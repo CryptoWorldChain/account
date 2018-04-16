@@ -7,13 +7,9 @@ enum PTSTModule {
 };
 
 enum PTSTCommand {
-    SST = 0; // 保存交易
-    CAT = 1; // 创建账户
-
-    GEN = 2; // 创世块交易
-    BLT = 3; // Block
-
-    BST = 4; // Block
+    BST = 0; // Single Block Test
+    TOT = 1; // Token 交易测试
+    MOT = 2; // 多重签名 交易测试
 }
 
 message ReqTxTest {

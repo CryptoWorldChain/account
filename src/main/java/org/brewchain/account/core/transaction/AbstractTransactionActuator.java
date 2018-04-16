@@ -33,12 +33,6 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	@Override
 	public void onPrepareExecute(MultiTransaction.Builder oMultiTransaction, Map<ByteString, Account> senders,
 			Map<ByteString, Account> receivers) throws Exception {
-		
-	}
-
-	@Override
-	public void onVerify(MultiTransaction.Builder oMultiTransaction, Map<ByteString, Account> senders,
-			Map<ByteString, Account> receivers) throws Exception {
 		int inputsTotal = 0;
 		int outputsTotal = 0;
 

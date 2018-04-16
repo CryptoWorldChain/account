@@ -70,6 +70,10 @@ public class AccountHelper implements ActorService {
 		putAccountValue(oAccount.getAddress().toByteArray(), oAccount.getValue());
 		return oAccount;
 	}
+	
+	public synchronized void DeleteAccount(byte[] address) {
+		dao.getAccountDao().delete(OEntityBuilder.byteKey2OKey(address));
+	}
 
 	public synchronized boolean isExist(byte[] addr) throws Exception {
 		return GetAccount(addr) != null;
@@ -95,10 +99,6 @@ public class AccountHelper implements ActorService {
 			// TODO: handle exception
 		}
 		return null;
-	}
-
-	public synchronized void delete(byte[] addr) {
-		throw new RuntimeException("未实现该方法");
 	}
 
 	public synchronized int increaseNonce(byte[] addr) throws Exception {

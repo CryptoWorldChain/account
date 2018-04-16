@@ -43,8 +43,6 @@ public class BlockSingleTest extends SessionModules<ReqTxTest> implements ActorS
 
 	@ActorRequire(name = "Block_Helper", scope = "global")
 	BlockHelper blockHelper;
-	// @ActorRequire
-	// DefDaos dao;
 
 	@ActorRequire(name = "bc_encoder", scope = "global")
 	EncAPI encApi;

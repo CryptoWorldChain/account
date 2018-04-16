@@ -141,7 +141,6 @@ public class TransactionHelper implements ActorService {
 			}
 
 			oiTransactionActuator.onPrepareExecute(oTransaction, senders, receivers);
-			oiTransactionActuator.onVerify(oTransaction, senders, receivers);
 			oiTransactionActuator.onExecute(oTransaction, senders, receivers);
 			oiTransactionActuator.onExecuteDone();
 		}
@@ -396,16 +395,15 @@ public class TransactionHelper implements ActorService {
 
 		iTransactionActuator oiTransactionActuator;
 		// TODO 枚举交易类型
-		if (oMultiTransaction.getData().toString().equals("01")) {
+		if (oMultiTransaction.getData().equals(ByteString.copyFromUtf8("01"))) {
 			oiTransactionActuator = new ActuatorCreateUnionAccount(this.oAccountHelper, null, null);
-		} else if (oMultiTransaction.getData().toString().equals("02")) {
+		} else if (oMultiTransaction.getData().equals(ByteString.copyFromUtf8("02"))) {
 			oiTransactionActuator = new ActuatorTokenTransaction(oAccountHelper, null, null);
 		} else {
 			oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, null, null);
 		}
 
 		oiTransactionActuator.onPrepareExecute(oMultiTransaction, senders, receivers);
-		oiTransactionActuator.onVerify(oMultiTransaction, senders, receivers);
 
 		// 生成交易Hash
 		getMultiTransactionHash(oMultiTransaction);

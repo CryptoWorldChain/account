@@ -33,7 +33,7 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 	 * java.util.Map)
 	 */
 	@Override
-	public void onVerify(MultiTransaction.Builder oMultiTransaction, Map<ByteString, Account> senders,
+	public void onPrepareExecute(MultiTransaction.Builder oMultiTransaction, Map<ByteString, Account> senders,
 			Map<ByteString, Account> receivers) throws Exception {
 		// 交易中的Token必须一致
 		String token = "";

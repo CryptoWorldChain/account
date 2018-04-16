@@ -27,13 +27,16 @@ public class ActuatorCreateUnionAccount extends AbstractTransactionActuator impl
 			throw new Exception("交易内容错误，data为null");
 		}
 
-		Account oUnionAccount = Account.parseFrom(oMultiTransaction.getData());
+		Account oUnionAccount = Account.parseFrom(oMultiTransaction.getExdata());
 		if (!oAccountHelper.isExist(oUnionAccount.getAddress().toByteArray())) {
 			// 如果账户不存在
 			oAccountHelper.CreateUnionAccount(oUnionAccount);
+			receivers.put(oUnionAccount.getAddress(), oUnionAccount);
 		} else {
 			// 如果账户存在
 			throw new Exception(String.format("账户 %s 已存在", oUnionAccount.getAddress().toString()));
 		}
+
+		super.onPrepareExecute(oMultiTransaction, senders, receivers);
 	}
 }
