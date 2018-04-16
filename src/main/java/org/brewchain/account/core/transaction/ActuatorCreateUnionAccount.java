@@ -19,7 +19,7 @@ public class ActuatorCreateUnionAccount extends AbstractTransactionActuator impl
 	}
 
 	@Override
-	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
+	public void onPrepareExecute(MultiTransaction.Builder oMultiTransaction, Map<ByteString, Account> senders,
 			Map<ByteString, Account> receivers) throws Exception {
 		// if (oMultiTransaction.getd)
 		// 如果data为空，直接抛出交易内容错误

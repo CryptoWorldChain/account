@@ -10,6 +10,7 @@ import org.apache.felix.ipojo.annotations.Provides;
 import org.bouncycastle.util.encoders.Hex;
 import org.brewchain.account.core.transaction.ActuatorCreateUnionAccount;
 import org.brewchain.account.core.transaction.ActuatorDefault;
+import org.brewchain.account.core.transaction.ActuatorTokenTransaction;
 import org.brewchain.account.core.transaction.iTransactionActuator;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.util.OEntityBuilder;
@@ -133,13 +134,15 @@ public class TransactionHelper implements ActorService {
 			// TODO 枚举交易类型
 			if (oTransaction.getData().toString().equals("01")) {
 				oiTransactionActuator = new ActuatorCreateUnionAccount(this.oAccountHelper, null, null);
+			} else if (oTransaction.getData().toString().equals("02")) {
+				oiTransactionActuator = new ActuatorTokenTransaction(oAccountHelper, null, null);
 			} else {
 				oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, null, null);
 			}
 
-			oiTransactionActuator.onPrepareExecute(oTransaction.build(), senders, receivers);
-			oiTransactionActuator.onVerify(oTransaction.build(), senders, receivers);
-			oiTransactionActuator.onExecute(oTransaction.build(), senders, receivers);
+			oiTransactionActuator.onPrepareExecute(oTransaction, senders, receivers);
+			oiTransactionActuator.onVerify(oTransaction, senders, receivers);
+			oiTransactionActuator.onExecute(oTransaction, senders, receivers);
 			oiTransactionActuator.onExecuteDone();
 		}
 	}
@@ -364,7 +367,7 @@ public class TransactionHelper implements ActorService {
 	// }
 
 	/**
-	 * 校验交易。 如果交易
+	 * 校验并保存交易。该方法不会执行交易，用户的账户余额不会发生变化。
 	 * 
 	 * @param oMultiTransaction
 	 * @throws Exception
@@ -381,37 +384,28 @@ public class TransactionHelper implements ActorService {
 					oMultiTransactionEncode);
 		}
 
-		// 判断发送方余额是否足够
-		int inputsTotal = 0; // 总转出金额
-		int outputsTotal = 0; // 总转入金额
+		Map<ByteString, Account> senders = new HashMap<ByteString, Account>();
 		for (MultiTransactionInput oInput : oMultiTransaction.getInputsList()) {
-			inputsTotal += oInput.getAmount();
-
-			Account.Builder sender = oAccountHelper.GetAccount(oInput.getAddress().toByteArray()).toBuilder();
-			long balance = sender.getValue().getBalance();
-			if (balance - oInput.getAmount() - oInput.getFeeLimit() >= 0) {
-				// 余额足够
-			} else {
-				throw new Exception(String.format("用户 %s 的账户余额 %s 不满足交易的最高限额 %s",
-						Hex.toHexString(oInput.getAddress().toByteArray()), balance,
-						oInput.getAmount() + oInput.getFeeLimit()));
-			}
-
-			// 判断nonce是否一致
-			int nonce = sender.getValue().getNonce();
-			if (nonce != oInput.getNonce()) {
-				throw new Exception(String.format("用户 %s 的交易索引 %s 与交易的索引不一致 %s",
-						Hex.toHexString(oInput.getAddress().toByteArray()), nonce, oInput.getNonce()));
-			}
+			senders.put(oInput.getAddress(), oAccountHelper.GetAccount(oInput.getAddress().toByteArray()));
 		}
 
+		Map<ByteString, Account> receivers = new HashMap<ByteString, Account>();
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getOutputsList()) {
-			outputsTotal += oOutput.getAmount();
+			receivers.put(oOutput.getAddress(), oAccountHelper.GetAccount(oOutput.getAddress().toByteArray()));
 		}
 
-		if (inputsTotal < outputsTotal) {
-			throw new Exception(String.format("交易的输入总金额 %s 小于 输出总金额 %s", inputsTotal, outputsTotal));
+		iTransactionActuator oiTransactionActuator;
+		// TODO 枚举交易类型
+		if (oMultiTransaction.getData().toString().equals("01")) {
+			oiTransactionActuator = new ActuatorCreateUnionAccount(this.oAccountHelper, null, null);
+		} else if (oMultiTransaction.getData().toString().equals("02")) {
+			oiTransactionActuator = new ActuatorTokenTransaction(oAccountHelper, null, null);
+		} else {
+			oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, null, null);
 		}
+
+		oiTransactionActuator.onPrepareExecute(oMultiTransaction, senders, receivers);
+		oiTransactionActuator.onVerify(oMultiTransaction, senders, receivers);
 
 		// 生成交易Hash
 		getMultiTransactionHash(oMultiTransaction);

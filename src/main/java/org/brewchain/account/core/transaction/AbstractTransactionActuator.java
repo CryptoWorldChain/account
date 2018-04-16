@@ -31,13 +31,13 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	}
 
 	@Override
-	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
+	public void onPrepareExecute(MultiTransaction.Builder oMultiTransaction, Map<ByteString, Account> senders,
 			Map<ByteString, Account> receivers) throws Exception {
 		
 	}
 
 	@Override
-	public void onVerify(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
+	public void onVerify(MultiTransaction.Builder oMultiTransaction, Map<ByteString, Account> senders,
 			Map<ByteString, Account> receivers) throws Exception {
 		int inputsTotal = 0;
 		int outputsTotal = 0;
@@ -51,7 +51,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 
 			// 判断发送方余额是否足够
 			long balance = senderAccountValue.getBalance();
-			if (balance - oInput.getAmount() - oInput.getFeeLimit() > 0) {
+			if (balance - oInput.getAmount() - oInput.getFeeLimit() >= 0) {
 				// 余额足够
 			} else {
 				throw new Exception(
@@ -80,7 +80,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	}
 
 	@Override
-	public void onExecute(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
+	public void onExecute(MultiTransaction.Builder oMultiTransaction, Map<ByteString, Account> senders,
 			Map<ByteString, Account> receivers) throws Exception {
 
 		LinkedList<OKey> keys = new LinkedList<OKey>();

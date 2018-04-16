@@ -10,6 +10,7 @@ import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.brewchain.account.gens.Act.Account;
+import org.brewchain.account.gens.Act.AccountTokenValue;
 import org.brewchain.account.gens.Act.AccountValue;
 import org.fc.brewchain.bcapi.EncAPI;
 
@@ -70,20 +71,16 @@ public class AccountHelper implements ActorService {
 		return oAccount;
 	}
 
-	//
-	// public synchronized AccountState createAccount(byte[] addr, byte[] code,
-	// String tag, String type) {
-	// byte[] codeHash = encApi.sha3Encode(code);
-	// AccountState state = new AccountState(KeyConstant.EMPTY_NONCE,
-	// KeyConstant.EMPTY_BALANCE, codeHash, tag, type);
-	// putAccountState(addr, state, code);
-	// return state;
-	// }
-
 	public synchronized boolean isExist(byte[] addr) throws Exception {
 		return GetAccount(addr) != null;
 	}
 
+	/**
+	 * 获取用户账户
+	 * 
+	 * @param addr
+	 * @return
+	 */
 	public synchronized Account GetAccount(byte[] addr) {
 		try {
 			OValue oValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(addr)).get();
@@ -108,6 +105,14 @@ public class AccountHelper implements ActorService {
 		return setNonce(addr, 1);
 	}
 
+	/**
+	 * 增加用户账户余额
+	 * 
+	 * @param addr
+	 * @param balance
+	 * @return
+	 * @throws Exception
+	 */
 	public synchronized long addBalance(byte[] addr, int balance) throws Exception {
 		Account.Builder oAccount = GetAccount(addr).toBuilder();
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
@@ -116,6 +121,42 @@ public class AccountHelper implements ActorService {
 		return oAccountValue.getBalance();
 	}
 
+	/**
+	 * 增加用户代币账户余额
+	 * 
+	 * @param addr
+	 * @param balance
+	 * @return
+	 * @throws Exception
+	 */
+	public synchronized long addTokenBalance(byte[] addr, String token, long balance) throws Exception {
+		Account.Builder oAccount = GetAccount(addr).toBuilder();
+		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
+
+		for (int i = 0; i < oAccountValue.getTokensCount(); i++) {
+			if (oAccountValue.getTokens(i).getToken().equals(token)) {
+				oAccountValue.getTokens(i).toBuilder().setBalance(oAccountValue.getTokens(i).getBalance() + balance);
+				putAccountValue(addr, oAccountValue.build());
+				return oAccountValue.getTokens(i).getBalance();
+			}
+		}
+		// 如果token账户余额不存在，直接增加一条记录
+		AccountTokenValue.Builder oAccountTokenValue = AccountTokenValue.newBuilder();
+		oAccountTokenValue.setBalance(balance);
+		oAccountTokenValue.setToken(token);
+		oAccountValue.addTokens(oAccountTokenValue);
+		putAccountValue(addr, oAccountValue.build());
+		return oAccountTokenValue.getBalance();
+	}
+
+	/**
+	 * 设置用户账户Nonce
+	 * 
+	 * @param addr
+	 * @param nonce
+	 * @return
+	 * @throws Exception
+	 */
 	public synchronized int setNonce(byte[] addr, int nonce) throws Exception {
 		Account.Builder oAccount = GetAccount(addr).toBuilder();
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
@@ -124,16 +165,48 @@ public class AccountHelper implements ActorService {
 		return oAccountValue.getNonce();
 	}
 
+	/**
+	 * 获取用户账户Nonce
+	 * 
+	 * @param addr
+	 * @return
+	 * @throws Exception
+	 */
 	public synchronized int getNonce(byte[] addr) throws Exception {
 		Account.Builder oAccount = GetAccount(addr).toBuilder();
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 		return oAccountValue.getNonce();
 	}
 
+	/**
+	 * 获取用户账户的Balance
+	 * 
+	 * @param addr
+	 * @return
+	 * @throws Exception
+	 */
 	public synchronized long getBalance(byte[] addr) throws Exception {
 		Account.Builder oAccount = GetAccount(addr).toBuilder();
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 		return oAccountValue.getBalance();
+	}
+
+	/**
+	 * 获取用户Token账户的Balance
+	 * 
+	 * @param addr
+	 * @return
+	 * @throws Exception
+	 */
+	public synchronized long getTokenBalance(byte[] addr, String token) throws Exception {
+		Account.Builder oAccount = GetAccount(addr).toBuilder();
+		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
+		for (int i = 0; i < oAccountValue.getTokensCount(); i++) {
+			if (oAccountValue.getTokens(i).getToken().equals(token)) {
+				return oAccountValue.getTokens(i).getBalance();
+			}
+		}
+		return 0;
 	}
 
 	private void putAccountValue(byte[] addr, AccountValue oAccountValue) {
