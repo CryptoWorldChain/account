@@ -132,9 +132,9 @@ public class TransactionHelper implements ActorService {
 
 			iTransactionActuator oiTransactionActuator;
 			// TODO 枚举交易类型
-			if (oTransaction.getData().toString().equals("01")) {
+			if (oTransaction.getData().equals(ByteString.copyFromUtf8("01"))) {
 				oiTransactionActuator = new ActuatorCreateUnionAccount(this.oAccountHelper, null, null);
-			} else if (oTransaction.getData().toString().equals("02")) {
+			} else if (oTransaction.getData().equals(ByteString.copyFromUtf8("02"))) {
 				oiTransactionActuator = new ActuatorTokenTransaction(oAccountHelper, null, null);
 			} else {
 				oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, null, null);

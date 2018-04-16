@@ -7,6 +7,7 @@ import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.gens.Act.Account;
+import org.brewchain.account.gens.Act.AccountTokenValue;
 import org.brewchain.account.gens.Act.AccountValue;
 import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.brewchain.account.gens.Tx.MultiTransaction.Builder;
@@ -101,13 +102,17 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 
 			token = oInput.getToken();
-
+			boolean isExistToken = false;
 			for (int i = 0; i < senderAccountValue.getTokensCount(); i++) {
 				if (senderAccountValue.getTokens(i).getToken().equals(oInput.getToken())) {
-					senderAccountValue.getTokens(i).toBuilder().setBalance(
-							senderAccountValue.getTokens(i).getBalance() - oInput.getAmount() - oInput.getFee());
+					senderAccountValue.setTokens(i, senderAccountValue.getTokens(i).toBuilder().setBalance(
+							senderAccountValue.getTokens(i).getBalance() - oInput.getAmount() - oInput.getFee()));
+					isExistToken = true;
 					break;
 				}
+			}
+			if (!isExistToken) {
+				throw new Exception(String.format("发送方账户异常，缺少token %s", oInput.getToken()));
 			}
 
 			keys.add(OEntityBuilder.byteKey2OKey(sender.getAddress().toByteArray()));
@@ -119,12 +124,22 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			AccountValue.Builder receiverAccountValue = receiver.getValue().toBuilder();
 			receiverAccountValue.setBalance(receiverAccountValue.getBalance() + oOutput.getAmount());
 
+			boolean isExistToken = false;
 			for (int i = 0; i < receiverAccountValue.getTokensCount(); i++) {
 				if (receiverAccountValue.getTokens(i).getToken().equals(token)) {
-					receiverAccountValue.getTokens(i).toBuilder()
-							.setBalance(receiverAccountValue.getTokens(i).getBalance() + oOutput.getAmount());
+					receiverAccountValue.setTokens(i, receiverAccountValue.getTokens(i).toBuilder()
+							.setBalance(receiverAccountValue.getTokens(i).getBalance() + oOutput.getAmount()));
+					isExistToken = true;
 					break;
 				}
+			}
+
+			// 如果对应账户中没有该token，则直接创建
+			if (!isExistToken) {
+				AccountTokenValue.Builder oAccountTokenValue = AccountTokenValue.newBuilder();
+				oAccountTokenValue.setToken(token);
+				oAccountTokenValue.setBalance(oOutput.getAmount());
+				receiverAccountValue.addTokens(oAccountTokenValue);
 			}
 
 			keys.add(OEntityBuilder.byteKey2OKey(receiver.getAddress().toByteArray()));
