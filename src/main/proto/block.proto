@@ -1,6 +1,6 @@
 syntax = "proto3";
 import "tx.proto";
-package org.brewchain.frontend.gens;
+package org.brewchain.account.gens;
 
 enum PBCTModule {
     BCT = 0; // Block

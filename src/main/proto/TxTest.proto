@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package org.brewchain.frontend.gens;
+package org.brewchain.account.gens;
 
 enum PTSTModule {
     TST = 0; // 交易

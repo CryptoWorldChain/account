@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package org.brewchain.frontend.gens;
+package org.brewchain.account.gens;
 
 // bc_unsend_tx -- 未发送交易
 // { bc_unsend_tx, 'txHash1' }, { bc_unsend_tx, 'txHash2' }, { bc_unsend_tx, 'txHash3' }
