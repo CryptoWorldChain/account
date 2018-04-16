@@ -437,7 +437,7 @@ public class TransactionHelper implements ActorService {
 	}
 
 	private void verifySignature(String pubKey, String signature, byte[] tx) throws Exception {
-		if (encApi.ecVerify(pubKey, tx, signature.getBytes())) {
+		if (encApi.ecVerify(pubKey, tx, encApi.hexDec(signature))) {
 
 		} else {
 			throw new Exception(String.format("签名 %s 使用公钥 %s 验证失败", pubKey, signature));

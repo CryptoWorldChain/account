@@ -129,7 +129,7 @@ public class BlockSingleTest extends SessionModules<ReqTxTest> implements ActorS
 
 			MultiTransactionSignature.Builder oMultiTransactionSignature = MultiTransactionSignature.newBuilder();
 			oMultiTransactionSignature.setPubKey(oKeyPairs2.getPubkey());
-			oMultiTransactionSignature.setSignature(Hex.toHexString(encApi.ecSign(oKeyPairs2.getPrikey(), oMultiTransaction.build().toByteArray())));
+			oMultiTransactionSignature.setSignature(encApi.hexEnc(encApi.ecSign(oKeyPairs2.getPrikey(), oMultiTransaction.build().toByteArray())));
 			
 			oMultiTransaction.addSignatures(oMultiTransactionSignature);			
 			//transactionHelper.Signature(privs, oMultiTransaction);
