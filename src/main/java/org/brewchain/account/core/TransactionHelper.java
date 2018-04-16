@@ -1,32 +1,22 @@
 package org.brewchain.account.core;
 
-import java.math.BigInteger;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.bouncycastle.util.encoders.Hex;
 import org.brewchain.account.core.transaction.ActuatorCreateUnionAccount;
 import org.brewchain.account.core.transaction.ActuatorDefault;
-import org.brewchain.account.core.transaction.TransactionTypeEnum;
 import org.brewchain.account.core.transaction.iTransactionActuator;
 import org.brewchain.account.dao.DefDaos;
-import org.brewchain.account.exception.TransactionException;
-import org.brewchain.account.util.FastByteComparisons;
 import org.brewchain.account.util.OEntityBuilder;
-import org.brewchain.bcapi.backend.ODBException;
 import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.brewchain.account.gens.Act.Account;
-import org.brewchain.account.gens.Act.AccountValue;
 import org.brewchain.account.gens.Tx.MultiTransaction;
-import org.brewchain.account.gens.Tx.MultiTransaction.Builder;
 import org.brewchain.account.gens.Tx.MultiTransactionInput;
 import org.brewchain.account.gens.Tx.MultiTransactionOutput;
 import org.brewchain.account.gens.Tx.MultiTransactionSignature;
@@ -380,8 +370,6 @@ public class TransactionHelper implements ActorService {
 	 * @throws Exception
 	 */
 	private void verifyAndSaveMultiTransaction(MultiTransaction.Builder oMultiTransaction) throws Exception {
-		boolean isUnionTx = false;
-
 		// 获取交易原始encode
 		MultiTransaction.Builder signatureTx = oMultiTransaction.clone();
 		signatureTx.clearSignatures();
@@ -401,7 +389,7 @@ public class TransactionHelper implements ActorService {
 
 			Account.Builder sender = oAccountHelper.GetAccount(oInput.getAddress().toByteArray()).toBuilder();
 			long balance = sender.getValue().getBalance();
-			if (balance - oInput.getAmount() - oInput.getFeeLimit() > 0) {
+			if (balance - oInput.getAmount() - oInput.getFeeLimit() >= 0) {
 				// 余额足够
 			} else {
 				throw new Exception(String.format("用户 %s 的账户余额 %s 不满足交易的最高限额 %s",
@@ -415,9 +403,6 @@ public class TransactionHelper implements ActorService {
 				throw new Exception(String.format("用户 %s 的交易索引 %s 与交易的索引不一致 %s",
 						Hex.toHexString(oInput.getAddress().toByteArray()), nonce, oInput.getNonce()));
 			}
-
-			// 校验签名
-			// verifySignature()
 		}
 
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getOutputsList()) {

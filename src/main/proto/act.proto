@@ -72,6 +72,12 @@ message AccountValue {
     int32 acceptMax = 5;
     int32 acceptLimit = 6;
     repeated bytes address = 7;
+    repeated AccountTokenValue tokens = 8;
+}
+
+message AccountTokenValue {
+    string token = 1;
+    int64 balance = 2;
 }
 
 message Contract {
