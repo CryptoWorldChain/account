@@ -43,12 +43,11 @@ message SingleTransaction {
 	int64 amount= 7;
 	bytes data= 8;
 	int64 timestamp = 9;
-	int64 sliceId = 10; // 切片id
-	bytes exdata = 11;
-	string signature = 12;
-	string pubKey = 13;
-	repeated bytes delegate = 14;
-	string token = 15;
+	bytes exdata = 10;
+	string signature = 11;
+	string pubKey = 12;
+	repeated bytes delegate = 13;
+	string token = 14;
 }
 
 message MultiTransaction {

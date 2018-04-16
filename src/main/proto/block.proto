@@ -39,6 +39,7 @@ message BlockHeader {
 	bytes nonce = 8;
 	bytes blockHash = 9;
 	repeated bytes txHashs = 10;
+	int64 sliceId = 11;
 }
 
 message BlockBody {
