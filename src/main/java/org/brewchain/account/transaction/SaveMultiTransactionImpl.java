@@ -6,6 +6,8 @@ import org.brewchain.account.gens.Tx.PTXTCommand;
 import org.brewchain.account.gens.Tx.PTXTModule;
 import org.brewchain.account.gens.Tx.ReqCreateMultiTransaction;
 import org.brewchain.account.gens.Tx.RespCreateTransaction;
+import org.fc.brewchain.bcapi.EncAPI;
+
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import onight.oapi.scala.commons.SessionModules;
@@ -21,6 +23,8 @@ import onight.tfw.otransio.api.beans.FramePacket;
 public class SaveMultiTransactionImpl extends SessionModules<ReqCreateMultiTransaction> {
 	@ActorRequire(name = "Transaction_Helper", scope = "global")
 	TransactionHelper transactionHelper;
+	@ActorRequire(name = "bc_encoder", scope = "global")
+	EncAPI encApi;
 
 	@Override
 	public String[] getCmds() {
@@ -37,7 +41,8 @@ public class SaveMultiTransactionImpl extends SessionModules<ReqCreateMultiTrans
 		RespCreateTransaction.Builder oRespCreateTx = RespCreateTransaction.newBuilder();
 
 		try {
-			MultiTransaction.Builder oTransaction = pb.getTransaction().toBuilder();
+			MultiTransaction.Builder oTransaction = MultiTransaction.parseFrom(encApi.hexDec(pb.getMultiTxString()))
+					.toBuilder();
 			transactionHelper.CreateMultiTransaction(oTransaction);
 			oRespCreateTx.setRetCode(1);
 		} catch (Exception e) {

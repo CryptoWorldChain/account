@@ -7,6 +7,7 @@ import org.fc.brewchain.bcapi.EncAPI;
 import com.google.protobuf.Message;
 
 import lombok.Data;
+import lombok.experimental.var;
 import lombok.extern.slf4j.Slf4j;
 import onight.oapi.scala.commons.SessionModules;
 import onight.osgi.annotation.NActorProvider;
@@ -34,9 +35,12 @@ public class DefDaos extends SessionModules<Message> {
 	@StoreDAO(target = "bc_bdb", daoClass = BlockDomain.class)
 	ODBSupport blockDao;
 
+	@StoreDAO(target = "redis", daoClass = DayTotalAmountRedisDao.class, key = "daily_total_amount")
+	var totalAmountDao;
+
 	@Override
 	public void onDaoServiceAllReady() {
-		//log.debug("EncAPI==" + enc);
+		// log.debug("EncAPI==" + enc);
 	}
 
 	@Override

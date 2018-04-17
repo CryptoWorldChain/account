@@ -5,6 +5,7 @@ import org.brewchain.account.gens.Act.PACTCommand;
 import org.brewchain.account.gens.Act.PACTModule;
 import org.brewchain.account.gens.Act.ReqCreateAccount;
 import org.brewchain.account.gens.Act.RespCreateAccount;
+import org.fc.brewchain.bcapi.EncAPI;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,8 @@ import onight.tfw.otransio.api.beans.FramePacket;
 public class CreateAccountImpl extends SessionModules<ReqCreateAccount> {
 	@ActorRequire(name = "Account_Helper", scope = "global")
 	AccountHelper oAccountHelper;
+	@ActorRequire(name = "bc_encoder", scope = "global")
+	EncAPI encApi;
 
 	@Override
 	public String[] getCmds() {
@@ -38,7 +41,7 @@ public class CreateAccountImpl extends SessionModules<ReqCreateAccount> {
 		// ExAccountState state = new ExAccountState(BigInteger.ZERO,
 		// BigInteger.ZERO);
 		try {
-			oAccountHelper.CreateAccount(pb.getAddress().toByteArray(), pb.getPubKey().toByteArray());
+			oAccountHelper.CreateAccount(encApi.hexDec(pb.getAddress()), encApi.hexDec(pb.getPubKey()));
 			oRespCreateAccount.setRetCode(1);
 		} catch (Exception e) {
 			e.printStackTrace();

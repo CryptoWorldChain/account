@@ -6,6 +6,7 @@ import org.brewchain.account.gens.Block.PBCTCommand;
 import org.brewchain.account.gens.Block.PBCTModule;
 import org.brewchain.account.gens.Block.ReqGetBlock;
 import org.brewchain.account.gens.Block.RespGetBlock;
+import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -18,6 +19,8 @@ import onight.tfw.otransio.api.beans.FramePacket;
 public class GetBlockImpl extends SessionModules<ReqGetBlock> {
 	@ActorRequire(name = "Block_Helper", scope = "global")
 	BlockHelper blockHelper;
+	@ActorRequire(name = "bc_encoder", scope = "global")
+	EncAPI encApi;
 
 	@Override
 	public String[] getCmds() {
@@ -35,7 +38,7 @@ public class GetBlockImpl extends SessionModules<ReqGetBlock> {
 
 		try {
 			BlockEntity.Builder oBlockEntity = blockHelper.CreateNewBlock(pb.getTxCount(),
-					pb.getExtraData().toByteArray());
+					encApi.hexDec(pb.getExtraData()));
 			oRespGetBlock.setHeader(oBlockEntity.getHeader());
 			oRespGetBlock.setRetCode(1);
 		} catch (InvalidProtocolBufferException e) {

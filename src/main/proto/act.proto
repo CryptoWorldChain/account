@@ -20,8 +20,8 @@ enum PACTCommand {
     // AAB = 9; // 增加Balance
 }
 message ReqCreateAccount {
-    bytes address = 1;
-    bytes pubKey = 2;
+    string address = 1;
+    string pubKey = 2;
 }
 
 message RespCreateAccount {
@@ -29,11 +29,11 @@ message RespCreateAccount {
 }
 
 message ReqCreateUnionAccount {
-    bytes address = 1;
+    string address = 1;
     int32 max = 2;
     int32 acceptMax = 3;
     int32 acceptLimit = 4;
-    repeated bytes relAddress = 5;
+    repeated string relAddress = 5;
     repeated string signature = 6;
     repeated string pubKey = 7;
 }
@@ -43,7 +43,7 @@ message RespCreateUnionAccount {
 }
 
 message ReqGetAccount {
-    bytes address = 1;
+    string address = 1;
 }
 
 message RespGetAccount {

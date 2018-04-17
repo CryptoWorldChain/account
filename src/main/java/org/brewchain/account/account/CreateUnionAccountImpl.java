@@ -1,10 +1,13 @@
 package org.brewchain.account.account;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.util.ByteUtil;
+import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;
 
@@ -31,7 +34,9 @@ public class CreateUnionAccountImpl extends SessionModules<ReqCreateUnionAccount
 	AccountHelper accountHelper;
 	@ActorRequire(name = "Transaction_Helper", scope = "global")
 	TransactionHelper transactionHelper;
-	
+	@ActorRequire(name = "bc_encoder", scope = "global")
+	EncAPI encApi;
+
 	@Override
 	public String[] getCmds() {
 		return new String[] { PACTCommand.UAC.name() };
@@ -47,9 +52,14 @@ public class CreateUnionAccountImpl extends SessionModules<ReqCreateUnionAccount
 		RespCreateUnionAccount.Builder oRespCreateUnionAccount = RespCreateUnionAccount.newBuilder();
 		try {
 			// 创建多重签名账户
-			accountHelper.CreateUnionAccount(pb.getAddress().toByteArray(), ByteUtil.EMPTY_BYTE_ARRAY, pb.getMax(),
-					pb.getAcceptMax(), pb.getAcceptLimit(), pb.getRelAddressList());
-			
+			List<ByteString> relAddresses = new ArrayList<ByteString>();
+			for (String addressString : pb.getRelAddressList()) {
+				relAddresses.add(ByteString.copyFrom(encApi.hexDec(addressString)));
+			}
+
+			accountHelper.CreateUnionAccount(encApi.hexDec(pb.getAddress()), ByteUtil.EMPTY_BYTE_ARRAY, pb.getMax(),
+					pb.getAcceptMax(), pb.getAcceptLimit(), relAddresses);
+
 			oRespCreateUnionAccount.setRetCode(1);
 		} catch (Exception e) {
 			e.printStackTrace();

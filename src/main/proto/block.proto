@@ -15,7 +15,7 @@ enum PBCTCommand {
 
 message ReqGetBlock {
     int32 txCount = 1;
-	bytes extraData = 2;
+	string extraData = 2;
 }
 
 message BlockEntity {

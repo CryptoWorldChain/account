@@ -6,6 +6,7 @@ import org.brewchain.account.gens.Tx.PTXTModule;
 import org.brewchain.account.gens.Tx.ReqCreateSingleTransaction;
 import org.brewchain.account.gens.Tx.RespCreateTransaction;
 import org.brewchain.account.gens.Tx.SingleTransaction;
+import org.fc.brewchain.bcapi.EncAPI;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,8 @@ import onight.tfw.otransio.api.beans.FramePacket;
 public class SaveTransactionImpl extends SessionModules<ReqCreateSingleTransaction> {
 	@ActorRequire(name = "Transaction_Helper", scope = "global")
 	TransactionHelper transactionHelper;
+	@ActorRequire(name = "bc_encoder", scope = "global")
+	EncAPI encApi;
 
 	@Override
 	public String[] getCmds() {
@@ -38,7 +41,8 @@ public class SaveTransactionImpl extends SessionModules<ReqCreateSingleTransacti
 		RespCreateTransaction.Builder oRespCreateTx = RespCreateTransaction.newBuilder();
 
 		try {
-			SingleTransaction.Builder oTransaction = pb.getTransaction().toBuilder();
+			SingleTransaction.Builder oTransaction = SingleTransaction.parseFrom(encApi.hexDec(pb.getSingleTxString()))
+					.toBuilder();
 			transactionHelper
 					.CreateMultiTransaction(transactionHelper.ParseSingleTransactionToMultiTransaction(oTransaction));
 			oRespCreateTx.setRetCode(1);

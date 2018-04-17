@@ -26,12 +26,49 @@ enum PTXTCommand {
 }
 
 message ReqCreateSingleTransaction {
-	SingleTransaction transaction = 1;
+	// SingleTransaction transaction = 1;
+	string singleTxString = 1;
 }
 
 message ReqCreateMultiTransaction {
-	MultiTransaction transaction = 1;
+	// MultiTransaction transaction = 1;
+	string multiTxString = 1;
 }
+
+message RespCreateTransaction {
+    string txHash = 1;
+	int32 retCode = 2;
+	string retMsg = 3;
+}
+
+message ReqGetTxToSync {
+	int32 total = 1;
+}
+
+message RespGetTxToSync {
+	repeated MultiTransaction txs = 1;
+	int32 txCount = 2;
+}
+
+message ReqSyncTx {
+	repeated MultiTransaction txs = 1;
+}
+
+message RespSyncTx {
+	int32 retCode = 1;
+	repeated bytes errList = 2;
+}
+
+message ReqGetTxByHash {
+	bytes txHash = 1;
+}
+
+message RespGetTxByHash {
+	MultiTransaction transaction = 1;
+	int32 retCode = 2;
+}
+
+
 
 message SingleTransaction {
 	bytes txHash = 1;
@@ -78,39 +115,6 @@ message MultiTransactionOutput {
 message MultiTransactionSignature {
 	string signature = 1;
 	string pubKey = 2;
-}
-
-message RespCreateTransaction {
-    bytes txHash = 1;
-	int32 retCode = 2;
-	string retMsg = 3;
-}
-
-message ReqGetTxToSync {
-	int32 total = 1;
-}
-
-message RespGetTxToSync {
-	repeated MultiTransaction txs = 1;
-	int32 txCount = 2;
-}
-
-message ReqSyncTx {
-	repeated MultiTransaction txs = 1;
-}
-
-message RespSyncTx {
-	int32 retCode = 1;
-	repeated bytes errList = 2;
-}
-
-message ReqGetTxByHash {
-	bytes txHash = 1;
-}
-
-message RespGetTxByHash {
-	MultiTransaction transaction = 1;
-	int32 retCode = 2;
 }
 
 // 统计

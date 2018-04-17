@@ -41,7 +41,7 @@ public class GetAccountImpl extends SessionModules<ReqGetAccount> {
 		RespGetAccount.Builder oRespGetAccount = RespGetAccount.newBuilder();
 
 		try {
-			Account oAccount = oAccountHelper.GetAccount(pb.getAddress().toByteArray());
+			Account oAccount = oAccountHelper.GetAccount(encApi.hexDec(pb.getAddress()));
 			oRespGetAccount.setAccount(oAccount);
 			oRespGetAccount.setRetCode(1);
 		} catch (Exception e) {

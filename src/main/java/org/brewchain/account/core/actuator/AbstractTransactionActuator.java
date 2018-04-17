@@ -31,6 +31,11 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	}
 
 	@Override
+	public boolean needSignature() {
+		return true;
+	}
+
+	@Override
 	public void onPrepareExecute(MultiTransaction.Builder oMultiTransaction, Map<ByteString, Account> senders,
 			Map<ByteString, Account> receivers) throws Exception {
 		int inputsTotal = 0;
