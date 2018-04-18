@@ -12,6 +12,8 @@ enum PTSTCommand {
     MOT = 2; // 多重签名 交易测试
     ICT = 3; // 内部调用 交易测试
     SST = 4; // 签名测试
+
+    TTT = 5; // 多线程测试
 }
 
 message ReqTxTest {
@@ -22,3 +24,8 @@ message RespTxTest {
     int32 retCode = 1;
 }
 
+message ReqTTT {
+    int32 block = 1;
+    int32 tx = 2;
+    int32 account = 3;
+}

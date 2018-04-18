@@ -116,6 +116,9 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 
 			senderAccountValue.setBalance(senderAccountValue.getBalance() - oInput.getAmount() - oInput.getFee());
 
+			senderAccountValue.setNonce(senderAccountValue.getNonce() + 1);
+
+			
 			keys.add(OEntityBuilder.byteKey2OKey(sender.getAddress().toByteArray()));
 			values.add(OEntityBuilder.byteValue2OValue(senderAccountValue.build().toByteArray()));
 		}

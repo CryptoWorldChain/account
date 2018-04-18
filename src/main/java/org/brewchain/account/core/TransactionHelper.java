@@ -137,7 +137,7 @@ public class TransactionHelper implements ActorService {
 			} else if (oTransaction.getData().equals(ByteString.copyFromUtf8("04"))) {
 				oiTransactionActuator = new ActuatorCallInternalFunction(oAccountHelper, null, null, encApi);
 			} else {
-				oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, null, null);
+				oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, null, null, encApi);
 			}
 
 			oiTransactionActuator.onPrepareExecute(oTransaction, senders, receivers);
@@ -295,7 +295,7 @@ public class TransactionHelper implements ActorService {
 
 		MultiTransaction.Builder newMultiTransaction = oMultiTransaction.clone();
 		newMultiTransaction.setTxHash(ByteString.EMPTY);
-		return ByteString.copyFrom(encApi.sha256Encode(newMultiTransaction.build().toByteArray())).toByteArray();
+		return encApi.sha256Encode(newMultiTransaction.build().toByteArray());
 	}
 
 	/**
@@ -397,7 +397,7 @@ public class TransactionHelper implements ActorService {
 		} else if (oMultiTransaction.getData().equals(ByteString.copyFromUtf8("04"))) {
 			oiTransactionActuator = new ActuatorCallInternalFunction(oAccountHelper, null, null, encApi);
 		} else {
-			oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, null, null);
+			oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, null, null,encApi);
 		}
 
 		// 如果交易本身需要验证签名

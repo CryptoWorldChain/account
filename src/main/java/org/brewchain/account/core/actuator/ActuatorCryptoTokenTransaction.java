@@ -129,6 +129,7 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 					break;
 				}
 			}
+			oAccountValue.setNonce(oAccountValue.getNonce() + 1);
 			keys.add(OEntityBuilder.byteKey2OKey(oInput.getAddress().toByteArray()));
 			values.add(OEntityBuilder.byteValue2OValue(oAccountValue.build().toByteArray()));
 		}

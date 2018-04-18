@@ -6,6 +6,7 @@ import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.util.ByteUtil;
+import org.fc.brewchain.bcapi.EncAPI;
 import org.brewchain.account.gens.Act.Account;
 import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.brewchain.account.gens.Tx.MultiTransactionInput;
@@ -15,9 +16,9 @@ import com.google.protobuf.ByteString;
 
 public class ActuatorDefault extends AbstractTransactionActuator implements iTransactionActuator {
 
-	public ActuatorDefault(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
-			BlockHelper oBlockHelper) {
-		super(oAccountHelper, oTransactionHelper, oBlockHelper, null);
+	public ActuatorDefault(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper, BlockHelper oBlockHelper,
+			EncAPI encApi) {
+		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi);
 		// TODO Auto-generated constructor stub
 	}
 
