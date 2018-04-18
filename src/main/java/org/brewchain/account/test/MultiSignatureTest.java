@@ -126,7 +126,7 @@ public class MultiSignatureTest extends SessionModules<ReqTxTest> implements Act
 		relAddress.add(ByteString.copyFromUtf8(oKeyPairs3.getAddress()));
 
 		// 创建多重签名账户
-		Account oAccount = accountHelper.CreateUnionAccount(mAddress, ByteUtil.EMPTY_BYTE_ARRAY, 300, 20, 2,
+		Account oAccount = accountHelper.CreateUnionAccount(mAddress, ByteUtil.EMPTY_BYTE_ARRAY, 300, 150, 2,
 				relAddress);
 
 		// 发送多重签名账户创建交易并转账
@@ -201,7 +201,8 @@ public class MultiSignatureTest extends SessionModules<ReqTxTest> implements Act
 		oSyncBlock = BlockEntity.newBuilder();
 
 		try {
-			newBlock = blockHelper.CreateNewBlock(600, ByteUtil.EMPTY_BYTE_ARRAY,  ByteString.copyFromUtf8(coinBase).toByteArray());
+			newBlock = blockHelper.CreateNewBlock(600, ByteUtil.EMPTY_BYTE_ARRAY,
+					ByteString.copyFromUtf8(coinBase).toByteArray());
 			log.debug("创建区块 高度" + newBlock.getHeader().getNumber());
 			oSyncBlock.setHeader(newBlock.getHeader());
 			blockHelper.ApplyBlock(oSyncBlock.build());
@@ -212,47 +213,50 @@ public class MultiSignatureTest extends SessionModules<ReqTxTest> implements Act
 			e2.printStackTrace();
 		}
 
-		// 创建多重签名交易 (小于多重签名金额)
-		MultiTransaction.Builder oMultiTransaction2 = MultiTransaction.newBuilder();
-		MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
-		oMultiTransactionInput4.setAddress(ByteString.copyFrom(mAddress));
-		oMultiTransactionInput4.setAmount(12);
-		oMultiTransactionInput4.setFee(0);
-		oMultiTransactionInput4.setFeeLimit(0);
-		oMultiTransactionInput4.setNonce(0);
-		oMultiTransaction2.addInputs(oMultiTransactionInput4);
+		for (int i = 0; i < 10; i++) {
+			// 创建多重签名交易 (小于多重签名金额)
+			MultiTransaction.Builder oMultiTransaction2 = MultiTransaction.newBuilder();
+			MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
+			oMultiTransactionInput4.setAddress(ByteString.copyFrom(mAddress));
+			oMultiTransactionInput4.setAmount(150);
+			oMultiTransactionInput4.setFee(0);
+			oMultiTransactionInput4.setFeeLimit(0);
+			oMultiTransactionInput4.setNonce(0);
+			oMultiTransaction2.addInputs(oMultiTransactionInput4);
 
-		// MultiTransactionOutput.Builder oMultiTransactionOutput =
-		// MultiTransactionOutput.newBuilder();
-		oMultiTransaction2.setData(ByteString.copyFromUtf8("03"));
-		oMultiTransaction2.setExdata(oAccount.toByteString());
-		oMultiTransaction2.setTxHash(ByteString.EMPTY);
-		oMultiTransaction2.clearSignatures();
+			// MultiTransactionOutput.Builder oMultiTransactionOutput =
+			// MultiTransactionOutput.newBuilder();
+			oMultiTransaction2.setData(ByteString.copyFromUtf8("03"));
+			oMultiTransaction2.setExdata(oAccount.toByteString());
+			oMultiTransaction2.setTxHash(ByteString.EMPTY);
+			oMultiTransaction2.clearSignatures();
 
-		// 签名
-		MultiTransactionSignature.Builder oMultiTransactionSignature21 = MultiTransactionSignature.newBuilder();
-		oMultiTransactionSignature21.setPubKey(oKeyPairs1.getPubkey());
-		oMultiTransactionSignature21.setSignature(
-				encApi.hexEnc(encApi.ecSign(oKeyPairs1.getPrikey(), oMultiTransaction.build().toByteArray())));
-		oMultiTransaction2.addSignatures(oMultiTransactionSignature21);
+			// 签名
+			MultiTransactionSignature.Builder oMultiTransactionSignature21 = MultiTransactionSignature.newBuilder();
+			oMultiTransactionSignature21.setPubKey(oKeyPairs1.getPubkey());
+			oMultiTransactionSignature21.setSignature(
+					encApi.hexEnc(encApi.ecSign(oKeyPairs1.getPrikey(), oMultiTransaction.build().toByteArray())));
+			oMultiTransaction2.addSignatures(oMultiTransactionSignature21);
 
-		try {
-			transactionHelper.CreateMultiTransaction(oMultiTransaction2);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		oSyncBlock = BlockEntity.newBuilder();
-		try {
-			newBlock = blockHelper.CreateNewBlock(600, ByteUtil.EMPTY_BYTE_ARRAY,ByteString.copyFromUtf8(coinBase).toByteArray());
-			log.debug("创建区块 高度" + newBlock.getHeader().getNumber());
-			oSyncBlock.setHeader(newBlock.getHeader());
-			blockHelper.ApplyBlock(oSyncBlock.build());
-			log.debug("block已同步");
-			log.debug("多重签名账户信息：" + accountHelper.GetAccount(mAddress));
-		} catch (Exception e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
+			try {
+				transactionHelper.CreateMultiTransaction(oMultiTransaction2);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			oSyncBlock = BlockEntity.newBuilder();
+			try {
+				newBlock = blockHelper.CreateNewBlock(600, ByteUtil.EMPTY_BYTE_ARRAY,
+						ByteString.copyFromUtf8(coinBase).toByteArray());
+				log.debug("创建区块 高度" + newBlock.getHeader().getNumber());
+				oSyncBlock.setHeader(newBlock.getHeader());
+				blockHelper.ApplyBlock(oSyncBlock.build());
+				log.debug("block已同步");
+				log.debug("多重签名账户信息：" + accountHelper.GetAccount(mAddress));
+			} catch (Exception e2) {
+				// TODO Auto-generated catch block
+				e2.printStackTrace();
+			}
 		}
 
 		oRespTxTest.setRetCode(-1);

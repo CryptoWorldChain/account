@@ -17,6 +17,9 @@ import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator implements iTransactionActuator {
 
 	public ActuatorUnionAccountTransaction(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
@@ -33,7 +36,8 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 		if (senders.size() != 1) {
 			throw new Exception(String.format("发送方地址不存在或者出现多个发送方地址 %s", senders.size()));
 		}
-		AccountValue.Builder oSenderValue = senders.get(0).getValue().toBuilder();
+
+		AccountValue.Builder oSenderValue = senders.get(senders.keySet().toArray()[0]).getValue().toBuilder();
 
 		long totalAmount = 0;
 		for (MultiTransactionInput oInput : oMultiTransaction.getInputsList()) {
@@ -41,7 +45,9 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 			totalAmount += oInput.getFee();
 		}
 		String key = String.format("%s_%s", new SimpleDateFormat("yyyy-MM-dd").format(new Date()),
-				oMultiTransaction.getInputs(0).getAddress().toString());
+				encApi.hexEnc(oMultiTransaction.getInputs(0).getAddress().toByteArray()));
+		log.debug(String.format("%s 累计 %s", key, AbstractLocalCache.dayTotalAmount.get(key)));
+
 		long dayTotal = totalAmount + AbstractLocalCache.dayTotalAmount.get(key);
 		long dayMax = oSenderValue.getMax();
 		if (dayTotal > dayMax) {
@@ -51,13 +57,15 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 		if (totalAmount > oSenderValue.getAcceptMax()) {
 			if (oMultiTransaction.getSignaturesCount() != oSenderValue.getAcceptMax()) {
 				throw new Exception(String.format("当前的交易金额 %s 大于 %s 时需要 %s 方签名才可以发起交易", totalAmount,
-						oSenderValue.getAcceptMax(), oMultiTransaction.getSignaturesCount()));
+						oSenderValue.getAcceptMax(), oSenderValue.getAcceptLimit()));
 			} else {
 				// TODO 如何判断交易的签名，是由多重签名账户的关联账户进行签名的
 			}
 		} else {
 			// 需要至少有一个子账户签名
-
+			if (oMultiTransaction.getSignaturesCount() == 0) {
+				throw new Exception(String.format("交易需要至少一个签名才能被验证"));
+			}
 		}
 
 		super.onPrepareExecute(oMultiTransaction, senders, receivers);
@@ -72,7 +80,7 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 			totalAmount += oInput.getFee();
 		}
 		String key = String.format("%s_%s", new SimpleDateFormat("yyyy-MM-dd").format(new Date()),
-				oMultiTransaction.getInputs(0).getAddress().toString());
+				encApi.hexEnc(oMultiTransaction.getInputs(0).getAddress().toByteArray()));
 		long v = AbstractLocalCache.dayTotalAmount.get(key);
 		AbstractLocalCache.dayTotalAmount.put(key, v + totalAmount);
 		super.onExecuteDone(oMultiTransaction);

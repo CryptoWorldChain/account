@@ -92,7 +92,6 @@ public class BlockHelper implements ActorService {
 			oBlockHeader.addTxHashs(txs.get(i).getTxHash());
 			oBlockBody.addTxs(i, txs.get(i));
 			oTrieImpl.put(txs.get(i).getTxHash().toByteArray(), txs.get(i).toByteArray());
-			log.debug(String.format("MPT %s %s", txs.get(i).getTxHash(), txs.get(i)));
 		}
 		oBlockHeader.setTxTrieRoot(ByteString.copyFrom(oTrieImpl.getRootHash()));
 		oBlockHeader.setBlockHash(ByteString.copyFrom(encApi.sha256Encode(oBlockHeader.build().toByteArray())));
@@ -154,8 +153,6 @@ public class BlockHelper implements ActorService {
 			}
 			// 2. 重构MPT Trie，比对RootHash
 			oTrieImpl.put(oMultiTransaction.getTxHash().toByteArray(), oMultiTransaction.build().toByteArray());
-			
-			log.debug(String.format("MPT %s %s", oMultiTransaction.getTxHash(), oMultiTransaction.build()));
 		}
 		if (!FastByteComparisons.equal(oBlockEntity.getHeader().getTxTrieRoot().toByteArray(),
 				oTrieImpl.getRootHash())) {

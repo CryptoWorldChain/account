@@ -30,10 +30,10 @@ public class ActuatorCallInternalFunction extends AbstractTransactionActuator im
 		for (int i = 0; i < InternalFunction.class.getMethods().length; i++) {
 			if (InternalFunction.class.getMethods()[i].getName().equals(oInternalCallArguments.getMethod())) {
 				if (oInternalCallArguments.getParamsCount() != 0)
-					InternalFunction.class.getMethods()[i].invoke(oAccountHelper,
-							oInternalCallArguments.getParamsList());
+					InternalFunction.class.getMethods()[i].invoke(null,
+							new Object[] { oAccountHelper, oInternalCallArguments.getParamsList() });
 				else
-					InternalFunction.class.getMethods()[i].invoke(oAccountHelper);
+					InternalFunction.class.getMethods()[i].invoke(null, new Object[] { oAccountHelper, new String[] {} });
 				break;
 			}
 		}

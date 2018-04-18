@@ -22,7 +22,7 @@ public class InternalFunction {
 	 */
 	public static void MinerReward(AccountHelper accountHelper, String... params) throws Exception {
 		String blackHoleAddress = "";
-		String balance = "";
+		String balance = "0";
 		String coinBase = "";
 		log.debug(String.format("call MinerReward!"));
 		accountHelper.addBalance(ByteString.copyFromUtf8(coinBase).toByteArray(), Long.valueOf(balance));

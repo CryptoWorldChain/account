@@ -36,7 +36,7 @@ public class ActuatorCreateUnionAccount extends AbstractTransactionActuator impl
 			receivers.put(oUnionAccount.getAddress(), oUnionAccount);
 		} else {
 			// 如果账户存在
-			throw new Exception(String.format("账户 %s 已存在", oUnionAccount.getAddress().toString()));
+			// throw new Exception(String.format("账户 %s 已存在", oUnionAccount.getAddress().toString()));
 		}
 
 		super.onPrepareExecute(oMultiTransaction, senders, receivers);
