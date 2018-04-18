@@ -9,25 +9,49 @@ import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.bcapi.gens.Oentity.OValue;
+import org.fc.brewchain.bcapi.EncAPI;
 import org.brewchain.account.gens.Act.Account;
 import org.brewchain.account.gens.Act.AccountValue;
 import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.brewchain.account.gens.Tx.MultiTransactionInput;
 import org.brewchain.account.gens.Tx.MultiTransactionOutput;
+import org.brewchain.account.gens.Tx.MultiTransactionSignature;
+import org.brewchain.account.gens.Tx.MultiTransaction.Builder;
 
 import com.google.protobuf.ByteString;
 
 public abstract class AbstractTransactionActuator implements iTransactionActuator {
 
+	@Override
+	public void onVerifySignature(Builder oMultiTransaction, Map<ByteString, Account> senders,
+			Map<ByteString, Account> receivers) throws Exception {
+		// 获取交易原始encode
+		MultiTransaction.Builder signatureTx = oMultiTransaction.clone();
+		signatureTx.clearSignatures();
+		signatureTx.setTxHash(ByteString.EMPTY);
+		byte[] oMultiTransactionEncode = signatureTx.build().toByteArray();
+		// 校验交易签名
+		for (MultiTransactionSignature oMultiTransactionSignature : oMultiTransaction.getSignaturesList()) {
+			if (encApi.ecVerify(oMultiTransactionSignature.getPubKey(), oMultiTransactionEncode,
+					encApi.hexDec(oMultiTransactionSignature.getSignature()))) {
+			} else {
+				throw new Exception(String.format("签名 %s 使用公钥 %s 验证失败", oMultiTransactionSignature.getSignature(),
+						oMultiTransactionSignature.getPubKey()));
+			}
+		}
+	}
+
 	protected AccountHelper oAccountHelper;
 	protected TransactionHelper oTransactionHelper;
 	protected BlockHelper oBlockHelper;
+	protected EncAPI encApi;
 
 	public AbstractTransactionActuator(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
-			BlockHelper oBlockHelper) {
+			BlockHelper oBlockHelper, EncAPI encApi) {
 		this.oAccountHelper = oAccountHelper;
 		this.oTransactionHelper = oTransactionHelper;
 		this.oBlockHelper = oBlockHelper;
+		this.encApi = encApi;
 	}
 
 	@Override
@@ -109,7 +133,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	}
 
 	@Override
-	public void onExecuteDone() throws Exception {
+	public void onExecuteDone(Builder oMultiTransaction) throws Exception {
 		// 记录日志
 	}
 }

@@ -17,7 +17,7 @@ public class ActuatorDefault extends AbstractTransactionActuator implements iTra
 
 	public ActuatorDefault(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
 			BlockHelper oBlockHelper) {
-		super(oAccountHelper, oTransactionHelper, oBlockHelper);
+		super(oAccountHelper, oTransactionHelper, oBlockHelper, null);
 		// TODO Auto-generated constructor stub
 	}
 

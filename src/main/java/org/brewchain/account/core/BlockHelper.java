@@ -57,15 +57,15 @@ public class BlockHelper implements ActorService {
 	@ActorRequire(name = "Block_StorageDB", scope = "global")
 	BlockStorageDB oBlockStorageDB;
 
-	public BlockEntity.Builder CreateNewBlock(byte[] extraData) throws InvalidProtocolBufferException {
-		return CreateNewBlock(KeyConstant.DEFAULT_BLOCK_TX_COUNT, extraData);
+	public BlockEntity.Builder CreateNewBlock(byte[] extraData, byte[] coinBase) throws InvalidProtocolBufferException {
+		return CreateNewBlock(KeyConstant.DEFAULT_BLOCK_TX_COUNT, extraData, coinBase);
 	}
 
-	public BlockEntity.Builder CreateNewBlock(int txCount, byte[] extraData) throws InvalidProtocolBufferException {
-		return CreateNewBlock(transactionHelper.getWaitBlockTx(txCount), extraData);
+	public BlockEntity.Builder CreateNewBlock(int txCount, byte[] extraData, byte[] coinBase) throws InvalidProtocolBufferException {
+		return CreateNewBlock(transactionHelper.getWaitBlockTx(txCount), extraData, coinBase);
 	}
 
-	public BlockEntity.Builder CreateNewBlock(LinkedList<MultiTransaction> txs, byte[] extraData) {
+	public BlockEntity.Builder CreateNewBlock(LinkedList<MultiTransaction> txs, byte[] extraData, byte[] coinBase) {
 		BlockEntity.Builder oBlockEntity = BlockEntity.newBuilder();
 		BlockHeader.Builder oBlockHeader = BlockHeader.newBuilder();
 		BlockBody.Builder oBlockBody = BlockBody.newBuilder();
@@ -75,7 +75,7 @@ public class BlockHelper implements ActorService {
 		BlockHeader.Builder oBestBlockHeader = oBestBlockEntity.getHeader().toBuilder();
 
 		// 构造Block Header
-		oBlockHeader.setCoinbase(ByteString.copyFrom(ByteUtil.EMPTY_BYTE_ARRAY));
+		oBlockHeader.setCoinbase(ByteString.copyFrom(coinBase));
 		oBlockHeader.setParentHash(oBestBlockHeader.getBlockHash());
 
 		// 确保时间戳不重复

@@ -11,11 +11,22 @@ enum PBCTCommand {
 	SBC = 1; // 广播block Header
 
 	SSS = 2; // 获取节点的Block
+	BCI = 3; // 获取BlockChain的统计信息
 }
 
 message ReqGetBlock {
     int32 txCount = 1;
 	string extraData = 2;
+}
+
+message ReqGetBlockChainInfo {
+	int32 begin = 1;
+	int32 end = 2;
+}
+
+message RespGetBlockChainInfo {
+	repeated BlockEntity block = 1;
+	int32 retCode = 2;
 }
 
 message BlockEntity {

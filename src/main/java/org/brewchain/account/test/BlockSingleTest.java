@@ -60,6 +60,10 @@ public class BlockSingleTest extends SessionModules<ReqTxTest> implements ActorS
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqTxTest pb, final CompleteHandler handler) {
 		RespTxTest.Builder oRespTxTest = RespTxTest.newBuilder();
+		String coinBase = this.props().get("block.coinBase", "");
+		if (coinBase == null) {
+			coinBase = "1234";
+		}
 
 		blockHelper.CreateGenesisBlock(new LinkedList<MultiTransaction>(), ByteUtil.EMPTY_BYTE_ARRAY);
 		BlockEntity.Builder oBlockEntity = blockHelper.GetBestBlock();
@@ -127,10 +131,11 @@ public class BlockSingleTest extends SessionModules<ReqTxTest> implements ActorS
 
 			MultiTransactionSignature.Builder oMultiTransactionSignature = MultiTransactionSignature.newBuilder();
 			oMultiTransactionSignature.setPubKey(oKeyPairs2.getPubkey());
-			oMultiTransactionSignature.setSignature(encApi.hexEnc(encApi.ecSign(oKeyPairs2.getPrikey(), oMultiTransaction.build().toByteArray())));
-			
-			oMultiTransaction.addSignatures(oMultiTransactionSignature);			
-			//transactionHelper.Signature(privs, oMultiTransaction);
+			oMultiTransactionSignature.setSignature(
+					encApi.hexEnc(encApi.ecSign(oKeyPairs2.getPrikey(), oMultiTransaction.build().toByteArray())));
+
+			oMultiTransaction.addSignatures(oMultiTransactionSignature);
+			// transactionHelper.Signature(privs, oMultiTransaction);
 			transactionHelper.CreateMultiTransaction(oMultiTransaction);
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
@@ -149,7 +154,8 @@ public class BlockSingleTest extends SessionModules<ReqTxTest> implements ActorS
 		BlockEntity.Builder oSyncBlock = BlockEntity.newBuilder();
 		BlockEntity.Builder newBlock;
 		try {
-			newBlock = blockHelper.CreateNewBlock(600, ByteUtil.EMPTY_BYTE_ARRAY);
+			newBlock = blockHelper.CreateNewBlock(600, ByteUtil.EMPTY_BYTE_ARRAY,
+					ByteString.copyFromUtf8(coinBase).toByteArray());
 			log.debug("创建区块 " + newBlock.toString());
 			oSyncBlock.setHeader(newBlock.getHeader());
 			blockHelper.ApplyBlock(oSyncBlock.build());

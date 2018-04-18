@@ -1,6 +1,4 @@
 package org.brewchain.account.util;
-
-import org.bouncycastle.util.encoders.Hex;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import java.math.BigInteger;
@@ -117,10 +115,6 @@ public class Value implements ActorService {
             return asString().getBytes();
         }
         return ByteUtil.EMPTY_BYTE_ARRAY;
-    }
-
-    public String getHex(){
-        return Hex.toHexString(this.encode());
     }
 
     public byte[] getData(){

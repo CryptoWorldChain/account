@@ -19,9 +19,6 @@ public class KeyConstant {
 	public static String type = "eth";
 	public static int chainId = 1;
 
-	public static String COIN_BASE = "address";
-	public static byte[] COIN_BASE_BYTE = COIN_BASE.getBytes();
-
 	public static int GENESIS_NUMBER = 0;
 	public static byte[] GENESIS_HASH = String.valueOf(GENESIS_NUMBER).getBytes();
 	

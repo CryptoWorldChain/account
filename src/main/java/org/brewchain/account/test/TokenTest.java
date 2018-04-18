@@ -64,6 +64,10 @@ public class TokenTest extends SessionModules<ReqTxTest> implements ActorService
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqTxTest pb, final CompleteHandler handler) {
 		RespTxTest.Builder oRespTxTest = RespTxTest.newBuilder();
+		String coinBase = this.props().get("block.coinBase", "");
+		if (coinBase == null) {
+			coinBase = "1234";
+		}
 
 		blockHelper.CreateGenesisBlock(new LinkedList<MultiTransaction>(), ByteUtil.EMPTY_BYTE_ARRAY);
 
@@ -169,7 +173,8 @@ public class TokenTest extends SessionModules<ReqTxTest> implements ActorService
 		BlockEntity.Builder oSyncBlock = BlockEntity.newBuilder();
 		BlockEntity.Builder newBlock;
 		try {
-			newBlock = blockHelper.CreateNewBlock(600, ByteUtil.EMPTY_BYTE_ARRAY);
+			newBlock = blockHelper.CreateNewBlock(600, ByteUtil.EMPTY_BYTE_ARRAY,
+					ByteString.copyFromUtf8(coinBase).toByteArray());
 			oSyncBlock.setHeader(newBlock.getHeader());
 			blockHelper.ApplyBlock(oSyncBlock.build());
 			log.debug("block已同步");

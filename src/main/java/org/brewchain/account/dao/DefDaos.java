@@ -34,9 +34,8 @@ public class DefDaos extends SessionModules<Message> {
 
 	@StoreDAO(target = "bc_bdb", daoClass = BlockDomain.class)
 	ODBSupport blockDao;
-
-	@StoreDAO(target = "redis", daoClass = DayTotalAmountRedisDao.class, key = "daily_total_amount")
-	var totalAmountDao;
+	
+	public String coinBase = props().get("block.coinBase", "");
 
 	@Override
 	public void onDaoServiceAllReady() {

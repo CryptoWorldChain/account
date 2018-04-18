@@ -105,11 +105,15 @@ message MultiTransactionInput {
 	int64 amount= 5;
 	string pubKey = 6;
 	string token = 7;
+	string symbol = 8;
+	bytes cryptoToken = 9;
 }
 
 message MultiTransactionOutput {
 	bytes address= 1;
 	int64 amount= 2;
+	string symbol = 3;
+	bytes cryptoToken = 4;
 }
 
 message MultiTransactionSignature {

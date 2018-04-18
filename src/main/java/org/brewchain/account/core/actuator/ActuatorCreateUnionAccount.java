@@ -7,15 +7,17 @@ import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.gens.Act.Account;
 import org.brewchain.account.gens.Tx.MultiTransaction;
+import org.brewchain.account.gens.Tx.MultiTransaction.Builder;
+import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;
 
 public class ActuatorCreateUnionAccount extends AbstractTransactionActuator implements iTransactionActuator {
 
 	public ActuatorCreateUnionAccount(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
-			BlockHelper oBlockHelper) {
+			BlockHelper oBlockHelper, EncAPI encApi) {
 		// this.accountHelper = oAccountHelper;
-		super(oAccountHelper, oTransactionHelper, oBlockHelper);
+		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi);
 	}
 
 	@Override

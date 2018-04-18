@@ -51,6 +51,7 @@ public class CreateUnionAccountImpl extends SessionModules<ReqCreateUnionAccount
 	public void onPBPacket(final FramePacket pack, final ReqCreateUnionAccount pb, final CompleteHandler handler) {
 		RespCreateUnionAccount.Builder oRespCreateUnionAccount = RespCreateUnionAccount.newBuilder();
 		try {
+			
 			// 创建多重签名账户
 			List<ByteString> relAddresses = new ArrayList<ByteString>();
 			for (String addressString : pb.getRelAddressList()) {

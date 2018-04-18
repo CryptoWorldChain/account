@@ -14,6 +14,7 @@ import org.brewchain.account.gens.Tx.MultiTransaction.Builder;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.bcapi.gens.Oentity.OValue;
+import org.fc.brewchain.bcapi.EncAPI;
 import org.brewchain.account.gens.Tx.MultiTransactionInput;
 import org.brewchain.account.gens.Tx.MultiTransactionOutput;
 
@@ -22,8 +23,8 @@ import com.google.protobuf.ByteString;
 public class ActuatorTokenTransaction extends AbstractTransactionActuator implements iTransactionActuator {
 
 	public ActuatorTokenTransaction(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
-			BlockHelper oBlockHelper) {
-		super(oAccountHelper, oTransactionHelper, oBlockHelper);
+			BlockHelper oBlockHelper, EncAPI encApi) {
+		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi);
 	}
 
 	/*
@@ -115,6 +116,9 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 				throw new Exception(String.format("发送方账户异常，缺少token %s", oInput.getToken()));
 			}
 
+			// 不论任何交易类型，都默认执行账户余额的更改
+			senderAccountValue.setBalance(senderAccountValue.getBalance() - oInput.getAmount() - oInput.getFee());
+
 			keys.add(OEntityBuilder.byteKey2OKey(sender.getAddress().toByteArray()));
 			values.add(OEntityBuilder.byteValue2OValue(senderAccountValue.build().toByteArray()));
 		}
@@ -122,6 +126,8 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getOutputsList()) {
 			Account receiver = receivers.get(oOutput.getAddress());
 			AccountValue.Builder receiverAccountValue = receiver.getValue().toBuilder();
+			
+			// 不论任何交易类型，都默认执行账户余额的更改
 			receiverAccountValue.setBalance(receiverAccountValue.getBalance() + oOutput.getAmount());
 
 			boolean isExistToken = false;

@@ -10,6 +10,7 @@ enum PTSTCommand {
     BST = 0; // Single Block Test
     TOT = 1; // Token 交易测试
     MOT = 2; // 多重签名 交易测试
+    ICT = 3; // 内部调用 交易测试
 }
 
 message ReqTxTest {
