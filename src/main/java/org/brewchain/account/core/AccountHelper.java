@@ -92,7 +92,7 @@ public class AccountHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public synchronized boolean isExist(byte[] addr) throws Exception {
+	public boolean isExist(byte[] addr) throws Exception {
 		return GetAccount(addr) != null;
 	}
 
@@ -102,7 +102,7 @@ public class AccountHelper implements ActorService {
 	 * @param addr
 	 * @return
 	 */
-	public synchronized Account GetAccount(byte[] addr) {
+	public Account GetAccount(byte[] addr) {
 		try {
 			OValue oValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(addr)).get();
 			AccountValue.Builder oAccountValue = AccountValue.newBuilder();
@@ -296,7 +296,7 @@ public class AccountHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public synchronized int getNonce(byte[] addr) throws Exception {
+	public int getNonce(byte[] addr) throws Exception {
 		Account.Builder oAccount = GetAccount(addr).toBuilder();
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 		return oAccountValue.getNonce();
@@ -309,7 +309,7 @@ public class AccountHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public synchronized long getBalance(byte[] addr) throws Exception {
+	public long getBalance(byte[] addr) throws Exception {
 		Account.Builder oAccount = GetAccount(addr).toBuilder();
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 		return oAccountValue.getBalance();
@@ -322,7 +322,7 @@ public class AccountHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public synchronized long getTokenBalance(byte[] addr, String token) throws Exception {
+	public long getTokenBalance(byte[] addr, String token) throws Exception {
 		Account.Builder oAccount = GetAccount(addr).toBuilder();
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 		for (int i = 0; i < oAccountValue.getTokensCount(); i++) {
@@ -341,7 +341,7 @@ public class AccountHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public synchronized List<AccountCryptoToken> getCryptoTokenBalance(byte[] addr, String symbol) throws Exception {
+	public List<AccountCryptoToken> getCryptoTokenBalance(byte[] addr, String symbol) throws Exception {
 		Account.Builder oAccount = GetAccount(addr).toBuilder();
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 
