@@ -93,6 +93,6 @@ public class ThreadTransaction extends Thread {
 					log.debug(String.format("=====> 执行 %s 交易异常 %s", count, e.getMessage()));
 				}
 			}
-		}, 0, 100);
+		}, 0, 1000);
 	}
 }

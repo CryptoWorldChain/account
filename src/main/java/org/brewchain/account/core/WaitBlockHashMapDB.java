@@ -2,6 +2,7 @@ package org.brewchain.account.core;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -21,17 +22,17 @@ import onight.tfw.ntrans.api.ActorService;
 @Slf4j
 @Data
 public class WaitBlockHashMapDB implements ActorService {
-	protected final Map<byte[], byte[]> storage;
+	protected final ConcurrentHashMap<byte[], byte[]> storage;
 
 	protected ReadWriteLock rwLock = new ReentrantReadWriteLock();
 	protected ALock readLock = new ALock(rwLock.readLock());
 	protected ALock writeLock = new ALock(rwLock.writeLock());
 
 	public WaitBlockHashMapDB() {
-		this(new ByteArrayMap<byte[]>());
+		this(new ConcurrentHashMap<byte[], byte[]>());
 	}
 
-	public WaitBlockHashMapDB(ByteArrayMap<byte[]> storage) {
+	public WaitBlockHashMapDB(ConcurrentHashMap<byte[], byte[]> storage) {
 		this.storage = storage;
 	}
 

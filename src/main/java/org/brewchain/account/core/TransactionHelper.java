@@ -275,9 +275,9 @@ public class TransactionHelper implements ActorService {
 		// oMultiTransaction.getSignatureCount(),
 		// oMultiTransaction.getInputsCount()));
 		// }
-//		if (oMultiTransaction.getSignaturesCount() == 0) {
-//			throw new Exception("交易需要签名后才能设置交易Hash");
-//		}
+		// if (oMultiTransaction.getSignaturesCount() == 0) {
+		// throw new Exception("交易需要签名后才能设置交易Hash");
+		// }
 		oMultiTransaction.setTxHash(ByteString.EMPTY);
 		oMultiTransaction.setTxHash(ByteString.copyFrom(encApi.sha256Encode(oMultiTransaction.build().toByteArray())));
 	}
@@ -289,12 +289,19 @@ public class TransactionHelper implements ActorService {
 		// oMultiTransaction.getSignatureCount(),
 		// oMultiTransaction.getInputsCount()));
 		// }
-//		if (oMultiTransaction.getSignaturesCount() == 0) {
-//			throw new Exception("交易需要签名后才能设置交易Hash");
-//		}
+		// if (oMultiTransaction.getSignaturesCount() == 0) {
+		// throw new Exception("交易需要签名后才能设置交易Hash");
+		// }
 
+		String oldHash = encApi.hexEnc(oMultiTransaction.getTxHash().toByteArray());
 		MultiTransaction.Builder newMultiTransaction = oMultiTransaction.clone();
 		newMultiTransaction.setTxHash(ByteString.EMPTY);
+		String newHash = encApi.hexEnc(encApi.sha256Encode(newMultiTransaction.build().toByteArray()));
+
+		log.debug(String.format(" %s <==> %s", oldHash, newHash));
+		if (!oldHash.equals(newHash)) {
+			throw new Exception("");
+		}
 		return encApi.sha256Encode(newMultiTransaction.build().toByteArray());
 	}
 
@@ -397,7 +404,7 @@ public class TransactionHelper implements ActorService {
 		} else if (oMultiTransaction.getData().equals(ByteString.copyFromUtf8("04"))) {
 			oiTransactionActuator = new ActuatorCallInternalFunction(oAccountHelper, null, null, encApi);
 		} else {
-			oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, null, null,encApi);
+			oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, null, null, encApi);
 		}
 
 		// 如果交易本身需要验证签名

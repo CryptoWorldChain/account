@@ -6,6 +6,7 @@ import org.brewchain.account.gens.Tx.PTXTCommand;
 import org.brewchain.account.gens.Tx.PTXTModule;
 import org.brewchain.account.gens.Tx.ReqGetTxByHash;
 import org.brewchain.account.gens.Tx.RespGetTxByHash;
+import org.fc.brewchain.bcapi.EncAPI;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,8 @@ import onight.tfw.otransio.api.beans.FramePacket;
 public class GetTxByTxHashImpl extends SessionModules<ReqGetTxByHash> {
 	@ActorRequire(name = "Transaction_Helper", scope = "global")
 	TransactionHelper transactionHelper;
+	@ActorRequire(name = "bc_encoder", scope = "global")
+	EncAPI encApi;
 
 	@Override
 	public String[] getCmds() {
@@ -38,7 +41,7 @@ public class GetTxByTxHashImpl extends SessionModules<ReqGetTxByHash> {
 		RespGetTxByHash.Builder oRespGetTxByHash = RespGetTxByHash.newBuilder();
 
 		try {
-			MultiTransaction oTransaction = transactionHelper.GetTransaction(pb.getTxHash().toByteArray());
+			MultiTransaction oTransaction = transactionHelper.GetTransaction(encApi.hexDec(pb.getHexTxHash()));
 			oRespGetTxByHash.setTransaction(oTransaction);
 			oRespGetTxByHash.setRetCode(1);
 		} catch (Exception e) {

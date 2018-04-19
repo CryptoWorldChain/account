@@ -35,7 +35,7 @@ dependencies {
     compile ("com.sleepycat:je:5.0.73")
 	compile ("org.fc.zippo:org.fc.zippo.oapi:3.3.0")
 	compile ("org.brewchain:org.brewchain.bcapi:3.3.1")
-	compile ("org.brewchain:org.brewchain.bc_bdb:3.0.6")
+	compile ("org.brewchain:org.brewchain.bc_bdb:3.0.7")
 	compile ("org.ethereum:solcJ-all:0.4.8")
 	compile ("org.ethereum:leveldbjni-all:1.18.3")
 	compile group: 'com.google.guava', name: 'guava', version: '18.0'

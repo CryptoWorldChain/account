@@ -9,15 +9,6 @@ enum PACTCommand {
     CAC = 0; // 保存账户，合约
     GAC = 1; // 获取账户，合约
     UAC = 2; // 创建多重签名账户
-
-    // DAC = 1; // 删除账户，合约
-    // CAE = 3; // 检查是否存在账户，合约
-    // GCA = 4; // 获取或创建账户
-    // INO = 5; // 增加交易索引
-    // SNO = 6; // 设置交易索引
-    // CCC = 7; // 保存合约代码
-    // GCC = 8; // 获取合约代码
-    // AAB = 9; // 增加Balance
 }
 message ReqCreateAccount {
     string address = 1;
