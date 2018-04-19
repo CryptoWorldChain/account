@@ -10,6 +10,14 @@
 
 	@ActorRequire(name = "Block_Helper", scope = "global")
 	BlockHelper blockHelper;
+
+## 定义
+Account [act.proto](http://cwvi.club:9999/chaincore/account/blob/master/src/main/proto/act.proto)
+
+Transaction [tx.proto](http://cwvi.club:9999/chaincore/account/blob/master/src/main/proto/tx.proto)
+
+Block [block.proto](http://cwvi.club:9999/chaincore/account/blob/master/src/main/proto/block.proto)
+	
 # 账户API
 ## 创建账户
 	act/pbcac.do
