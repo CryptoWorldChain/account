@@ -12,17 +12,20 @@
 	BlockHelper blockHelper;
 
 ## 定义
-Account [act.proto](http://cwvi.club:9999/chaincore/account/blob/master/src/main/proto/act.proto)
+Account     [act.proto](http://cwvi.club:9999/chaincore/account/blob/master/src/main/proto/act.proto)
 
 Transaction [tx.proto](http://cwvi.club:9999/chaincore/account/blob/master/src/main/proto/tx.proto)
 
-Block [block.proto](http://cwvi.club:9999/chaincore/account/blob/master/src/main/proto/block.proto)
-	
+Block       [block.proto](http://cwvi.club:9999/chaincore/account/blob/master/src/main/proto/block.proto)
+
+Sys         [sys.proto](http://cwvi.club:9999/chaincore/account/blob/master/src/main/proto/sys.proto)
 # 账户API
 ## 创建账户
 	act/pbcac.do
 ## 获取账户信息
 	act/pbgac.do
+## 添加CryptoToken (new)
+	sys/pbacb.do
 
 # 交易API
 ## 创建交易
