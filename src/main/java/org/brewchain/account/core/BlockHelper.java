@@ -24,10 +24,6 @@ import lombok.extern.slf4j.Slf4j;
 import onight.osgi.annotation.NActorProvider;
 import onight.tfw.ntrans.api.ActorService;
 import onight.tfw.ntrans.api.annotation.ActorRequire;
-//
-//@iPojoBean
-//@Provides(specifications = { ActorService.class }, strategy = "SINGLETON")
-//
 
 @NActorProvider
 @Instantiate(name = "Block_Helper")
@@ -171,6 +167,16 @@ public class BlockHelper implements ActorService {
 	 */
 	public void ApplyBlock(BlockEntity oBlockEntity) throws Exception {
 		BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
+
+		// 上一个区块是否存在
+		BlockEntity oParentBlock = getBlock(oBlockHeader.getParentHash().toByteArray()).build();
+		// 上一个区块的所以是否一致
+		if (oParentBlock.getHeader().getNumber() + 1 != oBlockHeader.getNumber()) {
+			throw new Exception(String.format("区块 %s 的索引 %s 与父区块的索引 %s 不一致",
+					encApi.hexEnc(oBlockHeader.getBlockHash().toByteArray()), oBlockHeader.getNumber(),
+					oParentBlock.getHeader().getNumber()));
+		}
+
 		LinkedList<MultiTransaction> txs = new LinkedList<MultiTransaction>();
 		TrieImpl oTrieImpl = new TrieImpl();
 		// 校验交易完整性
