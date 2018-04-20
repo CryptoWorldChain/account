@@ -119,8 +119,10 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			// 不论任何交易类型，都默认执行账户余额的更改
 			senderAccountValue.setBalance(senderAccountValue.getBalance() - oInput.getAmount() - oInput.getFee());
 			senderAccountValue.setNonce(senderAccountValue.getNonce() + 1);
+			
 			keys.add(OEntityBuilder.byteKey2OKey(sender.getAddress().toByteArray()));
 			values.add(OEntityBuilder.byteValue2OValue(senderAccountValue.build().toByteArray()));
+			
 		}
 
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
@@ -150,8 +152,10 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 
 			keys.add(OEntityBuilder.byteKey2OKey(receiver.getAddress().toByteArray()));
 			values.add(OEntityBuilder.byteValue2OValue(receiverAccountValue.build().toByteArray()));
+			
 		}
-
-		oAccountHelper.BatchPutAccounts(keys, values);
+		this.keys.addAll(keys);
+		this.values.addAll(values);
+		// oAccountHelper.BatchPutAccounts(keys, values);
 	}
 }

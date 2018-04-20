@@ -123,12 +123,12 @@ public class TokenTest extends SessionModules<ReqTxTest> implements ActorService
 		oMultiTransactionInput2.setFee(0);
 		oMultiTransactionInput2.setFeeLimit(0);
 		oMultiTransactionInput2.setNonce(0);
-		oMultiTransactionBody1.addInputs(oMultiTransactionInput2);
+		oMultiTransactionBody2.addInputs(oMultiTransactionInput2);
 
 		MultiTransactionOutput.Builder oMultiTransactionOutput2 = MultiTransactionOutput.newBuilder();
 		oMultiTransactionOutput2.setAddress(ByteString.copyFrom(oKeyPairs1.getAddress().getBytes()));
 		oMultiTransactionOutput2.setAmount(17);
-		oMultiTransactionBody1.addOutputs(oMultiTransactionOutput2);
+		oMultiTransactionBody2.addOutputs(oMultiTransactionOutput2);
 
 		oMultiTransactionBody1.setData(ByteString.copyFromUtf8("02"));
 		oMultiTransactionBody2.setData(ByteString.copyFromUtf8("02"));
@@ -160,10 +160,10 @@ public class TokenTest extends SessionModules<ReqTxTest> implements ActorService
 					accountHelper.getTokenBalance(oKeyPairs2.getAddress().getBytes(), "ABC"),
 					accountHelper.getTokenBalance(oKeyPairs2.getAddress().getBytes(), "DEF")));
 			oMultiTransaction1.setTxBody(oMultiTransactionBody1);
-			oMultiTransaction1.setTxBody(oMultiTransactionBody2);
+			//oMultiTransaction1.setTxBody(oMultiTransactionBody2);
 
 			transactionHelper.CreateMultiTransaction(oMultiTransaction1);
-			transactionHelper.CreateMultiTransaction(oMultiTransaction2);
+			//transactionHelper.CreateMultiTransaction(oMultiTransaction2);
 
 			log.debug(String.format("账户1 ABC %s DEF %s",
 					accountHelper.getTokenBalance(oKeyPairs1.getAddress().getBytes(), "ABC"),

@@ -162,7 +162,9 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 			values.add(OEntityBuilder.byteValue2OValue(receiverAccountValue.build().toByteArray()));
 		}
 
-		oAccountHelper.BatchPutAccounts(keys, values);
+		this.keys.addAll(keys);
+		this.values.addAll(values);
+		// oAccountHelper.BatchPutAccounts(keys, values);
 	}
 
 	@Override

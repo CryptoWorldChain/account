@@ -1,16 +1,20 @@
 package org.brewchain.account.core.actuator;
 
+import java.util.LinkedList;
 import java.util.Map;
 
 import org.brewchain.account.gens.Act.Account;
 import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.brewchain.account.gens.Tx.MultiTransaction.Builder;
+import org.brewchain.bcapi.gens.Oentity.OKey;
+import org.brewchain.bcapi.gens.Oentity.OValue;
 
 import com.google.protobuf.ByteString;
 
 public interface iTransactionActuator {
 	boolean needSignature();
-
+	LinkedList<OKey> getKeys();
+	LinkedList<OValue> getValues();
 	/**
 	 * 交易签名校验
 	 * 

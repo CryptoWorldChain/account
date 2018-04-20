@@ -1,5 +1,6 @@
 package org.brewchain.account.core;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -65,8 +66,8 @@ public class TransactionHelper implements ActorService {
 		oSendingHashMapDB.put(formatMultiTransaction.getTxHash().toByteArray(), formatMultiTransaction.toByteArray());
 
 		// 保存交易到缓存中，用于打包
-		if (formatMultiTransaction.getTxBody().getDelegateCount() == 0
-				|| formatMultiTransaction.getTxBody().getDelegateList().indexOf(ByteString.copyFromUtf8(dao.getCoinBase())) != -1) {
+		if (formatMultiTransaction.getTxBody().getDelegateCount() == 0 || formatMultiTransaction.getTxBody()
+				.getDelegateList().indexOf(ByteString.copyFromUtf8(dao.getCoinBase())) != -1) {
 			// 如果指定了委托，并且委托是本节点
 			oPendingHashMapDB.put(formatMultiTransaction.getTxHash().toByteArray(),
 					formatMultiTransaction.toByteArray());
@@ -81,8 +82,8 @@ public class TransactionHelper implements ActorService {
 		// oMultiTransaction.build().toByteArray());
 
 		// 保存交易到缓存中，用于打包
-		if (formatMultiTransaction.getTxBody().getDelegateCount() == 0
-				|| formatMultiTransaction.getTxBody().getDelegateList().indexOf(ByteString.copyFromUtf8(dao.getCoinBase())) != -1) {
+		if (formatMultiTransaction.getTxBody().getDelegateCount() == 0 || formatMultiTransaction.getTxBody()
+				.getDelegateList().indexOf(ByteString.copyFromUtf8(dao.getCoinBase())) != -1) {
 			// 如果指定了委托，并且委托是本节点
 			oPendingHashMapDB.put(formatMultiTransaction.getTxHash().toByteArray(),
 					formatMultiTransaction.toByteArray());
@@ -102,8 +103,8 @@ public class TransactionHelper implements ActorService {
 		// 如果交易是多重签名交易，根据extraData创建
 
 		// 保存交易到缓存中，用于打包
-		if (formatMultiTransaction.getTxBody().getDelegateCount() == 0
-				|| formatMultiTransaction.getTxBody().getDelegateList().indexOf(ByteString.copyFromUtf8(dao.getCoinBase())) != -1) {
+		if (formatMultiTransaction.getTxBody().getDelegateCount() == 0 || formatMultiTransaction.getTxBody()
+				.getDelegateList().indexOf(ByteString.copyFromUtf8(dao.getCoinBase())) != -1) {
 			oPendingHashMapDB.put(formatMultiTransaction.getTxHash().toByteArray(),
 					formatMultiTransaction.toByteArray());
 		}
@@ -115,6 +116,7 @@ public class TransactionHelper implements ActorService {
 	 * @param oTransaction
 	 */
 	public void ExecuteTransaction(LinkedList<MultiTransaction> oMultiTransactions) throws Exception {
+		// TODO 增加事务控制，最后批量提交
 		LinkedList<OKey> keys = new LinkedList<OKey>();
 		LinkedList<OValue> values = new LinkedList<OValue>();
 
@@ -149,7 +151,12 @@ public class TransactionHelper implements ActorService {
 			oiTransactionActuator.onPrepareExecute(oTransaction, senders, receivers);
 			oiTransactionActuator.onExecute(oTransaction, senders, receivers);
 			oiTransactionActuator.onExecuteDone(oTransaction);
+
+			keys.addAll(oiTransactionActuator.getKeys());
+			values.addAll(oiTransactionActuator.getValues());
 		}
+
+		oAccountHelper.BatchPutAccounts(keys, values);
 	}
 
 	/**
@@ -350,7 +357,6 @@ public class TransactionHelper implements ActorService {
 		oMultiTransactionSignature.setSignature(oSingleTransaction.getSignature());
 		oMultiTransactionSignature.setPubKey(oSingleTransaction.getPubKey());
 
-		
 		oMultiTransactionBody.addAllDelegate(oSingleTransaction.getDelegateList());
 		oMultiTransactionBody.setExdata(oSingleTransaction.getExdata());
 		oMultiTransactionBody.setData(oSingleTransaction.getData());
@@ -440,7 +446,8 @@ public class TransactionHelper implements ActorService {
 
 		oMultiTransaction.setTxHash(ByteString.EMPTY);
 		// 生成交易Hash
-		oMultiTransaction.setTxHash(ByteString.copyFrom(encApi.sha256Encode(oMultiTransaction.getTxBody().toByteArray())));
+		oMultiTransaction
+				.setTxHash(ByteString.copyFrom(encApi.sha256Encode(oMultiTransaction.getTxBody().toByteArray())));
 
 		MultiTransaction multiTransaction = oMultiTransaction.build();
 		// 保存交易到db中

@@ -23,6 +23,19 @@ import com.google.protobuf.ByteString;
 
 public abstract class AbstractTransactionActuator implements iTransactionActuator {
 
+	protected LinkedList<OKey> keys = new LinkedList<OKey>();
+	protected LinkedList<OValue> values = new LinkedList<OValue>();
+
+	@Override
+	public LinkedList<OKey> getKeys() {
+		return keys;
+	}
+
+	@Override
+	public LinkedList<OValue> getValues() {
+		return values;
+	}
+
 	@Override
 	public void onVerifySignature(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
 			Map<ByteString, Account> receivers) throws Exception {
@@ -120,7 +133,6 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 
 			senderAccountValue.setNonce(senderAccountValue.getNonce() + 1);
 
-			
 			keys.add(OEntityBuilder.byteKey2OKey(sender.getAddress().toByteArray()));
 			values.add(OEntityBuilder.byteValue2OValue(senderAccountValue.build().toByteArray()));
 		}
@@ -134,7 +146,9 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			values.add(OEntityBuilder.byteValue2OValue(receiverAccountValue.build().toByteArray()));
 		}
 
-		oAccountHelper.BatchPutAccounts(keys, values);
+		this.keys.addAll(keys);
+		this.values.addAll(values);
+		// oAccountHelper.BatchPutAccounts(keys, values);
 	}
 
 	@Override
