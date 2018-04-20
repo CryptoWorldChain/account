@@ -442,9 +442,6 @@ public class TransactionHelper implements ActorService {
 		// 生成交易Hash
 		oMultiTransaction.setTxHash(ByteString.copyFrom(encApi.sha256Encode(oMultiTransaction.getTxBody().toByteArray())));
 
-		log.debug(String.format(" 1-> %s %s", encApi.hexEnc(oMultiTransaction.getTxHash().toByteArray()),
-				oMultiTransaction.build().toString()));
-
 		MultiTransaction multiTransaction = oMultiTransaction.build();
 		// 保存交易到db中
 		dao.getTxsDao().put(OEntityBuilder.byteKey2OKey(multiTransaction.getTxHash().toByteArray()),

@@ -40,6 +40,7 @@ public class DefDaos extends SessionModules<Message> {
 	@Override
 	public void onDaoServiceAllReady() {
 		// log.debug("EncAPI==" + enc);
+		log.debug("service ready!!!!");
 	}
 
 	@Override

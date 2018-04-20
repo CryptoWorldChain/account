@@ -2,17 +2,23 @@ package org.brewchain.account.core;
 
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
+import org.apache.felix.ipojo.annotations.Validate;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.doublyll.DoubleLinkedList;
 import org.brewchain.account.gens.Block.BlockEntity;
+import org.brewchain.account.util.ByteUtil;
 import org.brewchain.account.util.FastByteComparisons;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.fc.brewchain.bcapi.EncAPI;
+
+import com.google.protobuf.ByteString;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -26,21 +32,21 @@ import onight.tfw.ntrans.api.annotation.ActorRequire;
 @Slf4j
 @Data
 public class BlockChainHelper implements ActorService {
-	@ActorRequire(name = "Block_Helper", scope = "global")
-	BlockHelper blockHelper;
 	@ActorRequire(name = "Block_Cache_DLL", scope = "global")
-	DoubleLinkedList<byte[]> blockCache;
+	DoubleLinkedList blockCache;
 	@ActorRequire(name = "Def_Daos", scope = "global")
 	DefDaos dao;
+	@ActorRequire(name = "bc_encoder", scope = "global")
+	EncAPI encApi;
 
 	/**
-	 * 获取节点最后一个区块
+	 * 获取节点最后一个区块的Hash
 	 * 
 	 * @return
 	 * @throws Exception
 	 */
-	public BlockEntity.Builder GetBestBlock() throws Exception {
-		return blockHelper.getBlock(blockCache.last());
+	public byte[] GetBestBlock() throws Exception {
+		return blockCache.last();
 	}
 
 	/**
@@ -59,7 +65,7 @@ public class BlockChainHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public int getLastBlockNumber() throws Exception {
-		return GetBestBlock().build().getHeader().getNumber();
+		return blockCache.getLast() == null ? 0 : blockCache.getLast().num;
 	}
 
 	/**
@@ -69,7 +75,7 @@ public class BlockChainHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public BlockEntity getGenesisBlock() throws Exception {
-		BlockEntity oBlockEntity = blockHelper.getBlock(blockCache.first()).build();
+		BlockEntity oBlockEntity = getBlock(blockCache.first()).build();
 		if (oBlockEntity.getHeader().getNumber() == KeyConstant.GENESIS_NUMBER) {
 			return oBlockEntity;
 		}
@@ -90,8 +96,25 @@ public class BlockChainHelper implements ActorService {
 				OEntityBuilder.byteValue2OValue(oBlock.toByteArray()) };
 
 		dao.getBlockDao().batchPuts(keys, values);
+
+		log.debug(String.format("添加区块 %s hash %s", oBlock.getHeader().getNumber(),
+				encApi.hexEnc(oBlock.getHeader().getBlockHash().toByteArray())));
+
 		return blockCache.insertAfter(oBlock.getHeader().getBlockHash().toByteArray(), oBlock.getHeader().getNumber(),
 				oBlock.getHeader().getParentHash().toByteArray());
+	}
+
+	public boolean newBlock(BlockEntity oBlock) {
+
+		OKey[] keys = new OKey[] { OEntityBuilder.byteKey2OKey(oBlock.getHeader().getBlockHash()),
+				OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK) };
+		OValue[] values = new OValue[] { OEntityBuilder.byteValue2OValue(oBlock.toByteArray()),
+				OEntityBuilder.byteValue2OValue(oBlock.toByteArray()) };
+
+		dao.getBlockDao().batchPuts(keys, values);
+		blockCache.clear();
+		blockCache.insertFirst(oBlock.getHeader().getBlockHash().toByteArray(), 0);
+		return true;
 	}
 
 	/**
@@ -133,7 +156,7 @@ public class BlockChainHelper implements ActorService {
 		while (iterator.hasNext() || maxCount > 0) {
 			byte[] cur = iterator.next();
 			if (FastByteComparisons.equal(blockHash, cur)) {
-				list.add(blockHelper.getBlock(cur).build());
+				list.add(getBlock(cur).build());
 				maxCount--;
 			} else if (endBlockHash != null && FastByteComparisons.equal(endBlockHash, cur)) {
 				break;
@@ -142,25 +165,91 @@ public class BlockChainHelper implements ActorService {
 		return list;
 	}
 
+	@Validate
+	public void startup() {
+		try {
+			// 开一线程，来监控对象注入状态，只有所有对象都注入成功了之后才执行
+			// reloadBlockCache();
+			final Timer timer = new Timer();
+			// 设定定时任务
+			timer.schedule(new TimerTask() {
+				// 定时任务执行方法
+				@Override
+				public void run() {
+					try {
+						while (dao != null && blockCache != null) {
+							reloadBlockCache();
+							break;
+						}
+						log.debug("节点启动！");
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			}, 1000 * 20);
+			log.debug("等待节点启动中。。。");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
 	/**
-	 * 该方法会移除本地缓存，然后取数据库中保存的最后一个块的信息，重新构造缓存
+	 * 该方法会移除本地缓存，然后取数据库中保存的最后一个块的信息，重新构造缓存。该方法可能会带来很大开销。在缓存没有加载后节点才启动完成。在启动完成之前
+	 * ，所有接口均无法使用。
 	 * 
 	 * @throws Exception
 	 */
 	public void reloadBlockCache() throws Exception {
 		// 数据库中的最后一个块
-		BlockEntity oBlockEntity = blockHelper.getBlock(KeyConstant.DB_CURRENT_BLOCK).build();
+		BlockEntity.Builder oBlockEntity = getBlock(KeyConstant.DB_CURRENT_BLOCK);
+		if (oBlockEntity == null) {
+			KeyConstant.isStart = true;
+			log.debug(String.format("启动空节点"));
+			return;
+		}
 		int blockNumber = oBlockEntity.getHeader().getNumber();
 		blockCache.insertFirst(oBlockEntity.getHeader().getBlockHash().toByteArray(), blockNumber);
 		// 开始遍历区块
 		while (blockNumber >= 0) {
-			BlockEntity loopBlockEntity = blockHelper.getBlock(oBlockEntity.getHeader().getParentHash().toByteArray())
-					.build();
-			blockNumber = loopBlockEntity.getHeader().getNumber();
+			blockNumber--;
+			if (oBlockEntity.getHeader().getParentHash() == null
+					|| oBlockEntity.getHeader().getParentHash().equals(ByteString.EMPTY)) {
+				// 只有创世块？
+				if (oBlockEntity.getHeader().getNumber() == KeyConstant.GENESIS_NUMBER) {
+					break;
+				} else {
+					throw new Exception(String.format("块数据错误，索引为 %s 的块 %s 没有父块", oBlockEntity.getHeader().getNumber(),
+							encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray())));
+				}
+			}
+			BlockEntity loopBlockEntity = getBlock(oBlockEntity.getHeader().getParentHash().toByteArray()).build();
+
+			if (blockNumber != loopBlockEntity.getHeader().getNumber()) {
+				throw new Exception(
+						String.format("期望的块索引 %s 实际得到的块索引 %s", blockNumber, loopBlockEntity.getHeader().getNumber()));
+			}
 			blockCache.insertFirst(loopBlockEntity.getHeader().getBlockHash().toByteArray(), blockNumber);
 			if (blockNumber == 0) {
 				break;
 			}
+			
+			oBlockEntity = loopBlockEntity.toBuilder();
 		}
+
+		KeyConstant.isStart = true;
+	}
+
+	private BlockEntity.Builder getBlock(byte[] blockHash) throws Exception {
+		OValue v = dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(blockHash)).get();
+		if (v == null || v.getExtdata() == null) {
+			return null;
+		} else {
+			BlockEntity.Builder oBlockEntity = BlockEntity.parseFrom(v.getExtdata()).toBuilder();
+			return oBlockEntity;
+		}
+	}
+
+	public String getBlockCacheFormatString() {
+		return blockCache.formatString();
 	}
 }

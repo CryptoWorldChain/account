@@ -46,9 +46,9 @@ public class BlockHelper implements ActorService {
 
 	// @ActorRequire(name = "Block_StorageDB", scope = "global")
 	// BlockStorageDB oBlockStorageDB;
-
-	@ActorRequire(name = "Block_Cache_DLL", scope = "global")
-	DoubleLinkedList<byte[]> blockCache;
+	//
+	// @ActorRequire(name = "Block_Cache_DLL", scope = "global")
+	// DoubleLinkedList<byte[]> blockCache;
 
 	/**
 	 * 创建新区块
@@ -91,7 +91,7 @@ public class BlockHelper implements ActorService {
 		BlockBody.Builder oBlockBody = BlockBody.newBuilder();
 
 		// 获取本节点的最后一块Block
-		BlockEntity.Builder oBestBlockEntity = blockChainHelper.GetBestBlock();
+		BlockEntity.Builder oBestBlockEntity = GetBestBlock();
 		BlockHeader.Builder oBestBlockHeader = oBestBlockEntity.getHeader().toBuilder();
 
 		// 构造Block Header
@@ -156,7 +156,7 @@ public class BlockHelper implements ActorService {
 		oBlockEntity.setBody(oBlockBody);
 
 		// oBlockStorageDB.setLastBlock(oBlockEntity.build());
-		blockChainHelper.appendBlock(oBlockEntity.build());
+		blockChainHelper.newBlock(oBlockEntity.build());
 	}
 
 	/**
@@ -190,10 +190,6 @@ public class BlockHelper implements ActorService {
 			MultiTransaction.Builder oReHashMultiTransaction = oMultiTransaction.toBuilder();
 			byte[] newHash = encApi.sha256Encode(oReHashMultiTransaction.getTxBody().toByteArray());
 			if (!encApi.hexEnc(newHash).equals(encApi.hexEnc(oMultiTransaction.getTxHash().toByteArray()))) {
-				// encApi.sha256Encode(oMultiTransaction.setTxHash(ByteString.EMPTY).build().toByteArray());
-				log.debug(String.format("--> %s %s", encApi.hexEnc(oMultiTransaction.getTxHash().toByteArray()),
-						oMultiTransaction));
-
 				throw new Exception(String.format("交易Hash %s 与 %s 不一致", encApi.hexEnc(txHash.toByteArray()),
 						encApi.hexEnc(newHash)));
 			}
@@ -225,5 +221,16 @@ public class BlockHelper implements ActorService {
 				.parseFrom(dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(blockHash)).get().getExtdata())
 				.toBuilder();
 		return oBlockEntity;
+	}
+	
+
+	/**
+	 * 获取节点最后一个区块
+	 * 
+	 * @return
+	 * @throws Exception
+	 */
+	public BlockEntity.Builder GetBestBlock() throws Exception {
+		return getBlock(blockChainHelper.GetBestBlock());
 	}
 }

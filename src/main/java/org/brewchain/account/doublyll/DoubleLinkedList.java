@@ -8,21 +8,26 @@ import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.brewchain.account.core.WaitBlockHashMapDB;
 import org.brewchain.account.util.ALock;
+import org.brewchain.account.util.FastByteComparisons;
+import org.fc.brewchain.bcapi.EncAPI;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import onight.osgi.annotation.NActorProvider;
 import onight.tfw.ntrans.api.ActorService;
+import onight.tfw.ntrans.api.annotation.ActorRequire;
 
 @NActorProvider
 @Provides(specifications = { ActorService.class }, strategy = "SINGLETON")
 @Instantiate(name = "Block_Cache_DLL")
 @Slf4j
 @Data
-public class DoubleLinkedList<T> implements ActorService {
+public class DoubleLinkedList implements ActorService {
+	@ActorRequire(name = "bc_encoder", scope = "global")
+	EncAPI encApi;
 
-	private Node<T> first = null;
-	private Node<T> last = null;
+	private Node first = null;
+	private Node last = null;
 	private int count = 0;
 
 	public DoubleLinkedList() {
@@ -31,21 +36,28 @@ public class DoubleLinkedList<T> implements ActorService {
 		count = 0;
 	}
 
-	public void insertFirst(T elem, int number) {
-		Node<T> oNode = new Node<T>(elem, number);
+	public void insertFirst(byte[] elem, int number) {
+		Node oNode = new Node(elem, number);
 		if (first == null) {
 			first = oNode;
 		} else {
-			oNode.next = first;
-			first.prev = oNode;
-			first = oNode;
+			if (count == 1) {
+				oNode.next = first;
+				first.prev = oNode;
+				last = first;
+				first = oNode;
+			} else {
+				oNode.next = first;
+				first.prev = oNode;
+				first = oNode;
+			}
 		}
 
 		count++;
 	}
 
-	public void insertLast(T elem, int number) {
-		Node<T> oNode = new Node<T>(elem, number);
+	public void insertLast(byte[] elem, int number) {
+		Node oNode = new Node(elem, number);
 		if (last == null) {
 			last = oNode;
 		} else {
@@ -57,28 +69,37 @@ public class DoubleLinkedList<T> implements ActorService {
 		count++;
 	}
 
-	public boolean insertAfter(T elem, int number, T target) {
-		Node<T> data = new Node<T>(elem, number);
-		Node<T> cur = first;
+	public boolean insertAfter(byte[] elem, int number, byte[] target) {
+		Node data = new Node(elem, number);
+		Node cur = first;
 		while (cur != null) {
-			if (cur.data.equals(target)) {
-				data.next = cur.next;
-				data.prev = cur;
-				if (cur == last)
+			log.debug(String.format("cur %s target %s", encApi.hexEnc(cur.data), encApi.hexEnc(target)));
+			if (FastByteComparisons.equal(cur.data, target)) {
+				if (cur == first && cur.next == null && last == null) {
+					data.prev = cur;
 					last = data;
-				else
-					cur.next.prev = data;
-				cur.next = data;
-				count++;
-				return true;
+					cur.next = last;
+					count++;
+					return true;
+				} else {
+					data.next = cur.next;
+					data.prev = cur;
+					if (cur == last)
+						last = data;
+					else
+						cur.next.prev = data;
+					cur.next = data;
+					count++;
+					return true;
+				}
 			}
 			cur = cur.next;
 		}
 		return false;
 	}
 
-	public T removeFirst() {
-		T o = first.data;
+	public byte[] removeFirst() {
+		byte[] o = first.data;
 		if (last == first) {
 			last = null;
 			first = null;
@@ -90,8 +111,8 @@ public class DoubleLinkedList<T> implements ActorService {
 		return o;
 	}
 
-	public T removeLast() {
-		T o = last.data;
+	public byte[] removeLast() {
+		byte[] o = last.data;
 		if (last == first) {
 			last = null;
 			first = null;
@@ -103,9 +124,9 @@ public class DoubleLinkedList<T> implements ActorService {
 		return o;
 	}
 
-	public T remove(T elem) {
-		T o = null;
-		Node<T> egungoa = first;
+	public byte[] remove(byte[] elem) {
+		byte[] o = null;
+		Node egungoa = first;
 
 		while ((egungoa != null) && (o == null)) {
 			if (egungoa.data.equals(elem)) {
@@ -127,25 +148,32 @@ public class DoubleLinkedList<T> implements ActorService {
 		return o;
 	}
 
-	public T first() {
+	public byte[] first() {
 		if (isEmpty())
 			return null;
 		else
 			return first.data;
 	}
 
-	public T last() {
+	public byte[] last() {
 		if (isEmpty())
 			return null;
-		else
-			return last.data;
+		else {
+			if (last != null) {
+				return last.data;
+			} else if (count == 1) {
+				return first.data;
+			} else {
+				return null;
+			}
+		}
 	}
 
-	public boolean contains(T elem) {
+	public boolean contains(byte[] elem) {
 		if (isEmpty())
 			return false;
 
-		Node<T> current = first;
+		Node current = first;
 
 		while ((current != null) && !elem.equals(current.data))
 			current = current.next;
@@ -155,14 +183,14 @@ public class DoubleLinkedList<T> implements ActorService {
 			return elem.equals(current.data);
 	}
 
-	public T find(T pElementua) {
-		T elementua = null;
+	public byte[] find(byte[] pElementua) {
+		byte[] elementua = null;
 
-		Iterator<T> it = iterator();
+		Iterator it = iterator();
 		boolean topatua = false;
 
 		while (it.hasNext() && !topatua) {
-			elementua = it.next();
+			elementua = (byte[]) it.next();
 			if (pElementua.equals(elementua)) {
 				topatua = true;
 			}
@@ -179,21 +207,27 @@ public class DoubleLinkedList<T> implements ActorService {
 		return first == null;
 	}
 
+	public void clear() {
+		first = null;
+		last = null;
+		count = 0;
+	}
+
 	public int size() {
 		return count;
 	}
 
-	public Iterator<T> iterator() {
+	public Iterator iterator() {
 		return new ListIterator();
 	}
 
-	public Iterator<T> reverseIterator() {
+	public Iterator reverseIterator() {
 		return new ReverseListIterator();
 	}
 
-	private class ListIterator implements Iterator<T> {
+	private class ListIterator implements Iterator {
 
-		private Node<T> egungoElementua = first;
+		private Node egungoElementua = first;
 
 		@Override
 		public boolean hasNext() {
@@ -201,10 +235,10 @@ public class DoubleLinkedList<T> implements ActorService {
 		}
 
 		@Override
-		public T next() {
+		public byte[] next() {
 			if (!hasNext())
 				throw new NoSuchElementException();
-			T t = egungoElementua.data;
+			byte[] t = egungoElementua.data;
 			egungoElementua = egungoElementua.next;
 			return t;
 		}
@@ -217,9 +251,9 @@ public class DoubleLinkedList<T> implements ActorService {
 
 	}
 
-	private class ReverseListIterator implements Iterator<T> {
+	private class ReverseListIterator implements Iterator {
 
-		private Node<T> egungoElementua = last;
+		private Node egungoElementua = last;
 
 		@Override
 		public boolean hasNext() {
@@ -227,10 +261,10 @@ public class DoubleLinkedList<T> implements ActorService {
 		}
 
 		@Override
-		public T next() {
+		public byte[] next() {
 			if (!hasNext())
 				throw new NoSuchElementException();
-			T t = egungoElementua.data;
+			byte[] t = egungoElementua.data;
 			egungoElementua = egungoElementua.prev;
 			return t;
 		}
@@ -244,29 +278,28 @@ public class DoubleLinkedList<T> implements ActorService {
 	}
 
 	public void adabegiakInprimatu() {
-		System.out.println(this.toString());
+		System.out.println(this.formatString());
 	}
 
-	@Override
-	public String toString() {
+	public String formatString() {
 		String result = new String();
-		Iterator<T> it = iterator();
+		Iterator it = iterator();
 		while (it.hasNext()) {
-			T elem = it.next();
-			result = result + "[" + elem.toString() + "] \n";
+			byte[] elem = (byte[]) it.next();
+			result = result + "[" + encApi.hexEnc((byte[]) elem) + "] \n";
 		}
 		return "SimpleLinkedList " + result;
 	}
 
 	public void reverseAdabegiakInprimatu() {
-		System.out.println(this.reverseToString());
+		System.out.println(this.reverseFormatString());
 	}
 
-	public String reverseToString() {
+	public String reverseFormatString() {
 		String result = new String();
-		Iterator<T> it = reverseIterator();
+		Iterator it = reverseIterator();
 		while (it.hasNext()) {
-			T elem = it.next();
+			byte[] elem = (byte[]) it.next();
 			result = result + "[" + elem.toString() + "] \n";
 		}
 		return "SimpleLinkedList " + result;

@@ -72,7 +72,7 @@ public class BlockSingleTest extends SessionModules<ReqTxTest> implements ActorS
 		blockHelper.CreateGenesisBlock(new LinkedList<MultiTransaction>(), ByteUtil.EMPTY_BYTE_ARRAY);
 		BlockEntity.Builder oBlockEntity;
 		try {
-			oBlockEntity = blockChainHelper.GetBestBlock();
+			oBlockEntity = blockHelper.GetBestBlock();
 		} catch (Exception e3) {
 			// TODO Auto-generated catch block
 			e3.printStackTrace();

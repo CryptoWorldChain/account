@@ -54,6 +54,6 @@ public class ThreadBlock extends Thread {
 					log.debug(String.format("执行 %s 区块异常 %s", count, e.getMessage()));
 				}
 			}
-		}, 0, 1000 * 25);
+		}, 0, 1000 * 5);
 	}
 }

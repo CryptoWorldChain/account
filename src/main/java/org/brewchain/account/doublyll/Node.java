@@ -1,12 +1,12 @@
 package org.brewchain.account.doublyll;
 
-public class Node<T> {
-	public T data;
+public class Node {
+	public byte[] data;
 	public int num;
-	public Node<T> next;
-	public Node<T> prev;
+	public Node next;
+	public Node prev;
 
-	public Node(T v, int number) {
+	public Node(byte[] v, int number) {
 		data = v;
 		num = number;
 		next = null;
