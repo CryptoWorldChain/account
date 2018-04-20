@@ -181,6 +181,9 @@ public class BlockHelper implements ActorService {
 		TrieImpl oTrieImpl = new TrieImpl();
 		// 校验交易完整性
 		for (ByteString txHash : oBlockHeader.getTxHashsList()) {
+			// 从本地缓存中移除交易
+			transactionHelper.removeWaitBlockTx(txHash.toByteArray());
+
 			// 交易必须都存在
 			MultiTransaction oMultiTransaction = transactionHelper.GetTransaction(txHash.toByteArray());
 			txs.add(oMultiTransaction);
@@ -222,7 +225,6 @@ public class BlockHelper implements ActorService {
 				.toBuilder();
 		return oBlockEntity;
 	}
-	
 
 	/**
 	 * 获取节点最后一个区块

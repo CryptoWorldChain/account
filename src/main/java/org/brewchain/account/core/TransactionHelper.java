@@ -10,6 +10,7 @@ import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.brewchain.account.core.actuator.*;
 import org.brewchain.account.dao.DefDaos;
+import org.brewchain.account.util.FastByteComparisons;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.bcapi.gens.Oentity.OValue;
@@ -210,6 +211,17 @@ public class TransactionHelper implements ActorService {
 			}
 		}
 		return list;
+	}
+
+	public void removeWaitBlockTx(byte[] txHash) throws InvalidProtocolBufferException {
+		for (Iterator<Map.Entry<byte[], byte[]>> it = oPendingHashMapDB.getStorage().entrySet().iterator(); it
+				.hasNext();) {
+			Map.Entry<byte[], byte[]> item = it.next();
+			if (FastByteComparisons.equal(item.getKey(), txHash)) {
+				it.remove();
+				return;
+			}
+		}
 	}
 
 	/**
