@@ -8,6 +8,7 @@ import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.gens.Block.BlockEntity;
 import org.brewchain.account.gens.Tx.MultiTransaction;
+import org.brewchain.account.gens.Tx.MultiTransactionBody;
 import org.brewchain.account.gens.Tx.MultiTransactionInput;
 import org.brewchain.account.gens.Tx.MultiTransactionOutput;
 import org.brewchain.account.gens.TxTest.PTSTCommand;
@@ -66,16 +67,20 @@ public class InternalCallTest extends SessionModules<ReqTxTest> implements Actor
 
 		// 发送多重签名账户创建交易并转账
 		MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
-		oMultiTransaction.setData(ByteString.copyFromUtf8("04"));
+		MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
+		oMultiTransactionBody.setData(ByteString.copyFromUtf8("04"));
 		InternalCallArguments.Builder oInternalCallArguments = InternalCallArguments.newBuilder();
 		oInternalCallArguments.setMethod("MinerReward"); // MinerReward 奖励
 															// MinerPunish 惩罚
 		// oInternalCallArguments.addParams("");
 
-		oMultiTransaction.setExdata(oInternalCallArguments.build().toByteString());
+		oMultiTransactionBody.setExdata(oInternalCallArguments.build().toByteString());
 		oMultiTransaction.setTxHash(ByteString.EMPTY);
-		oMultiTransaction.clearSignatures();
+		oMultiTransactionBody.clearSignatures();
 
+		oMultiTransaction.setTxBody(oMultiTransactionBody);
+
+		
 		try {
 			transactionHelper.CreateMultiTransaction(oMultiTransaction);
 		} catch (Exception e) {

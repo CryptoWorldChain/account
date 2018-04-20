@@ -23,16 +23,16 @@ public class ActuatorDefault extends AbstractTransactionActuator implements iTra
 	}
 
 	@Override
-	public void onPrepareExecute(MultiTransaction.Builder oMultiTransaction, Map<ByteString, Account> senders,
+	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
 			Map<ByteString, Account> receivers) throws Exception {
 
-		for (MultiTransactionInput oInput : oMultiTransaction.getInputsList()) {
+		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			if (!senders.containsKey(oInput.getAddress())) {
 				throw new Exception(String.format("交易的发送方账户 %s 不存在", oInput.getAddress().toString()));
 			}
 		}
 
-		for (MultiTransactionOutput oOutput : oMultiTransaction.getOutputsList()) {
+		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
 			if (!receivers.containsKey(oOutput.getAddress())) {
 				oAccountHelper.CreateAccount(oOutput.getAddress().toByteArray(), ByteUtil.EMPTY_BYTE_ARRAY);
 			}

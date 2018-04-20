@@ -1,22 +1,15 @@
 package org.brewchain.account.core;
 
-import java.math.BigInteger;
 import java.util.Date;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
-import org.bouncycastle.util.encoders.Hex;
 import org.brewchain.account.dao.DefDaos;
-import org.brewchain.account.exception.BlockException;
+import org.brewchain.account.doublyll.DoubleLinkedList;
 import org.brewchain.account.trie.TrieImpl;
 import org.brewchain.account.util.ByteUtil;
 import org.brewchain.account.util.FastByteComparisons;
 import org.brewchain.account.util.OEntityBuilder;
-import org.brewchain.bcapi.backend.ODBException;
-import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.brewchain.account.gens.Block.BlockBody;
 import org.brewchain.account.gens.Block.BlockEntity;
 import org.brewchain.account.gens.Block.BlockHeader;
@@ -29,7 +22,6 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import onight.osgi.annotation.NActorProvider;
-import onight.osgi.annotation.iPojoBean;
 import onight.tfw.ntrans.api.ActorService;
 import onight.tfw.ntrans.api.annotation.ActorRequire;
 //
@@ -45,6 +37,8 @@ import onight.tfw.ntrans.api.annotation.ActorRequire;
 public class BlockHelper implements ActorService {
 	@ActorRequire(name = "Transaction_Helper", scope = "global")
 	TransactionHelper transactionHelper;
+	@ActorRequire(name = "BlockChain_Helper", scope = "global")
+	BlockChainHelper blockChainHelper;
 
 	@ActorRequire(name = "bc_encoder", scope = "global")
 	EncAPI encApi;
@@ -54,24 +48,54 @@ public class BlockHelper implements ActorService {
 	@ActorRequire(name = "WaitBlock_HashMapDB", scope = "global")
 	WaitBlockHashMapDB oPendingHashMapDB;
 
-	@ActorRequire(name = "Block_StorageDB", scope = "global")
-	BlockStorageDB oBlockStorageDB;
+	// @ActorRequire(name = "Block_StorageDB", scope = "global")
+	// BlockStorageDB oBlockStorageDB;
 
-	public BlockEntity.Builder CreateNewBlock(byte[] extraData, byte[] coinBase) throws InvalidProtocolBufferException {
+	@ActorRequire(name = "Block_Cache_DLL", scope = "global")
+	DoubleLinkedList<byte[]> blockCache;
+
+	/**
+	 * 创建新区块
+	 * 
+	 * @param extraData
+	 * @param coinBase
+	 * @return
+	 * @throws Exception
+	 */
+	public BlockEntity.Builder CreateNewBlock(byte[] extraData, byte[] coinBase) throws Exception {
 		return CreateNewBlock(KeyConstant.DEFAULT_BLOCK_TX_COUNT, extraData, coinBase);
 	}
 
-	public BlockEntity.Builder CreateNewBlock(int txCount, byte[] extraData, byte[] coinBase) throws InvalidProtocolBufferException {
+	/**
+	 * 创建新区块
+	 * 
+	 * @param txCount
+	 * @param extraData
+	 * @param coinBase
+	 * @return
+	 * @throws Exception
+	 */
+	public BlockEntity.Builder CreateNewBlock(int txCount, byte[] extraData, byte[] coinBase) throws Exception {
 		return CreateNewBlock(transactionHelper.getWaitBlockTx(txCount), extraData, coinBase);
 	}
 
-	public BlockEntity.Builder CreateNewBlock(LinkedList<MultiTransaction> txs, byte[] extraData, byte[] coinBase) {
+	/**
+	 * 创建新区块
+	 * 
+	 * @param txs
+	 * @param extraData
+	 * @param coinBase
+	 * @return
+	 * @throws Exception
+	 */
+	public BlockEntity.Builder CreateNewBlock(LinkedList<MultiTransaction> txs, byte[] extraData, byte[] coinBase)
+			throws Exception {
 		BlockEntity.Builder oBlockEntity = BlockEntity.newBuilder();
 		BlockHeader.Builder oBlockHeader = BlockHeader.newBuilder();
 		BlockBody.Builder oBlockBody = BlockBody.newBuilder();
 
 		// 获取本节点的最后一块Block
-		BlockEntity.Builder oBestBlockEntity = GetBestBlock();
+		BlockEntity.Builder oBestBlockEntity = blockChainHelper.GetBestBlock();
 		BlockHeader.Builder oBestBlockHeader = oBestBlockEntity.getHeader().toBuilder();
 
 		// 构造Block Header
@@ -90,7 +114,7 @@ public class BlockHelper implements ActorService {
 		TrieImpl oTrieImpl = new TrieImpl();
 		for (int i = 0; i < txs.size(); i++) {
 			oBlockHeader.addTxHashs(txs.get(i).getTxHash());
-			oBlockBody.addTxs(i, txs.get(i));
+			oBlockBody.addTxs(txs.get(i));
 			oTrieImpl.put(txs.get(i).getTxHash().toByteArray(), txs.get(i).toByteArray());
 		}
 		oBlockHeader.setTxTrieRoot(ByteString.copyFrom(oTrieImpl.getRootHash()));
@@ -101,6 +125,12 @@ public class BlockHelper implements ActorService {
 		return oBlockEntity;
 	}
 
+	/**
+	 * 创建创世块
+	 * 
+	 * @param txs
+	 * @param extraData
+	 */
 	public void CreateGenesisBlock(LinkedList<MultiTransaction> txs, byte[] extraData) {
 		BlockEntity.Builder oBlockEntity = BlockEntity.newBuilder();
 		BlockHeader.Builder oBlockHeader = BlockHeader.newBuilder();
@@ -120,8 +150,8 @@ public class BlockHelper implements ActorService {
 		// 构造MPT Trie
 		TrieImpl oTrieImpl = new TrieImpl();
 		for (int i = 0; i < txs.size(); i++) {
-			oBlockHeader.setTxHashs(i, txs.get(i).getTxHash());
-			oBlockBody.setTxs(i, txs.get(i));
+			oBlockHeader.addTxHashs(txs.get(i).getTxHash());
+			oBlockBody.addTxs(txs.get(i));
 			oTrieImpl.put(txs.get(i).getTxHash().toByteArray(), txs.get(i).toByteArray());
 		}
 		oBlockHeader.setTxTrieRoot(ByteString.copyFrom(oTrieImpl.getRootHash()));
@@ -129,53 +159,65 @@ public class BlockHelper implements ActorService {
 		oBlockEntity.setHeader(oBlockHeader);
 		oBlockEntity.setBody(oBlockBody);
 
-		oBlockStorageDB.setLastBlock(oBlockEntity.build());
-		dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(oBlockEntity.getHeader().getBlockHash()),
-				OEntityBuilder.byteValue2OValue(oBlockEntity.build().toByteArray()));
+		// oBlockStorageDB.setLastBlock(oBlockEntity.build());
+		blockChainHelper.appendBlock(oBlockEntity.build());
 	}
 
+	/**
+	 * 执行区块。比较交易完整性，执行交易。
+	 * 
+	 * @param oBlockEntity
+	 * @throws Exception
+	 */
 	public void ApplyBlock(BlockEntity oBlockEntity) throws Exception {
 		BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
-		LinkedList<MultiTransaction.Builder> txs = new LinkedList<MultiTransaction.Builder>();
+		LinkedList<MultiTransaction> txs = new LinkedList<MultiTransaction>();
 		TrieImpl oTrieImpl = new TrieImpl();
 		// 校验交易完整性
 		for (ByteString txHash : oBlockHeader.getTxHashsList()) {
 			// 交易必须都存在
-			MultiTransaction.Builder oMultiTransaction = transactionHelper.GetTransaction(txHash.toByteArray())
-					.toBuilder();
+			MultiTransaction oMultiTransaction = transactionHelper.GetTransaction(txHash.toByteArray());
 			txs.add(oMultiTransaction);
 			// 验证交易是否被篡改
 			// 1. 重新Hash，比对交易Hash
-			byte[] newHash = transactionHelper.ReHashTransaction(oMultiTransaction);
-			if (!FastByteComparisons.equal(newHash, txHash.toByteArray())) {
-				throw new Exception(String.format("交易Hash %s 与 %s 不一致", Hex.toHexString(txHash.toByteArray()),
-						Hex.toHexString(newHash)));
+
+			MultiTransaction.Builder oReHashMultiTransaction = oMultiTransaction.toBuilder();
+			byte[] newHash = encApi.sha256Encode(oReHashMultiTransaction.getTxBody().toByteArray());
+			if (!encApi.hexEnc(newHash).equals(encApi.hexEnc(oMultiTransaction.getTxHash().toByteArray()))) {
+				// encApi.sha256Encode(oMultiTransaction.setTxHash(ByteString.EMPTY).build().toByteArray());
+				log.debug(String.format("--> %s %s", encApi.hexEnc(oMultiTransaction.getTxHash().toByteArray()),
+						oMultiTransaction));
+
+				throw new Exception(String.format("交易Hash %s 与 %s 不一致", encApi.hexEnc(txHash.toByteArray()),
+						encApi.hexEnc(newHash)));
 			}
 			// 2. 重构MPT Trie，比对RootHash
-			oTrieImpl.put(oMultiTransaction.getTxHash().toByteArray(), oMultiTransaction.build().toByteArray());
+			oTrieImpl.put(oMultiTransaction.getTxHash().toByteArray(), oMultiTransaction.toByteArray());
 		}
 		if (!FastByteComparisons.equal(oBlockEntity.getHeader().getTxTrieRoot().toByteArray(),
 				oTrieImpl.getRootHash())) {
 			throw new Exception(String.format("交易根 %s 与 %s 不一致",
-					Hex.toHexString(oBlockEntity.getHeader().getTxTrieRoot().toByteArray()),
-					Hex.toHexString(oTrieImpl.getRootHash())));
+					encApi.hexEnc(oBlockEntity.getHeader().getTxTrieRoot().toByteArray()),
+					encApi.hexEnc(oTrieImpl.getRootHash())));
 		}
 
 		// 执行交易
 		transactionHelper.ExecuteTransaction(txs);
 
-		// 缓存
-		oBlockStorageDB.setLastBlock(oBlockEntity);
-
-		// 持久化
-		dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(oBlockHeader.getBlockHash()),
-				OEntityBuilder.byteValue2OValue(oBlockEntity.toByteArray()));
-
-		// 发送奖励
-
+		blockChainHelper.appendBlock(oBlockEntity);
 	}
 
-	public BlockEntity.Builder GetBestBlock() {
-		return oBlockStorageDB.getLastBlock().toBuilder();
+	/**
+	 * 根据区块Hash获取区块信息
+	 * 
+	 * @param blockHash
+	 * @return
+	 * @throws Exception
+	 */
+	public BlockEntity.Builder getBlock(byte[] blockHash) throws Exception {
+		BlockEntity.Builder oBlockEntity = BlockEntity
+				.parseFrom(dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(blockHash)).get().getExtdata())
+				.toBuilder();
+		return oBlockEntity;
 	}
 }

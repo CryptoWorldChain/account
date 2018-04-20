@@ -13,6 +13,7 @@ import org.brewchain.account.util.ByteUtil;
 import org.brewchain.account.gens.Act.Account;
 import org.brewchain.account.gens.Block.BlockEntity;
 import org.brewchain.account.gens.Tx.MultiTransaction;
+import org.brewchain.account.gens.Tx.MultiTransactionBody;
 import org.brewchain.account.gens.Tx.MultiTransactionInput;
 import org.brewchain.account.gens.Tx.MultiTransactionOutput;
 import org.brewchain.account.gens.Tx.MultiTransactionSignature;
@@ -95,21 +96,25 @@ public class TokenTest extends SessionModules<ReqTxTest> implements ActorService
 		}
 
 		MultiTransaction.Builder oMultiTransaction1 = MultiTransaction.newBuilder();
+		MultiTransactionBody.Builder oMultiTransactionBody1 = MultiTransactionBody.newBuilder();
 		MultiTransaction.Builder oMultiTransaction2 = MultiTransaction.newBuilder();
+		MultiTransactionBody.Builder oMultiTransactionBody2 = MultiTransactionBody.newBuilder();
 
+		
 		MultiTransactionInput.Builder oMultiTransactionInput1 = MultiTransactionInput.newBuilder();
+		
 		oMultiTransactionInput1.setAddress(ByteString.copyFrom(oKeyPairs1.getAddress().getBytes()));
 		oMultiTransactionInput1.setAmount(16);
 		oMultiTransactionInput1.setToken("ABC");
 		oMultiTransactionInput1.setFee(0);
 		oMultiTransactionInput1.setFeeLimit(0);
 		oMultiTransactionInput1.setNonce(0);
-		oMultiTransaction1.addInputs(oMultiTransactionInput1);
+		oMultiTransactionBody1.addInputs(oMultiTransactionInput1);
 
 		MultiTransactionOutput.Builder oMultiTransactionOutput1 = MultiTransactionOutput.newBuilder();
 		oMultiTransactionOutput1.setAddress(ByteString.copyFrom(oKeyPairs2.getAddress().getBytes()));
 		oMultiTransactionOutput1.setAmount(16);
-		oMultiTransaction1.addOutputs(oMultiTransactionOutput1);
+		oMultiTransactionBody1.addOutputs(oMultiTransactionOutput1);
 
 		MultiTransactionInput.Builder oMultiTransactionInput2 = MultiTransactionInput.newBuilder();
 		oMultiTransactionInput2.setAddress(ByteString.copyFrom(oKeyPairs2.getAddress().getBytes()));
@@ -118,33 +123,33 @@ public class TokenTest extends SessionModules<ReqTxTest> implements ActorService
 		oMultiTransactionInput2.setFee(0);
 		oMultiTransactionInput2.setFeeLimit(0);
 		oMultiTransactionInput2.setNonce(0);
-		oMultiTransaction2.addInputs(oMultiTransactionInput2);
+		oMultiTransactionBody1.addInputs(oMultiTransactionInput2);
 
 		MultiTransactionOutput.Builder oMultiTransactionOutput2 = MultiTransactionOutput.newBuilder();
 		oMultiTransactionOutput2.setAddress(ByteString.copyFrom(oKeyPairs1.getAddress().getBytes()));
 		oMultiTransactionOutput2.setAmount(17);
-		oMultiTransaction2.addOutputs(oMultiTransactionOutput2);
+		oMultiTransactionBody1.addOutputs(oMultiTransactionOutput2);
 
-		oMultiTransaction1.setData(ByteString.copyFromUtf8("02"));
-		oMultiTransaction2.setData(ByteString.copyFromUtf8("02"));
+		oMultiTransactionBody1.setData(ByteString.copyFromUtf8("02"));
+		oMultiTransactionBody2.setData(ByteString.copyFromUtf8("02"));
 
 		oMultiTransaction1.setTxHash(ByteString.EMPTY);
-		oMultiTransaction1.clearSignatures();
+		oMultiTransactionBody1.clearSignatures();
 		oMultiTransaction2.setTxHash(ByteString.EMPTY);
-		oMultiTransaction2.clearSignatures();
+		oMultiTransactionBody2.clearSignatures();
 
 		// 签名
 		MultiTransactionSignature.Builder oMultiTransactionSignature1 = MultiTransactionSignature.newBuilder();
 		oMultiTransactionSignature1.setPubKey(oKeyPairs1.getPubkey());
 		oMultiTransactionSignature1.setSignature(
 				encApi.hexEnc(encApi.ecSign(oKeyPairs1.getPrikey(), oMultiTransaction1.build().toByteArray())));
-		oMultiTransaction1.addSignatures(oMultiTransactionSignature1);
+		oMultiTransactionBody1.addSignatures(oMultiTransactionSignature1);
 
 		MultiTransactionSignature.Builder oMultiTransactionSignature2 = MultiTransactionSignature.newBuilder();
 		oMultiTransactionSignature1.setPubKey(oKeyPairs2.getPubkey());
 		oMultiTransactionSignature1.setSignature(
 				encApi.hexEnc(encApi.ecSign(oKeyPairs2.getPrikey(), oMultiTransaction2.build().toByteArray())));
-		oMultiTransaction2.addSignatures(oMultiTransactionSignature2);
+		oMultiTransactionBody2.addSignatures(oMultiTransactionSignature2);
 
 		try {
 			// 测试其他节点，删除多重签名账户
@@ -154,6 +159,8 @@ public class TokenTest extends SessionModules<ReqTxTest> implements ActorService
 			log.debug(String.format("账户2 ABC %s DEF %s",
 					accountHelper.getTokenBalance(oKeyPairs2.getAddress().getBytes(), "ABC"),
 					accountHelper.getTokenBalance(oKeyPairs2.getAddress().getBytes(), "DEF")));
+			oMultiTransaction1.setTxBody(oMultiTransactionBody1);
+			oMultiTransaction1.setTxBody(oMultiTransactionBody2);
 
 			transactionHelper.CreateMultiTransaction(oMultiTransaction1);
 			transactionHelper.CreateMultiTransaction(oMultiTransaction2);

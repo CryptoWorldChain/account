@@ -13,6 +13,7 @@ import org.brewchain.account.util.ByteUtil;
 import org.brewchain.account.gens.Act.Account;
 import org.brewchain.account.gens.Block.BlockEntity;
 import org.brewchain.account.gens.Tx.MultiTransaction;
+import org.brewchain.account.gens.Tx.MultiTransactionBody;
 import org.brewchain.account.gens.Tx.MultiTransactionInput;
 import org.brewchain.account.gens.Tx.MultiTransactionOutput;
 import org.brewchain.account.gens.Tx.MultiTransactionSignature;
@@ -131,13 +132,15 @@ public class MultiSignatureTest extends SessionModules<ReqTxTest> implements Act
 
 		// 发送多重签名账户创建交易并转账
 		MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
+		MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
 		MultiTransactionInput.Builder oMultiTransactionInput1 = MultiTransactionInput.newBuilder();
+		
 		oMultiTransactionInput1.setAddress(ByteString.copyFrom(oKeyPairs1.getAddress().getBytes()));
 		oMultiTransactionInput1.setAmount(160);
 		oMultiTransactionInput1.setFee(0);
 		oMultiTransactionInput1.setFeeLimit(0);
 		oMultiTransactionInput1.setNonce(0);
-		oMultiTransaction.addInputs(oMultiTransactionInput1);
+		oMultiTransactionBody.addInputs(oMultiTransactionInput1);
 
 		MultiTransactionInput.Builder oMultiTransactionInput2 = MultiTransactionInput.newBuilder();
 		oMultiTransactionInput2.setAddress(ByteString.copyFrom(oKeyPairs2.getAddress().getBytes()));
@@ -145,7 +148,7 @@ public class MultiSignatureTest extends SessionModules<ReqTxTest> implements Act
 		oMultiTransactionInput2.setFee(0);
 		oMultiTransactionInput2.setFeeLimit(0);
 		oMultiTransactionInput2.setNonce(0);
-		oMultiTransaction.addInputs(oMultiTransactionInput2);
+		oMultiTransactionBody.addInputs(oMultiTransactionInput2);
 
 		MultiTransactionInput.Builder oMultiTransactionInput3 = MultiTransactionInput.newBuilder();
 		oMultiTransactionInput3.setAddress(ByteString.copyFrom(oKeyPairs3.getAddress().getBytes()));
@@ -153,37 +156,38 @@ public class MultiSignatureTest extends SessionModules<ReqTxTest> implements Act
 		oMultiTransactionInput3.setFee(0);
 		oMultiTransactionInput3.setFeeLimit(0);
 		oMultiTransactionInput3.setNonce(0);
-		oMultiTransaction.addInputs(oMultiTransactionInput3);
+		oMultiTransactionBody.addInputs(oMultiTransactionInput3);
 
 		MultiTransactionOutput.Builder oMultiTransactionOutput1 = MultiTransactionOutput.newBuilder();
 		oMultiTransactionOutput1.setAddress(ByteString.copyFrom(mAddress));
 		oMultiTransactionOutput1.setAmount(510);
-		oMultiTransaction.addOutputs(oMultiTransactionOutput1);
+		oMultiTransactionBody.addOutputs(oMultiTransactionOutput1);
 
-		oMultiTransaction.setData(ByteString.copyFromUtf8("01"));
-		oMultiTransaction.setExdata(oAccount.toByteString());
+		oMultiTransactionBody.setData(ByteString.copyFromUtf8("01"));
+		oMultiTransactionBody.setExdata(oAccount.toByteString());
 		oMultiTransaction.setTxHash(ByteString.EMPTY);
-		oMultiTransaction.clearSignatures();
+		oMultiTransactionBody.clearSignatures();
 
 		// 签名
 		MultiTransactionSignature.Builder oMultiTransactionSignature1 = MultiTransactionSignature.newBuilder();
 		oMultiTransactionSignature1.setPubKey(oKeyPairs1.getPubkey());
 		oMultiTransactionSignature1.setSignature(
 				encApi.hexEnc(encApi.ecSign(oKeyPairs1.getPrikey(), oMultiTransaction.build().toByteArray())));
-		oMultiTransaction.addSignatures(oMultiTransactionSignature1);
+		oMultiTransactionBody.addSignatures(oMultiTransactionSignature1);
 
 		MultiTransactionSignature.Builder oMultiTransactionSignature2 = MultiTransactionSignature.newBuilder();
 		oMultiTransactionSignature1.setPubKey(oKeyPairs2.getPubkey());
 		oMultiTransactionSignature1.setSignature(
 				encApi.hexEnc(encApi.ecSign(oKeyPairs2.getPrikey(), oMultiTransaction.build().toByteArray())));
-		oMultiTransaction.addSignatures(oMultiTransactionSignature2);
+		oMultiTransactionBody.addSignatures(oMultiTransactionSignature2);
 
 		MultiTransactionSignature.Builder oMultiTransactionSignature3 = MultiTransactionSignature.newBuilder();
 		oMultiTransactionSignature1.setPubKey(oKeyPairs3.getPubkey());
 		oMultiTransactionSignature1.setSignature(
 				encApi.hexEnc(encApi.ecSign(oKeyPairs3.getPrikey(), oMultiTransaction.build().toByteArray())));
-		oMultiTransaction.addSignatures(oMultiTransactionSignature3);
+		oMultiTransactionBody.addSignatures(oMultiTransactionSignature3);
 
+		oMultiTransaction.setTxBody(oMultiTransactionBody);
 		try {
 			// 测试其他节点，删除多重签名账户
 			log.debug("多重签名账户信息：" + accountHelper.GetAccount(mAddress));
@@ -216,28 +220,30 @@ public class MultiSignatureTest extends SessionModules<ReqTxTest> implements Act
 		for (int i = 0; i < 10; i++) {
 			// 创建多重签名交易 (小于多重签名金额)
 			MultiTransaction.Builder oMultiTransaction2 = MultiTransaction.newBuilder();
+			MultiTransactionBody.Builder oMultiTransactionBody1 = MultiTransactionBody.newBuilder();
 			MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
 			oMultiTransactionInput4.setAddress(ByteString.copyFrom(mAddress));
 			oMultiTransactionInput4.setAmount(150);
 			oMultiTransactionInput4.setFee(0);
 			oMultiTransactionInput4.setFeeLimit(0);
 			oMultiTransactionInput4.setNonce(0);
-			oMultiTransaction2.addInputs(oMultiTransactionInput4);
+			oMultiTransactionBody1.addInputs(oMultiTransactionInput4);
 
 			// MultiTransactionOutput.Builder oMultiTransactionOutput =
 			// MultiTransactionOutput.newBuilder();
-			oMultiTransaction2.setData(ByteString.copyFromUtf8("03"));
-			oMultiTransaction2.setExdata(oAccount.toByteString());
+			oMultiTransactionBody1.setData(ByteString.copyFromUtf8("03"));
+			oMultiTransactionBody1.setExdata(oAccount.toByteString());
 			oMultiTransaction2.setTxHash(ByteString.EMPTY);
-			oMultiTransaction2.clearSignatures();
+			oMultiTransactionBody1.clearSignatures();
 
 			// 签名
 			MultiTransactionSignature.Builder oMultiTransactionSignature21 = MultiTransactionSignature.newBuilder();
 			oMultiTransactionSignature21.setPubKey(oKeyPairs1.getPubkey());
 			oMultiTransactionSignature21.setSignature(
 					encApi.hexEnc(encApi.ecSign(oKeyPairs1.getPrikey(), oMultiTransaction.build().toByteArray())));
-			oMultiTransaction2.addSignatures(oMultiTransactionSignature21);
+			oMultiTransactionBody1.addSignatures(oMultiTransactionSignature21);
 
+			oMultiTransaction2.setTxBody(oMultiTransactionBody1);
 			try {
 				transactionHelper.CreateMultiTransaction(oMultiTransaction2);
 			} catch (Exception e) {

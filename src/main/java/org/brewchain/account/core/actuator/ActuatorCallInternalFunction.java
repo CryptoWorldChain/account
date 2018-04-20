@@ -8,6 +8,7 @@ import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.function.InternalFunction;
 import org.brewchain.account.gens.Act.Account;
+import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.brewchain.account.gens.Tx.MultiTransaction.Builder;
 import org.fc.brewchain.bcapi.EncAPI;
 
@@ -22,10 +23,10 @@ public class ActuatorCallInternalFunction extends AbstractTransactionActuator im
 	}
 
 	@Override
-	public void onExecute(Builder oMultiTransaction, Map<ByteString, Account> senders,
+	public void onExecute(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
 			Map<ByteString, Account> receivers) throws Exception {
 		InternalCallArguments.Builder oInternalCallArguments = InternalCallArguments
-				.parseFrom(oMultiTransaction.getExdata()).toBuilder();
+				.parseFrom(oMultiTransaction.getTxBody().getExdata()).toBuilder();
 
 		for (int i = 0; i < InternalFunction.class.getMethods().length; i++) {
 			if (InternalFunction.class.getMethods()[i].getName().equals(oInternalCallArguments.getMethod())) {
@@ -41,7 +42,7 @@ public class ActuatorCallInternalFunction extends AbstractTransactionActuator im
 	}
 
 	@Override
-	public void onExecuteDone(Builder oMultiTransaction) throws Exception {
+	public void onExecuteDone(MultiTransaction oMultiTransaction) throws Exception {
 		// TODO Auto-generated method stub
 		super.onExecuteDone(oMultiTransaction);
 	}

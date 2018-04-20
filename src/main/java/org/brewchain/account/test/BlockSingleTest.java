@@ -6,11 +6,13 @@ import java.util.List;
 
 import org.bouncycastle.util.encoders.Hex;
 import org.brewchain.account.core.AccountHelper;
+import org.brewchain.account.core.BlockChainHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.util.ByteUtil;
 import org.brewchain.account.gens.Block.BlockEntity;
 import org.brewchain.account.gens.Tx.MultiTransaction;
+import org.brewchain.account.gens.Tx.MultiTransactionBody;
 import org.brewchain.account.gens.Tx.MultiTransactionSignature;
 import org.brewchain.account.gens.Tx.SingleTransaction;
 import org.brewchain.account.gens.TxTest.PTSTCommand;
@@ -43,6 +45,8 @@ public class BlockSingleTest extends SessionModules<ReqTxTest> implements ActorS
 
 	@ActorRequire(name = "Block_Helper", scope = "global")
 	BlockHelper blockHelper;
+	@ActorRequire(name = "BlockChain_Helper", scope = "global")
+	BlockChainHelper blockChainHelper;
 
 	@ActorRequire(name = "bc_encoder", scope = "global")
 	EncAPI encApi;
@@ -66,7 +70,13 @@ public class BlockSingleTest extends SessionModules<ReqTxTest> implements ActorS
 		}
 
 		blockHelper.CreateGenesisBlock(new LinkedList<MultiTransaction>(), ByteUtil.EMPTY_BYTE_ARRAY);
-		BlockEntity.Builder oBlockEntity = blockHelper.GetBestBlock();
+		BlockEntity.Builder oBlockEntity;
+		try {
+			oBlockEntity = blockChainHelper.GetBestBlock();
+		} catch (Exception e3) {
+			// TODO Auto-generated catch block
+			e3.printStackTrace();
+		}
 
 		// 创建账户1
 		KeyPairs oKeyPairs1 = encApi.genKeys();
@@ -134,7 +144,10 @@ public class BlockSingleTest extends SessionModules<ReqTxTest> implements ActorS
 			oMultiTransactionSignature.setSignature(
 					encApi.hexEnc(encApi.ecSign(oKeyPairs2.getPrikey(), oMultiTransaction.build().toByteArray())));
 
-			oMultiTransaction.addSignatures(oMultiTransactionSignature);
+			MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
+
+			oMultiTransactionBody.addSignatures(oMultiTransactionSignature);
+			oMultiTransaction.setTxBody(oMultiTransactionBody);
 			// transactionHelper.Signature(privs, oMultiTransaction);
 			transactionHelper.CreateMultiTransaction(oMultiTransaction);
 		} catch (Exception e1) {

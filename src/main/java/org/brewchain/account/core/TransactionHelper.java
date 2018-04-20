@@ -14,6 +14,7 @@ import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.brewchain.account.gens.Act.Account;
 import org.brewchain.account.gens.Tx.MultiTransaction;
+import org.brewchain.account.gens.Tx.MultiTransactionBody;
 import org.brewchain.account.gens.Tx.MultiTransactionInput;
 import org.brewchain.account.gens.Tx.MultiTransactionOutput;
 import org.brewchain.account.gens.Tx.MultiTransactionSignature;
@@ -58,31 +59,33 @@ public class TransactionHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public void CreateMultiTransaction(MultiTransaction.Builder oMultiTransaction) throws Exception {
-		verifyAndSaveMultiTransaction(oMultiTransaction);
+		MultiTransaction formatMultiTransaction = verifyAndSaveMultiTransaction(oMultiTransaction);
 
 		// 保存交易到缓存中，用于广播
-		oSendingHashMapDB.put(oMultiTransaction.getTxHash().toByteArray(), oMultiTransaction.build().toByteArray());
+		oSendingHashMapDB.put(formatMultiTransaction.getTxHash().toByteArray(), formatMultiTransaction.toByteArray());
 
 		// 保存交易到缓存中，用于打包
-		if (oMultiTransaction.getDelegateCount() == 0
-				|| oMultiTransaction.getDelegateList().indexOf(ByteString.copyFromUtf8(dao.getCoinBase())) != -1) {
+		if (formatMultiTransaction.getTxBody().getDelegateCount() == 0
+				|| formatMultiTransaction.getTxBody().getDelegateList().indexOf(ByteString.copyFromUtf8(dao.getCoinBase())) != -1) {
 			// 如果指定了委托，并且委托是本节点
-			oPendingHashMapDB.put(oMultiTransaction.getTxHash().toByteArray(), oMultiTransaction.build().toByteArray());
+			oPendingHashMapDB.put(formatMultiTransaction.getTxHash().toByteArray(),
+					formatMultiTransaction.toByteArray());
 		}
 	}
 
 	public void CreateGenesisMultiTransaction(MultiTransaction.Builder oMultiTransaction) throws Exception {
-		verifyAndSaveMultiTransaction(oMultiTransaction);
+		MultiTransaction formatMultiTransaction = verifyAndSaveMultiTransaction(oMultiTransaction);
 
 		// 保存交易到缓存中，用于广播
 		// oSendingHashMapDB.put(oMultiTransaction.getTxHash().toByteArray(),
 		// oMultiTransaction.build().toByteArray());
 
 		// 保存交易到缓存中，用于打包
-		if (oMultiTransaction.getDelegateCount() == 0
-				|| oMultiTransaction.getDelegateList().indexOf(ByteString.copyFromUtf8(dao.getCoinBase())) != -1) {
+		if (formatMultiTransaction.getTxBody().getDelegateCount() == 0
+				|| formatMultiTransaction.getTxBody().getDelegateList().indexOf(ByteString.copyFromUtf8(dao.getCoinBase())) != -1) {
 			// 如果指定了委托，并且委托是本节点
-			oPendingHashMapDB.put(oMultiTransaction.getTxHash().toByteArray(), oMultiTransaction.build().toByteArray());
+			oPendingHashMapDB.put(formatMultiTransaction.getTxHash().toByteArray(),
+					formatMultiTransaction.toByteArray());
 		}
 	}
 
@@ -93,15 +96,16 @@ public class TransactionHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public void SyncTransaction(MultiTransaction.Builder oMultiTransaction) throws Exception {
-		verifyAndSaveMultiTransaction(oMultiTransaction);
+		MultiTransaction formatMultiTransaction = verifyAndSaveMultiTransaction(oMultiTransaction);
 
 		// 交易的发送地址和接收地址如果不存在，则创建
 		// 如果交易是多重签名交易，根据extraData创建
 
 		// 保存交易到缓存中，用于打包
-		if (oMultiTransaction.getDelegateCount() == 0
-				|| oMultiTransaction.getDelegateList().indexOf(ByteString.copyFromUtf8(dao.getCoinBase())) != -1) {
-			oPendingHashMapDB.put(oMultiTransaction.getTxHash().toByteArray(), oMultiTransaction.build().toByteArray());
+		if (formatMultiTransaction.getTxBody().getDelegateCount() == 0
+				|| formatMultiTransaction.getTxBody().getDelegateList().indexOf(ByteString.copyFromUtf8(dao.getCoinBase())) != -1) {
+			oPendingHashMapDB.put(formatMultiTransaction.getTxHash().toByteArray(),
+					formatMultiTransaction.toByteArray());
 		}
 	}
 
@@ -110,32 +114,34 @@ public class TransactionHelper implements ActorService {
 	 * 
 	 * @param oTransaction
 	 */
-	public void ExecuteTransaction(LinkedList<MultiTransaction.Builder> oMultiTransactions) throws Exception {
+	public void ExecuteTransaction(LinkedList<MultiTransaction> oMultiTransactions) throws Exception {
 		LinkedList<OKey> keys = new LinkedList<OKey>();
 		LinkedList<OValue> values = new LinkedList<OValue>();
 
-		for (MultiTransaction.Builder oTransaction : oMultiTransactions) {
+		for (MultiTransaction oTransaction : oMultiTransactions) {
 
 			Map<ByteString, Account> senders = new HashMap<ByteString, Account>();
-			for (MultiTransactionInput oInput : oTransaction.getInputsList()) {
+			for (MultiTransactionInput oInput : oTransaction.getTxBody().getInputsList()) {
 				senders.put(oInput.getAddress(), oAccountHelper.GetAccount(oInput.getAddress().toByteArray()));
 			}
 
 			Map<ByteString, Account> receivers = new HashMap<ByteString, Account>();
-			for (MultiTransactionOutput oOutput : oTransaction.getOutputsList()) {
+			for (MultiTransactionOutput oOutput : oTransaction.getTxBody().getOutputsList()) {
 				receivers.put(oOutput.getAddress(), oAccountHelper.GetAccount(oOutput.getAddress().toByteArray()));
 			}
 
 			iTransactionActuator oiTransactionActuator;
 			// TODO 枚举交易类型
-			if (oTransaction.getData().equals(ByteString.copyFromUtf8("01"))) {
+			if (oTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("01"))) {
 				oiTransactionActuator = new ActuatorCreateUnionAccount(this.oAccountHelper, null, null, encApi);
-			} else if (oTransaction.getData().equals(ByteString.copyFromUtf8("02"))) {
+			} else if (oTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("02"))) {
 				oiTransactionActuator = new ActuatorTokenTransaction(oAccountHelper, null, null, encApi);
-			} else if (oTransaction.getData().equals(ByteString.copyFromUtf8("03"))) {
+			} else if (oTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("03"))) {
 				oiTransactionActuator = new ActuatorUnionAccountTransaction(oAccountHelper, null, null, encApi);
-			} else if (oTransaction.getData().equals(ByteString.copyFromUtf8("04"))) {
+			} else if (oTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("04"))) {
 				oiTransactionActuator = new ActuatorCallInternalFunction(oAccountHelper, null, null, encApi);
+			} else if (oTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("05"))) {
+				oiTransactionActuator = new ActuatorCryptoTokenTransaction(oAccountHelper, null, null, encApi);
 			} else {
 				oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, null, null, encApi);
 			}
@@ -209,6 +215,9 @@ public class TransactionHelper implements ActorService {
 	public MultiTransaction GetTransaction(byte[] txHash) throws Exception {
 		OValue oValue = dao.getTxsDao().get(OEntityBuilder.byteKey2OKey(txHash)).get();
 		MultiTransaction.Builder oTransaction = MultiTransaction.newBuilder();
+		if (oValue == null || oValue.getExtdata() == null) {
+			throw new Exception(String.format("没有找到hash %s 的交易数据", encApi.hexEnc(txHash)));
+		}
 		oTransaction.mergeFrom(oValue.getExtdata().toByteArray());
 		return oTransaction.build();
 	}
@@ -256,54 +265,63 @@ public class TransactionHelper implements ActorService {
 	 * @throws Exception
 	 */
 	private void getTransactionHash(MultiTransaction.Builder oTransaction) throws Exception {
-		if (oTransaction.getSignaturesCount() == 0) {
+		if (oTransaction.getTxBody().getSignaturesCount() == 0) {
 			throw new Exception("交易需要签名后才能设置交易Hash");
 		}
 		oTransaction.setTxHash(ByteString.copyFrom(encApi.sha256Encode(oTransaction.build().toByteArray())));
 	}
 
-	/**
-	 * 获取多重交易签名后的Hash
-	 * 
-	 * @param oMultiTransaction
-	 * @throws Exception
-	 */
-	private void getMultiTransactionHash(MultiTransaction.Builder oMultiTransaction) throws Exception {
-		// if (oMultiTransaction.getInputsCount() !=
-		// oMultiTransaction.getSignatureCount()) {
-		// throw new Exception(String.format("交易签名个数 %s 与输入个数 %s 不一致",
-		// oMultiTransaction.getSignatureCount(),
-		// oMultiTransaction.getInputsCount()));
-		// }
-		// if (oMultiTransaction.getSignaturesCount() == 0) {
-		// throw new Exception("交易需要签名后才能设置交易Hash");
-		// }
-		oMultiTransaction.setTxHash(ByteString.EMPTY);
-		oMultiTransaction.setTxHash(ByteString.copyFrom(encApi.sha256Encode(oMultiTransaction.build().toByteArray())));
-	}
+	// /**
+	// * 获取多重交易签名后的Hash
+	// *
+	// * @param oMultiTransaction
+	// * @throws Exception
+	// */
+	// public byte[] getMultiTransactionHash(MultiTransaction oMultiTransaction)
+	// throws Exception {
+	// // if (oMultiTransaction.getInputsCount() !=
+	// // oMultiTransaction.getSignatureCount()) {
+	// // throw new Exception(String.format("交易签名个数 %s 与输入个数 %s 不一致",
+	// // oMultiTransaction.getSignatureCount(),
+	// // oMultiTransaction.getInputsCount()));
+	// // }
+	// // if (oMultiTransaction.getSignaturesCount() == 0) {
+	// // throw new Exception("交易需要签名后才能设置交易Hash");
+	// // }
+	// MultiTransaction.Builder newMultiTransaction =
+	// MultiTransaction.newBuilder(oMultiTransaction);
+	// newMultiTransaction.setTxHash(ByteString.EMPTY);
+	// byte[] txHash =
+	// encApi.sha256Encode(newMultiTransaction.build().toByteArray());
+	// newMultiTransaction.setTxHash(ByteString.copyFrom(txHash));
+	// return newMultiTransaction.getTxHash().toByteArray();
+	// }
 
-	public byte[] ReHashTransaction(MultiTransaction.Builder oMultiTransaction) throws Exception {
-		// if (oMultiTransaction.getInputsCount() !=
-		// oMultiTransaction.getSignatureCount()) {
-		// throw new Exception(String.format("交易签名个数 %s 与输入个数 %s 不一致",
-		// oMultiTransaction.getSignatureCount(),
-		// oMultiTransaction.getInputsCount()));
-		// }
-		// if (oMultiTransaction.getSignaturesCount() == 0) {
-		// throw new Exception("交易需要签名后才能设置交易Hash");
-		// }
-
-		String oldHash = encApi.hexEnc(oMultiTransaction.getTxHash().toByteArray());
-		MultiTransaction.Builder newMultiTransaction = oMultiTransaction.clone();
-		newMultiTransaction.setTxHash(ByteString.EMPTY);
-		String newHash = encApi.hexEnc(encApi.sha256Encode(newMultiTransaction.build().toByteArray()));
-
-		log.debug(String.format(" %s <==> %s", oldHash, newHash));
-		if (!oldHash.equals(newHash)) {
-			throw new Exception("");
-		}
-		return encApi.sha256Encode(newMultiTransaction.build().toByteArray());
-	}
+	// public byte[] ReHashTransaction(MultiTransaction.Builder
+	// oMultiTransaction) throws Exception {
+	// // if (oMultiTransaction.getInputsCount() !=
+	// // oMultiTransaction.getSignatureCount()) {
+	// // throw new Exception(String.format("交易签名个数 %s 与输入个数 %s 不一致",
+	// // oMultiTransaction.getSignatureCount(),
+	// // oMultiTransaction.getInputsCount()));
+	// // }
+	// // if (oMultiTransaction.getSignaturesCount() == 0) {
+	// // throw new Exception("交易需要签名后才能设置交易Hash");
+	// // }
+	//
+	// String oldHash =
+	// encApi.hexEnc(oMultiTransaction.getTxHash().toByteArray());
+	// MultiTransaction.Builder newMultiTransaction = oMultiTransaction.clone();
+	// newMultiTransaction.setTxHash(ByteString.EMPTY);
+	// String newHash =
+	// encApi.hexEnc(encApi.sha256Encode(newMultiTransaction.build().toByteArray()));
+	//
+	// log.debug(String.format(" %s <==> %s", oldHash, newHash));
+	// if (!oldHash.equals(newHash)) {
+	// throw new Exception("");
+	// }
+	// return encApi.sha256Encode(newMultiTransaction.build().toByteArray());
+	// }
 
 	/**
 	 * 将交易映射为多重交易。映射后原交易的Hash将失效，应在后续使用中重新生成多重交易的Hash。
@@ -314,6 +332,7 @@ public class TransactionHelper implements ActorService {
 	public MultiTransaction.Builder ParseSingleTransactionToMultiTransaction(
 			SingleTransaction.Builder oSingleTransaction) {
 		MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
+		MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
 		MultiTransactionInput.Builder oMultiTransactionInput = MultiTransactionInput.newBuilder();
 		MultiTransactionOutput.Builder oMultiTransactionOutput = MultiTransactionOutput.newBuilder();
 		MultiTransactionSignature.Builder oMultiTransactionSignature = MultiTransactionSignature.newBuilder();
@@ -331,13 +350,14 @@ public class TransactionHelper implements ActorService {
 		oMultiTransactionSignature.setSignature(oSingleTransaction.getSignature());
 		oMultiTransactionSignature.setPubKey(oSingleTransaction.getPubKey());
 
-		oMultiTransaction.addAllDelegate(oSingleTransaction.getDelegateList());
-		oMultiTransaction.setExdata(oSingleTransaction.getExdata());
-		oMultiTransaction.setData(oSingleTransaction.getData());
-		oMultiTransaction.addInputs(oMultiTransactionInput);
-		oMultiTransaction.addOutputs(oMultiTransactionOutput);
-		oMultiTransaction.addSignatures(oMultiTransactionSignature);
-
+		
+		oMultiTransactionBody.addAllDelegate(oSingleTransaction.getDelegateList());
+		oMultiTransactionBody.setExdata(oSingleTransaction.getExdata());
+		oMultiTransactionBody.setData(oSingleTransaction.getData());
+		oMultiTransactionBody.addInputs(oMultiTransactionInput);
+		oMultiTransactionBody.addOutputs(oMultiTransactionOutput);
+		oMultiTransactionBody.addSignatures(oMultiTransactionSignature);
+		oMultiTransaction.setTxBody(oMultiTransactionBody);
 		return oMultiTransaction;
 	}
 
@@ -378,14 +398,15 @@ public class TransactionHelper implements ActorService {
 	 * @param oMultiTransaction
 	 * @throws Exception
 	 */
-	private void verifyAndSaveMultiTransaction(MultiTransaction.Builder oMultiTransaction) throws Exception {
+	private MultiTransaction verifyAndSaveMultiTransaction(MultiTransaction.Builder oMultiTransaction)
+			throws Exception {
 		Map<ByteString, Account> senders = new HashMap<ByteString, Account>();
-		for (MultiTransactionInput oInput : oMultiTransaction.getInputsList()) {
+		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			senders.put(oInput.getAddress(), oAccountHelper.GetAccount(oInput.getAddress().toByteArray()));
 		}
 
 		Map<ByteString, Account> receivers = new HashMap<ByteString, Account>();
-		for (MultiTransactionOutput oOutput : oMultiTransaction.getOutputsList()) {
+		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
 			receivers.put(oOutput.getAddress(), oAccountHelper.GetAccount(oOutput.getAddress().toByteArray()));
 		}
 
@@ -395,32 +416,41 @@ public class TransactionHelper implements ActorService {
 		// 01 -- 创建多重签名账户交易
 		// 02 -- Token交易
 		// 03 -- 多重签名账户交易
-		if (oMultiTransaction.getData().equals(ByteString.copyFromUtf8("01"))) {
+		if (oMultiTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("01"))) {
 			oiTransactionActuator = new ActuatorCreateUnionAccount(this.oAccountHelper, null, null, encApi);
-		} else if (oMultiTransaction.getData().equals(ByteString.copyFromUtf8("02"))) {
+		} else if (oMultiTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("02"))) {
 			oiTransactionActuator = new ActuatorTokenTransaction(oAccountHelper, null, null, encApi);
-		} else if (oMultiTransaction.getData().equals(ByteString.copyFromUtf8("03"))) {
+		} else if (oMultiTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("03"))) {
 			oiTransactionActuator = new ActuatorUnionAccountTransaction(oAccountHelper, null, null, encApi);
-		} else if (oMultiTransaction.getData().equals(ByteString.copyFromUtf8("04"))) {
+		} else if (oMultiTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("04"))) {
 			oiTransactionActuator = new ActuatorCallInternalFunction(oAccountHelper, null, null, encApi);
+		} else if (oMultiTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("05"))) {
+			oiTransactionActuator = new ActuatorCryptoTokenTransaction(oAccountHelper, null, null, encApi);
 		} else {
 			oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, null, null, encApi);
 		}
 
 		// 如果交易本身需要验证签名
 		if (oiTransactionActuator.needSignature()) {
-			oiTransactionActuator.onVerifySignature(oMultiTransaction, senders, receivers);
+			oiTransactionActuator.onVerifySignature(oMultiTransaction.build(), senders, receivers);
 		}
 
 		// 执行交易执行前的数据校验
-		oiTransactionActuator.onPrepareExecute(oMultiTransaction, senders, receivers);
+		oiTransactionActuator.onPrepareExecute(oMultiTransaction.build(), senders, receivers);
 
+		oMultiTransaction.setTxHash(ByteString.EMPTY);
 		// 生成交易Hash
-		getMultiTransactionHash(oMultiTransaction);
+		oMultiTransaction.setTxHash(ByteString.copyFrom(encApi.sha256Encode(oMultiTransaction.getTxBody().toByteArray())));
 
+		log.debug(String.format(" 1-> %s %s", encApi.hexEnc(oMultiTransaction.getTxHash().toByteArray()),
+				oMultiTransaction.build().toString()));
+
+		MultiTransaction multiTransaction = oMultiTransaction.build();
 		// 保存交易到db中
-		dao.getTxsDao().put(OEntityBuilder.byteKey2OKey(oMultiTransaction.getTxHash().toByteArray()),
-				OEntityBuilder.byteValue2OValue(oMultiTransaction.build().toByteArray()));
+		dao.getTxsDao().put(OEntityBuilder.byteKey2OKey(multiTransaction.getTxHash().toByteArray()),
+				OEntityBuilder.byteValue2OValue(multiTransaction.toByteArray()));
+
+		return multiTransaction;
 	}
 
 	private void verifySignature(String pubKey, String signature, byte[] tx) throws Exception {

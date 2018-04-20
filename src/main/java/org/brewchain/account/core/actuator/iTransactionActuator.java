@@ -19,7 +19,7 @@ public interface iTransactionActuator {
 	 * @param receivers
 	 * @throws Exception
 	 */
-	void onVerifySignature(MultiTransaction.Builder oMultiTransaction, Map<ByteString, Account> senders,
+	void onVerifySignature(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
 			Map<ByteString, Account> receivers) throws Exception;
 
 	/**
@@ -30,7 +30,7 @@ public interface iTransactionActuator {
 	 * @param receivers
 	 * @throws Exception
 	 */
-	void onPrepareExecute(MultiTransaction.Builder oMultiTransaction, Map<ByteString, Account> senders,
+	void onPrepareExecute(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
 			Map<ByteString, Account> receivers) throws Exception;
 
 	/**
@@ -41,7 +41,7 @@ public interface iTransactionActuator {
 	 * @param receivers
 	 * @throws Exception
 	 */
-	void onExecute(MultiTransaction.Builder oMultiTransaction, Map<ByteString, Account> senders,
+	void onExecute(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
 			Map<ByteString, Account> receivers) throws Exception;
 
 	/**
@@ -50,5 +50,5 @@ public interface iTransactionActuator {
 	 * @param oMultiTransaction
 	 * @throws Exception
 	 */
-	void onExecuteDone(Builder oMultiTransaction) throws Exception;
+	void onExecuteDone(MultiTransaction oMultiTransaction) throws Exception;
 }

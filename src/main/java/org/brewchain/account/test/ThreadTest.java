@@ -94,23 +94,23 @@ public class ThreadTest extends SessionModules<ReqTTT> implements ActorService {
 			ThreadTransaction oThreadTransaction = new ThreadTransaction(accountHelper, transactionHelper, encApi,
 					listKeys);
 			oThreadTransaction.start();
-			Thread.currentThread().sleep(50);
+			//Thread.currentThread().sleep(50);
 			ThreadTransaction oThreadTransaction1 = new ThreadTransaction(accountHelper, transactionHelper, encApi,
 					listKeys);
 			oThreadTransaction1.start();
-			Thread.currentThread().sleep(60);
+			//Thread.currentThread().sleep(60);
 			ThreadTransaction oThreadTransaction2 = new ThreadTransaction(accountHelper, transactionHelper, encApi,
 					listKeys);
 			oThreadTransaction2.start();
-			Thread.currentThread().sleep(110);
+			//Thread.currentThread().sleep(110);
 			ThreadTransaction oThreadTransaction3 = new ThreadTransaction(accountHelper, transactionHelper, encApi,
 					listKeys);
 			oThreadTransaction3.start();
-			Thread.currentThread().sleep(160);
+			//Thread.currentThread().sleep(160);
 			ThreadTransaction oThreadTransaction4 = new ThreadTransaction(accountHelper, transactionHelper, encApi,
 					listKeys);
 			oThreadTransaction4.start();
-			Thread.currentThread().sleep(310);
+			//Thread.currentThread().sleep(310);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

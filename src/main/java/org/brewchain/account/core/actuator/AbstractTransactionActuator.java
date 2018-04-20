@@ -13,6 +13,7 @@ import org.fc.brewchain.bcapi.EncAPI;
 import org.brewchain.account.gens.Act.Account;
 import org.brewchain.account.gens.Act.AccountValue;
 import org.brewchain.account.gens.Tx.MultiTransaction;
+import org.brewchain.account.gens.Tx.MultiTransactionBody;
 import org.brewchain.account.gens.Tx.MultiTransactionInput;
 import org.brewchain.account.gens.Tx.MultiTransactionOutput;
 import org.brewchain.account.gens.Tx.MultiTransactionSignature;
@@ -23,15 +24,16 @@ import com.google.protobuf.ByteString;
 public abstract class AbstractTransactionActuator implements iTransactionActuator {
 
 	@Override
-	public void onVerifySignature(Builder oMultiTransaction, Map<ByteString, Account> senders,
+	public void onVerifySignature(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
 			Map<ByteString, Account> receivers) throws Exception {
 		// 获取交易原始encode
-		MultiTransaction.Builder signatureTx = oMultiTransaction.clone();
-		signatureTx.clearSignatures();
+		MultiTransaction.Builder signatureTx = oMultiTransaction.toBuilder();
+		MultiTransactionBody.Builder txBody = signatureTx.getTxBodyBuilder();
 		signatureTx.setTxHash(ByteString.EMPTY);
-		byte[] oMultiTransactionEncode = signatureTx.build().toByteArray();
+		txBody = txBody.clearSignatures();
+		byte[] oMultiTransactionEncode = txBody.build().toByteArray();
 		// 校验交易签名
-		for (MultiTransactionSignature oMultiTransactionSignature : oMultiTransaction.getSignaturesList()) {
+		for (MultiTransactionSignature oMultiTransactionSignature : oMultiTransaction.getTxBody().getSignaturesList()) {
 			if (encApi.ecVerify(oMultiTransactionSignature.getPubKey(), oMultiTransactionEncode,
 					encApi.hexDec(oMultiTransactionSignature.getSignature()))) {
 			} else {
@@ -60,12 +62,12 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	}
 
 	@Override
-	public void onPrepareExecute(MultiTransaction.Builder oMultiTransaction, Map<ByteString, Account> senders,
+	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
 			Map<ByteString, Account> receivers) throws Exception {
 		int inputsTotal = 0;
 		int outputsTotal = 0;
 
-		for (MultiTransactionInput oInput : oMultiTransaction.getInputsList()) {
+		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			inputsTotal += oInput.getAmount();
 
 			// 取发送方账户
@@ -88,7 +90,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			}
 		}
 
-		for (MultiTransactionOutput oOutput : oMultiTransaction.getOutputsList()) {
+		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
 			outputsTotal += oOutput.getAmount();
 
 			// 取接收方账户
@@ -103,13 +105,13 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	}
 
 	@Override
-	public void onExecute(MultiTransaction.Builder oMultiTransaction, Map<ByteString, Account> senders,
+	public void onExecute(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
 			Map<ByteString, Account> receivers) throws Exception {
 
 		LinkedList<OKey> keys = new LinkedList<OKey>();
 		LinkedList<OValue> values = new LinkedList<OValue>();
 
-		for (MultiTransactionInput oInput : oMultiTransaction.getInputsList()) {
+		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			// 取发送方账户
 			Account sender = senders.get(oInput.getAddress());
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
@@ -123,7 +125,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			values.add(OEntityBuilder.byteValue2OValue(senderAccountValue.build().toByteArray()));
 		}
 
-		for (MultiTransactionOutput oOutput : oMultiTransaction.getOutputsList()) {
+		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
 			Account receiver = receivers.get(oOutput.getAddress());
 			AccountValue.Builder receiverAccountValue = receiver.getValue().toBuilder();
 			receiverAccountValue.setBalance(receiverAccountValue.getBalance() + oOutput.getAmount());
@@ -136,7 +138,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	}
 
 	@Override
-	public void onExecuteDone(Builder oMultiTransaction) throws Exception {
+	public void onExecuteDone(MultiTransaction oMultiTransaction) throws Exception {
 		// 记录日志
 	}
 }

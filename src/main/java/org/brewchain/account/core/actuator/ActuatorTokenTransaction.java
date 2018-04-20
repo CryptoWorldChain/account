@@ -35,14 +35,14 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 	 * java.util.Map)
 	 */
 	@Override
-	public void onPrepareExecute(MultiTransaction.Builder oMultiTransaction, Map<ByteString, Account> senders,
+	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
 			Map<ByteString, Account> receivers) throws Exception {
 		// 交易中的Token必须一致
 		String token = "";
 		long inputsTotal = 0;
 		long outputsTotal = 0;
 
-		for (MultiTransactionInput oInput : oMultiTransaction.getInputsList()) {
+		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			if (oInput.getToken().isEmpty() || oInput.getToken() == "") {
 				throw new Exception(String.format("Token交易中Token不允许为空"));
 			}
@@ -81,7 +81,7 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			}
 		}
 
-		for (MultiTransactionOutput oOutput : oMultiTransaction.getOutputsList()) {
+		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
 			outputsTotal += oOutput.getAmount();
 		}
 
@@ -91,13 +91,13 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 	}
 
 	@Override
-	public void onExecute(Builder oMultiTransaction, Map<ByteString, Account> senders,
+	public void onExecute(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
 			Map<ByteString, Account> receivers) throws Exception {
 		LinkedList<OKey> keys = new LinkedList<OKey>();
 		LinkedList<OValue> values = new LinkedList<OValue>();
 
 		String token = "";
-		for (MultiTransactionInput oInput : oMultiTransaction.getInputsList()) {
+		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			// 取发送方账户
 			Account sender = senders.get(oInput.getAddress());
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
@@ -123,7 +123,7 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			values.add(OEntityBuilder.byteValue2OValue(senderAccountValue.build().toByteArray()));
 		}
 
-		for (MultiTransactionOutput oOutput : oMultiTransaction.getOutputsList()) {
+		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
 			Account receiver = receivers.get(oOutput.getAddress());
 			AccountValue.Builder receiverAccountValue = receiver.getValue().toBuilder();
 

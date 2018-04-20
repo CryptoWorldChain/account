@@ -68,8 +68,6 @@ message RespGetTxByHash {
 	int32 retCode = 2;
 }
 
-
-
 message SingleTransaction {
 	bytes txHash = 1;
 	int32 nonce = 2;
@@ -88,14 +86,18 @@ message SingleTransaction {
 }
 
 message MultiTransaction {
+	bytes txHash = 1;
+	MultiTransactionBody txBody = 2;
+} 
+
+message MultiTransactionBody {
 	repeated MultiTransactionInput inputs = 1;
 	repeated MultiTransactionOutput outputs = 2;
 	bytes exdata = 3;
 	repeated MultiTransactionSignature signatures = 4;
-	bytes txHash = 5;
-	repeated bytes delegate = 6;
-	bytes data = 7;
-} 
+	repeated bytes delegate = 5;
+	bytes data = 6;
+}
 
 message MultiTransactionInput {
 	int32 nonce = 1;

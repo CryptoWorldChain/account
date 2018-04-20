@@ -8,6 +8,7 @@ import java.util.TimerTask;
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.gens.Tx.MultiTransaction;
+import org.brewchain.account.gens.Tx.MultiTransactionBody;
 import org.brewchain.account.gens.Tx.MultiTransactionInput;
 import org.brewchain.account.gens.Tx.MultiTransactionOutput;
 import org.brewchain.account.gens.Tx.MultiTransactionSignature;
@@ -58,33 +59,35 @@ public class ThreadTransaction extends Thread {
 					int nonce = accountHelper.getNonce(encApi.hexDec(oKeyPairs1.getAddress()));
 
 					MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
+					MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
 					MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
 					oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(oKeyPairs1.getAddress())));
 					oMultiTransactionInput4.setAmount(rAmount);
 					oMultiTransactionInput4.setFee(0);
 					oMultiTransactionInput4.setFeeLimit(0);
 					oMultiTransactionInput4.setNonce(nonce);
-					oMultiTransaction.addInputs(oMultiTransactionInput4);
+					oMultiTransactionBody.addInputs(oMultiTransactionInput4);
 
 					MultiTransactionOutput.Builder oMultiTransactionOutput1 = MultiTransactionOutput.newBuilder();
 					oMultiTransactionOutput1.setAddress(ByteString.copyFrom(encApi.hexDec(oKeyPairs2.getAddress())));
 					oMultiTransactionOutput1.setAmount(rAmount);
-					oMultiTransaction.addOutputs(oMultiTransactionOutput1);
+					oMultiTransactionBody.addOutputs(oMultiTransactionOutput1);
 
 					// MultiTransactionOutput.Builder oMultiTransactionOutput =
 					// MultiTransactionOutput.newBuilder();
-					oMultiTransaction.setData(ByteString.EMPTY);
+					oMultiTransactionBody.setData(ByteString.EMPTY);
 					oMultiTransaction.setTxHash(ByteString.EMPTY);
-					oMultiTransaction.clearSignatures();
-
+					oMultiTransactionBody.clearSignatures();
+					
 					// 签名
 					MultiTransactionSignature.Builder oMultiTransactionSignature21 = MultiTransactionSignature
 							.newBuilder();
 					oMultiTransactionSignature21.setPubKey(oKeyPairs1.getPubkey());
 					oMultiTransactionSignature21.setSignature(encApi
 							.hexEnc(encApi.ecSign(oKeyPairs1.getPrikey(), oMultiTransaction.build().toByteArray())));
-					oMultiTransaction.addSignatures(oMultiTransactionSignature21);
+					oMultiTransactionBody.addSignatures(oMultiTransactionSignature21);
 
+					oMultiTransaction.setTxBody(oMultiTransactionBody);
 					transactionHelper.CreateMultiTransaction(oMultiTransaction);
 					// log.debug(String.format("=====> 创建交易 %s 次数 %s 金额 %s 累计执行 %s", oKeyPairs1.getAddress(), nonce, rAmount, count));
 					count += 1;

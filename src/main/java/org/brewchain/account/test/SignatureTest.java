@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.bouncycastle.util.encoders.Hex;
 import org.brewchain.account.core.AccountHelper;
@@ -63,15 +65,26 @@ public class SignatureTest extends SessionModules<ReqTxTest> implements ActorSer
 
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqTxTest pb, final CompleteHandler handler) {
-		RespTxTest.Builder oRespTxTest = RespTxTest.newBuilder();
+		final RespTxTest.Builder oRespTxTest = RespTxTest.newBuilder();
 		oRespTxTest.setRetCode(1234);
 
-		KeyPairs oKeyPairs1 = encApi.genKeys();
-		log.debug(String.format("import %s", oKeyPairs1.getPubkey()));
-
-		String base64str = encApi.base64Enc(encApi.ecSign(oKeyPairs1.getPrikey(), oRespTxTest.build().toByteArray()));
-		log.debug(String.format("export %s",
-				encApi.hexEnc(encApi.ecToKeyBytes(oRespTxTest.build().toByteArray(), base64str))));
+		// KeyPairs oKeyPairs1 = encApi.genKeys();
+		// log.debug(String.format("import %s", oKeyPairs1.getPubkey()));
+		//
+		// String base64str =
+		// encApi.base64Enc(encApi.ecSign(oKeyPairs1.getPrikey(),
+		// oRespTxTest.build().toByteArray()));
+		// log.debug(String.format("export %s",
+		// encApi.hexEnc(encApi.ecToKeyBytes(oRespTxTest.build().toByteArray(),
+		// base64str))));
+		ThreadSignature oThreadSignature1 = new ThreadSignature(1, encApi);
+		oThreadSignature1.start();
+		
+		ThreadSignature oThreadSignature2 = new ThreadSignature(2, encApi);
+		oThreadSignature2.start();
+		
+		ThreadSignature oThreadSignature3 = new ThreadSignature(2, encApi);
+		oThreadSignature3.start();
 
 		oRespTxTest.setRetCode(-1);
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespTxTest.build()));

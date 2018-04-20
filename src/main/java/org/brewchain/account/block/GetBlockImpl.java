@@ -51,11 +51,18 @@ public class GetBlockImpl extends SessionModules<ReqGetBlock> {
 				handler.onFinished(PacketHelper.toPBReturn(pack, oRespGetBlock.build()));
 				return;
 			}
-			BlockEntity.Builder oBlockEntity = blockHelper.CreateNewBlock(pb.getTxCount(),
-					encApi.hexDec(pb.getExtraData()), ByteString.copyFromUtf8(coinBase).toByteArray());
-			oRespGetBlock.setHeader(oBlockEntity.getHeader());
-			oRespGetBlock.setRetCode(1);
-		} catch (InvalidProtocolBufferException e) {
+			BlockEntity.Builder oBlockEntity;
+			try {
+				oBlockEntity = blockHelper.CreateNewBlock(pb.getTxCount(), encApi.hexDec(pb.getExtraData()),
+						ByteString.copyFromUtf8(coinBase).toByteArray());
+				oRespGetBlock.setHeader(oBlockEntity.getHeader());
+				oRespGetBlock.setRetCode(1);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+		} catch (Exception e) {
 			oRespGetBlock.setRetCode(-1);
 			e.printStackTrace();
 		}

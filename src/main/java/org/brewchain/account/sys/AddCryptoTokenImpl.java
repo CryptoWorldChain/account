@@ -1,11 +1,9 @@
 package org.brewchain.account.sys;
 
-import org.brewchain.account.account.CreateAccountImpl;
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.gens.Act.AccountCryptoToken;
-import org.brewchain.account.gens.Act.PACTCommand;
-import org.brewchain.account.gens.Act.PACTModule;
-import org.brewchain.account.gens.Act.ReqCreateAccount;
+import org.brewchain.account.gens.Sys.PSYSCommand;
+import org.brewchain.account.gens.Sys.PSYSModule;
 import org.brewchain.account.gens.Sys.ReqAddCryptoToken;
 import org.brewchain.account.gens.Sys.RespAddCryptoToken;
 import org.fc.brewchain.bcapi.EncAPI;
@@ -32,12 +30,12 @@ public class AddCryptoTokenImpl extends SessionModules<ReqAddCryptoToken> {
 
 	@Override
 	public String[] getCmds() {
-		return new String[] { PACTCommand.CAC.name() };
+		return new String[] { PSYSCommand.ACB.name() };
 	}
 
 	@Override
 	public String getModule() {
-		return PACTModule.ACT.name();
+		return PSYSModule.SYS.name();
 	}
 
 	@Override

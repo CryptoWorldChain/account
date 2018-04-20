@@ -12,6 +12,7 @@ import org.brewchain.account.gens.Act.Account;
 import org.brewchain.account.gens.Act.AccountCryptoToken;
 import org.brewchain.account.gens.Act.AccountCryptoValue;
 import org.brewchain.account.gens.Act.AccountValue;
+import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.brewchain.account.gens.Tx.MultiTransaction.Builder;
 import org.brewchain.account.gens.Tx.MultiTransactionInput;
 import org.brewchain.account.gens.Tx.MultiTransactionOutput;
@@ -40,15 +41,15 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 	 * @throws Exception
 	 */
 	@Override
-	public void onPrepareExecute(Builder oMultiTransaction, Map<ByteString, Account> senders,
+	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
 			Map<ByteString, Account> receivers) throws Exception {
 
 		String inputSymbol = "";
 
 		// 发送方账户中必须存在该token
-		for (int i = 0; i < oMultiTransaction.getInputsCount(); i++) {
+		for (int i = 0; i < oMultiTransaction.getTxBody().getInputsCount(); i++) {
 			boolean isTokenExists = false;
-			MultiTransactionInput oInput = oMultiTransaction.getInputs(i);
+			MultiTransactionInput oInput = oMultiTransaction.getTxBody().getInputs(i);
 			if (inputSymbol.equals("") && !oInput.getSymbol().isEmpty()) {
 				inputSymbol = oInput.getSymbol();
 			}
@@ -77,8 +78,8 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 			}
 		}
 
-		for (int i = 0; i < oMultiTransaction.getOutputsCount(); i++) {
-			MultiTransactionOutput oOutput = oMultiTransaction.getOutputs(i);
+		for (int i = 0; i < oMultiTransaction.getTxBody().getOutputsCount(); i++) {
+			MultiTransactionOutput oOutput = oMultiTransaction.getTxBody().getOutputs(i);
 			if (!oOutput.getSymbol().isEmpty() && !oOutput.getSymbol().equals(inputSymbol)) {
 				throw new Exception(
 						String.format("发送方的加密token标记 %s 与接收方的加密token标记 %s 不一致", inputSymbol, oOutput.getSymbol()));
@@ -95,15 +96,15 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 	 * java.util.Map)
 	 */
 	@Override
-	public void onExecute(Builder oMultiTransaction, Map<ByteString, Account> senders,
+	public void onExecute(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
 			Map<ByteString, Account> receivers) throws Exception {
 		LinkedList<OKey> keys = new LinkedList<OKey>();
 		LinkedList<OValue> values = new LinkedList<OValue>();
 
 		Map<byte[], AccountCryptoToken> tokens = new HashMap<byte[], AccountCryptoToken>();
 		// 发送方移除balance
-		for (int i = 0; i < oMultiTransaction.getInputsCount(); i++) {
-			MultiTransactionInput oInput = oMultiTransaction.getInputs(i);
+		for (int i = 0; i < oMultiTransaction.getTxBody().getInputsCount(); i++) {
+			MultiTransactionInput oInput = oMultiTransaction.getTxBody().getInputs(i);
 
 			// tokens.put(oMultiTransaction.get, value);
 			Account sender = senders.get(oInput.getAddress());
@@ -135,8 +136,8 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 		}
 
 		// 接收方增加balance
-		for (int i = 0; i < oMultiTransaction.getOutputsCount(); i++) {
-			MultiTransactionOutput oOutput = oMultiTransaction.getOutputs(i);
+		for (int i = 0; i < oMultiTransaction.getTxBody().getOutputsCount(); i++) {
+			MultiTransactionOutput oOutput = oMultiTransaction.getTxBody().getOutputs(i);
 
 			Account receiver = receivers.get(oOutput.getAddress());
 			AccountValue.Builder receiverAccountValue = receiver.getValue().toBuilder();
@@ -165,7 +166,7 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 	}
 
 	@Override
-	public void onExecuteDone(Builder oMultiTransaction) throws Exception {
+	public void onExecuteDone(MultiTransaction oMultiTransaction) throws Exception {
 		// TODO Auto-generated method stub
 		super.onExecuteDone(oMultiTransaction);
 	}
