@@ -71,11 +71,12 @@ public class DoubleLinkedList implements ActorService {
 
 	public boolean insertAfter(byte[] elem, int number, byte[] target) {
 		Node data = new Node(elem, number);
-		Node cur = first;
+		Node cur = last == null ? first : last;
+
 		while (cur != null) {
 			log.debug(String.format("cur %s target %s", encApi.hexEnc(cur.data), encApi.hexEnc(target)));
 			if (FastByteComparisons.equal(cur.data, target)) {
-				if (cur == first && cur.next == null && last == null) {
+				if (cur == first && cur.prev == null && last == null) {
 					data.prev = cur;
 					last = data;
 					cur.next = last;
@@ -93,8 +94,34 @@ public class DoubleLinkedList implements ActorService {
 					return true;
 				}
 			}
-			cur = cur.next;
+			cur = cur.prev;
 		}
+		// Node cur = first;
+		// while (cur != null) {
+		// log.debug(String.format("cur %s target %s", encApi.hexEnc(cur.data),
+		// encApi.hexEnc(target)));
+		// if (FastByteComparisons.equal(cur.data, target)) {
+		// if (cur == first && cur.next == null && last == null) {
+		// data.prev = cur;
+		// last = data;
+		// cur.next = last;
+		// count++;
+		// return true;
+		// } else {
+		// data.next = cur.next;
+		// data.prev = cur;
+		// if (cur == last)
+		// last = data;
+		// else
+		// cur.next.prev = data;
+		// cur.next = data;
+		// count++;
+		// return true;
+		// }
+		// }
+		// cur = cur.next;
+		// }
+
 		return false;
 	}
 
