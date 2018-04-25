@@ -35,11 +35,10 @@ public class DefDaos extends SessionModules<Message> {
 	@StoreDAO(target = "bc_bdb", daoClass = BlockDomain.class)
 	ODBSupport blockDao;
 	
-	public String coinBase = props().get("block.coinBase", "");
-
 	@Override
 	public void onDaoServiceAllReady() {
 		// log.debug("EncAPI==" + enc);
+		// 校验
 		log.debug("service ready!!!!");
 	}
 

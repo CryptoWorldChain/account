@@ -35,7 +35,10 @@ public class BlockHelper implements ActorService {
 	TransactionHelper transactionHelper;
 	@ActorRequire(name = "BlockChain_Helper", scope = "global")
 	BlockChainHelper blockChainHelper;
-
+	@ActorRequire(name = "Account_Helper", scope = "global")
+	AccountHelper accountHelper;
+	@ActorRequire(name = "BlockChain_Config", scope = "global")
+	BlockChainConfig blockChainConfig;
 	@ActorRequire(name = "bc_encoder", scope = "global")
 	EncAPI encApi;
 	@ActorRequire(name = "Def_Daos", scope = "global")
@@ -210,6 +213,10 @@ public class BlockHelper implements ActorService {
 		transactionHelper.ExecuteTransaction(txs);
 
 		blockChainHelper.appendBlock(oBlockEntity);
+	}
+
+	public void applyReward(BlockEntity oBlock) {
+		// blockChainConfig.getMinerReward()
 	}
 
 	/**

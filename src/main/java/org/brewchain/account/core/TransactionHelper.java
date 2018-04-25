@@ -48,6 +48,8 @@ public class TransactionHelper implements ActorService {
 	DefDaos dao;
 	@ActorRequire(name = "bc_encoder", scope = "global")
 	EncAPI encApi;
+	@ActorRequire(name = "BlockChain_Config", scope = "global")
+	BlockChainConfig blockChainConfig;
 	@ActorRequire(name = "WaitSend_HashMapDB", scope = "global")
 	WaitSendHashMapDB oSendingHashMapDB; // 保存待广播交易
 	@ActorRequire(name = "WaitBlock_HashMapDB", scope = "global")
@@ -68,7 +70,7 @@ public class TransactionHelper implements ActorService {
 
 		// 保存交易到缓存中，用于打包
 		if (formatMultiTransaction.getTxBody().getDelegateCount() == 0 || formatMultiTransaction.getTxBody()
-				.getDelegateList().indexOf(ByteString.copyFromUtf8(dao.getCoinBase())) != -1) {
+				.getDelegateList().indexOf(ByteString.copyFrom(encApi.hexDec(blockChainConfig.getCoinBase()))) != -1) {
 			// 如果指定了委托，并且委托是本节点
 			oPendingHashMapDB.put(formatMultiTransaction.getTxHash().toByteArray(),
 					formatMultiTransaction.toByteArray());
@@ -84,7 +86,7 @@ public class TransactionHelper implements ActorService {
 
 		// 保存交易到缓存中，用于打包
 		if (formatMultiTransaction.getTxBody().getDelegateCount() == 0 || formatMultiTransaction.getTxBody()
-				.getDelegateList().indexOf(ByteString.copyFromUtf8(dao.getCoinBase())) != -1) {
+				.getDelegateList().indexOf(ByteString.copyFrom(encApi.hexDec(blockChainConfig.getCoinBase()))) != -1) {
 			// 如果指定了委托，并且委托是本节点
 			oPendingHashMapDB.put(formatMultiTransaction.getTxHash().toByteArray(),
 					formatMultiTransaction.toByteArray());
@@ -105,7 +107,7 @@ public class TransactionHelper implements ActorService {
 
 		// 保存交易到缓存中，用于打包
 		if (formatMultiTransaction.getTxBody().getDelegateCount() == 0 || formatMultiTransaction.getTxBody()
-				.getDelegateList().indexOf(ByteString.copyFromUtf8(dao.getCoinBase())) != -1) {
+				.getDelegateList().indexOf(ByteString.copyFrom(encApi.hexDec(blockChainConfig.getCoinBase()))) != -1) {
 			oPendingHashMapDB.put(formatMultiTransaction.getTxHash().toByteArray(),
 					formatMultiTransaction.toByteArray());
 		}

@@ -10,7 +10,7 @@ import com.google.common.cache.LoadingCache;
 
 public abstract class AbstractLocalCache {
 	public static LoadingCache<String, Long> dayTotalAmount = CacheBuilder.newBuilder()
-			.maximumSize(100)
+			.maximumSize(10000)
 			.expireAfterAccess(86400, TimeUnit.SECONDS)
 			.build(new CacheLoader<String, Long>(){
 	            @Override

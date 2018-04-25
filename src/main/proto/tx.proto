@@ -123,7 +123,4 @@ message MultiTransactionSignature {
 	string pubKey = 2;
 }
 
-// 统计
-// 交易笔数
-// 广播笔数
-// 日交易总额
+// 交易属于那个块

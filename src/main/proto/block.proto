@@ -67,5 +67,7 @@ message ReqBlockInfo {
 message RespBlockInfo {
 	int32 number = 1;
 	int32 blockCount = 2;
-	string cache = 3;
+	int32 waitSync = 3;
+	int32 waitBlock = 4;
+	string cache = 5;
 }

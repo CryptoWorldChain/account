@@ -97,13 +97,13 @@ public class BlockChainHelper implements ActorService {
 
 		dao.getBlockDao().batchPuts(keys, values);
 
-		log.debug(String.format("添加区块 %s hash %s", oBlock.getHeader().getNumber(),
-				encApi.hexEnc(oBlock.getHeader().getBlockHash().toByteArray())));
+//		log.debug(String.format("添加区块 %s hash %s", oBlock.getHeader().getNumber(),
+//				encApi.hexEnc(oBlock.getHeader().getBlockHash().toByteArray())));
 
 		return blockCache.insertAfter(oBlock.getHeader().getBlockHash().toByteArray(), oBlock.getHeader().getNumber(),
 				oBlock.getHeader().getParentHash().toByteArray());
 	}
-
+	
 	public boolean newBlock(BlockEntity oBlock) {
 
 		OKey[] keys = new OKey[] { OEntityBuilder.byteKey2OKey(oBlock.getHeader().getBlockHash()),
@@ -181,6 +181,7 @@ public class BlockChainHelper implements ActorService {
 							reloadBlockCache();
 							break;
 						}
+						// 配置项检查
 						log.debug("节点启动！");
 					} catch (Exception e) {
 						e.printStackTrace();

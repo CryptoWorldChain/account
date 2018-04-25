@@ -45,7 +45,7 @@ public class GetBlockImpl extends SessionModules<ReqGetBlock> {
 		RespGetBlock.Builder oRespGetBlock = RespGetBlock.newBuilder();
 
 		try {
-			String coinBase = this.props().get("block.coinBase", "");
+			String coinBase = this.props().get("block.coinBase.hex", null);
 			if (coinBase == null) {
 				oRespGetBlock.setRetCode(-2);
 				handler.onFinished(PacketHelper.toPBReturn(pack, oRespGetBlock.build()));
