@@ -262,10 +262,10 @@ public class DoubleLinkedList implements ActorService {
 		}
 
 		@Override
-		public byte[] next() {
+		public Node next() {
 			if (!hasNext())
 				throw new NoSuchElementException();
-			byte[] t = egungoElementua.data;
+			Node t = egungoElementua;
 			egungoElementua = egungoElementua.next;
 			return t;
 		}
@@ -288,10 +288,10 @@ public class DoubleLinkedList implements ActorService {
 		}
 
 		@Override
-		public byte[] next() {
+		public Node next() {
 			if (!hasNext())
 				throw new NoSuchElementException();
-			byte[] t = egungoElementua.data;
+			Node t = egungoElementua;
 			egungoElementua = egungoElementua.prev;
 			return t;
 		}

@@ -10,7 +10,9 @@ import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Validate;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.doublyll.DoubleLinkedList;
+import org.brewchain.account.doublyll.Node;
 import org.brewchain.account.gens.Block.BlockEntity;
+import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.brewchain.account.util.ByteUtil;
 import org.brewchain.account.util.FastByteComparisons;
 import org.brewchain.account.util.OEntityBuilder;
@@ -97,13 +99,22 @@ public class BlockChainHelper implements ActorService {
 
 		dao.getBlockDao().batchPuts(keys, values);
 
-//		log.debug(String.format("添加区块 %s hash %s", oBlock.getHeader().getNumber(),
-//				encApi.hexEnc(oBlock.getHeader().getBlockHash().toByteArray())));
+		LinkedList<OKey> txBlockKeyList = new LinkedList<OKey>();
+		LinkedList<OValue> txBlockValueList = new LinkedList<OValue>();
+		for (MultiTransaction oMultiTransaction : oBlock.getBody().getTxsList()) {
+			txBlockKeyList.add(OEntityBuilder.byteKey2OKey(oMultiTransaction.getTxHash()));
+			txBlockValueList.add(OEntityBuilder.byteValue2OValue(oBlock.getHeader().getBlockHash()));
+		}
+
+		dao.getTxblockDao().batchPuts(txBlockKeyList.toArray(new OKey[0]), txBlockValueList.toArray(new OValue[0]));
+		// log.debug(String.format("添加区块 %s hash %s",
+		// oBlock.getHeader().getNumber(),
+		// encApi.hexEnc(oBlock.getHeader().getBlockHash().toByteArray())));
 
 		return blockCache.insertAfter(oBlock.getHeader().getBlockHash().toByteArray(), oBlock.getHeader().getNumber(),
 				oBlock.getHeader().getParentHash().toByteArray());
 	}
-	
+
 	public boolean newBlock(BlockEntity oBlock) {
 
 		OKey[] keys = new OKey[] { OEntityBuilder.byteKey2OKey(oBlock.getHeader().getBlockHash()),
@@ -133,7 +144,7 @@ public class BlockChainHelper implements ActorService {
 	 * 
 	 * @param blockHash
 	 * @param endBlockHash
-	 * @return
+	 * @return 200块
 	 * @throws Exception
 	 */
 	public LinkedList<BlockEntity> getBlocks(byte[] blockHash, byte[] endBlockHash) throws Exception {
@@ -151,18 +162,91 @@ public class BlockChainHelper implements ActorService {
 	 */
 	public LinkedList<BlockEntity> getBlocks(byte[] blockHash, byte[] endBlockHash, int maxCount) throws Exception {
 		LinkedList<BlockEntity> list = new LinkedList<BlockEntity>();
-		Iterator<byte[]> iterator = blockCache.iterator();
+		Iterator<Node> iterator = blockCache.iterator();
 
 		while (iterator.hasNext() || maxCount > 0) {
-			byte[] cur = iterator.next();
-			if (FastByteComparisons.equal(blockHash, cur)) {
-				list.add(getBlock(cur).build());
+			Node cur = iterator.next();
+			if (FastByteComparisons.equal(blockHash, cur.data)) {
+				list.add(getBlock(cur.data).build());
 				maxCount--;
-			} else if (endBlockHash != null && FastByteComparisons.equal(endBlockHash, cur)) {
+			} else if (endBlockHash != null && FastByteComparisons.equal(endBlockHash, cur.data)) {
 				break;
 			}
 		}
 		return list;
+	}
+
+	/**
+	 * 从一个块开始，遍历整个整个区块，返回改块的所有父块
+	 * 
+	 * @param blockHash
+	 * @return
+	 * @throws Exception
+	 */
+	public LinkedList<BlockEntity> getParentsBlocks(byte[] blockHash) throws Exception {
+		return getParentsBlocks(blockHash, null);
+	}
+
+	/**
+	 * 从一个块开始，到一个块结束，遍历整个整个区块，返回改块的所有父块
+	 * 
+	 * @param blockHash
+	 * @param endBlockHash
+	 * @return 200块
+	 * @throws Exception
+	 */
+	public LinkedList<BlockEntity> getParentsBlocks(byte[] blockHash, byte[] endBlockHash) throws Exception {
+		return getParentsBlocks(blockHash, endBlockHash, 200);
+	}
+
+	/**
+	 * 从一个块开始，到一个块结束，遍历整个整个区块，返回指定数量的该块的所有父块
+	 * 
+	 * @param blockHash
+	 * @param endBlockHash
+	 * @param maxCount
+	 * @return
+	 * @throws Exception
+	 */
+	public LinkedList<BlockEntity> getParentsBlocks(byte[] blockHash, byte[] endBlockHash, int maxCount)
+			throws Exception {
+		LinkedList<BlockEntity> list = new LinkedList<BlockEntity>();
+		Iterator<Node> iterator = blockCache.reverseIterator();
+
+		while (iterator.hasNext() || maxCount > 0) {
+			Node cur = iterator.next();
+			if (FastByteComparisons.equal(blockHash, cur.data)) {
+				list.add(getBlock(cur.data).build());
+				maxCount--;
+			} else if (endBlockHash != null && FastByteComparisons.equal(endBlockHash, cur.data)) {
+				break;
+			}
+		}
+		return list;
+	}
+
+	/**
+	 * 根据区块高度，获取区块信息
+	 * 
+	 * @param number
+	 * @return
+	 * @throws Exception
+	 */
+	public BlockEntity getBlockByNumber(int number) throws Exception {
+		// 判断从前遍历还是从后遍历
+		Iterator<Node> iterator;
+		if (getBlockCount() / 2 > number) {
+			iterator = blockCache.iterator();
+		} else {
+			iterator = blockCache.reverseIterator();
+		}
+		while (iterator.hasNext()) {
+			Node cur = iterator.next();
+			if (cur.num == number) {
+				return getBlock(cur.data).build();
+			}
+		}
+		throw new Exception(String.format("没有找到高度为 %s 的区块", number));
 	}
 
 	@Validate
@@ -195,7 +279,7 @@ public class BlockChainHelper implements ActorService {
 	}
 
 	/**
-	 * 该方法会移除本地缓存，然后取数据库中保存的最后一个块的信息，重新构造缓存。该方法可能会带来很大开销。在缓存没有加载后节点才启动完成。在启动完成之前
+	 * 该方法会移除本地缓存，然后取数据库中保存的最后一个块的信息，重新构造缓存。该方法可能会带来很大开销。在缓存加载后节点才启动完成。在启动完成之前
 	 * ，所有接口均无法使用。
 	 * 
 	 * @throws Exception
@@ -233,7 +317,7 @@ public class BlockChainHelper implements ActorService {
 			if (blockNumber == 0) {
 				break;
 			}
-			
+
 			oBlockEntity = loopBlockEntity.toBuilder();
 		}
 

@@ -14,6 +14,8 @@ import org.brewchain.account.gens.Block.BlockBody;
 import org.brewchain.account.gens.Block.BlockEntity;
 import org.brewchain.account.gens.Block.BlockHeader;
 import org.brewchain.account.gens.Tx.MultiTransaction;
+import org.brewchain.account.gens.Tx.MultiTransactionInput;
+import org.brewchain.account.gens.Tx.MultiTransactionOutput;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;
@@ -212,6 +214,7 @@ public class BlockHelper implements ActorService {
 		// 执行交易
 		transactionHelper.ExecuteTransaction(txs);
 
+		// 添加块
 		blockChainHelper.appendBlock(oBlockEntity);
 	}
 
@@ -241,5 +244,71 @@ public class BlockHelper implements ActorService {
 	 */
 	public BlockEntity.Builder GetBestBlock() throws Exception {
 		return getBlock(blockChainHelper.GetBestBlock());
+	}
+
+	/**
+	 * 获取Block中的全部交易
+	 * 
+	 * @param blockHash
+	 * @return
+	 * @throws Exception
+	 */
+	public LinkedList<MultiTransaction> GetTransactionsByBlock(byte[] blockHash) throws Exception {
+		LinkedList<MultiTransaction> txs = new LinkedList<MultiTransaction>();
+		BlockEntity.Builder oBlockEntity = getBlock(blockHash);
+		for (MultiTransaction tx : oBlockEntity.getBody().getTxsList()) {
+			txs.add(tx);
+		}
+		return txs;
+	}
+
+	/**
+	 * 根据交易，获取区块信息
+	 * 
+	 * @param txHash
+	 * @return
+	 * @throws Exception
+	 */
+	public BlockEntity getBlockByTransaction(byte[] txHash) throws Exception {
+		ByteString blockHash = dao.getTxblockDao().get(OEntityBuilder.byteKey2OKey(txHash)).get().getExtdata();
+		return getBlock(blockHash.toByteArray()).build();
+	}
+
+	/**
+	 * 根据账户地址，读取账户关联的交易(可以增加遍历的区块的数量)
+	 * 
+	 * @param address
+	 * @return
+	 * @throws Exception
+	 */
+	public LinkedList<MultiTransaction> getTransactionByAddress(byte[] address) throws Exception {
+		LinkedList<MultiTransaction> txs = new LinkedList<MultiTransaction>();
+		// 找到最佳块，遍历所有block
+		for (BlockEntity oBlockEntity : blockChainHelper.getParentsBlocks(blockChainHelper.GetBestBlock())) {
+			for (MultiTransaction multiTransaction : oBlockEntity.getBody().getTxsList()) {
+				// if
+				// (multiTransaction.toBuilder().build().getTxBody().getInputs(index))
+				boolean added = false;
+				for (MultiTransactionInput oMultiTransactionInput : multiTransaction.getTxBody().getInputsList()) {
+					if (FastByteComparisons.equal(oMultiTransactionInput.getAddress().toByteArray(), address)) {
+						txs.add(multiTransaction);
+						added = true;
+						break;
+					}
+				}
+				if (!added) {
+					for (MultiTransactionOutput oMultiTransactionOutput : multiTransaction.getTxBody()
+							.getOutputsList()) {
+						if (FastByteComparisons.equal(oMultiTransactionOutput.getAddress().toByteArray(), address)) {
+							txs.add(multiTransaction);
+							added = true;
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		return txs;
 	}
 }

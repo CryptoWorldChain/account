@@ -370,7 +370,7 @@ public class TransactionHelper implements ActorService {
 
 		oMultiTransactionSignature.setSignature(oSingleTransaction.getSignature());
 		oMultiTransactionSignature.setPubKey(oSingleTransaction.getPubKey());
-		
+
 		for (ByteString oDelegate : oSingleTransaction.getDelegateList()) {
 			oMultiTransactionBody.addDelegate(oDelegate);
 		}

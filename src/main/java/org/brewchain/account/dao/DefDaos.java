@@ -35,6 +35,10 @@ public class DefDaos extends SessionModules<Message> {
 	@StoreDAO(target = "bc_bdb", daoClass = BlockDomain.class)
 	ODBSupport blockDao;
 	
+	@StoreDAO(target = "bc_bdb", daoClass = TxBlockDomain.class)
+	ODBSupport txblockDao;
+	
+	
 	@Override
 	public void onDaoServiceAllReady() {
 		// log.debug("EncAPI==" + enc);
@@ -84,5 +88,13 @@ public class DefDaos extends SessionModules<Message> {
 
 	public ODBSupport getTxsDao() {
 		return txsDao;
+	}
+	
+	public void setTxblockDao(DomainDaoSupport txblockDao) {
+		this.txblockDao = (ODBSupport) txblockDao;
+	}
+
+	public ODBSupport getTxblockDao() {
+		return txblockDao;
 	}
 }
