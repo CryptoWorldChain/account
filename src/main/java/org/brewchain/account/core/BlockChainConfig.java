@@ -17,6 +17,8 @@ import onight.osgi.annotation.NActorProvider;
 public class BlockChainConfig extends SessionModules<Message> {
 	private String coinBase = props().get("block.coinBase.hex", null);
 	private int minerReward = props().get("block.miner.reward", 0);
+	private int minerRewardWait = props().get("block.miner.reward.wait", 0);
+
 	@Override
 	public void onDaoServiceAllReady() {
 		// 校验配置是否有效

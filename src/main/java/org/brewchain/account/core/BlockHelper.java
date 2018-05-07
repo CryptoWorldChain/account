@@ -216,10 +216,27 @@ public class BlockHelper implements ActorService {
 
 		// 添加块
 		blockChainHelper.appendBlock(oBlockEntity);
+
+		// 应用奖励
+		applyReward(oBlockEntity);
 	}
 
-	public void applyReward(BlockEntity oBlock) {
+	/**
+	 * 区块奖励
+	 * 
+	 * @param oBlock
+	 * @throws Exception
+	 */
+	public void applyReward(BlockEntity oBlock) throws Exception {
 		// blockChainConfig.getMinerReward()
+		// 取第n块block
+		if (oBlock.getHeader().getNumber() - blockChainConfig.getMinerRewardWait() > 0) {
+			BlockEntity rewardBlock = blockChainHelper
+					.getBlockByNumber(oBlock.getHeader().getNumber() - blockChainConfig.getMinerRewardWait());
+
+			accountHelper.addBalance(rewardBlock.getHeader().getCoinbase().toByteArray(),
+					blockChainConfig.getMinerReward());
+		}
 	}
 
 	/**
