@@ -12,9 +12,9 @@ buildscript {
 
 version = '1.0.3'
 
-repositories{
-	maven{ url "http://dl.bintray.com/ethereum/maven/"}
-}
+//repositories{
+//	maven{ url "http://dl.bintray.com/ethereum/maven/"}
+//}
 project.group='org.brewchain'
 
 apply plugin: 'zippo'
@@ -36,8 +36,6 @@ dependencies {
 	compile ("org.fc.zippo:org.fc.zippo.oapi:3.3.0")
 	compile ("org.brewchain:org.brewchain.bcapi:3.3.3")
 	compile ("org.brewchain:org.brewchain.bc_bdb:3.0.7")
-	compile ("org.ethereum:solcJ-all:0.4.8")
-	compile ("org.ethereum:leveldbjni-all:1.18.3")
 	compile group: 'com.google.guava', name: 'guava', version: '18.0'
 	compile ("org.apache.commons:commons-collections4:4.0")
 	includeInJar ("org.bouncycastle:bcprov-jdk15on:1.58")
