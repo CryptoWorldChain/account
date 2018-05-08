@@ -218,7 +218,7 @@ public class BlockHelper implements ActorService {
 		blockChainHelper.appendBlock(oBlockEntity);
 
 		// 应用奖励
-		applyReward(oBlockEntity);
+		// applyReward(oBlockEntity);
 	}
 
 	/**
