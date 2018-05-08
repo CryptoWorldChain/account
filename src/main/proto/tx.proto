@@ -97,6 +97,7 @@ message MultiTransactionBody {
 	repeated MultiTransactionSignature signatures = 4;
 	repeated bytes delegate = 5;
 	bytes data = 6;
+	int64 timestamp = 7;
 }
 
 message MultiTransactionInput {
