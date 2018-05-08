@@ -1,5 +1,6 @@
 package org.brewchain.account.test;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Random;
 import java.util.Timer;
@@ -79,12 +80,13 @@ public class ThreadTransaction extends Thread {
 					oMultiTransaction.setTxHash(ByteString.EMPTY);
 					oMultiTransactionBody.clearSignatures();
 					
+					oMultiTransactionBody.setTimestamp((new Date()).getTime());
 					// 签名
 					MultiTransactionSignature.Builder oMultiTransactionSignature21 = MultiTransactionSignature
 							.newBuilder();
 					oMultiTransactionSignature21.setPubKey(oKeyPairs1.getPubkey());
 					oMultiTransactionSignature21.setSignature(encApi
-							.hexEnc(encApi.ecSign(oKeyPairs1.getPrikey(), oMultiTransaction.build().toByteArray())));
+							.hexEnc(encApi.ecSign(oKeyPairs1.getPrikey(), oMultiTransactionBody.build().toByteArray())));
 					oMultiTransactionBody.addSignatures(oMultiTransactionSignature21);
 
 					oMultiTransaction.setTxBody(oMultiTransactionBody);

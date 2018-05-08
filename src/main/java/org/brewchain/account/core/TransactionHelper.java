@@ -379,6 +379,7 @@ public class TransactionHelper implements ActorService {
 		oMultiTransactionBody.addInputs(oMultiTransactionInput);
 		oMultiTransactionBody.addOutputs(oMultiTransactionOutput);
 		oMultiTransactionBody.addSignatures(oMultiTransactionSignature);
+		oMultiTransactionBody.setTimestamp(oSingleTransaction.getTimestamp());
 		oMultiTransaction.setTxBody(oMultiTransactionBody);
 		return oMultiTransaction;
 	}
