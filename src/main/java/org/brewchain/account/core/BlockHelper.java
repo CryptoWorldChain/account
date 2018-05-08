@@ -2,6 +2,8 @@ package org.brewchain.account.core;
 
 import java.util.Date;
 import java.util.LinkedList;
+import java.util.Random;
+
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.brewchain.account.dao.DefDaos;
@@ -97,6 +99,9 @@ public class BlockHelper implements ActorService {
 
 		// 获取本节点的最后一块Block
 		BlockEntity.Builder oBestBlockEntity = GetBestBlock();
+		
+		log.debug(String.format("最新Block number %s", oBestBlockEntity.getHeader().getNumber()));
+		
 		BlockHeader.Builder oBestBlockHeader = oBestBlockEntity.getHeader().toBuilder();
 
 		// 构造Block Header
@@ -170,7 +175,7 @@ public class BlockHelper implements ActorService {
 	 * @param oBlockEntity
 	 * @throws Exception
 	 */
-	public void ApplyBlock(BlockEntity oBlockEntity) throws Exception {
+	public synchronized void ApplyBlock(BlockEntity oBlockEntity) throws Exception {
 		BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
 
 		// 上一个区块是否存在

@@ -37,13 +37,15 @@ public class ThreadBlock extends Thread {
 			// 定时任务执行方法
 			@Override
 			public void run() {
+				BlockEntity.Builder oSyncBlock = BlockEntity.newBuilder();
+				BlockEntity.Builder newBlock;
 				try {
-					BlockEntity.Builder oSyncBlock = BlockEntity.newBuilder();
-					BlockEntity.Builder newBlock;
 					newBlock = blockHelper.CreateNewBlock(600, ByteUtil.EMPTY_BYTE_ARRAY,
 							ByteString.copyFromUtf8("12345").toByteArray());
 					oSyncBlock.setHeader(newBlock.getHeader());
 					oSyncBlock.setBody(newBlock.getBody());
+					log.debug(String.format("==> 第 %s 块 hash %s 创建成功", oSyncBlock.getHeader().getNumber(),
+							encApi.hexEnc(oSyncBlock.getHeader().getBlockHash().toByteArray())));
 					blockHelper.ApplyBlock(oSyncBlock.build());
 					log.debug(String.format("==> 第 %s 块 hash %s 父hash %s 交易 %s 笔", oSyncBlock.getHeader().getNumber(),
 							encApi.hexEnc(oSyncBlock.getHeader().getBlockHash().toByteArray()),
