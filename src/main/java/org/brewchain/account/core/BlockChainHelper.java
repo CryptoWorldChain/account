@@ -249,34 +249,47 @@ public class BlockChainHelper implements ActorService {
 		throw new Exception(String.format("没有找到高度为 %s 的区块", number));
 	}
 
-	@Validate
-	public void startup() {
+	public void onStart() {
 		try {
-			// 开一线程，来监控对象注入状态，只有所有对象都注入成功了之后才执行
-			// reloadBlockCache();
-			final Timer timer = new Timer();
-			// 设定定时任务
-			timer.schedule(new TimerTask() {
-				// 定时任务执行方法
-				@Override
-				public void run() {
-					try {
-						while (dao != null && blockCache != null) {
-							reloadBlockCache();
-							break;
-						}
-						// 配置项检查
-						log.debug("节点启动！");
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-			}, 1000 * 20);
-			log.debug("等待节点启动中。。。");
+			while (dao != null && blockCache != null) {
+				reloadBlockCache();
+				break;
+			}
+			// 配置项检查
+			log.debug("节点启动！");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
+
+	// @Validate
+	// public void startup() {
+	// try {
+	// // 开一线程，来监控对象注入状态，只有所有对象都注入成功了之后才执行
+	// // reloadBlockCache();
+	// final Timer timer = new Timer();
+	// // 设定定时任务
+	// timer.schedule(new TimerTask() {
+	// // 定时任务执行方法
+	// @Override
+	// public void run() {
+	// try {
+	// while (dao != null && blockCache != null) {
+	// reloadBlockCache();
+	// break;
+	// }
+	// // 配置项检查
+	// log.debug("节点启动！");
+	// } catch (Exception e) {
+	// e.printStackTrace();
+	// }
+	// }
+	// }, 1000 * 20);
+	// log.debug("等待节点启动中。。。");
+	// } catch (Exception e) {
+	// e.printStackTrace();
+	// }
+	// }
 
 	/**
 	 * 该方法会移除本地缓存，然后取数据库中保存的最后一个块的信息，重新构造缓存。该方法可能会带来很大开销。在缓存加载后节点才启动完成。在启动完成之前
@@ -314,6 +327,7 @@ public class BlockChainHelper implements ActorService {
 						String.format("期望的块索引 %s 实际得到的块索引 %s", blockNumber, loopBlockEntity.getHeader().getNumber()));
 			}
 			blockCache.insertFirst(loopBlockEntity.getHeader().getBlockHash().toByteArray(), blockNumber);
+			log.info(String.format("加载第 %s 块Block", blockNumber));
 			if (blockNumber == 0) {
 				break;
 			}
