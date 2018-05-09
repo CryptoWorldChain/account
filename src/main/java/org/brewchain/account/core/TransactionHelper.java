@@ -371,6 +371,8 @@ public class TransactionHelper implements ActorService {
 		oMultiTransactionInput.setFeeLimit(oSingleTransaction.getFeeLimit());
 		oMultiTransactionInput.setNonce(oSingleTransaction.getNonce());
 		oMultiTransactionInput.setPubKey(oSingleTransaction.getPubKey());
+		oMultiTransactionInput.setToken(oSingleTransaction.getToken());
+		//oMultiTransactionInput.setSymbol(oSingleTransaction.gets)
 
 		oMultiTransactionOutput.setAddress(oSingleTransaction.getReceiveAddress());
 		oMultiTransactionOutput.setAmount(oSingleTransaction.getAmount());
