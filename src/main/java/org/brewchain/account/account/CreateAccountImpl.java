@@ -41,7 +41,11 @@ public class CreateAccountImpl extends SessionModules<ReqCreateAccount> {
 		// ExAccountState state = new ExAccountState(BigInteger.ZERO,
 		// BigInteger.ZERO);
 		try {
-			oAccountHelper.CreateAccount(encApi.hexDec(pb.getAddress()), encApi.hexDec(pb.getPubKey()));
+			String address = pb.getAddress();
+			if (pb.getAddress().startsWith("0x")) {
+				address = pb.getAddress().substring(2, pb.getAddress().length() - 2);
+			}
+			oAccountHelper.CreateAccount(encApi.hexDec(address), encApi.hexDec(pb.getPubKey()));
 			oRespCreateAccount.setRetCode(1);
 		} catch (Exception e) {
 			e.printStackTrace();
