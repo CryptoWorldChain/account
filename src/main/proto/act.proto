@@ -38,6 +38,7 @@ message ReqGetAccount {
 }
 
 message RespGetAccount {
+    string hexAddress = 3;
     Account account = 1;
     int32 retCode = 2;
 }

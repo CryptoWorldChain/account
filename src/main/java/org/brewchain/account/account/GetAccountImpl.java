@@ -6,6 +6,7 @@ import org.brewchain.account.gens.Act.PACTCommand;
 import org.brewchain.account.gens.Act.PACTModule;
 import org.brewchain.account.gens.Act.ReqGetAccount;
 import org.brewchain.account.gens.Act.RespGetAccount;
+import org.brewchain.account.util.ByteUtil;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import lombok.Data;
@@ -41,11 +42,8 @@ public class GetAccountImpl extends SessionModules<ReqGetAccount> {
 		RespGetAccount.Builder oRespGetAccount = RespGetAccount.newBuilder();
 
 		try {
-			String address = pb.getAddress();
-			if (pb.getAddress().startsWith("0x")) {
-				address = pb.getAddress().substring(2, pb.getAddress().length() - 2);
-			}
-			Account oAccount = oAccountHelper.GetAccount(encApi.hexDec(address));
+			Account oAccount = oAccountHelper.GetAccount(encApi.hexDec(ByteUtil.formatHexAddress(pb.getAddress())));
+			oRespGetAccount.setHexAddress(encApi.hexEnc(oAccount.getAddress().toByteArray()));
 			oRespGetAccount.setAccount(oAccount);
 			oRespGetAccount.setRetCode(1);
 		} catch (Exception e) {

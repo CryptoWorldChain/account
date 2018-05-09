@@ -10,9 +10,6 @@ import com.cedarsoftware.util.DeepEquals;
 import onight.tfw.ntrans.api.ActorService;
 import onight.tfw.ntrans.api.annotation.ActorRequire;
 
-/**
- * Class to encapsulate an object and provide utilities for conversion
- */
 public class Value implements ActorService {
 	@ActorRequire(name = "bc_encoder", scope = "global")
 	EncAPI encApi;

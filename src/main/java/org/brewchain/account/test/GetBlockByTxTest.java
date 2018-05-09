@@ -153,12 +153,19 @@ public class GetBlockByTxTest extends SessionModules<ReqTxTest> implements Actor
 		// }
 
 		try {
-			BlockEntity oBlockEntity1 = blockChainHelper.getBlockByNumber(1);
-			BlockEntity oBlockEntity4 = blockChainHelper.getBlockByNumber(4);
-
-			List<BlockEntity> list = blockChainHelper.getBlocks(oBlockEntity1.getHeader().getBlockHash().toByteArray(),
-					oBlockEntity4.getHeader().getBlockHash().toByteArray(), 100);
-			log.debug("list count " + list.size());
+//			BlockEntity oBlockEntity1 = blockChainHelper.getBlockByNumber(1);
+//			BlockEntity oBlockEntity4 = blockChainHelper.getBlockByNumber(4);
+//
+//			List<BlockEntity> list1 = blockChainHelper.getBlocks(oBlockEntity1.getHeader().getBlockHash().toByteArray(),
+//					oBlockEntity4.getHeader().getBlockHash().toByteArray(), 100);
+//			log.debug("list count " + list1.size());
+			
+			BlockEntity oBlockEntity1 = blockChainHelper.getBlockByNumber(0);
+//			BlockEntity oBlockEntity26 = blockChainHelper.getBlockByNumber(26);
+//
+//			List<BlockEntity> list1 = blockChainHelper.getParentsBlocks(oBlockEntity26.getHeader().getBlockHash().toByteArray(),
+//					oBlockEntity1.getHeader().getBlockHash().toByteArray(), 100);
+			log.debug("list count ");
 			
 		} catch (Exception e) {
 			// TODO: handle exception

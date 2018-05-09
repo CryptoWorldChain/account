@@ -33,6 +33,8 @@ public class ApplicationStart implements ActorService {
 			timer.schedule(new TimerTask() {
 				@Override
 				public void run() {
+					// copy db is db is not exists
+
 					// load block
 					blockChainHelper.onStart();
 

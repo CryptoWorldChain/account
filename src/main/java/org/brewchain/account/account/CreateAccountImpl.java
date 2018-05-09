@@ -5,6 +5,7 @@ import org.brewchain.account.gens.Act.PACTCommand;
 import org.brewchain.account.gens.Act.PACTModule;
 import org.brewchain.account.gens.Act.ReqCreateAccount;
 import org.brewchain.account.gens.Act.RespCreateAccount;
+import org.brewchain.account.util.ByteUtil;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import lombok.Data;
@@ -41,11 +42,7 @@ public class CreateAccountImpl extends SessionModules<ReqCreateAccount> {
 		// ExAccountState state = new ExAccountState(BigInteger.ZERO,
 		// BigInteger.ZERO);
 		try {
-			String address = pb.getAddress();
-			if (pb.getAddress().startsWith("0x")) {
-				address = pb.getAddress().substring(2, pb.getAddress().length() - 2);
-			}
-			oAccountHelper.CreateAccount(encApi.hexDec(address), encApi.hexDec(pb.getPubKey()));
+			oAccountHelper.CreateAccount(encApi.hexDec(ByteUtil.formatHexAddress(pb.getAddress())), encApi.hexDec(pb.getPubKey()));
 			oRespCreateAccount.setRetCode(1);
 		} catch (Exception e) {
 			e.printStackTrace();

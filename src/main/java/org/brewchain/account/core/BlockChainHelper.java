@@ -315,6 +315,7 @@ public class BlockChainHelper implements ActorService {
 		}
 		int blockNumber = oBlockEntity.getHeader().getNumber();
 		blockCache.insertFirst(oBlockEntity.getHeader().getBlockHash().toByteArray(), blockNumber);
+		log.debug(String.format("加载创世块"));
 		// 开始遍历区块
 		while (blockNumber >= 0) {
 			blockNumber--;

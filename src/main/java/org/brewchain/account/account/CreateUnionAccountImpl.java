@@ -55,7 +55,7 @@ public class CreateUnionAccountImpl extends SessionModules<ReqCreateUnionAccount
 			// 创建多重签名账户
 			List<ByteString> relAddresses = new ArrayList<ByteString>();
 			for (String addressString : pb.getRelAddressList()) {
-				relAddresses.add(ByteString.copyFrom(encApi.hexDec(addressString)));
+				relAddresses.add(ByteString.copyFrom(encApi.hexDec(ByteUtil.formatHexAddress(addressString))));
 			}
 
 			accountHelper.CreateUnionAccount(encApi.hexDec(pb.getAddress()), ByteUtil.EMPTY_BYTE_ARRAY, pb.getMax(),
