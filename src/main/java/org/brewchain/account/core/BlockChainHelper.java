@@ -163,14 +163,19 @@ public class BlockChainHelper implements ActorService {
 	public LinkedList<BlockEntity> getBlocks(byte[] blockHash, byte[] endBlockHash, int maxCount) throws Exception {
 		LinkedList<BlockEntity> list = new LinkedList<BlockEntity>();
 		Iterator<Node> iterator = blockCache.iterator();
-
+		boolean st = false;
 		while (iterator.hasNext() || maxCount > 0) {
 			Node cur = iterator.next();
-			if (FastByteComparisons.equal(blockHash, cur.data)) {
+			log.debug(String.format("%s %s ", encApi.hexEnc(cur.data), encApi.hexEnc(endBlockHash)));
+			if (endBlockHash != null && FastByteComparisons.equal(endBlockHash, cur.data)) {
+				st = false;
+				list.add(getBlock(cur.data).build());
+				break;
+			} else if (FastByteComparisons.equal(blockHash, cur.data) || st) {
+				st = true;
+
 				list.add(getBlock(cur.data).build());
 				maxCount--;
-			} else if (endBlockHash != null && FastByteComparisons.equal(endBlockHash, cur.data)) {
-				break;
 			}
 		}
 		return list;
@@ -212,15 +217,18 @@ public class BlockChainHelper implements ActorService {
 			throws Exception {
 		LinkedList<BlockEntity> list = new LinkedList<BlockEntity>();
 		Iterator<Node> iterator = blockCache.reverseIterator();
-
+		boolean st = false;
 		while (iterator.hasNext() || maxCount > 0) {
 			Node cur = iterator.next();
-			if (FastByteComparisons.equal(blockHash, cur.data)) {
+			if (endBlockHash != null && FastByteComparisons.equal(endBlockHash, cur.data)) {
+				st = false;
+				list.add(getBlock(cur.data).build());
+				break;
+			} else if (FastByteComparisons.equal(blockHash, cur.data) || st) {
+				st = true;
 				list.add(getBlock(cur.data).build());
 				maxCount--;
-			} else if (endBlockHash != null && FastByteComparisons.equal(endBlockHash, cur.data)) {
-				break;
-			}
+			}  
 		}
 		return list;
 	}

@@ -76,6 +76,9 @@ public class TransactionHelper implements ActorService {
 					formatMultiTransaction.toByteArray());
 		}
 		
+		// {node} {component} {opt} {type} {msg}
+		// log.info(String.format("%s %s %s %s %s", "","","create","transaction",""));
+		
 		return formatMultiTransaction.getTxHash();
 	}
 
