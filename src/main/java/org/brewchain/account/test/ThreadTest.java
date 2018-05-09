@@ -68,10 +68,11 @@ public class ThreadTest extends SessionModules<ReqTTT> implements ActorService {
 	public void onPBPacket(final FramePacket pack, final ReqTTT pb, final CompleteHandler handler) {
 		RespTxTest.Builder oRespTxTest = RespTxTest.newBuilder();
 		oRespTxTest.setRetCode(1234);
-
 		List<KeyPairs> listKeys = new ArrayList<KeyPairs>();
-		// 创建创世块
-		blockHelper.CreateGenesisBlock(new LinkedList<MultiTransaction>(), ByteUtil.EMPTY_BYTE_ARRAY);
+		if (pb.getBlock() == 1) {
+			// 创建创世块
+			blockHelper.CreateGenesisBlock(new LinkedList<MultiTransaction>(), ByteUtil.EMPTY_BYTE_ARRAY);
+		}
 
 		// 创建账户 100 个
 		int accountCount = 100;
