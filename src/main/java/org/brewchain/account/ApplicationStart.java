@@ -6,6 +6,9 @@ import java.util.TimerTask;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Validate;
 import org.brewchain.account.core.BlockChainHelper;
+import org.brewchain.account.core.KeyConstant;
+import org.brewchain.account.dao.DefDaos;
+import org.fc.brewchain.p22p.node.Network;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +23,8 @@ import onight.tfw.ntrans.api.annotation.ActorRequire;
 public class ApplicationStart implements ActorService {
 	@ActorRequire(name = "BlockChain_Helper", scope = "global")
 	BlockChainHelper blockChainHelper;
+	@ActorRequire(name = "Def_Daos", scope = "global")
+	DefDaos dao;
 
 	@Validate
 	public void startup() {
@@ -28,7 +33,13 @@ public class ApplicationStart implements ActorService {
 			timer.schedule(new TimerTask() {
 				@Override
 				public void run() {
+					// load block
 					blockChainHelper.onStart();
+
+					// get node
+					// Network oNetwork = dao.getPzp().networkByID("raft");
+					// KeyConstant.nodeName = oNetwork.root().name();
+					KeyConstant.nodeName = "测试节点01";
 				}
 			}, 1000 * 20);
 		} catch (Exception e) {

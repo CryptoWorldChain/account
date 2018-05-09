@@ -17,4 +17,5 @@ public class KeyConstant {
 	public static final byte[] DB_CURRENT_BLOCK = "DB_CURRENT_BLOCK_y0yXF4880c".getBytes();
 	
 	public static boolean isStart = false;
+	public static String nodeName = "";
 }

@@ -22,6 +22,7 @@ import org.brewchain.account.gens.Tx.MultiTransactionOutput;
 import org.brewchain.account.gens.Tx.MultiTransactionSignature;
 import org.brewchain.account.gens.Tx.SingleTransaction;
 import org.fc.brewchain.bcapi.EncAPI;
+import org.fc.brewchain.p22p.core.PZPCtrl;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -75,10 +76,11 @@ public class TransactionHelper implements ActorService {
 			oPendingHashMapDB.put(formatMultiTransaction.getTxHash().toByteArray(),
 					formatMultiTransaction.toByteArray());
 		}
-		
+
 		// {node} {component} {opt} {type} {msg}
-		// log.info(String.format("%s %s %s %s %s", "","","create","transaction",""));
-		
+		log.info(String.format("%s %s %s %s 创建交易[%s]", KeyConstant.nodeName, "account", "create", "transaction",
+				encApi.hexEnc(formatMultiTransaction.getTxHash().toByteArray())));
+
 		return formatMultiTransaction.getTxHash();
 	}
 

@@ -99,9 +99,9 @@ public class BlockHelper implements ActorService {
 
 		// 获取本节点的最后一块Block
 		BlockEntity.Builder oBestBlockEntity = GetBestBlock();
-		
+
 		log.debug(String.format("最新Block number %s", oBestBlockEntity.getHeader().getNumber()));
-		
+
 		BlockHeader.Builder oBestBlockHeader = oBestBlockEntity.getHeader().toBuilder();
 
 		// 构造Block Header
@@ -127,6 +127,9 @@ public class BlockHelper implements ActorService {
 		oBlockHeader.setBlockHash(ByteString.copyFrom(encApi.sha256Encode(oBlockHeader.build().toByteArray())));
 		oBlockEntity.setHeader(oBlockHeader);
 		oBlockEntity.setBody(oBlockBody);
+
+		log.info(String.format("%s %s %s %s 创建区块[%s]", KeyConstant.nodeName, "account", "create", "block",
+				encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray())));
 
 		return oBlockEntity;
 	}
@@ -189,6 +192,8 @@ public class BlockHelper implements ActorService {
 
 		LinkedList<MultiTransaction> txs = new LinkedList<MultiTransaction>();
 		TrieImpl oTrieImpl = new TrieImpl();
+
+		BlockBody.Builder bb = oBlockEntity.getBody().toBuilder();
 		// 校验交易完整性
 		for (ByteString txHash : oBlockHeader.getTxHashsList()) {
 			// 从本地缓存中移除交易
@@ -208,6 +213,8 @@ public class BlockHelper implements ActorService {
 			}
 			// 2. 重构MPT Trie，比对RootHash
 			oTrieImpl.put(oMultiTransaction.getTxHash().toByteArray(), oMultiTransaction.toByteArray());
+
+			bb.addTxs(oMultiTransaction);
 		}
 		if (!FastByteComparisons.equal(oBlockEntity.getHeader().getTxTrieRoot().toByteArray(),
 				oTrieImpl.getRootHash())) {
@@ -215,6 +222,8 @@ public class BlockHelper implements ActorService {
 					encApi.hexEnc(oBlockEntity.getHeader().getTxTrieRoot().toByteArray()),
 					encApi.hexEnc(oTrieImpl.getRootHash())));
 		}
+
+		oBlockEntity = oBlockEntity.toBuilder().setBody(bb).build();
 
 		// 执行交易
 		transactionHelper.ExecuteTransaction(txs);
@@ -224,6 +233,8 @@ public class BlockHelper implements ActorService {
 
 		// 应用奖励
 		// applyReward(oBlockEntity);
+		log.info(String.format("%s %s %s %s 执行区块[%s]", KeyConstant.nodeName, "account", "apply", "block",
+				encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray())));
 	}
 
 	/**

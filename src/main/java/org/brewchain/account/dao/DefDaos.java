@@ -3,6 +3,7 @@ package org.brewchain.account.dao;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.brewchain.bcapi.backend.ODBSupport;
 import org.fc.brewchain.bcapi.EncAPI;
+import org.fc.brewchain.p22p.core.PZPCtrl;
 
 import com.google.protobuf.Message;
 
@@ -38,6 +39,8 @@ public class DefDaos extends SessionModules<Message> {
 	@StoreDAO(target = "bc_bdb", daoClass = TxBlockDomain.class)
 	ODBSupport txblockDao;
 	
+//	@ActorRequire(scope = "global", name = "pzpctrl")
+//	PZPCtrl pzp;
 	
 	@Override
 	public void onDaoServiceAllReady() {
