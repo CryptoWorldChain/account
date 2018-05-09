@@ -22,7 +22,7 @@ public class ByteUtil {
 
 	public static String formatHexAddress(String address) {
 		if (address.startsWith("0x")) {
-			address = address.substring(2, address.length() - 2);
+			address = address.substring(2, address.length());
 		}
 		return address;
 	}
