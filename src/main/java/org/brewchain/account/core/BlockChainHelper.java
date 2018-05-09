@@ -164,7 +164,7 @@ public class BlockChainHelper implements ActorService {
 		LinkedList<BlockEntity> list = new LinkedList<BlockEntity>();
 		Iterator<Node> iterator = blockCache.iterator();
 		boolean st = false;
-		while (iterator.hasNext() || maxCount > 0) {
+		while (iterator.hasNext() && maxCount > 0) {
 			Node cur = iterator.next();
 			log.debug(String.format("%s %s ", encApi.hexEnc(cur.data), encApi.hexEnc(endBlockHash)));
 			if (endBlockHash != null && FastByteComparisons.equal(endBlockHash, cur.data)) {
@@ -218,7 +218,7 @@ public class BlockChainHelper implements ActorService {
 		LinkedList<BlockEntity> list = new LinkedList<BlockEntity>();
 		Iterator<Node> iterator = blockCache.reverseIterator();
 		boolean st = false;
-		while (iterator.hasNext() || maxCount > 0) {
+		while (iterator.hasNext() && maxCount > 0) {
 			Node cur = iterator.next();
 			if (endBlockHash != null && FastByteComparisons.equal(endBlockHash, cur.data)) {
 				st = false;
