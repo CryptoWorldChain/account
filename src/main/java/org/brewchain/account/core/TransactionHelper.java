@@ -62,7 +62,7 @@ public class TransactionHelper implements ActorService {
 	 * @param oMultiTransaction
 	 * @throws Exception
 	 */
-	public void CreateMultiTransaction(MultiTransaction.Builder oMultiTransaction) throws Exception {
+	public ByteString CreateMultiTransaction(MultiTransaction.Builder oMultiTransaction) throws Exception {
 		MultiTransaction formatMultiTransaction = verifyAndSaveMultiTransaction(oMultiTransaction);
 
 		// 保存交易到缓存中，用于广播
@@ -75,6 +75,8 @@ public class TransactionHelper implements ActorService {
 			oPendingHashMapDB.put(formatMultiTransaction.getTxHash().toByteArray(),
 					formatMultiTransaction.toByteArray());
 		}
+		
+		return formatMultiTransaction.getTxHash();
 	}
 
 	public void CreateGenesisMultiTransaction(MultiTransaction.Builder oMultiTransaction) throws Exception {

@@ -16,6 +16,7 @@ enum PTSTCommand {
     TTT = 5; // 多线程测试
 
     STM = 7; // 单交易转多重交易
+    GBX = 8; // 根据交易获取Block测试
 }
 
 message ReqTxTest {
