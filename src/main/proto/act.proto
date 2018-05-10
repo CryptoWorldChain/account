@@ -2,54 +2,6 @@ syntax = "proto3";
 
 package org.brewchain.account.gens;
 
-enum PACTModule {
-	ACT = 0; // 账户，合约，合约代码
-};
-enum PACTCommand {
-    CAC = 0; // 保存账户，合约
-    GAC = 1; // 获取账户，合约
-    UAC = 2; // 创建多重签名账户
-}
-message ReqCreateAccount {
-    string address = 1;
-    string pubKey = 2;
-}
-
-message RespCreateAccount {
-    int32 retCode = 1;
-}
-
-message ReqCreateUnionAccount {
-    string address = 1;
-    int64 max = 2;
-    int64 acceptMax = 3;
-    int32 acceptLimit = 4;
-    repeated string relAddress = 5;
-    repeated string signature = 6;
-    repeated string pubKey = 7;
-}
-
-message RespCreateUnionAccount {
-    int32 retCode = 1;
-}
-
-message ReqGetAccount {
-    string address = 1;
-}
-
-message RespGetAccount {
-    string hexAddress = 3;
-    Account account = 1;
-    int32 retCode = 2;
-}
-
-message ReqCreateContract {
-    Contract contract = 1;
-}
-
-message RespCreateContract {
-    int32 retCode = 1;
-}
 
 message Account {
     bytes address = 1;
@@ -87,6 +39,7 @@ message AccountCryptoToken {
     string name = 6; // Token的名称
     bytes owner = 7; // 所有人的账户地址
     int32 nonce = 8; // 交易次数
+    int64 ownertime = 9; // 所有人获取时间
 }
 
 message Contract {
@@ -97,8 +50,3 @@ message Contract {
     bytes codeHash = 5;
     bytes code = 6;
 }
-
-// 统计
-// ERC 721 - 账户接口
-//  加/减/获取
-// ERC 721 - CWV购买交易

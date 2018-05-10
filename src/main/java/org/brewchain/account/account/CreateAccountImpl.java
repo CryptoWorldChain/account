@@ -1,10 +1,10 @@
 package org.brewchain.account.account;
 
 import org.brewchain.account.core.AccountHelper;
-import org.brewchain.account.gens.Act.PACTCommand;
-import org.brewchain.account.gens.Act.PACTModule;
-import org.brewchain.account.gens.Act.ReqCreateAccount;
-import org.brewchain.account.gens.Act.RespCreateAccount;
+import org.brewchain.account.gens.Actimpl.PACTCommand;
+import org.brewchain.account.gens.Actimpl.PACTModule;
+import org.brewchain.account.gens.Actimpl.ReqCreateAccount;
+import org.brewchain.account.gens.Actimpl.RespCreateAccount;
 import org.brewchain.account.util.ByteUtil;
 import org.fc.brewchain.bcapi.EncAPI;
 

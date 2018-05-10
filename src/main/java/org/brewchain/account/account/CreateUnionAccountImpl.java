@@ -11,10 +11,10 @@ import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;
 
-import org.brewchain.account.gens.Act.PACTCommand;
-import org.brewchain.account.gens.Act.PACTModule;
-import org.brewchain.account.gens.Act.ReqCreateUnionAccount;
-import org.brewchain.account.gens.Act.RespCreateUnionAccount;
+import org.brewchain.account.gens.Actimpl.PACTCommand;
+import org.brewchain.account.gens.Actimpl.PACTModule;
+import org.brewchain.account.gens.Actimpl.ReqCreateUnionAccount;
+import org.brewchain.account.gens.Actimpl.RespCreateUnionAccount;
 import org.brewchain.account.gens.Tx.SingleTransaction;
 
 import lombok.Data;
