@@ -159,6 +159,8 @@ public class TransactionHelper implements ActorService {
 				oiTransactionActuator = new ActuatorCallInternalFunction(oAccountHelper, null, null, encApi);
 			} else if (oTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("05"))) {
 				oiTransactionActuator = new ActuatorCryptoTokenTransaction(oAccountHelper, null, null, encApi);
+			} else if (oTransaction.getTxBody().getOutputsCount() == 0) {
+				oiTransactionActuator = new ActuatorCreateContract(oAccountHelper, null, null, encApi);
 			} else {
 				oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, null, null, encApi);
 			}
@@ -483,8 +485,7 @@ public class TransactionHelper implements ActorService {
 		}
 		// oMultiTransactionBodyImpl.setSignatures(index, value)
 		for (MultiTransactionSignatureImpl signature : oMultiTransactionBodyImpl.getSignaturesList()) {
-			MultiTransactionSignature.Builder oMultiTransactionSignature = MultiTransactionSignature
-					.newBuilder();
+			MultiTransactionSignature.Builder oMultiTransactionSignature = MultiTransactionSignature.newBuilder();
 			oMultiTransactionSignature.setPubKey(signature.getPubKey());
 			oMultiTransactionSignature.setSignature(signature.getSignature());
 			oMultiTransactionBody.addSignatures(oMultiTransactionSignature);
@@ -558,6 +559,8 @@ public class TransactionHelper implements ActorService {
 			oiTransactionActuator = new ActuatorCallInternalFunction(oAccountHelper, null, null, encApi);
 		} else if (oMultiTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("05"))) {
 			oiTransactionActuator = new ActuatorCryptoTokenTransaction(oAccountHelper, null, null, encApi);
+		} else if (oMultiTransaction.getTxBody().getOutputsCount() == 0) {
+			oiTransactionActuator = new ActuatorCreateContract(oAccountHelper, null, null, encApi);
 		} else {
 			oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, null, null, encApi);
 		}

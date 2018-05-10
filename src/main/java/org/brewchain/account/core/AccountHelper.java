@@ -4,12 +4,14 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.util.FastByteComparisons;
 import org.brewchain.account.util.OEntityBuilder;
+import org.brewchain.bcapi.backend.ODBException;
 import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.brewchain.account.gens.Act.Account;
@@ -17,6 +19,8 @@ import org.brewchain.account.gens.Act.AccountCryptoToken;
 import org.brewchain.account.gens.Act.AccountCryptoValue;
 import org.brewchain.account.gens.Act.AccountTokenValue;
 import org.brewchain.account.gens.Act.AccountValue;
+import org.brewchain.account.gens.Act.Contract;
+import org.brewchain.account.gens.Act.ContractValue;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;
@@ -77,6 +81,27 @@ public class AccountHelper implements ActorService {
 	}
 
 	/**
+	 * 创建合约账户
+	 * 
+	 * @param address
+	 * @param code
+	 * @return
+	 */
+	public synchronized Contract createContractAccount(byte[] address, byte[] code) {
+		Contract.Builder oContract = Contract.newBuilder();
+		ContractValue.Builder oContractValue = ContractValue.newBuilder();
+		oContract.setAddress(ByteString.copyFrom(address));
+
+		oContractValue.setBalance(KeyConstant.EMPTY_BALANCE.intValue());
+		oContractValue.setNonce(KeyConstant.EMPTY_NONCE.intValue());
+		oContractValue.setCode(ByteString.copyFrom(code));
+		oContractValue.setCodeHash(ByteString.copyFrom(encApi.sha3Encode(code)));
+		oContract.setValue(oContractValue);
+		putContractValue(address, oContractValue.build());
+		return oContract.build();
+	}
+
+	/**
 	 * 移除账户。删除后不可恢复。
 	 * 
 	 * @param address
@@ -116,6 +141,24 @@ public class AccountHelper implements ActorService {
 			// TODO: handle exception
 		}
 		return null;
+	}
+
+	/**
+	 * 获取合约信息
+	 * 
+	 * @param addr
+	 * @return
+	 * @throws Exception
+	 */
+	public Contract GetContract(byte[] addr) throws Exception {
+		OValue oValue = dao.getContractDao().get(OEntityBuilder.byteKey2OKey(addr)).get();
+		ContractValue.Builder oContractValue = ContractValue.newBuilder();
+		oContractValue.mergeFrom(oValue.getExtdata());
+
+		Contract.Builder oContract = Contract.newBuilder();
+		oContract.setAddress(ByteString.copyFrom(addr));
+		oContract.setValue(oContractValue);
+		return oContract.build();
 	}
 
 	/**
@@ -397,6 +440,11 @@ public class AccountHelper implements ActorService {
 	private void putAccountValue(byte[] addr, AccountValue oAccountValue) {
 		dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(addr),
 				OEntityBuilder.byteValue2OValue(oAccountValue.toByteArray()));
+	}
+
+	private void putContractValue(byte[] addr, ContractValue oContractValue) {
+		dao.getContractDao().put(OEntityBuilder.byteKey2OKey(addr),
+				OEntityBuilder.byteValue2OValue(oContractValue.toByteArray()));
 	}
 
 	public void BatchPutAccounts(LinkedList<OKey> keys, LinkedList<OValue> values) {
