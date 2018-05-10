@@ -2,10 +2,7 @@ package org.brewchain.account.transaction;
 
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.gens.Tx.MultiTransaction;
-import org.brewchain.account.gens.Tx.PTXTCommand;
-import org.brewchain.account.gens.Tx.PTXTModule;
-import org.brewchain.account.gens.Tx.ReqCreateMultiTransaction;
-import org.brewchain.account.gens.Tx.RespCreateTransaction;
+import org.brewchain.account.gens.Tximpl.*;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import lombok.Data;
@@ -41,8 +38,7 @@ public class SaveMultiTransactionImpl extends SessionModules<ReqCreateMultiTrans
 		RespCreateTransaction.Builder oRespCreateTx = RespCreateTransaction.newBuilder();
 
 		try {
-			MultiTransaction.Builder oTransaction = MultiTransaction.parseFrom(encApi.hexDec(pb.getMultiTxString()))
-					.toBuilder();
+			MultiTransaction.Builder oTransaction = transactionHelper.parse(pb.getTransaction());
 			transactionHelper.CreateMultiTransaction(oTransaction);
 			oRespCreateTx.setRetCode(1);
 		} catch (Exception e) {

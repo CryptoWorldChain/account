@@ -1,12 +1,18 @@
 package org.brewchain.account.transaction;
 
+import java.util.Iterator;
+
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.gens.Tx.MultiTransaction;
-import org.brewchain.account.gens.Tx.PTXTCommand;
-import org.brewchain.account.gens.Tx.PTXTModule;
-import org.brewchain.account.gens.Tx.ReqGetTxByHash;
-import org.brewchain.account.gens.Tx.RespGetTxByHash;
+import org.brewchain.account.gens.Tx.MultiTransactionBody;
+import org.brewchain.account.gens.Tx.MultiTransactionInput;
+import org.brewchain.account.gens.Tx.MultiTransactionOutput;
+import org.brewchain.account.gens.Tx.MultiTransactionSignature;
+import org.brewchain.account.gens.Tximpl.*;
+import org.brewchain.account.util.ByteUtil;
 import org.fc.brewchain.bcapi.EncAPI;
+
+import com.google.protobuf.ByteString;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -41,8 +47,10 @@ public class GetTxByTxHashImpl extends SessionModules<ReqGetTxByHash> {
 		RespGetTxByHash.Builder oRespGetTxByHash = RespGetTxByHash.newBuilder();
 
 		try {
-			MultiTransaction oTransaction = transactionHelper.GetTransaction(encApi.hexDec(pb.getHexTxHash()));
-			oRespGetTxByHash.setTransaction(oTransaction);
+			MultiTransaction oTransaction = transactionHelper
+					.GetTransaction(encApi.hexDec(ByteUtil.formatHexAddress(pb.getHexTxHash())));
+			MultiTransactionImpl.Builder oMultiTransactionImpl = transactionHelper.parseToImpl(oTransaction);
+			oRespGetTxByHash.setTransaction(oMultiTransactionImpl);
 			oRespGetTxByHash.setRetCode(1);
 		} catch (Exception e) {
 			oRespGetTxByHash.setRetCode(-1);

@@ -4,10 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.gens.Tx.MultiTransaction;
-import org.brewchain.account.gens.Tx.PTXTCommand;
-import org.brewchain.account.gens.Tx.PTXTModule;
-import org.brewchain.account.gens.Tx.ReqSyncTx;
-import org.brewchain.account.gens.Tx.RespSyncTx;
+import org.brewchain.account.gens.Tximpl.*;
 
 import com.google.protobuf.ByteString;
 
@@ -41,12 +38,12 @@ public class SyncTransactionImpl extends SessionModules<ReqSyncTx> {
 	public void onPBPacket(final FramePacket pack, final ReqSyncTx pb, final CompleteHandler handler) {
 		RespSyncTx.Builder oRespSyncTx = RespSyncTx.newBuilder();
 		oRespSyncTx.setRetCode(1);
-		List<ByteString> list = new ArrayList<ByteString>();
-		for (MultiTransaction oTransaction : pb.getTxsList()) {
+		for (MultiTransactionImpl oTransaction : pb.getTxsList()) {
 			try {
-				transactionHelper.SyncTransaction(oTransaction.toBuilder());
+				MultiTransaction.Builder oMultiTransaction = transactionHelper.parse(oTransaction);
+				transactionHelper.SyncTransaction(oMultiTransaction);
 			} catch (Exception e) {
-				list.add(oTransaction.getTxHash());
+				oRespSyncTx.addErrList(oTransaction.getTxHash());
 				oRespSyncTx.setRetCode(-1);
 			}
 		}

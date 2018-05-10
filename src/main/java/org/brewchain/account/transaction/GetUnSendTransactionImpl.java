@@ -4,10 +4,7 @@ import java.util.List;
 
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.gens.Tx.MultiTransaction;
-import org.brewchain.account.gens.Tx.PTXTCommand;
-import org.brewchain.account.gens.Tx.PTXTModule;
-import org.brewchain.account.gens.Tx.ReqGetTxToSync;
-import org.brewchain.account.gens.Tx.RespGetTxToSync;
+import org.brewchain.account.gens.Tximpl.*;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -42,7 +39,7 @@ public class GetUnSendTransactionImpl extends SessionModules<ReqGetTxToSync> {
 		try {
 			List<MultiTransaction> txs = transactionHelper.getWaitSendTx(pb.getTotal());
 			for (int i = 0; i < txs.size(); i++) {
-				oRespGetTxToSync.setTxs(i, txs.get(i).toBuilder());
+				oRespGetTxToSync.setTxs(i, transactionHelper.parseToImpl(txs.get(i)));
 			}
 			oRespGetTxToSync.setTxCount(txs.size());
 		} catch (Exception e) {

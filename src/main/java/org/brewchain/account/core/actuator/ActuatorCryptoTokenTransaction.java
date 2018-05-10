@@ -1,5 +1,6 @@
 package org.brewchain.account.core.actuator;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -153,6 +154,7 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 							.toBuilder();
 					oAccountCryptoToken.setOwner(oOutput.getAddress());
 					oAccountCryptoToken.setNonce(oAccountCryptoToken.getNonce() + 1);
+					oAccountCryptoToken.setOwnertime((new Date()).getTime());
 					oAccountCryptoValue.addTokens(oAccountCryptoToken.build());
 					receiverAccountValue.setCryptos(k, oAccountCryptoValue);
 				}

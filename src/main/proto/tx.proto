@@ -8,66 +8,6 @@ package org.brewchain.account.gens;
 // bc_wait_tx -- 已确认未block交易
 // 
 
-enum PTXTModule {
-    TXT = 0; // 交易
-};
-
-enum PTXTCommand {
-    STX = 0; // 保存交易
-    GUT = 1; // 获取未发送交易
-	AYC = 2; // 同步交易
-	GTX = 3; // 获取交易
-	MTX = 4; // 保存多重交易
-
-	// 暂时不用
-	// CTX = 3; // 节点确认交易
-	// DTX = 4; // 节点回滚交易 
-	// BTX = 5; // 获取已确认未block交易
-}
-
-message ReqCreateSingleTransaction {
-	// SingleTransaction transaction = 1;
-	string singleTxString = 1;
-}
-
-message ReqCreateMultiTransaction {
-	// MultiTransaction transaction = 1;
-	string multiTxString = 1;
-}
-
-message RespCreateTransaction {
-    string txHash = 1;
-	int32 retCode = 2;
-	string retMsg = 3;
-}
-
-message ReqGetTxToSync {
-	int32 total = 1;
-}
-
-message RespGetTxToSync {
-	repeated MultiTransaction txs = 1;
-	int32 txCount = 2;
-}
-
-message ReqSyncTx {
-	repeated MultiTransaction txs = 1;
-}
-
-message RespSyncTx {
-	int32 retCode = 1;
-	repeated bytes errList = 2;
-}
-
-message ReqGetTxByHash {
-	string hexTxHash = 1;
-}
-
-message RespGetTxByHash {
-	MultiTransaction transaction = 1;
-	int32 retCode = 2;
-}
-
 message SingleTransaction {
 	bytes txHash = 1;
 	int32 nonce = 2;
@@ -123,5 +63,3 @@ message MultiTransactionSignature {
 	string signature = 1;
 	string pubKey = 2;
 }
-
-// 交易属于那个块

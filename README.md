@@ -28,8 +28,6 @@ Sys         [sys.proto](http://cwvi.club:9999/chaincore/account/blob/master/src/
 	sys/pbacb.do
 
 # 交易API
-## 创建交易
-	txt/pbstx.do
 ## 创建多重交易
 	txt/pbmtx.do
 ## 获取未广播交易
