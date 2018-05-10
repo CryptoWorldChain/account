@@ -66,7 +66,12 @@ public class CryptoTokenTest extends SessionModules<ReqTxTest> implements ActorS
 			coinBase = "1234";
 		}
 
-		blockHelper.CreateGenesisBlock(new LinkedList<MultiTransaction>(), ByteUtil.EMPTY_BYTE_ARRAY);
+		try {
+			blockHelper.CreateGenesisBlock(new LinkedList<MultiTransaction>(), ByteUtil.EMPTY_BYTE_ARRAY);
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		// 创建账户1
 		KeyPairs oKeyPairs1 = encApi.genKeys();
 		// 创建账户1

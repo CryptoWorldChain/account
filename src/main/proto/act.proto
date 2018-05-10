@@ -53,4 +53,5 @@ message ContractValue {
     bytes storage = 3;
     bytes codeHash = 4;
     bytes code = 5;
+    bytes data = 6;
 }

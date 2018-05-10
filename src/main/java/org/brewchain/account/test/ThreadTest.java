@@ -71,7 +71,12 @@ public class ThreadTest extends SessionModules<ReqTTT> implements ActorService {
 		List<KeyPairs> listKeys = new ArrayList<KeyPairs>();
 		if (pb.getBlock() == 1) {
 			// 创建创世块
-			blockHelper.CreateGenesisBlock(new LinkedList<MultiTransaction>(), ByteUtil.EMPTY_BYTE_ARRAY);
+			try {
+				blockHelper.CreateGenesisBlock(new LinkedList<MultiTransaction>(), ByteUtil.EMPTY_BYTE_ARRAY);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 
 		// 创建账户 100 个
