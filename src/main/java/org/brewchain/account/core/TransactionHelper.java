@@ -83,7 +83,7 @@ public class TransactionHelper implements ActorService {
 		}
 
 		// {node} {component} {opt} {type} {msg}
-		log.info(String.format("%s %s %s %s 创建交易[%s]", KeyConstant.nodeName, "account", "create", "transaction",
+		log.info(String.format("LOGFILTER %s %s %s %s 创建交易[%s]", KeyConstant.nodeName, "account", "create", "transaction",
 				encApi.hexEnc(formatMultiTransaction.getTxHash().toByteArray())));
 
 		return formatMultiTransaction.getTxHash();

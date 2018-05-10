@@ -84,6 +84,14 @@ public class BlockChainHelper implements ActorService {
 		throw new Exception(String.format("缺失创世块，当前第一个块索引 %s", oBlockEntity.getHeader().getNumber()));
 	}
 
+	public boolean isExistsGenesisBlock() throws Exception {
+		BlockEntity oBlockEntity = getBlock(blockCache.first()).build();
+		if (oBlockEntity.getHeader().getNumber() == KeyConstant.GENESIS_NUMBER) {
+			return true;
+		}
+		return false;
+	}
+
 	/**
 	 * 向区块链中加入新的区块
 	 * 
@@ -228,7 +236,7 @@ public class BlockChainHelper implements ActorService {
 				st = true;
 				list.add(getBlock(cur.data).build());
 				maxCount--;
-			}  
+			}
 		}
 		return list;
 	}

@@ -99,9 +99,6 @@ public class BlockHelper implements ActorService {
 
 		// 获取本节点的最后一块Block
 		BlockEntity.Builder oBestBlockEntity = GetBestBlock();
-
-		log.debug(String.format("最新Block number %s", oBestBlockEntity.getHeader().getNumber()));
-
 		BlockHeader.Builder oBestBlockHeader = oBestBlockEntity.getHeader().toBuilder();
 
 		// 构造Block Header
@@ -128,7 +125,7 @@ public class BlockHelper implements ActorService {
 		oBlockEntity.setHeader(oBlockHeader);
 		oBlockEntity.setBody(oBlockBody);
 
-		log.info(String.format("%s %s %s %s 创建区块[%s]", KeyConstant.nodeName, "account", "create", "block",
+		log.info(String.format("LOGFILTER %s %s %s %s 创建区块[%s]", KeyConstant.nodeName, "account", "create", "block",
 				encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray())));
 
 		return oBlockEntity;
@@ -139,8 +136,13 @@ public class BlockHelper implements ActorService {
 	 * 
 	 * @param txs
 	 * @param extraData
+	 * @throws Exception
 	 */
-	public void CreateGenesisBlock(LinkedList<MultiTransaction> txs, byte[] extraData) {
+	public void CreateGenesisBlock(LinkedList<MultiTransaction> txs, byte[] extraData) throws Exception {
+		if (blockChainHelper.isExistsGenesisBlock()) {
+			throw new Exception("不允许重复创建创世块");
+		}
+
 		BlockEntity.Builder oBlockEntity = BlockEntity.newBuilder();
 		BlockHeader.Builder oBlockHeader = BlockHeader.newBuilder();
 		BlockBody.Builder oBlockBody = BlockBody.newBuilder();
@@ -233,7 +235,7 @@ public class BlockHelper implements ActorService {
 
 		// 应用奖励
 		// applyReward(oBlockEntity);
-		log.info(String.format("%s %s %s %s 执行区块[%s]", KeyConstant.nodeName, "account", "apply", "block",
+		log.info(String.format("LOGFILTER %s %s %s %s 执行区块[%s]", KeyConstant.nodeName, "account", "apply", "block",
 				encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray())));
 	}
 
