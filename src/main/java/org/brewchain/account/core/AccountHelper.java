@@ -21,6 +21,8 @@ import org.brewchain.account.gens.Act.AccountTokenValue;
 import org.brewchain.account.gens.Act.AccountValue;
 import org.brewchain.account.gens.Act.Contract;
 import org.brewchain.account.gens.Act.ContractValue;
+import org.brewchain.account.gens.Act.ICO;
+import org.brewchain.account.gens.Act.ICOValue;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;
@@ -435,6 +437,38 @@ public class AccountHelper implements ActorService {
 
 		oAccountValue.addCryptos(oAccountCryptoValue);
 		putAccountValue(addr, oAccountValue.build());
+	}
+
+	public void ICO(byte[] addr, String token) throws Exception {
+		OValue oValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN)).get();
+		ICO.Builder oICO = ICO.parseFrom(oValue.getExtdata().toByteArray()).toBuilder();
+		ICOValue.Builder oICOValue = ICOValue.newBuilder();
+		oICOValue.setAddress(ByteString.copyFrom(addr));
+		oICOValue.setTimestamp((new Date()).getTime());
+		oICOValue.setToken(token);
+		oICO.addValue(oICOValue);
+
+		dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN),
+				OEntityBuilder.byteValue2OValue(oICO.build().toByteArray()));
+	}
+
+	/**
+	 * 判断token是否已经发行
+	 * 
+	 * @param token
+	 * @return
+	 * @throws Exception
+	 */
+	public boolean isExistsToken(String token) throws Exception {
+		OValue oValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN)).get();
+		ICO oICO = ICO.parseFrom(oValue.getExtdata().toByteArray());
+
+		for (ICOValue oICOValue : oICO.getValueList()) {
+			if (oICOValue.getToken().equals(token)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private void putAccountValue(byte[] addr, AccountValue oAccountValue) {

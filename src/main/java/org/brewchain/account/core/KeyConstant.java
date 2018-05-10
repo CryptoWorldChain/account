@@ -15,7 +15,8 @@ public class KeyConstant {
 	public static final byte[] GENESIS_HASH = String.valueOf(GENESIS_NUMBER).getBytes();
 	public static final int DEFAULT_BLOCK_TX_COUNT = 1000;
 	public static final byte[] DB_CURRENT_BLOCK = "DB_CURRENT_BLOCK_y0yXF4880c".getBytes();
-	
+	public static final byte[] DB_EXISTS_TOKEN = "DB_EXISTS_TOKEN_7513d2287ce94891ba227ba83aa6fe51".getBytes();
+
 	public static boolean isStart = false;
 	public static String nodeName = "";
 }

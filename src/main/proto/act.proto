@@ -55,3 +55,12 @@ message ContractValue {
     bytes code = 5;
     bytes data = 6;
 }
+
+message ICO {
+    repeated ICOValue value = 1;
+}
+message ICOValue {
+    string token = 1;
+    bytes address = 2;
+    int64 timestamp = 3;
+}
