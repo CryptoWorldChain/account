@@ -1,6 +1,7 @@
 package org.brewchain.account.dao;
 
 import org.apache.felix.ipojo.annotations.Instantiate;
+import org.brewchain.account.gens.Actimpl.PACTModule;
 import org.brewchain.bcapi.backend.ODBSupport;
 import org.fc.brewchain.bcapi.EncAPI;
 import org.fc.brewchain.p22p.core.PZPCtrl;
@@ -100,4 +101,16 @@ public class DefDaos extends SessionModules<Message> {
 	public ODBSupport getTxblockDao() {
 		return txblockDao;
 	}
+	
+	@Override
+	public String[] getCmds() {
+		return new String[] { "DEFDAOS" };
+	}
+
+	@Override
+	public String getModule() {
+		return PACTModule.ACT.name();
+	}
+	
+	
 }

@@ -8,10 +8,16 @@ import org.apache.felix.ipojo.annotations.Validate;
 import org.brewchain.account.core.BlockChainHelper;
 import org.brewchain.account.core.KeyConstant;
 import org.brewchain.account.dao.DefDaos;
+import org.brewchain.account.gens.Actimpl.PACTCommand;
+import org.brewchain.account.gens.Actimpl.PACTModule;
+import org.brewchain.account.gens.Actimpl.ReqCreateAccount;
 import org.fc.brewchain.p22p.node.Network;
+
+import com.google.protobuf.Message;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import onight.oapi.scala.commons.SessionModules;
 import onight.osgi.annotation.NActorProvider;
 import onight.tfw.ntrans.api.ActorService;
 import onight.tfw.ntrans.api.annotation.ActorRequire;
@@ -20,7 +26,17 @@ import onight.tfw.ntrans.api.annotation.ActorRequire;
 @Provides(specifications = { ActorService.class }, strategy = "SINGLETON")
 @Slf4j
 @Data
-public class ApplicationStart implements ActorService {
+public class ApplicationStart extends SessionModules<Message>  {
+	
+	@Override
+	public String[] getCmds() {
+		return new String[] { "___" };
+	}
+
+	@Override
+	public String getModule() {
+		return PACTModule.ACT.name();
+	}
 	@ActorRequire(name = "BlockChain_Helper", scope = "global")
 	BlockChainHelper blockChainHelper;
 	@ActorRequire(name = "Def_Daos", scope = "global")
