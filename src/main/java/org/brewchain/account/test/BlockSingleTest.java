@@ -68,8 +68,12 @@ public class BlockSingleTest extends SessionModules<ReqTxTest> implements ActorS
 		if (coinBase == null) {
 			coinBase = "1234";
 		}
+		try {
+			blockHelper.CreateGenesisBlock(new LinkedList<MultiTransaction>(), ByteUtil.EMPTY_BYTE_ARRAY);
 
-		blockHelper.CreateGenesisBlock(new LinkedList<MultiTransaction>(), ByteUtil.EMPTY_BYTE_ARRAY);
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
 		BlockEntity.Builder oBlockEntity;
 		try {
 			oBlockEntity = blockHelper.GetBestBlock();
