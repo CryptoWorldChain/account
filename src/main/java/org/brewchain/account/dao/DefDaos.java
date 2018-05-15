@@ -36,13 +36,13 @@ public class DefDaos extends SessionModules<Message> {
 
 	@StoreDAO(target = "bc_bdb", daoClass = BlockDomain.class)
 	ODBSupport blockDao;
-	
+
 	@StoreDAO(target = "bc_bdb", daoClass = TxBlockDomain.class)
 	ODBSupport txblockDao;
-	
-//	@ActorRequire(scope = "global", name = "pzpctrl")
-//	PZPCtrl pzp;
-	
+
+	// @ActorRequire(scope = "global", name = "pzpctrl")
+	// PZPCtrl pzp;
+
 	@Override
 	public void onDaoServiceAllReady() {
 		// log.debug("EncAPI==" + enc);
@@ -93,7 +93,7 @@ public class DefDaos extends SessionModules<Message> {
 	public ODBSupport getTxsDao() {
 		return txsDao;
 	}
-	
+
 	public void setTxblockDao(DomainDaoSupport txblockDao) {
 		this.txblockDao = (ODBSupport) txblockDao;
 	}
@@ -101,7 +101,7 @@ public class DefDaos extends SessionModules<Message> {
 	public ODBSupport getTxblockDao() {
 		return txblockDao;
 	}
-	
+
 	@Override
 	public String[] getCmds() {
 		return new String[] { "DEFDAOS" };
@@ -111,6 +111,27 @@ public class DefDaos extends SessionModules<Message> {
 	public String getModule() {
 		return PACTModule.ACT.name();
 	}
-	
-	
+
+	public boolean isReady() {
+		if (blockDao != null 
+				&& BlockDomain.class.isInstance(blockDao)
+				&& blockDao.getDaosupport() != null
+				&& txblockDao != null 
+				&& TxBlockDomain.class.isInstance(txblockDao)
+				&& txblockDao.getDaosupport() != null
+				&& txsDao != null 
+				&& TxSecondaryDomain.class.isInstance(txsDao)
+				&& txsDao.getDaosupport() != null
+				&& contractDao != null 
+				&& ContractDomain.class.isInstance(contractDao)
+				&& contractDao.getDaosupport() != null
+				&& accountDao != null
+				&& AccoutDomain.class.isInstance(accountDao)
+				&& accountDao.getDaosupport() != null) {
+			;
+			return true;
+		}
+		return false;
+	}
+
 }

@@ -3,6 +3,7 @@ package org.brewchain.account;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import org.apache.commons.collections.functors.WhileClosure;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Validate;
 import org.brewchain.account.core.BlockChainHelper;
@@ -26,8 +27,8 @@ import onight.tfw.ntrans.api.annotation.ActorRequire;
 @Provides(specifications = { ActorService.class }, strategy = "SINGLETON")
 @Slf4j
 @Data
-public class ApplicationStart extends SessionModules<Message>  {
-	
+public class ApplicationStart extends SessionModules<Message> {
+
 	@Override
 	public String[] getCmds() {
 		return new String[] { "___" };
@@ -37,6 +38,7 @@ public class ApplicationStart extends SessionModules<Message>  {
 	public String getModule() {
 		return PACTModule.ACT.name();
 	}
+
 	@ActorRequire(name = "BlockChain_Helper", scope = "global")
 	BlockChainHelper blockChainHelper;
 	@ActorRequire(name = "Def_Daos", scope = "global")
@@ -45,23 +47,43 @@ public class ApplicationStart extends SessionModules<Message>  {
 	@Validate
 	public void startup() {
 		try {
-			final Timer timer = new Timer();
-			timer.schedule(new TimerTask() {
-				@Override
-				public void run() {
-					// copy db is db is not exists
-
-					// load block
-					blockChainHelper.onStart();
-
-					// get node
-					// Network oNetwork = dao.getPzp().networkByID("raft");
-					// KeyConstant.nodeName = oNetwork.root().name();
-					KeyConstant.nodeName = "测试节点01";
-				}
-			}, 1000 * 20);
+			new Thread(new AccountStartThread()).start();
+//			final Timer timer = new Timer();
+//			timer.schedule(new TimerTask() {
+//				@Override
+//				public void run() {
+//					// copy db is db is not exists
+//
+//					// load block
+//					blockChainHelper.onStart();
+//
+//					// get node
+//					// Network oNetwork = dao.getPzp().networkByID("raft");
+//					// KeyConstant.nodeName = oNetwork.root().name();
+//					KeyConstant.nodeName = "测试节点01";
+//				}
+//			}, 1000 * 20);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	class AccountStartThread extends Thread {
+		@Override
+		public void run() {
+			try {
+				while (dao == null || !dao.isReady()) {
+					log.debug("等待dao注入完成...");
+					Thread.sleep(1000);
+				}
+				log.debug("dao注入完成，开始加载block");
+				blockChainHelper.onStart();
+				KeyConstant.nodeName = "测试节点01";
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
 	}
 }
