@@ -77,6 +77,9 @@ public class ApplicationStart extends SessionModules<Message> {
 					Thread.sleep(1000);
 				}
 				log.debug("dao注入完成，开始加载block");
+				// 如果是第一次启动，创建db目录
+				
+				log.debug("导入数据库");
 				blockChainHelper.onStart();
 				KeyConstant.nodeName = "测试节点01";
 			} catch (InterruptedException e) {

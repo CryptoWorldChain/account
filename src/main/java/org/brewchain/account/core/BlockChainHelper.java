@@ -85,6 +85,9 @@ public class BlockChainHelper implements ActorService {
 	}
 
 	public boolean isExistsGenesisBlock() throws Exception {
+		if (blockCache.first()== null) {
+			return false;
+		}
 		BlockEntity oBlockEntity = getBlock(blockCache.first()).build();
 		if (oBlockEntity.getHeader().getNumber() == KeyConstant.GENESIS_NUMBER) {
 			return true;
