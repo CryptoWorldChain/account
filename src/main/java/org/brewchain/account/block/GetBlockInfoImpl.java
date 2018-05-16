@@ -3,10 +3,10 @@ package org.brewchain.account.block;
 import org.brewchain.account.core.BlockChainHelper;
 import org.brewchain.account.core.WaitBlockHashMapDB;
 import org.brewchain.account.core.WaitSendHashMapDB;
-import org.brewchain.account.gens.Block.PBCTCommand;
-import org.brewchain.account.gens.Block.PBCTModule;
-import org.brewchain.account.gens.Block.ReqBlockInfo;
-import org.brewchain.account.gens.Block.RespBlockInfo;
+import org.brewchain.account.gens.Blockimpl.PBCTCommand;
+import org.brewchain.account.gens.Blockimpl.PBCTModule;
+import org.brewchain.account.gens.Blockimpl.ReqBlockInfo;
+import org.brewchain.account.gens.Blockimpl.RespBlockInfo;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import lombok.Data;

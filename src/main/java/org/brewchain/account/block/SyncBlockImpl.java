@@ -3,10 +3,16 @@ package org.brewchain.account.block;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.gens.Block.BlockEntity;
-import org.brewchain.account.gens.Block.PBCTCommand;
-import org.brewchain.account.gens.Block.PBCTModule;
-import org.brewchain.account.gens.Block.ReqSyncBlock;
-import org.brewchain.account.gens.Block.RespSyncBlock;
+import org.brewchain.account.gens.Block.BlockHeader;
+import org.brewchain.account.gens.Blockimpl.BlockHeaderImpl;
+import org.brewchain.account.gens.Blockimpl.PBCTCommand;
+import org.brewchain.account.gens.Blockimpl.PBCTModule;
+import org.brewchain.account.gens.Blockimpl.ReqSyncBlock;
+import org.brewchain.account.gens.Blockimpl.RespSyncBlock;
+import org.brewchain.account.util.ByteUtil;
+import org.fc.brewchain.bcapi.EncAPI;
+
+import com.google.protobuf.ByteString;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +31,8 @@ public class SyncBlockImpl extends SessionModules<ReqSyncBlock> {
 	BlockHelper blockHelper;
 	@ActorRequire(name = "Transaction_Helper", scope = "global")
 	TransactionHelper transactionHelper;
+	@ActorRequire(name = "bc_encoder", scope = "global")
+	EncAPI encApi;
 
 	@Override
 	public String[] getCmds() {
@@ -42,7 +50,23 @@ public class SyncBlockImpl extends SessionModules<ReqSyncBlock> {
 
 		try {
 			BlockEntity.Builder oBlockEntity = BlockEntity.newBuilder();
-			oBlockEntity.setHeader(pb.getHeader());
+
+			BlockHeader.Builder oBlockHeader = BlockHeader.newBuilder();
+			oBlockHeader.setBlockHash(ByteString.copyFrom(encApi.hexDec(pb.getHeader().getBlockHash())));
+			oBlockHeader.setCoinbase(ByteString.copyFrom(encApi.hexDec(pb.getHeader().getCoinbase())));
+			oBlockHeader.setExtraData(ByteString.copyFrom(encApi.hexDec(pb.getHeader().getExtraData())));
+			oBlockHeader.setNonce(ByteString.copyFrom(encApi.hexDec(pb.getHeader().getNonce())));
+			oBlockHeader.setNumber(pb.getHeader().getNumber());
+			oBlockHeader.setParentHash(ByteString.copyFrom(encApi.hexDec(pb.getHeader().getParentHash())));
+			oBlockHeader.setReward(ByteString.copyFrom(ByteUtil.intToBytes(pb.getHeader().getReward())));
+			oBlockHeader.setSliceId(pb.getHeader().getSliceId());
+			oBlockHeader.setTimestamp(pb.getHeader().getTimestamp());
+
+			for (String oTxhash : pb.getHeader().getTxHashsList()) {
+				oBlockHeader.addTxHashs(ByteString.copyFrom(encApi.hexDec(oTxhash)));
+			}
+
+			oBlockEntity.setHeader(oBlockHeader);
 			// 如果节点已经启动，则重新加载全部block
 			blockHelper.ApplyBlock(oBlockEntity.build());
 			oRespSyncBlock.setRetCode(1);

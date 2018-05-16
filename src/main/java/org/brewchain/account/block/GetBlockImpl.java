@@ -3,10 +3,12 @@ package org.brewchain.account.block;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.gens.Block.BlockEntity;
-import org.brewchain.account.gens.Block.PBCTCommand;
-import org.brewchain.account.gens.Block.PBCTModule;
-import org.brewchain.account.gens.Block.ReqGetBlock;
-import org.brewchain.account.gens.Block.RespGetBlock;
+import org.brewchain.account.gens.Blockimpl.BlockHeaderImpl;
+import org.brewchain.account.gens.Blockimpl.PBCTCommand;
+import org.brewchain.account.gens.Blockimpl.PBCTModule;
+import org.brewchain.account.gens.Blockimpl.ReqGetBlock;
+import org.brewchain.account.gens.Blockimpl.RespGetBlock;
+import org.brewchain.account.util.ByteUtil;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;
@@ -55,7 +57,23 @@ public class GetBlockImpl extends SessionModules<ReqGetBlock> {
 			try {
 				oBlockEntity = blockHelper.CreateNewBlock(pb.getTxCount(), encApi.hexDec(pb.getExtraData()),
 						ByteString.copyFromUtf8(coinBase).toByteArray());
-				oRespGetBlock.setHeader(oBlockEntity.getHeader());
+
+				BlockHeaderImpl.Builder oBlockHeaderImpl = BlockHeaderImpl.newBuilder();
+				oBlockHeaderImpl.setBlockHash(encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()));
+				oBlockHeaderImpl.setCoinbase(encApi.hexEnc(oBlockEntity.getHeader().getCoinbase().toByteArray()));
+				oBlockHeaderImpl.setExtraData(encApi.hexEnc(oBlockEntity.getHeader().getExtraData().toByteArray()));
+				oBlockHeaderImpl.setNonce(encApi.hexEnc(oBlockEntity.getHeader().getNonce().toByteArray()));
+				oBlockHeaderImpl.setNumber(oBlockEntity.getHeader().getNumber());
+				oBlockHeaderImpl.setParentHash(encApi.hexEnc(oBlockEntity.getHeader().getParentHash().toByteArray()));
+				oBlockHeaderImpl.setReward(ByteUtil.byteArrayToInt(oBlockEntity.getHeader().getReward().toByteArray()));
+				oBlockHeaderImpl.setSliceId(oBlockEntity.getHeader().getSliceId());
+				oBlockHeaderImpl.setTimestamp(oBlockEntity.getHeader().getTimestamp());
+
+				for (ByteString oTxhash : oBlockEntity.getHeader().getTxHashsList()) {
+					oBlockHeaderImpl.addTxHashs(encApi.hexEnc(oTxhash.toByteArray()));
+				}
+
+				oRespGetBlock.setHeader(oBlockHeaderImpl);
 				oRespGetBlock.setRetCode(1);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
