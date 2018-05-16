@@ -9,9 +9,10 @@ enum PBCTModule {
 enum PBCTCommand {
 	GBC = 0; // 生成Block Header
 	SBC = 1; // 广播block Header
-
 	SSS = 2; // 获取节点的Block
 	BIO = 3; // Block信息
+	GLB = 4; 
+	GBH = 5; 
 }
 
 message ReqGetBlock {
@@ -23,6 +24,7 @@ message ReqGetBlock {
 message RespGetBlock {
 	BlockHeaderImpl header = 1;
 	int32 retCode = 2;
+	string retMsg = 3;
 }
 
 message ReqSyncBlock {
@@ -43,6 +45,22 @@ message RespBlockInfo {
 	int32 waitSync = 3;
 	int32 waitBlock = 4;
 	string cache = 5;
+}
+
+message RespBlockDetail {
+	int32 retCode = 1;
+	string retMsg = 2;
+	string parentHash = 3;
+	string coinbase = 4;
+	string txTrieRoot = 5;
+	int64 timestamp = 6;
+	int32 number = 7;
+	int32 reward = 8;
+	string extraData = 9;
+	string nonce = 10;
+	string blockHash = 11;
+	repeated string txHashs = 12;
+	int64 sliceId = 13;
 }
 
 message BlockHeaderImpl {

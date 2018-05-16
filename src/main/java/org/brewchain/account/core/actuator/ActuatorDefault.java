@@ -37,5 +37,7 @@ public class ActuatorDefault extends AbstractTransactionActuator implements iTra
 				oAccountHelper.CreateAccount(oOutput.getAddress().toByteArray(), ByteUtil.EMPTY_BYTE_ARRAY);
 			}
 		}
+		
+		super.onPrepareExecute(oMultiTransaction, senders, receivers);
 	}
 }

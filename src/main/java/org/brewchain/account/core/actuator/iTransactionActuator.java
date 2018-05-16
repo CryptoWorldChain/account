@@ -15,6 +15,8 @@ public interface iTransactionActuator {
 	boolean needSignature();
 	LinkedList<OKey> getKeys();
 	LinkedList<OValue> getValues();
+	LinkedList<OKey> getTxKeys();
+	LinkedList<OValue> getTxValues();
 	/**
 	 * 交易签名校验
 	 * 
@@ -55,4 +57,12 @@ public interface iTransactionActuator {
 	 * @throws Exception
 	 */
 	void onExecuteDone(MultiTransaction oMultiTransaction) throws Exception;
+	
+	/**
+	 * 交易执行失败后。
+	 * 
+	 * @param oMultiTransaction
+	 * @throws Exception
+	 */
+	void onExecuteError(MultiTransaction oMultiTransaction) throws Exception;
 }

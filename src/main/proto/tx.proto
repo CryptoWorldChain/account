@@ -28,6 +28,7 @@ message SingleTransaction {
 message MultiTransaction {
 	bytes txHash = 1;
 	MultiTransactionBody txBody = 2;
+	string status = 3;
 } 
 
 message MultiTransactionBody {
