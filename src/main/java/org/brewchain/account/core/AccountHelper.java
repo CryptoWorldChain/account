@@ -441,7 +441,13 @@ public class AccountHelper implements ActorService {
 
 	public void ICO(byte[] addr, String token) throws Exception {
 		OValue oValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN)).get();
-		ICO.Builder oICO = ICO.parseFrom(oValue.getExtdata().toByteArray()).toBuilder();
+		ICO.Builder oICO;
+		if (oValue == null) {
+			oICO = ICO.newBuilder();
+		} else {
+			oICO = ICO.parseFrom(oValue.getExtdata().toByteArray()).toBuilder();
+		}
+
 		ICOValue.Builder oICOValue = ICOValue.newBuilder();
 		oICOValue.setAddress(ByteString.copyFrom(addr));
 		oICOValue.setTimestamp((new Date()).getTime());
@@ -461,6 +467,9 @@ public class AccountHelper implements ActorService {
 	 */
 	public boolean isExistsToken(String token) throws Exception {
 		OValue oValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN)).get();
+		if (oValue == null) {
+			return false;
+		}
 		ICO oICO = ICO.parseFrom(oValue.getExtdata().toByteArray());
 
 		for (ICOValue oICOValue : oICO.getValueList()) {

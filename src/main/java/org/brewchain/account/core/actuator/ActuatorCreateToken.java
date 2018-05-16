@@ -40,9 +40,14 @@ public class ActuatorCreateToken extends AbstractTransactionActuator implements 
 		if (oMultiTransaction.getTxBody().getInputsCount() != 1) {
 			throw new Exception(String.format("不允许存在多个发行方"));
 		}
+		
 		String token = oMultiTransaction.getTxBody().getInputs(0).getToken();
 		if (token == null || token.isEmpty()) {
 			throw new Exception(String.format("Token交易中Token不允许为空"));
+		}
+		
+		if (token.toLowerCase().startsWith("CW")) {
+			throw new Exception(String.format("Token名称无效"));
 		}
 
 		// 判断nonce是否一致
