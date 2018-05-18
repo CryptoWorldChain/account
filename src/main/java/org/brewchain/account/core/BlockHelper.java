@@ -128,6 +128,8 @@ public class BlockHelper implements ActorService {
 		log.info(String.format("LOGFILTER %s %s %s %s 创建区块[%s]", KeyConstant.nodeName, "account", "create", "block",
 				encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray())));
 
+		ApplyBlock(oBlockEntity.build());
+		
 		return oBlockEntity;
 	}
 

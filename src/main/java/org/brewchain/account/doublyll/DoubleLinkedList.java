@@ -258,7 +258,7 @@ public class DoubleLinkedList implements ActorService {
 
 		@Override
 		public boolean hasNext() {
-			return (egungoElementua != null);
+			return (egungoElementua != null) && egungoElementua.next !=null;
 		}
 
 		@Override
@@ -315,7 +315,7 @@ public class DoubleLinkedList implements ActorService {
 			byte[] elem = (byte[]) it.next();
 			result = result + "[" + encApi.hexEnc((byte[]) elem) + "] \n";
 		}
-		return "SimpleLinkedList " + result;
+		return result;
 	}
 
 	public void reverseAdabegiakInprimatu() {

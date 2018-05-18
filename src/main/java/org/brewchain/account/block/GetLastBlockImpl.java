@@ -67,7 +67,7 @@ public class GetLastBlockImpl extends SessionModules<ReqBlockInfo> {
 			oRespBlockDetail.setRetCode(1);
 		} catch (Exception e) {
 			oRespBlockDetail.setRetCode(-1);
-			oRespBlockDetail.setRetMsg(e.getMessage());
+			// oRespBlockDetail.setRetMsg(e.);
 		}
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespBlockDetail.build()));
 	}

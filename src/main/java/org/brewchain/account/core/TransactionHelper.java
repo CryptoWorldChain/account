@@ -89,20 +89,39 @@ public class TransactionHelper implements ActorService {
 		return formatMultiTransaction.getTxHash();
 	}
 
-	public void CreateGenesisMultiTransaction(MultiTransaction.Builder oMultiTransaction) throws Exception {
-		MultiTransaction formatMultiTransaction = verifyAndSaveMultiTransaction(oMultiTransaction);
-
-		// 保存交易到缓存中，用于广播
-		// oSendingHashMapDB.put(oMultiTransaction.getTxHash().toByteArray(),
-		// oMultiTransaction.build().toByteArray());
-
-		// 保存交易到缓存中，用于打包
-		if (formatMultiTransaction.getTxBody().getDelegateCount() == 0 || formatMultiTransaction.getTxBody()
-				.getDelegateList().indexOf(ByteString.copyFrom(encApi.hexDec(blockChainConfig.getCoinBase()))) != -1) {
-			// 如果指定了委托，并且委托是本节点
-			oPendingHashMapDB.put(formatMultiTransaction.getTxHash().toByteArray(),
-					formatMultiTransaction.toByteArray());
+	public ByteString CreateGenesisMultiTransaction(MultiTransaction.Builder oMultiTransaction) throws Exception {
+		Map<ByteString, Account> senders = new HashMap<ByteString, Account>();
+		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
+			senders.put(oInput.getAddress(), oAccountHelper.GetAccount(oInput.getAddress().toByteArray()));
 		}
+
+		Map<ByteString, Account> receivers = new HashMap<ByteString, Account>();
+		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
+			receivers.put(oOutput.getAddress(), oAccountHelper.GetAccount(oOutput.getAddress().toByteArray()));
+		}
+
+		iTransactionActuator oiTransactionActuator;
+		oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, null, null, encApi);
+
+		// 如果交易本身需要验证签名
+		if (oiTransactionActuator.needSignature()) {
+			oiTransactionActuator.onVerifySignature(oMultiTransaction.build(), senders, receivers);
+		}
+
+		// 执行交易执行前的数据校验
+		// oiTransactionActuator.onPrepareExecute(oMultiTransaction.build(), senders, receivers);
+
+		oMultiTransaction.setTxHash(ByteString.EMPTY);
+		// 生成交易Hash
+		oMultiTransaction
+				.setTxHash(ByteString.copyFrom(encApi.sha256Encode(oMultiTransaction.getTxBody().toByteArray())));
+
+		MultiTransaction multiTransaction = oMultiTransaction.build();
+		// 保存交易到db中
+		dao.getTxsDao().put(OEntityBuilder.byteKey2OKey(multiTransaction.getTxHash().toByteArray()),
+				OEntityBuilder.byteValue2OValue(multiTransaction.toByteArray()));
+
+		return oMultiTransaction.getTxHash();
 	}
 
 	/**
@@ -578,6 +597,8 @@ public class TransactionHelper implements ActorService {
 
 		// 执行交易执行前的数据校验
 		oiTransactionActuator.onPrepareExecute(oMultiTransaction.build(), senders, receivers);
+
+		// 双花校验
 
 		oMultiTransaction.setTxHash(ByteString.EMPTY);
 		// 生成交易Hash
