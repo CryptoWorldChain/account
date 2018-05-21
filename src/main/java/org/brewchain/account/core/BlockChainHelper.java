@@ -277,7 +277,8 @@ public class BlockChainHelper implements ActorService {
 			// 配置项检查
 			log.debug("节点启动！");
 		} catch (Exception e) {
-			e.printStackTrace();
+//			e.printStackTrace();
+			log.error("节点异常",e);
 		}
 	}
 

@@ -72,7 +72,8 @@ public class SyncBlockImpl extends SessionModules<ReqSyncBlock> {
 			oRespSyncBlock.setRetCode(1);
 		} catch (Exception e) {
 			oRespSyncBlock.setRetCode(-1);
-			e.printStackTrace();
+//			e.printStackTrace();
+			log.error("SyncBlockImpl error",e);
 		}
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespSyncBlock.build()));
 	}

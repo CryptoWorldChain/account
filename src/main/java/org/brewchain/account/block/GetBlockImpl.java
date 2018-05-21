@@ -77,12 +77,15 @@ public class GetBlockImpl extends SessionModules<ReqGetBlock> {
 				oRespGetBlock.setRetCode(1);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+//				e.printStackTrace();
+				oRespGetBlock.setRetCode(-1);
+				log.error("GetBlockImpl error",e);
 			}
 
 		} catch (Exception e) {
 			oRespGetBlock.setRetCode(-1);
-			e.printStackTrace();
+//			e.printStackTrace();
+			log.error("GetBlockImpl error",e);
 		}
 
 		oRespGetBlock.setRetCode(1);
