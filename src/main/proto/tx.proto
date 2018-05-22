@@ -29,6 +29,7 @@ message MultiTransaction {
 	bytes txHash = 1;
 	MultiTransactionBody txBody = 2;
 	string status = 3;
+	MultiTransactionNode txNode = 4;
 } 
 
 message MultiTransactionBody {
@@ -63,4 +64,10 @@ message MultiTransactionOutput {
 message MultiTransactionSignature {
 	string signature = 1;
 	string pubKey = 2;
+}
+
+message MultiTransactionNode {
+	string node = 1;
+	string address = 2;
+	string bcuid = 3;
 }

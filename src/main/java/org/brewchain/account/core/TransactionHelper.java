@@ -18,6 +18,7 @@ import org.brewchain.account.gens.Act.Account;
 import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.brewchain.account.gens.Tx.MultiTransactionBody;
 import org.brewchain.account.gens.Tx.MultiTransactionInput;
+import org.brewchain.account.gens.Tx.MultiTransactionNode;
 import org.brewchain.account.gens.Tx.MultiTransactionOutput;
 import org.brewchain.account.gens.Tx.MultiTransactionSignature;
 import org.brewchain.account.gens.Tx.SingleTransaction;
@@ -69,8 +70,15 @@ public class TransactionHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public ByteString CreateMultiTransaction(MultiTransaction.Builder oMultiTransaction) throws Exception {
+		// 节点
+		MultiTransactionNode.Builder oNode = MultiTransactionNode.newBuilder();
+		oNode.setBcuid(KeyConstant.node.getBcuid());
+		oNode.setAddress(KeyConstant.node.getAddress());
+		oNode.setNode(KeyConstant.node.getNode());
+		oMultiTransaction.setTxNode(oNode);
+		
 		MultiTransaction formatMultiTransaction = verifyAndSaveMultiTransaction(oMultiTransaction);
-
+		
 		// 保存交易到缓存中，用于广播
 		oSendingHashMapDB.put(formatMultiTransaction.getTxHash().toByteArray(), formatMultiTransaction.toByteArray());
 
@@ -83,7 +91,7 @@ public class TransactionHelper implements ActorService {
 		}
 
 		// {node} {component} {opt} {type} {msg}
-		log.info(String.format("LOGFILTER %s %s %s %s 创建交易[%s]", KeyConstant.nodeName, "account", "create",
+		log.info(String.format("LOGFILTER %s %s %s %s 创建交易[%s]", KeyConstant.node.getNode(), "account", "create",
 				"transaction", encApi.hexEnc(formatMultiTransaction.getTxHash().toByteArray())));
 
 		return formatMultiTransaction.getTxHash();
@@ -597,8 +605,6 @@ public class TransactionHelper implements ActorService {
 
 		// 执行交易执行前的数据校验
 		oiTransactionActuator.onPrepareExecute(oMultiTransaction.build(), senders, receivers);
-
-		// 双花校验
 
 		oMultiTransaction.setTxHash(ByteString.EMPTY);
 		// 生成交易Hash

@@ -5,11 +5,12 @@ package org.brewchain.account.gens;
 message BlockEntity {
 	BlockHeader header = 1;
 	BlockBody body = 2;
+	BlockMiner miner = 3;
 }
 
 message BlockHeader {
 	bytes parentHash = 1;
-	bytes coinbase = 2;
+	// bytes coinbase = 2;
 	// bytes stateRoot;
 	bytes txTrieRoot = 3;
 	// bytes receiptTrieRoot;
@@ -28,4 +29,11 @@ message BlockHeader {
 
 message BlockBody {
 	repeated MultiTransaction txs = 1;
+}
+
+message BlockMiner {
+	string node = 1;
+	int32 reward = 3;
+	string address = 4;
+	string bcuid = 5;
 }

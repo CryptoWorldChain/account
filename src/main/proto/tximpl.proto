@@ -60,6 +60,7 @@ message RespGetTxByHash {
 message MultiTransactionImpl {
     string txHash = 1;
 	MultiTransactionBodyImpl txBody = 2;
+	MultiTransactionNodeImpl node = 3;
 } 
 
 message MultiTransactionBodyImpl {
@@ -94,4 +95,11 @@ message MultiTransactionOutputImpl {
 message MultiTransactionSignatureImpl {
 	string signature = 1;
 	string pubKey = 2;
+}
+
+
+message MultiTransactionNodeImpl {
+	string node = 1;
+	string ip = 2;
+	string bcuid = 3;
 }

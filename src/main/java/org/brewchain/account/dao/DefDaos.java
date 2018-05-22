@@ -40,8 +40,8 @@ public class DefDaos extends SessionModules<Message> {
 	@StoreDAO(target = "bc_bdb", daoClass = TxBlockDomain.class)
 	ODBSupport txblockDao;
 
-	// @ActorRequire(scope = "global", name = "pzpctrl")
-	// PZPCtrl pzp;
+	@ActorRequire(scope = "global", name = "pzpctrl")
+	PZPCtrl pzp;
 
 	@Override
 	public void onDaoServiceAllReady() {

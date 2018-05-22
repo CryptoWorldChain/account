@@ -15,11 +15,13 @@ import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.account.gens.Block.BlockBody;
 import org.brewchain.account.gens.Block.BlockEntity;
 import org.brewchain.account.gens.Block.BlockHeader;
+import org.brewchain.account.gens.Block.BlockMiner;
 import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.brewchain.account.gens.Tx.MultiTransactionInput;
 import org.brewchain.account.gens.Tx.MultiTransactionOutput;
 import org.fc.brewchain.bcapi.EncAPI;
 
+import com.google.inject.Key;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -96,13 +98,14 @@ public class BlockHelper implements ActorService {
 		BlockEntity.Builder oBlockEntity = BlockEntity.newBuilder();
 		BlockHeader.Builder oBlockHeader = BlockHeader.newBuilder();
 		BlockBody.Builder oBlockBody = BlockBody.newBuilder();
-
+		BlockMiner.Builder oBlockMiner = BlockMiner.newBuilder();
+		
 		// 获取本节点的最后一块Block
 		BlockEntity.Builder oBestBlockEntity = GetBestBlock();
 		BlockHeader.Builder oBestBlockHeader = oBestBlockEntity.getHeader().toBuilder();
 
 		// 构造Block Header
-		oBlockHeader.setCoinbase(ByteString.copyFrom(coinBase));
+		// oBlockHeader.setCoinbase(ByteString.copyFrom(coinBase));
 		oBlockHeader.setParentHash(oBestBlockHeader.getBlockHash());
 
 		// 确保时间戳不重复
@@ -120,16 +123,23 @@ public class BlockHelper implements ActorService {
 			oBlockBody.addTxs(txs.get(i));
 			oTrieImpl.put(txs.get(i).getTxHash().toByteArray(), txs.get(i).toByteArray());
 		}
+		oBlockMiner.setAddress(KeyConstant.node.getAddress());
+		oBlockMiner.setNode(KeyConstant.node.getNode());
+		oBlockMiner.setBcuid(KeyConstant.node.getBcuid());
+		oBlockMiner.setReward(KeyConstant.BLOCK_REWARD);
+		//oBlockMiner.setAddress(value);
+		
 		oBlockHeader.setTxTrieRoot(ByteString.copyFrom(oTrieImpl.getRootHash()));
 		oBlockHeader.setBlockHash(ByteString.copyFrom(encApi.sha256Encode(oBlockHeader.build().toByteArray())));
 		oBlockEntity.setHeader(oBlockHeader);
 		oBlockEntity.setBody(oBlockBody);
+		oBlockEntity.setMiner(oBlockMiner);
 
-		log.info(String.format("LOGFILTER %s %s %s %s 创建区块[%s]", KeyConstant.nodeName, "account", "create", "block",
-				encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray())));
+		log.info(String.format("LOGFILTER %s %s %s %s 创建区块[%s]", KeyConstant.node.getNode(), "account", "create",
+				"block", encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray())));
 
 		ApplyBlock(oBlockEntity.build());
-		
+
 		return oBlockEntity;
 	}
 
@@ -150,7 +160,7 @@ public class BlockHelper implements ActorService {
 		BlockBody.Builder oBlockBody = BlockBody.newBuilder();
 
 		// 构造Block Header
-		oBlockHeader.setCoinbase(ByteString.copyFrom(ByteUtil.EMPTY_BYTE_ARRAY));
+		// oBlockHeader.setCoinbase(ByteString.copyFrom(ByteUtil.EMPTY_BYTE_ARRAY));
 		oBlockHeader.setParentHash(ByteString.copyFrom(ByteUtil.EMPTY_BYTE_ARRAY));
 
 		// 确保时间戳不重复
@@ -237,8 +247,8 @@ public class BlockHelper implements ActorService {
 
 		// 应用奖励
 		// applyReward(oBlockEntity);
-		log.info(String.format("LOGFILTER %s %s %s %s 执行区块[%s]", KeyConstant.nodeName, "account", "apply", "block",
-				encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray())));
+		log.info(String.format("LOGFILTER %s %s %s %s 执行区块[%s]", KeyConstant.node.getNode(), "account", "apply",
+				"block", encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray())));
 	}
 
 	/**
@@ -253,9 +263,9 @@ public class BlockHelper implements ActorService {
 		if (oBlock.getHeader().getNumber() - blockChainConfig.getMinerRewardWait() > 0) {
 			BlockEntity rewardBlock = blockChainHelper
 					.getBlockByNumber(oBlock.getHeader().getNumber() - blockChainConfig.getMinerRewardWait());
-
-			accountHelper.addBalance(rewardBlock.getHeader().getCoinbase().toByteArray(),
-					blockChainConfig.getMinerReward());
+			// TODO 待实现
+			// accountHelper.addBalance(rewardBlock.getHeader().getCoinbase().toByteArray(),
+			// blockChainConfig.getMinerReward());
 		}
 	}
 

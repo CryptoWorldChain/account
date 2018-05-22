@@ -12,6 +12,7 @@ import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.gens.Actimpl.PACTCommand;
 import org.brewchain.account.gens.Actimpl.PACTModule;
 import org.brewchain.account.gens.Actimpl.ReqCreateAccount;
+import org.brewchain.account.util.NodeDef;
 import org.fc.brewchain.p22p.node.Network;
 
 import com.google.protobuf.Message;
@@ -48,21 +49,21 @@ public class ApplicationStart extends SessionModules<Message> {
 	public void startup() {
 		try {
 			new Thread(new AccountStartThread()).start();
-//			final Timer timer = new Timer();
-//			timer.schedule(new TimerTask() {
-//				@Override
-//				public void run() {
-//					// copy db is db is not exists
-//
-//					// load block
-//					blockChainHelper.onStart();
-//
-//					// get node
-//					// Network oNetwork = dao.getPzp().networkByID("raft");
-//					// KeyConstant.nodeName = oNetwork.root().name();
-//					KeyConstant.nodeName = "测试节点01";
-//				}
-//			}, 1000 * 20);
+			// final Timer timer = new Timer();
+			// timer.schedule(new TimerTask() {
+			// @Override
+			// public void run() {
+			// // copy db is db is not exists
+			//
+			// // load block
+			// blockChainHelper.onStart();
+			//
+			// // get node
+			// // Network oNetwork = dao.getPzp().networkByID("raft");
+			// // KeyConstant.nodeName = oNetwork.root().name();
+			// KeyConstant.nodeName = "测试节点01";
+			// }
+			// }, 1000 * 20);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -76,12 +77,20 @@ public class ApplicationStart extends SessionModules<Message> {
 					log.debug("等待dao注入完成...");
 					Thread.sleep(1000);
 				}
-				log.debug("dao注入完成，开始加载block");
-				// 如果是第一次启动，创建db目录
-				
-				log.debug("导入数据库");
+
+				log.debug("dao注入完成");
+
+				Network oNetwork = dao.getPzp().networkByID("raft");
+				NodeDef oNodeDef = new NodeDef();
+				oNodeDef.setBcuid(oNetwork.root().bcuid());
+				oNodeDef.setAddress(oNetwork.root().v_address());
+				oNodeDef.setNode(oNetwork.root().name());
+				KeyConstant.node = oNodeDef;
+
+				log.debug("节点信息::" + KeyConstant.node);
+
+				log.debug("开始初始化数据库");
 				blockChainHelper.onStart();
-				KeyConstant.nodeName = "测试节点01";
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

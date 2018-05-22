@@ -4,6 +4,7 @@ import org.brewchain.account.core.BlockChainHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.gens.Block.BlockEntity;
 import org.brewchain.account.gens.Blockimpl.BlockHeaderImpl;
+import org.brewchain.account.gens.Blockimpl.BlockMinerImpl;
 import org.brewchain.account.gens.Blockimpl.PBCTCommand;
 import org.brewchain.account.gens.Blockimpl.PBCTModule;
 import org.brewchain.account.gens.Blockimpl.ReqBlockInfo;
@@ -50,20 +51,27 @@ public class GetLastBlockImpl extends SessionModules<ReqBlockInfo> {
 		try {
 			byte[] blockHash = blockChainHelper.GetBestBlock();
 			BlockEntity.Builder oBlockEntity = blockHelper.getBlock(blockHash);
-
+			BlockMinerImpl.Builder oBlockMinerImpl = BlockMinerImpl.newBuilder();
+			
 			oRespBlockDetail.setBlockHash(encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()));
-			oRespBlockDetail.setCoinbase(encApi.hexEnc(oBlockEntity.getHeader().getCoinbase().toByteArray()));
+			//oRespBlockDetail.setCoinbase(encApi.hexEnc(oBlockEntity.getHeader().getCoinbase().toByteArray()));
 			oRespBlockDetail.setExtraData(encApi.hexEnc(oBlockEntity.getHeader().getExtraData().toByteArray()));
 			oRespBlockDetail.setNonce(encApi.hexEnc(oBlockEntity.getHeader().getNonce().toByteArray()));
 			oRespBlockDetail.setNumber(oBlockEntity.getHeader().getNumber());
 			oRespBlockDetail.setParentHash(encApi.hexEnc(oBlockEntity.getHeader().getParentHash().toByteArray()));
-			oRespBlockDetail.setReward(ByteUtil.byteArrayToInt(oBlockEntity.getHeader().getReward().toByteArray()));
+			// oRespBlockDetail.setReward(ByteUtil.byteArrayToInt(oBlockEntity.getHeader().getReward().toByteArray()));
 			oRespBlockDetail.setSliceId(oBlockEntity.getHeader().getSliceId());
 			oRespBlockDetail.setTimestamp(oBlockEntity.getHeader().getTimestamp());
 
 			for (ByteString oTxhash : oBlockEntity.getHeader().getTxHashsList()) {
 				oRespBlockDetail.addTxHashs(encApi.hexEnc(oTxhash.toByteArray()));
 			}
+			oBlockMinerImpl.setBcuid(oBlockEntity.getMiner().getBcuid());
+			oBlockMinerImpl.setAddress(oBlockEntity.getMiner().getAddress());
+			oBlockMinerImpl.setNode(oBlockEntity.getMiner().getNode());
+			oBlockMinerImpl.setReward(oBlockEntity.getMiner().getReward());
+			
+			oRespBlockDetail.setMiner(oBlockMinerImpl);
 			oRespBlockDetail.setRetCode(1);
 		} catch (Exception e) {
 			oRespBlockDetail.setRetCode(-1);

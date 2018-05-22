@@ -4,6 +4,7 @@ import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.gens.Block.BlockEntity;
 import org.brewchain.account.gens.Block.BlockHeader;
+import org.brewchain.account.gens.Block.BlockMiner;
 import org.brewchain.account.gens.Blockimpl.BlockHeaderImpl;
 import org.brewchain.account.gens.Blockimpl.PBCTCommand;
 import org.brewchain.account.gens.Blockimpl.PBCTModule;
@@ -52,8 +53,9 @@ public class SyncBlockImpl extends SessionModules<ReqSyncBlock> {
 			BlockEntity.Builder oBlockEntity = BlockEntity.newBuilder();
 
 			BlockHeader.Builder oBlockHeader = BlockHeader.newBuilder();
+			BlockMiner.Builder oBlockMiner = BlockMiner.newBuilder();
 			oBlockHeader.setBlockHash(ByteString.copyFrom(encApi.hexDec(pb.getHeader().getBlockHash())));
-			oBlockHeader.setCoinbase(ByteString.copyFrom(encApi.hexDec(pb.getHeader().getCoinbase())));
+			//oBlockHeader.setCoinbase(ByteString.copyFrom(encApi.hexDec(pb.getHeader().getCoinbase())));
 			oBlockHeader.setExtraData(ByteString.copyFrom(encApi.hexDec(pb.getHeader().getExtraData())));
 			oBlockHeader.setNonce(ByteString.copyFrom(encApi.hexDec(pb.getHeader().getNonce())));
 			oBlockHeader.setNumber(pb.getHeader().getNumber());
@@ -66,7 +68,13 @@ public class SyncBlockImpl extends SessionModules<ReqSyncBlock> {
 				oBlockHeader.addTxHashs(ByteString.copyFrom(encApi.hexDec(oTxhash)));
 			}
 
+			oBlockMiner.setBcuid(pb.getMiner().getBcuid());
+			oBlockMiner.setAddress(pb.getMiner().getAddress());
+			oBlockMiner.setNode(pb.getMiner().getNode());
+			oBlockMiner.setReward(pb.getMiner().getReward());
+			
 			oBlockEntity.setHeader(oBlockHeader);
+			oBlockEntity.setMiner(oBlockMiner);
 			// 如果节点已经启动，则重新加载全部block
 			blockHelper.ApplyBlock(oBlockEntity.build());
 			oRespSyncBlock.setRetCode(1);

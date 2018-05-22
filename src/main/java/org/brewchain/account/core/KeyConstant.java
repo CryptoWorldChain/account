@@ -2,6 +2,8 @@ package org.brewchain.account.core;
 
 import java.math.BigInteger;
 
+import org.brewchain.account.util.NodeDef;
+
 public class KeyConstant {
 	public static final int BLOCK_REWARD = 6;
 	public static final int BLOCK_REWARD_DELAY = 5;
@@ -18,5 +20,5 @@ public class KeyConstant {
 	public static final byte[] DB_EXISTS_TOKEN = "DB_EXISTS_TOKEN_7513d2287ce94891ba227ba83aa6fe51".getBytes();
 
 	public static boolean isStart = false;
-	public static String nodeName = "";
+	public static NodeDef node;
 }
