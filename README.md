@@ -20,15 +20,17 @@ Block       [block.proto](http://cwvi.club:9999/chaincore/account/blob/master/sr
 
 Sys         [sys.proto](http://cwvi.club:9999/chaincore/account/blob/master/src/main/proto/sys.proto)
 # 账户API
-## 创建账户
+## 创建账户 (unavailable)
 	act/pbcac.do
 ## 获取账户信息
 	act/pbgac.do
 ## 添加CryptoToken (new)
 	sys/pbacb.do
+## 创建联合签名账户 (unavailable)
+	act/pbuac.do
 
 # 交易API
-## 创建多重交易
+## 创建交易
 	txt/pbmtx.do
 ## 获取未广播交易
 	txt/pbgut.do
@@ -39,6 +41,8 @@ Sys         [sys.proto](http://cwvi.club:9999/chaincore/account/blob/master/src/
 
 # 区块API
 ## 生成区块
-	btc/pbgbc.do
+	bct/pbgbc.do
 ## 广播区块
-	btc/pbsbc.do
+	bct/pbsbc.do
+## 获取最新区块 (new)
+	bct/pbglb.do
