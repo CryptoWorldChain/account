@@ -43,7 +43,8 @@ public class GetUnSendTransactionImpl extends SessionModules<ReqGetTxToSync> {
 			}
 			oRespGetTxToSync.setTxCount(txs.size());
 		} catch (Exception e) {
-			e.printStackTrace();
+//			e.printStackTrace();
+			log.error("GetUnSendTransactionImpl error",e);
 		}
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespGetTxToSync.build()));
 	}

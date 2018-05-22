@@ -90,7 +90,9 @@ public class GetAccountImpl extends SessionModules<ReqGetAccount> {
 			oRespGetAccount.setRetCode(1);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+//			e.printStackTrace();
+			log.error("GetAccountImpl error",e);
+			oRespGetAccount.clear();
 			oRespGetAccount.setRetCode(-1);
 		}
 

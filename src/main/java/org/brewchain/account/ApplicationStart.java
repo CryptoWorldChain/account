@@ -65,7 +65,8 @@ public class ApplicationStart extends SessionModules<Message> {
 			// }
 			// }, 1000 * 20);
 		} catch (Exception e) {
-			e.printStackTrace();
+//			e.printStackTrace();
+			log.error("dao注入异常",e);
 		}
 	}
 
@@ -93,7 +94,8 @@ public class ApplicationStart extends SessionModules<Message> {
 				blockChainHelper.onStart();
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+//				e.printStackTrace();
+				log.error("dao注入异常",e);
 			}
 		}
 

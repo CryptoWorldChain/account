@@ -41,13 +41,14 @@ public class CreateAccountImpl extends SessionModules<ReqCreateAccount> {
 		RespCreateAccount.Builder oRespCreateAccount = RespCreateAccount.newBuilder();
 		// ExAccountState state = new ExAccountState(BigInteger.ZERO,
 		// BigInteger.ZERO);
-		try {
+		
+//		try {
 			oAccountHelper.CreateAccount(encApi.hexDec(ByteUtil.formatHexAddress(pb.getAddress())), encApi.hexDec(pb.getPubKey()));
 			oRespCreateAccount.setRetCode(1);
-		} catch (Exception e) {
-			e.printStackTrace();
-			oRespCreateAccount.setRetCode(-1);
-		}
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//			oRespCreateAccount.setRetCode(-1);
+//		}
 
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespCreateAccount.build()));
 	}

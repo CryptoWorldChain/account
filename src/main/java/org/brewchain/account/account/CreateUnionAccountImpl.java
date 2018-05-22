@@ -50,7 +50,7 @@ public class CreateUnionAccountImpl extends SessionModules<ReqCreateUnionAccount
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqCreateUnionAccount pb, final CompleteHandler handler) {
 		RespCreateUnionAccount.Builder oRespCreateUnionAccount = RespCreateUnionAccount.newBuilder();
-		try {
+//		try {
 			
 			// 创建多重签名账户
 			List<ByteString> relAddresses = new ArrayList<ByteString>();
@@ -62,10 +62,10 @@ public class CreateUnionAccountImpl extends SessionModules<ReqCreateUnionAccount
 					pb.getAcceptMax(), pb.getAcceptLimit(), relAddresses);
 
 			oRespCreateUnionAccount.setRetCode(1);
-		} catch (Exception e) {
-			e.printStackTrace();
-			oRespCreateUnionAccount.setRetCode(-1);
-		}
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//			oRespCreateUnionAccount.setRetCode(-1);
+//		}
 
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespCreateUnionAccount.build()));
 	}

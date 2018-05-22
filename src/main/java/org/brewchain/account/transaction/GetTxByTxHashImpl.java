@@ -54,7 +54,8 @@ public class GetTxByTxHashImpl extends SessionModules<ReqGetTxByHash> {
 			oRespGetTxByHash.setRetCode(1);
 		} catch (Exception e) {
 			oRespGetTxByHash.setRetCode(-1);
-			e.printStackTrace();
+//			e.printStackTrace();
+			log.error("GetTxByTxHashImpl error",e);
 		}
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespGetTxByHash.build()));
 	}

@@ -59,7 +59,8 @@ public class AddCryptoTokenImpl extends SessionModules<ReqAddCryptoToken> {
 						oAccountCryptoToken.build().toByteArray());
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+//				e.printStackTrace();
+				log.error("AddCryptoTokenImpl error",e);
 				oRespAddCryptoToken.setTotal(i + 1);
 				oRespAddCryptoToken.setRetCode(-1);
 				handler.onFinished(PacketHelper.toPBReturn(pack, oRespAddCryptoToken.build()));

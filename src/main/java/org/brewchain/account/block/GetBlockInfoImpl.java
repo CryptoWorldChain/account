@@ -55,7 +55,8 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 			oRespBlockInfo.setWaitBlock(oPendingHashMapDB.keys().size());
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+//			e.printStackTrace();
+			log.error("GetBlockInfoImpl error",e);
 		}
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespBlockInfo.build()));
 	}
