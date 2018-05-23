@@ -14,6 +14,7 @@ import org.brewchain.account.util.FastByteComparisons;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.account.gens.Block.BlockBody;
 import org.brewchain.account.gens.Block.BlockEntity;
+import org.brewchain.account.gens.Block.BlockEntityOrBuilder;
 import org.brewchain.account.gens.Block.BlockHeader;
 import org.brewchain.account.gens.Block.BlockMiner;
 import org.brewchain.account.gens.Tx.MultiTransaction;
@@ -99,7 +100,7 @@ public class BlockHelper implements ActorService {
 		BlockHeader.Builder oBlockHeader = BlockHeader.newBuilder();
 		BlockBody.Builder oBlockBody = BlockBody.newBuilder();
 		BlockMiner.Builder oBlockMiner = BlockMiner.newBuilder();
-		
+
 		// 获取本节点的最后一块Block
 		BlockEntity.Builder oBestBlockEntity = GetBestBlock();
 		BlockHeader.Builder oBestBlockHeader = oBestBlockEntity.getHeader().toBuilder();
@@ -127,8 +128,8 @@ public class BlockHelper implements ActorService {
 		oBlockMiner.setNode(KeyConstant.node.getNode());
 		oBlockMiner.setBcuid(KeyConstant.node.getBcuid());
 		oBlockMiner.setReward(KeyConstant.BLOCK_REWARD);
-		//oBlockMiner.setAddress(value);
-		
+		// oBlockMiner.setAddress(value);
+
 		oBlockHeader.setTxTrieRoot(ByteString.copyFrom(oTrieImpl.getRootHash()));
 		oBlockHeader.setBlockHash(ByteString.copyFrom(encApi.sha256Encode(oBlockHeader.build().toByteArray())));
 		oBlockEntity.setHeader(oBlockHeader);
@@ -184,6 +185,10 @@ public class BlockHelper implements ActorService {
 
 		// oBlockStorageDB.setLastBlock(oBlockEntity.build());
 		blockChainHelper.newBlock(oBlockEntity.build());
+	}
+
+	public  void ApplyBlock(ByteString bs) throws Exception {
+		ApplyBlock(BlockEntity.newBuilder().mergeFrom(bs).build());
 	}
 
 	/**

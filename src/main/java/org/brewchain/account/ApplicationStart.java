@@ -4,6 +4,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import org.apache.commons.collections.functors.WhileClosure;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Validate;
 import org.brewchain.account.core.BlockChainHelper;
@@ -65,37 +66,47 @@ public class ApplicationStart extends SessionModules<Message> {
 			// }
 			// }, 1000 * 20);
 		} catch (Exception e) {
-//			e.printStackTrace();
-			log.error("dao注入异常",e);
+			// e.printStackTrace();
+			log.error("dao注入异常", e);
 		}
 	}
 
 	class AccountStartThread extends Thread {
 		@Override
 		public void run() {
-			try {
-				while (dao == null || !dao.isReady()) {
-					log.debug("等待dao注入完成...");
-					Thread.sleep(1000);
+
+			String consensus = props().get("org.brewchain.consensus", "");
+			if (StringUtils.isNotBlank(consensus) && !StringUtils.equalsIgnoreCase(consensus, "single")) {
+				// run account in dpos layer
+				log.debug("Account Start Running In " + consensus + " layer");
+			} else {
+				try {
+					while (dao == null || !dao.isReady()) {
+						log.debug("等待dao注入完成...");
+						Thread.sleep(1000);
+					}
+
+					log.debug("dao注入完成");
+
+					Network oNetwork = dao.getPzp().networkByID("dpos");
+					NodeDef oNodeDef = new NodeDef();
+					if (oNetwork.root().node_idx() > 0) {
+						// waiting for dpos
+					}
+					oNodeDef.setBcuid(oNetwork.root().bcuid());
+					oNodeDef.setAddress(oNetwork.root().v_address());
+					oNodeDef.setNode(oNetwork.root().name());
+					KeyConstant.node = oNodeDef;
+
+					log.debug("节点信息::" + KeyConstant.node);
+
+					log.debug("开始初始化数据库");
+					blockChainHelper.onStart();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					// e.printStackTrace();
+					log.error("dao注入异常", e);
 				}
-
-				log.debug("dao注入完成");
-
-				Network oNetwork = dao.getPzp().networkByID("raft");
-				NodeDef oNodeDef = new NodeDef();
-				oNodeDef.setBcuid(oNetwork.root().bcuid());
-				oNodeDef.setAddress(oNetwork.root().v_address());
-				oNodeDef.setNode(oNetwork.root().name());
-				KeyConstant.node = oNodeDef;
-
-				log.debug("节点信息::" + KeyConstant.node);
-
-				log.debug("开始初始化数据库");
-				blockChainHelper.onStart();
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-//				e.printStackTrace();
-				log.error("dao注入异常",e);
 			}
 		}
 
