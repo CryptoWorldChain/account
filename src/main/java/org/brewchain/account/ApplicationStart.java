@@ -87,19 +87,7 @@ public class ApplicationStart extends SessionModules<Message> {
 					}
 
 					log.debug("dao注入完成");
-
-					Network oNetwork = dao.getPzp().networkByID("dpos");
-					NodeDef oNodeDef = new NodeDef();
-					if (oNetwork.root().node_idx() > 0) {
-						// waiting for dpos
-					}
-					oNodeDef.setBcuid(oNetwork.root().bcuid());
-					oNodeDef.setAddress(oNetwork.root().v_address());
-					oNodeDef.setNode(oNetwork.root().name());
-					KeyConstant.node = oNodeDef;
-
-					log.debug("节点信息::" + KeyConstant.node);
-
+					
 					log.debug("开始初始化数据库");
 					blockChainHelper.onStart();
 				} catch (InterruptedException e) {

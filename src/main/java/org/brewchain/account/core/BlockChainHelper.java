@@ -15,10 +15,12 @@ import org.brewchain.account.gens.Block.BlockEntity;
 import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.brewchain.account.util.ByteUtil;
 import org.brewchain.account.util.FastByteComparisons;
+import org.brewchain.account.util.NodeDef;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.fc.brewchain.bcapi.EncAPI;
+import org.fc.brewchain.p22p.node.Network;
 
 import com.google.protobuf.ByteString;
 
@@ -270,6 +272,18 @@ public class BlockChainHelper implements ActorService {
 
 	public void onStart() {
 		try {
+			
+			Network oNetwork = dao.getPzp().networkByID("dpos");
+			NodeDef oNodeDef = new NodeDef();
+			if (oNetwork.root().node_idx() > 0) {
+				// waiting for dpos
+			}
+			oNodeDef.setBcuid(oNetwork.root().bcuid());
+			oNodeDef.setAddress(oNetwork.root().v_address());
+			oNodeDef.setNode(oNetwork.root().name());
+			KeyConstant.node = oNodeDef;
+			log.debug("节点信息::" + KeyConstant.node);
+			
 			while (dao != null && blockCache != null) {
 				reloadBlockCache();
 				break;
