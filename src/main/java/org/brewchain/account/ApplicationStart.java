@@ -14,7 +14,6 @@ import org.brewchain.account.gens.Actimpl.PACTCommand;
 import org.brewchain.account.gens.Actimpl.PACTModule;
 import org.brewchain.account.gens.Actimpl.ReqCreateAccount;
 import org.brewchain.account.util.NodeDef;
-import org.fc.brewchain.p22p.node.Network;
 
 import com.google.protobuf.Message;
 
@@ -87,9 +86,9 @@ public class ApplicationStart extends SessionModules<Message> {
 					}
 
 					log.debug("dao注入完成");
-					
+
 					log.debug("开始初始化数据库");
-					blockChainHelper.onStart();
+					blockChainHelper.onStart("", "", "");
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					// e.printStackTrace();

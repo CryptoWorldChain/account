@@ -18,6 +18,7 @@ message AccountValue {
     repeated bytes address = 7;
     repeated AccountTokenValue tokens = 8;
     repeated AccountCryptoValue cryptos = 9;
+    bytes storage = 10;
 }
 
 message AccountTokenValue {

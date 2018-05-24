@@ -11,6 +11,7 @@ import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.util.ByteUtil;
 import org.brewchain.account.gens.Block.BlockEntity;
+import org.brewchain.account.gens.Block.BlockHeader;
 import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.brewchain.account.gens.Tx.MultiTransactionBody;
 import org.brewchain.account.gens.Tx.MultiTransactionSignature;
@@ -68,128 +69,33 @@ public class BlockSingleTest extends SessionModules<ReqTxTest> implements ActorS
 		if (coinBase == null) {
 			coinBase = "1234";
 		}
-		try {
-			blockHelper.CreateGenesisBlock(new LinkedList<MultiTransaction>(), ByteUtil.EMPTY_BYTE_ARRAY);
-
-		} catch (Exception e) {
-			// TODO: handle exception
-		}
-		BlockEntity.Builder oBlockEntity;
-		try {
-			oBlockEntity = blockHelper.GetBestBlock();
-		} catch (Exception e3) {
-			// TODO Auto-generated catch block
-			e3.printStackTrace();
-		}
-
-		// 创建账户1
-		KeyPairs oKeyPairs1 = encApi.genKeys();
-		// 创建账户1
-		accountHelper.CreateAccount(oKeyPairs1.getAddress().getBytes(), oKeyPairs1.getPubkey().getBytes());
-		// 增加账户余额1
-		try {
-			accountHelper.addBalance(oKeyPairs1.getAddress().getBytes(), 10000000);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		// 创建账户2
-		KeyPairs oKeyPairs2 = encApi.genKeys();
-		// 创建账户1
-		accountHelper.CreateAccount(oKeyPairs2.getAddress().getBytes(), oKeyPairs2.getPubkey().getBytes());
-		// 增加账户余额1
-		try {
-			accountHelper.addBalance(oKeyPairs2.getAddress().getBytes(), 10000000);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		try {
-			log.debug(String.format("账户1余额 %s 账户2余额 %s", accountHelper.getBalance(oKeyPairs1.getAddress().getBytes()),
-					accountHelper.getBalance(oKeyPairs2.getAddress().getBytes())));
-		} catch (Exception e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-
-		// 发送交易
-		// 模拟合约交易
-		// 1. 签名
-		// 2. 生成Hash
-		// 3. 生成Sender
-		SingleTransaction.Builder newTx = SingleTransaction.newBuilder();
-		newTx.setAmount(98);
-		newTx.setData(ByteString.copyFrom(ByteUtil.EMPTY_BYTE_ARRAY));
-		newTx.setExdata(ByteString.copyFrom(ByteUtil.EMPTY_BYTE_ARRAY));
-		newTx.setFee(0);
-		newTx.setFeeLimit(2);
-		try {
-			newTx.setNonce(accountHelper.getNonce(oKeyPairs2.getAddress().getBytes()));
-		} catch (Exception e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
-		}
-		newTx.setPubKey(oKeyPairs2.getPubkey());
-		newTx.setReceiveAddress(ByteString.copyFrom(oKeyPairs1.getAddress().getBytes()));
-		newTx.setSenderAddress(ByteString.copyFrom(oKeyPairs2.getAddress().getBytes()));
-		newTx.setTimestamp(new Date().getTime());
-		newTx.setTxHash(ByteString.copyFrom(ByteUtil.EMPTY_BYTE_ARRAY));
-
-		List<String> privs = new LinkedList<String>();
-		privs.add(oKeyPairs2.getPrikey());
-
-		try {
-			MultiTransaction.Builder oMultiTransaction = transactionHelper
-					.ParseSingleTransactionToMultiTransaction(newTx);
-
-			MultiTransactionSignature.Builder oMultiTransactionSignature = MultiTransactionSignature.newBuilder();
-			oMultiTransactionSignature.setPubKey(oKeyPairs2.getPubkey());
-			oMultiTransactionSignature.setSignature(
-					encApi.hexEnc(encApi.ecSign(oKeyPairs2.getPrikey(), oMultiTransaction.build().toByteArray())));
-
-			MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
-
-			oMultiTransactionBody.addSignatures(oMultiTransactionSignature);
-			oMultiTransaction.setTxBody(oMultiTransactionBody);
-			// transactionHelper.Signature(privs, oMultiTransaction);
-			transactionHelper.CreateMultiTransaction(oMultiTransaction);
-		} catch (Exception e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-
-		log.debug("交易创建！ " + Hex.toHexString(newTx.getTxHash().toByteArray()));
-		try {
-			log.debug(String.format("账户1余额 %s 账户2余额 %s", accountHelper.getBalance(oKeyPairs1.getAddress().getBytes()),
-					accountHelper.getBalance(oKeyPairs2.getAddress().getBytes())));
-		} catch (Exception e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
 
 		BlockEntity.Builder oSyncBlock = BlockEntity.newBuilder();
 		BlockEntity.Builder newBlock;
 		try {
-			newBlock = blockHelper.CreateNewBlock(600, ByteUtil.EMPTY_BYTE_ARRAY,
-					ByteString.copyFromUtf8(coinBase).toByteArray());
+			newBlock = blockHelper.CreateNewBlock(600, ByteUtil.EMPTY_BYTE_ARRAY, ByteUtil.EMPTY_BYTE_ARRAY);
 			log.debug("创建区块 " + newBlock.toString());
-			oSyncBlock.setHeader(newBlock.getHeader());
-			blockHelper.ApplyBlock(oSyncBlock.build());
+			BlockHeader.Builder oBlockHeader = newBlock.getHeader().toBuilder();
+			oBlockHeader.setNumber(pb.getBlockNumber());
+
+			BlockEntity.Builder oSyncBlock1 = BlockEntity.newBuilder();
+			newBlock = blockHelper.CreateNewBlock(600, ByteUtil.EMPTY_BYTE_ARRAY, ByteUtil.EMPTY_BYTE_ARRAY);
+			BlockHeader.Builder oBlockHeader1 = newBlock.getHeader().toBuilder();
+			oBlockHeader1.setNumber(pb.getBlockNumber() - 1);
+			oBlockHeader.setParentHash(oBlockHeader1.getBlockHash());
+
+			oSyncBlock.setHeader(oBlockHeader);
+			oSyncBlock1.setHeader(oBlockHeader1);
+
+			log.debug(" after " + blockHelper.addBlock(oSyncBlock.build()));
+			log.debug(" before " + blockHelper.addBlock(oSyncBlock1.build()));
+
 		} catch (Exception e2) {
 			// TODO Auto-generated catch block
 			e2.printStackTrace();
 		}
 
 		log.debug("block已同步");
-
-		try {
-			log.debug(String.format("账户1余额 %s 账户2余额 %s", accountHelper.getBalance(oKeyPairs1.getAddress().getBytes()),
-					accountHelper.getBalance(oKeyPairs2.getAddress().getBytes())));
-		} catch (Exception e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
 
 		oRespTxTest.setRetCode(-1);
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespTxTest.build()));

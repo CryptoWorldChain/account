@@ -28,7 +28,6 @@ import org.brewchain.account.gens.Tximpl.MultiTransactionInputImpl;
 import org.brewchain.account.gens.Tximpl.MultiTransactionOutputImpl;
 import org.brewchain.account.gens.Tximpl.MultiTransactionSignatureImpl;
 import org.fc.brewchain.bcapi.EncAPI;
-import org.fc.brewchain.p22p.core.PZPCtrl;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;

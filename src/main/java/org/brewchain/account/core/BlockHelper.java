@@ -2,6 +2,7 @@ package org.brewchain.account.core;
 
 import java.util.Date;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Random;
 
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -17,6 +18,7 @@ import org.brewchain.account.gens.Block.BlockEntity;
 import org.brewchain.account.gens.Block.BlockEntityOrBuilder;
 import org.brewchain.account.gens.Block.BlockHeader;
 import org.brewchain.account.gens.Block.BlockMiner;
+import org.brewchain.account.gens.Blockimpl.AddBlockResponse;
 import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.brewchain.account.gens.Tx.MultiTransactionInput;
 import org.brewchain.account.gens.Tx.MultiTransactionOutput;
@@ -50,10 +52,7 @@ public class BlockHelper implements ActorService {
 	EncAPI encApi;
 	@ActorRequire(name = "Def_Daos", scope = "global")
 	DefDaos dao;
-
-	@ActorRequire(name = "WaitBlock_HashMapDB", scope = "global")
-	WaitBlockHashMapDB oPendingHashMapDB;
-
+	
 	// @ActorRequire(name = "Block_StorageDB", scope = "global")
 	// BlockStorageDB oBlockStorageDB;
 	//
@@ -139,7 +138,7 @@ public class BlockHelper implements ActorService {
 		log.info(String.format("LOGFILTER %s %s %s %s 创建区块[%s]", KeyConstant.node.getNode(), "account", "create",
 				"block", encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray())));
 
-		ApplyBlock(oBlockEntity.build());
+		// ApplyBlock(oBlockEntity.build());
 
 		return oBlockEntity;
 	}
@@ -187,8 +186,62 @@ public class BlockHelper implements ActorService {
 		blockChainHelper.newBlock(oBlockEntity.build());
 	}
 
-	public  void ApplyBlock(ByteString bs) throws Exception {
+	public void ApplyBlock(ByteString bs) throws Exception {
 		ApplyBlock(BlockEntity.newBuilder().mergeFrom(bs).build());
+	}
+
+	public synchronized AddBlockResponse addBlock(BlockEntity oBlockEntity) {
+		AddBlockResponse.Builder oAddBlockResponse = AddBlockResponse.newBuilder();
+		BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
+		int currentLastBlockNumber;
+		try {
+			currentLastBlockNumber = blockChainHelper.getLastBlockNumber();
+		} catch (Exception e1) {
+			oAddBlockResponse.setRetCode(-2);
+			return oAddBlockResponse.build();
+		}
+		// 上一个区块是否存在
+		BlockEntity oParentBlock = null;
+		try {
+			oParentBlock = getBlock(oBlockHeader.getParentHash().toByteArray()).build();
+		} catch (Exception e) {
+			log.error("parent block not found::" + (oBlockHeader.getNumber() - 1));
+		}
+		if (oParentBlock == null) {
+			oAddBlockResponse.setRetCode(-1);
+			oAddBlockResponse.setCurrentNumber(currentLastBlockNumber);
+
+			// 暂存
+			blockChainHelper.cacheBlock(oBlockEntity);
+		} else {
+			if (oParentBlock.getHeader().getNumber() + 1 != oBlockHeader.getNumber()
+					|| currentLastBlockNumber != oParentBlock.getHeader().getNumber()) {
+				oAddBlockResponse.setRetCode(-1);
+				oAddBlockResponse.setCurrentNumber(currentLastBlockNumber);
+
+				// 暂存
+				blockChainHelper.cacheBlock(oBlockEntity);
+			} else {
+				try {
+					ApplyBlock(oBlockEntity);
+
+					// 检查
+					List<BlockEntity> childs = blockChainHelper
+							.tryGetChildBlock(oBlockEntity.getHeader().getBlockHash().toByteArray());
+					if (childs.size() == 1) {
+						oAddBlockResponse = addBlock(childs.get(0)).toBuilder();
+					} else if (childs.size() > 1) {
+
+					}
+				} catch (Exception e) {
+					oAddBlockResponse.setRetCode(-2);
+					if (e.getMessage() != null)
+						oAddBlockResponse.setRetMsg(e.getMessage());
+				}
+			}
+		}
+
+		return oAddBlockResponse.build();
 	}
 
 	/**
@@ -199,16 +252,6 @@ public class BlockHelper implements ActorService {
 	 */
 	public synchronized void ApplyBlock(BlockEntity oBlockEntity) throws Exception {
 		BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
-
-		// 上一个区块是否存在
-		BlockEntity oParentBlock = getBlock(oBlockHeader.getParentHash().toByteArray()).build();
-		// 上一个区块的所以是否一致
-		if (oParentBlock.getHeader().getNumber() + 1 != oBlockHeader.getNumber()) {
-			throw new Exception(String.format("区块 %s 的索引 %s 与父区块的索引 %s 不一致",
-					encApi.hexEnc(oBlockHeader.getBlockHash().toByteArray()), oBlockHeader.getNumber(),
-					oParentBlock.getHeader().getNumber()));
-		}
-
 		LinkedList<MultiTransaction> txs = new LinkedList<MultiTransaction>();
 		TrieImpl oTrieImpl = new TrieImpl();
 

@@ -1,7 +1,10 @@
 package org.brewchain.account.core;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -20,7 +23,6 @@ import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.fc.brewchain.bcapi.EncAPI;
-import org.fc.brewchain.p22p.node.Network;
 
 import com.google.protobuf.ByteString;
 
@@ -42,6 +44,8 @@ public class BlockChainHelper implements ActorService {
 	DefDaos dao;
 	@ActorRequire(name = "bc_encoder", scope = "global")
 	EncAPI encApi;
+	@ActorRequire(name = "CacheBlock_HashMapDB", scope = "global")
+	CacheBlockHashMapDB oCacheHashMapDB;
 
 	/**
 	 * 获取节点最后一个区块的Hash
@@ -50,7 +54,9 @@ public class BlockChainHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public byte[] GetBestBlock() throws Exception {
-		return blockCache.last();
+		return dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get().getExtdata()
+				.toByteArray();
+		// return blockCache.last();
 	}
 
 	/**
@@ -69,7 +75,8 @@ public class BlockChainHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public int getLastBlockNumber() throws Exception {
-		return blockCache.getLast() == null ? 0 : blockCache.getLast().num;
+		return getBlock(GetBestBlock()).getHeader().getNumber();
+		// return blockCache.getLast() == null ? 0 : blockCache.getLast().num;
 	}
 
 	/**
@@ -87,7 +94,7 @@ public class BlockChainHelper implements ActorService {
 	}
 
 	public boolean isExistsGenesisBlock() throws Exception {
-		if (blockCache.first()== null) {
+		if (blockCache.first() == null) {
 			return false;
 		}
 		BlockEntity oBlockEntity = getBlock(blockCache.first()).build();
@@ -108,18 +115,22 @@ public class BlockChainHelper implements ActorService {
 		OKey[] keys = new OKey[] { OEntityBuilder.byteKey2OKey(oBlock.getHeader().getBlockHash()),
 				OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK) };
 		OValue[] values = new OValue[] { OEntityBuilder.byteValue2OValue(oBlock.toByteArray()),
-				OEntityBuilder.byteValue2OValue(oBlock.toByteArray()) };
+				OEntityBuilder.byteValue2OValue(oBlock.getHeader().getBlockHash()) };
 
 		dao.getBlockDao().batchPuts(keys, values);
 
-		LinkedList<OKey> txBlockKeyList = new LinkedList<OKey>();
-		LinkedList<OValue> txBlockValueList = new LinkedList<OValue>();
-		for (MultiTransaction oMultiTransaction : oBlock.getBody().getTxsList()) {
-			txBlockKeyList.add(OEntityBuilder.byteKey2OKey(oMultiTransaction.getTxHash()));
-			txBlockValueList.add(OEntityBuilder.byteValue2OValue(oBlock.getHeader().getBlockHash()));
-		}
+		if (oBlock.getBody() != null) {
+			LinkedList<OKey> txBlockKeyList = new LinkedList<OKey>();
+			LinkedList<OValue> txBlockValueList = new LinkedList<OValue>();
 
-		dao.getTxblockDao().batchPuts(txBlockKeyList.toArray(new OKey[0]), txBlockValueList.toArray(new OValue[0]));
+			for (MultiTransaction oMultiTransaction : oBlock.getBody().getTxsList()) {
+				txBlockKeyList.add(OEntityBuilder.byteKey2OKey(oMultiTransaction.getTxHash()));
+				txBlockValueList.add(OEntityBuilder.byteValue2OValue(oBlock.getHeader().getBlockHash()));
+			}
+
+			dao.getTxblockDao().batchPuts(txBlockKeyList.toArray(new OKey[0]), txBlockValueList.toArray(new OValue[0]));
+
+		}
 		// log.debug(String.format("添加区块 %s hash %s",
 		// oBlock.getHeader().getNumber(),
 		// encApi.hexEnc(oBlock.getHeader().getBlockHash().toByteArray())));
@@ -128,12 +139,40 @@ public class BlockChainHelper implements ActorService {
 				oBlock.getHeader().getParentHash().toByteArray());
 	}
 
+	public boolean cacheBlock(BlockEntity oBlock) {
+		OKey[] keys = new OKey[] { OEntityBuilder.byteKey2OKey(oBlock.getHeader().getBlockHash()) };
+		OValue[] values = new OValue[] { OEntityBuilder.byteValue2OValue(oBlock.toByteArray()) };
+
+		dao.getBlockDao().batchPuts(keys, values);
+		oCacheHashMapDB.put(oBlock.getHeader().getBlockHash().toByteArray(), oBlock.toByteArray());
+		return true;
+	}
+
+	public List<BlockEntity> tryGetChildBlock(byte[] parentHash) {
+		List<BlockEntity> list = new ArrayList<BlockEntity>();
+		for (Iterator<Map.Entry<byte[], byte[]>> it = oCacheHashMapDB.getStorage().entrySet().iterator(); it
+				.hasNext();) {
+			try {
+				Map.Entry<byte[], byte[]> item = it.next();
+				BlockEntity.Builder oBlock = BlockEntity.newBuilder();
+				oBlock.mergeFrom(item.getValue());
+				if (FastByteComparisons.equal(parentHash, oBlock.getHeader().getParentHash().toByteArray())) {
+					list.add(oBlock.build());
+				}
+				it.remove();
+			} catch (Exception e) {
+				log.error("error on init block from cache::" + e.getMessage());
+			}
+		}
+		return list;
+	}
+
 	public boolean newBlock(BlockEntity oBlock) {
 
 		OKey[] keys = new OKey[] { OEntityBuilder.byteKey2OKey(oBlock.getHeader().getBlockHash()),
 				OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK) };
 		OValue[] values = new OValue[] { OEntityBuilder.byteValue2OValue(oBlock.toByteArray()),
-				OEntityBuilder.byteValue2OValue(oBlock.toByteArray()) };
+				OEntityBuilder.byteValue2OValue(oBlock.getHeader().getBlockHash()) };
 
 		dao.getBlockDao().batchPuts(keys, values);
 		blockCache.clear();
@@ -270,20 +309,15 @@ public class BlockChainHelper implements ActorService {
 		throw new Exception(String.format("没有找到高度为 %s 的区块", number));
 	}
 
-	public void onStart() {
+	public void onStart(String bcuid, String address, String name) {
 		try {
-			
-			Network oNetwork = dao.getPzp().networkByID("dpos");
 			NodeDef oNodeDef = new NodeDef();
-			if (oNetwork.root().node_idx() > 0) {
-				// waiting for dpos
-			}
-			oNodeDef.setBcuid(oNetwork.root().bcuid());
-			oNodeDef.setAddress(oNetwork.root().v_address());
-			oNodeDef.setNode(oNetwork.root().name());
+			oNodeDef.setBcuid(bcuid);
+			oNodeDef.setAddress(address);
+			oNodeDef.setNode(name);
 			KeyConstant.node = oNodeDef;
 			log.debug("节点信息::" + KeyConstant.node);
-			
+
 			while (dao != null && blockCache != null) {
 				reloadBlockCache();
 				break;
@@ -291,8 +325,8 @@ public class BlockChainHelper implements ActorService {
 			// 配置项检查
 			log.debug("节点启动！");
 		} catch (Exception e) {
-//			e.printStackTrace();
-			log.error("节点异常",e);
+			// e.printStackTrace();
+			log.error("节点异常", e);
 		}
 	}
 
@@ -333,7 +367,8 @@ public class BlockChainHelper implements ActorService {
 	 */
 	public void reloadBlockCache() throws Exception {
 		// 数据库中的最后一个块
-		BlockEntity.Builder oBlockEntity = getBlock(KeyConstant.DB_CURRENT_BLOCK);
+		BlockEntity.Builder oBlockEntity = getBlock(dao.getBlockDao()
+				.get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get().getExtdata().toByteArray());
 		if (oBlockEntity == null) {
 			KeyConstant.isStart = true;
 			log.debug(String.format("启动空节点"));
@@ -341,7 +376,9 @@ public class BlockChainHelper implements ActorService {
 		}
 		int blockNumber = oBlockEntity.getHeader().getNumber();
 		blockCache.insertFirst(oBlockEntity.getHeader().getBlockHash().toByteArray(), blockNumber);
-		log.debug(String.format("加载创世块"));
+		log.debug("genesis hash::" + encApi.hexEnc(blockCache.getFirst().data));
+		log.debug("genesis hash::" + encApi.hexEnc(blockCache.last()));
+
 		// 开始遍历区块
 		while (blockNumber >= 0) {
 			blockNumber--;

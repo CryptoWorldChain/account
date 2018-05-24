@@ -56,7 +56,7 @@ public class AddCryptoTokenImpl extends SessionModules<ReqAddCryptoToken> {
 
 			try {
 				oAccountHelper.addCryptoBalance(oAccountCryptoToken.build().getOwner().toByteArray(), pb.getSymbol(i),
-						oAccountCryptoToken.build().toByteArray());
+						oAccountCryptoToken);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 //				e.printStackTrace();
