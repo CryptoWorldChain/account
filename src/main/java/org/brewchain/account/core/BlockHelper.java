@@ -186,11 +186,11 @@ public class BlockHelper implements ActorService {
 		blockChainHelper.newBlock(oBlockEntity.build());
 	}
 
-	public void ApplyBlock(ByteString bs) throws Exception {
-		ApplyBlock(BlockEntity.newBuilder().mergeFrom(bs).build());
+	public AddBlockResponse ApplyBlock(ByteString bs) throws Exception {
+		return ApplyBlock(BlockEntity.newBuilder().mergeFrom(bs).build());
 	}
 
-	public synchronized AddBlockResponse addBlock(BlockEntity oBlockEntity) {
+	public synchronized AddBlockResponse ApplyBlock(BlockEntity oBlockEntity) {
 		AddBlockResponse.Builder oAddBlockResponse = AddBlockResponse.newBuilder();
 		BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
 		int currentLastBlockNumber;
@@ -223,13 +223,13 @@ public class BlockHelper implements ActorService {
 				blockChainHelper.cacheBlock(oBlockEntity);
 			} else {
 				try {
-					ApplyBlock(oBlockEntity);
+					addBlock(oBlockEntity);
 
 					// 检查
 					List<BlockEntity> childs = blockChainHelper
 							.tryGetChildBlock(oBlockEntity.getHeader().getBlockHash().toByteArray());
 					if (childs.size() == 1) {
-						oAddBlockResponse = addBlock(childs.get(0)).toBuilder();
+						oAddBlockResponse = ApplyBlock(childs.get(0)).toBuilder();
 					} else if (childs.size() > 1) {
 
 					}
@@ -250,7 +250,7 @@ public class BlockHelper implements ActorService {
 	 * @param oBlockEntity
 	 * @throws Exception
 	 */
-	public synchronized void ApplyBlock(BlockEntity oBlockEntity) throws Exception {
+	private synchronized void addBlock(BlockEntity oBlockEntity) throws Exception {
 		BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
 		LinkedList<MultiTransaction> txs = new LinkedList<MultiTransaction>();
 		TrieImpl oTrieImpl = new TrieImpl();
