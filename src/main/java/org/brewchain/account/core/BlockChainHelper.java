@@ -367,8 +367,11 @@ public class BlockChainHelper implements ActorService {
 	 */
 	public void reloadBlockCache() throws Exception {
 		// 数据库中的最后一个块
-		BlockEntity.Builder oBlockEntity = getBlock(dao.getBlockDao()
-				.get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get().getExtdata().toByteArray());
+		OValue ov = dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get();
+		BlockEntity.Builder oBlockEntity = null;
+		if (ov != null && ov.getExtdata() != null) {
+			oBlockEntity = getBlock(ov.getExtdata().toByteArray());
+		}
 		if (oBlockEntity == null) {
 			KeyConstant.isStart = true;
 			log.debug(String.format("启动空节点"));
