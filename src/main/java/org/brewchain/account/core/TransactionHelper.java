@@ -199,6 +199,7 @@ public class TransactionHelper implements ActorService {
 				oiTransactionActuator.onExecute(oTransaction, senders, receivers);
 				oiTransactionActuator.onExecuteDone(oTransaction);
 			} catch (Exception e) {
+				e.printStackTrace();
 				oiTransactionActuator.onExecuteError(oTransaction);
 				// throw e;
 				log.error(String.format("error on exec tx::", e));

@@ -27,6 +27,7 @@ import onight.osgi.annotation.NActorProvider;
 import onight.tfw.async.CompleteHandler;
 import onight.tfw.ntrans.api.ActorService;
 import onight.tfw.ntrans.api.annotation.ActorRequire;
+import onight.tfw.otransio.api.PacketHelper;
 import onight.tfw.otransio.api.beans.FramePacket;
 
 @NActorProvider
@@ -99,10 +100,14 @@ public class CreateContractTest extends SessionModules<ReqCreateContract> implem
 		oMultiTransactionBody.addSignatures(oMultiTransactionSignature21);
 		oMultiTransaction.setTxBody(oMultiTransactionBody);
 		try {
+			log.debug("合约地址："
+					+ encApi.hexEnc(transactionHelper.getContractAddressByTransaction(oMultiTransaction.build())));
 			transactionHelper.CreateMultiTransaction(oMultiTransaction);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		handler.onFinished(PacketHelper.toPBReturn(pack, oRespTxTest.build()));
+
 	}
 }

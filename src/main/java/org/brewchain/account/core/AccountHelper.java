@@ -79,7 +79,8 @@ public class AccountHelper implements ActorService {
 		oUnionAccountValue.setBalance(KeyConstant.EMPTY_BALANCE.intValue());
 		oUnionAccountValue.setMax(max);
 		oUnionAccountValue.setNonce(KeyConstant.EMPTY_NONCE.intValue());
-		oUnionAccountValue.setPubKey(ByteString.copyFrom(pubKey));
+		if (pubKey != null)
+			oUnionAccountValue.setPubKey(ByteString.copyFrom(pubKey));
 
 		if (code != null) {
 			oUnionAccountValue.setCode(ByteString.copyFrom(code));
