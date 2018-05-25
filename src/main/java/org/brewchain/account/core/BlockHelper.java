@@ -130,6 +130,7 @@ public class BlockHelper implements ActorService {
 		// oBlockMiner.setAddress(value);
 
 		oBlockHeader.setTxTrieRoot(ByteString.copyFrom(oTrieImpl.getRootHash()));
+		//accountHelper.getStateRoot(addr);
 		oBlockHeader.setBlockHash(ByteString.copyFrom(encApi.sha256Encode(oBlockHeader.build().toByteArray())));
 		oBlockEntity.setHeader(oBlockHeader);
 		oBlockEntity.setBody(oBlockBody);

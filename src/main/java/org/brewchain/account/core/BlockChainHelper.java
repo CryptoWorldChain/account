@@ -54,6 +54,10 @@ public class BlockChainHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public byte[] GetBestBlock() throws Exception {
+		OValue oOValue = dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get();
+		if (oOValue == null || oOValue.getExtdata() == null || oOValue.getExtdata().equals(ByteString.EMPTY)) {
+			log.error("");
+		}
 		return dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get().getExtdata()
 				.toByteArray();
 		// return blockCache.last();
@@ -367,11 +371,17 @@ public class BlockChainHelper implements ActorService {
 	 */
 	public void reloadBlockCache() throws Exception {
 		// 数据库中的最后一个块
-		BlockEntity.Builder oBlockEntity = getBlock(dao.getBlockDao()
-				.get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get().getExtdata().toByteArray());
+
+		BlockEntity.Builder oBlockEntity;
+		OValue oOValue = dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get();
+		if (oOValue == null || oOValue.getExtdata() == null || oOValue.getExtdata().equals(ByteString.EMPTY)) {
+			log.debug("last block not found");
+			return;
+		}
+		oBlockEntity = getBlock(oOValue.getExtdata().toByteArray());
 		if (oBlockEntity == null) {
 			KeyConstant.isStart = true;
-			log.debug(String.format("启动空节点"));
+			log.debug(String.format("not found last block, start empty node"));
 			return;
 		}
 		int blockNumber = oBlockEntity.getHeader().getNumber();

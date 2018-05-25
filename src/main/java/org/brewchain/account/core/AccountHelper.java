@@ -271,7 +271,20 @@ public class AccountHelper implements ActorService {
 			if (oAccountValue.getCryptosList().get(i).getSymbol().equals(symbol)) {
 				token.setOwner(ByteString.copyFrom(addr));
 				token.setNonce(token.getNonce() + 1);
-				oAccountValue.getCryptosList().set(i, oAccountValue.getCryptos(i).toBuilder().addTokens(token).build());
+
+				AccountCryptoValue.Builder oAccountCryptoValue = oAccountValue.getCryptos(i).toBuilder();
+				boolean isTokenExists = false;
+				for (int k = 0; k < oAccountCryptoValue.getTokensCount(); k++) {
+					if (oAccountCryptoValue.getTokens(k).getHash().equals(token.getHash())) {
+						isTokenExists = true;
+						break;
+					}
+				}
+				if (!isTokenExists) {
+					oAccountCryptoValue.addTokens(token);
+					oAccountValue.setCryptos(i, oAccountCryptoValue);
+				}
+
 				putAccountValue(addr, oAccountValue.build());
 				return oAccountValue.getCryptosList().get(i).getTokensCount();
 			}
@@ -284,6 +297,59 @@ public class AccountHelper implements ActorService {
 		oAccountValue.addCryptos(oAccountCryptoValue.build());
 		putAccountValue(addr, oAccountValue.build());
 		return 1;
+	}
+
+	/**
+	 * batch add balance。
+	 * 
+	 * @param addr
+	 * @param symbol
+	 * @param tokens
+	 * @return
+	 * @throws Exception
+	 */
+	public synchronized long addCryptoBalances(byte[] addr, String symbol, ArrayList<AccountCryptoToken.Builder> tokens)
+			throws Exception {
+		Account.Builder oAccount = GetAccount(addr).toBuilder();
+		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
+
+		int symbolIndex = 0;
+		boolean isExistsSymbol = false;
+		for (int i = 0; i < oAccountValue.getCryptosList().size(); i++) {
+			if (oAccountValue.getCryptosList().get(i).getSymbol().equals(symbol)) {
+				isExistsSymbol = true;
+				symbolIndex = i;
+				break;
+			}
+		}
+
+		if (isExistsSymbol) {
+			AccountCryptoValue.Builder oAccountCryptoValue = oAccountValue.getCryptos(symbolIndex).toBuilder();
+			boolean isTokenExists = false;
+			for (AccountCryptoToken.Builder token : tokens) {
+				for (int k = 0; k < oAccountCryptoValue.getTokensCount(); k++) {
+					if (oAccountCryptoValue.getTokens(k).getHash().equals(token.getHash())) {
+						isTokenExists = true;
+						break;
+					}
+				}
+				if (!isTokenExists) {
+					oAccountCryptoValue.addTokens(token);
+				}
+			}
+			oAccountValue.setCryptos(symbolIndex, oAccountCryptoValue);
+			putAccountValue(addr, oAccountValue.build());
+			return oAccountValue.getCryptosList().get(symbolIndex).getTokensCount();
+		} else {
+			AccountCryptoValue.Builder oAccountCryptoValue = AccountCryptoValue.newBuilder();
+			oAccountCryptoValue.setSymbol(symbol);
+			for (AccountCryptoToken.Builder token : tokens) {
+				oAccountCryptoValue.addTokens(token);
+			}
+			oAccountValue.addCryptos(oAccountCryptoValue.build());
+			putAccountValue(addr, oAccountValue.build());
+			return tokens.size();
+		}
 	}
 
 	/**

@@ -11,7 +11,7 @@ message BlockEntity {
 message BlockHeader {
 	bytes parentHash = 1;
 	// bytes coinbase = 2;
-	// bytes stateRoot;
+	bytes stateRoot = 12;
 	bytes txTrieRoot = 3;
 	// bytes receiptTrieRoot;
 	int64 timestamp = 4;
