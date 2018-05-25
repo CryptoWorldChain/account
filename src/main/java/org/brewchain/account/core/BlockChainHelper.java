@@ -371,7 +371,6 @@ public class BlockChainHelper implements ActorService {
 	 */
 	public void reloadBlockCache() throws Exception {
 		// 数据库中的最后一个块
-
 		BlockEntity.Builder oBlockEntity;
 		OValue oOValue = dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get();
 		if (oOValue == null || oOValue.getExtdata() == null || oOValue.getExtdata().equals(ByteString.EMPTY)) {
