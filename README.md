@@ -38,6 +38,8 @@ Sys         [sys.proto](http://cwvi.club:9999/chaincore/account/blob/master/src/
 	txt/pbayc.do
 ## 获取交易
 	txt/pbgtx.do
+## 创建合约
+	txt/pbsct.do
 
 # 区块API
 ## 生成区块

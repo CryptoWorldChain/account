@@ -16,6 +16,7 @@ import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.brewchain.account.gens.Act.Account;
 import org.brewchain.account.gens.Tx.MultiTransaction;
+import org.brewchain.account.gens.Tx.MultiTransaction.Builder;
 import org.brewchain.account.gens.Tx.MultiTransactionBody;
 import org.brewchain.account.gens.Tx.MultiTransactionInput;
 import org.brewchain.account.gens.Tx.MultiTransactionNode;
@@ -28,7 +29,9 @@ import org.brewchain.account.gens.Tximpl.MultiTransactionInputImpl;
 import org.brewchain.account.gens.Tximpl.MultiTransactionOutputImpl;
 import org.brewchain.account.gens.Tximpl.MultiTransactionSignatureImpl;
 import org.fc.brewchain.bcapi.EncAPI;
+import org.fc.brewchain.bcapi.KeyPairs;
 
+import com.google.protobuf.AbstractMessageLite;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -75,9 +78,9 @@ public class TransactionHelper implements ActorService {
 		oNode.setAddress(KeyConstant.node.getAddress());
 		oNode.setNode(KeyConstant.node.getNode());
 		oMultiTransaction.setTxNode(oNode);
-		
+
 		MultiTransaction formatMultiTransaction = verifyAndSaveMultiTransaction(oMultiTransaction);
-		
+
 		// 保存交易到缓存中，用于广播
 		oSendingHashMapDB.put(formatMultiTransaction.getTxHash().toByteArray(), formatMultiTransaction.toByteArray());
 
@@ -116,7 +119,8 @@ public class TransactionHelper implements ActorService {
 		}
 
 		// 执行交易执行前的数据校验
-		// oiTransactionActuator.onPrepareExecute(oMultiTransaction.build(), senders, receivers);
+		// oiTransactionActuator.onPrepareExecute(oMultiTransaction.build(),
+		// senders, receivers);
 
 		oMultiTransaction.setTxHash(ByteString.EMPTY);
 		// 生成交易Hash
@@ -638,5 +642,22 @@ public class TransactionHelper implements ActorService {
 		tx.setStatus("error");
 		dao.getTxsDao().put(OEntityBuilder.byteKey2OKey(tx.getTxHash().toByteArray()),
 				OEntityBuilder.byteValue2OValue(tx.build().toByteArray()));
+	}
+
+	/**
+	 * generate contract address by transaction
+	 * 
+	 * @param oMultiTransaction
+	 * @return
+	 */
+	public byte[] getContractAddressByTransaction(MultiTransaction oMultiTransaction) throws Exception {
+		if (oMultiTransaction.getTxBody().getOutputsCount() != 0
+				|| oMultiTransaction.getTxBody().getInputsCount() != 1) {
+			throw new Exception("transaction type is wrong.");
+		}
+		KeyPairs pair = encApi.genKeys(String.format("%s%s",
+				encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(0).getAddress().toByteArray()),
+				oMultiTransaction.getTxBody().getInputs(0).getNonce()));
+		return encApi.hexDec(pair.getAddress());
 	}
 }

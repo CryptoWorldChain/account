@@ -17,6 +17,24 @@ enum PTXTCommand {
 	// CTX = 3; // 节点确认交易
 	// DTX = 4; // 节点回滚交易 
 	// BTX = 5; // 获取已确认未block交易
+	
+
+	SCT = 5; // send transaction of the contract creation
+}
+message ReqCreateContractTransaction {
+	MultiTransactionInputImpl input = 1;
+	string exdata = 2;
+	MultiTransactionSignatureImpl signature = 3;
+	repeated string delegate = 4;
+	string data = 5;
+	int64 timestamp = 6;
+}
+
+message RespCreateContractTransaction {
+	string txHash = 1;
+	string contractAddress = 2;
+	int32 retCode = 3;
+	string retMsg = 4;
 }
 
 message ReqCreateMultiTransaction {

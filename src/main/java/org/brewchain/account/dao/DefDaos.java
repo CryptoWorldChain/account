@@ -23,9 +23,9 @@ import onight.tfw.ojpa.api.annotations.StoreDAO;
 public class DefDaos extends SessionModules<Message> {
 	@StoreDAO(target = "bc_bdb", daoClass = AccoutDomain.class)
 	ODBSupport accountDao;
-
-	@StoreDAO(target = "bc_bdb", daoClass = ContractDomain.class)
-	ODBSupport contractDao;
+//
+//	@StoreDAO(target = "bc_bdb", daoClass = ContractDomain.class)
+//	ODBSupport contractDao;
 
 	// @StoreDAO(target = "bc_bdb", daoClass = TxDomain.class)
 	// ODBSupport txDao;
@@ -57,14 +57,14 @@ public class DefDaos extends SessionModules<Message> {
 	public ODBSupport getAccountDao() {
 		return accountDao;
 	}
-
-	public void setContractDao(DomainDaoSupport contractDao) {
-		this.contractDao = (ODBSupport) contractDao;
-	}
-
-	public ODBSupport getContractDao() {
-		return contractDao;
-	}
+//
+//	public void setContractDao(DomainDaoSupport contractDao) {
+//		this.contractDao = (ODBSupport) contractDao;
+//	}
+//
+//	public ODBSupport getContractDao() {
+//		return contractDao;
+//	}
 
 	// public void setTxDao(DomainDaoSupport txDao) {
 	// this.txDao = (ODBSupport) txDao;
@@ -118,9 +118,9 @@ public class DefDaos extends SessionModules<Message> {
 				&& txsDao != null 
 				&& TxSecondaryDomain.class.isInstance(txsDao)
 				&& txsDao.getDaosupport() != null
-				&& contractDao != null 
-				&& ContractDomain.class.isInstance(contractDao)
-				&& contractDao.getDaosupport() != null
+//				&& contractDao != null 
+//				&& ContractDomain.class.isInstance(contractDao)
+//				&& contractDao.getDaosupport() != null
 				&& accountDao != null
 				&& AccoutDomain.class.isInstance(accountDao)
 				&& accountDao.getDaosupport() != null) {

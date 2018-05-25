@@ -34,12 +34,8 @@ public class ActuatorCreateContract extends AbstractTransactionActuator implemen
 	@Override
 	public void onExecute(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
 			Map<ByteString, Account> receivers) throws Exception {
-		// 计算合约地址
-		KeyPairs pair = encApi.genKeys(String.format("%s%s",
-				encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(0).getAddress().toByteArray()),
-				oMultiTransaction.getTxBody().getInputs(0).getNonce()));
 		// 创建
-		oAccountHelper.createContractAccount(encApi.hexDec(pair.getAddress()),
+		oAccountHelper.CreateContract(oTransactionHelper.getContractAddressByTransaction(oMultiTransaction), null,
 				oMultiTransaction.getTxBody().getData().toByteArray());
 	}
 }

@@ -86,12 +86,13 @@ public class GetAccountImpl extends SessionModules<ReqGetAccount> {
 				oAccountTokenValueImpl.setToken(oAccountTokenValue.getToken());
 				oAccountValueImpl.addTokens(oAccountTokenValueImpl);
 			}
+			oAccountValueImpl.setCode(oAccountValue.getCode().toStringUtf8());
 			oRespGetAccount.setAccount(oAccountValueImpl);
 			oRespGetAccount.setRetCode(1);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
-//			e.printStackTrace();
-			log.error("GetAccountImpl error",e);
+			// e.printStackTrace();
+			log.error("GetAccountImpl error", e);
 			oRespGetAccount.clear();
 			oRespGetAccount.setRetCode(-1);
 		}

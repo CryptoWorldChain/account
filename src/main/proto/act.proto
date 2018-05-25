@@ -19,6 +19,9 @@ message AccountValue {
     repeated AccountTokenValue tokens = 8;
     repeated AccountCryptoValue cryptos = 9;
     bytes storage = 10;
+    bytes codeHash = 11;
+    bytes code = 12;
+    bytes data = 13;
 }
 
 message AccountTokenValue {
@@ -41,20 +44,6 @@ message AccountCryptoToken {
     bytes owner = 7; // 所有人的账户地址
     int32 nonce = 8; // 交易次数
     int64 ownertime = 9; // 所有人获取时间
-}
-
-message Contract {
-    bytes address = 1;
-    ContractValue value = 2;
-}
-
-message ContractValue {
-    int32 nonce = 1;
-    int64 balance = 2;
-    bytes storage = 3;
-    bytes codeHash = 4;
-    bytes code = 5;
-    bytes data = 6;
 }
 
 message ICO {

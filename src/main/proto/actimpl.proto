@@ -7,9 +7,10 @@ enum PACTModule {
 	ACT = 0; // 账户，合约，合约代码
 };
 enum PACTCommand {
-    CAC = 0; // 保存账户，合约
-    GAC = 1; // 获取账户，合约
+    CAC = 0; // 保存账户
+    GAC = 1; // 获取账户
     UAC = 2; // 创建多重签名账户
+
 }
 
 message ReqCreateAccount {
@@ -46,13 +47,6 @@ message RespGetAccount {
     
 }
 
-message ReqCreateContract {
-    Contract contract = 1;
-}
-
-message RespCreateContract {
-    int32 retCode = 1;
-}
 
 message AccountValueImpl {
     int32 nonce = 1;
@@ -64,6 +58,7 @@ message AccountValueImpl {
     repeated string address = 7;
     repeated AccountTokenValueImpl tokens = 8;
     repeated AccountCryptoValueImpl cryptos = 9;
+    string code = 10;
 }
 
 message AccountTokenValueImpl {

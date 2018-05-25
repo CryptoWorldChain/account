@@ -19,8 +19,6 @@ import org.brewchain.account.gens.Act.AccountCryptoToken;
 import org.brewchain.account.gens.Act.AccountCryptoValue;
 import org.brewchain.account.gens.Act.AccountTokenValue;
 import org.brewchain.account.gens.Act.AccountValue;
-import org.brewchain.account.gens.Act.Contract;
-import org.brewchain.account.gens.Act.ContractValue;
 import org.brewchain.account.gens.Act.ICO;
 import org.brewchain.account.gens.Act.ICOValue;
 import org.fc.brewchain.bcapi.EncAPI;
@@ -53,11 +51,23 @@ public class AccountHelper implements ActorService {
 	}
 
 	public synchronized Account CreateAccount(byte[] address, byte[] pubKey) {
-		return CreateUnionAccount(address, pubKey, 0, 0, 0, null);
+		return CreateAccount(address, pubKey, 0, 0, 0, null, null);
+	}
+
+	public synchronized Account CreateContract(byte[] address, byte[] pubKey, byte[] code) {
+		if (code == null) {
+			return null;
+		}
+		return CreateAccount(address, pubKey, 0, 0, 0, null, code);
 	}
 
 	public synchronized Account CreateUnionAccount(byte[] address, byte[] pubKey, long max, long acceptMax,
 			int acceptLimit, List<ByteString> addresses) {
+		return CreateAccount(address, pubKey, max, acceptMax, acceptLimit, addresses, null);
+	}
+
+	private synchronized Account CreateAccount(byte[] address, byte[] pubKey, long max, long acceptMax, int acceptLimit,
+			List<ByteString> addresses, byte[] code) {
 		Account.Builder oUnionAccount = Account.newBuilder();
 		AccountValue.Builder oUnionAccountValue = AccountValue.newBuilder();
 
@@ -71,6 +81,11 @@ public class AccountHelper implements ActorService {
 		oUnionAccountValue.setNonce(KeyConstant.EMPTY_NONCE.intValue());
 		oUnionAccountValue.setPubKey(ByteString.copyFrom(pubKey));
 
+		if (code != null) {
+			oUnionAccountValue.setCode(ByteString.copyFrom(code));
+			oUnionAccountValue.setCodeHash(ByteString.copyFrom(encApi.sha3Encode(code)));
+		}
+
 		oUnionAccount.setAddress(ByteString.copyFrom(address));
 		oUnionAccount.setValue(oUnionAccountValue);
 
@@ -80,27 +95,6 @@ public class AccountHelper implements ActorService {
 	public synchronized Account CreateUnionAccount(Account oAccount) {
 		putAccountValue(oAccount.getAddress().toByteArray(), oAccount.getValue());
 		return oAccount;
-	}
-
-	/**
-	 * 创建合约账户
-	 * 
-	 * @param address
-	 * @param code
-	 * @return
-	 */
-	public synchronized Contract createContractAccount(byte[] address, byte[] code) {
-		Contract.Builder oContract = Contract.newBuilder();
-		ContractValue.Builder oContractValue = ContractValue.newBuilder();
-		oContract.setAddress(ByteString.copyFrom(address));
-
-		oContractValue.setBalance(KeyConstant.EMPTY_BALANCE.intValue());
-		oContractValue.setNonce(KeyConstant.EMPTY_NONCE.intValue());
-		oContractValue.setCode(ByteString.copyFrom(code));
-		oContractValue.setCodeHash(ByteString.copyFrom(encApi.sha3Encode(code)));
-		oContract.setValue(oContractValue);
-		putContractValue(address, oContractValue.build());
-		return oContract.build();
 	}
 
 	/**
@@ -143,24 +137,6 @@ public class AccountHelper implements ActorService {
 			// TODO: handle exception
 		}
 		return null;
-	}
-
-	/**
-	 * 获取合约信息
-	 * 
-	 * @param addr
-	 * @return
-	 * @throws Exception
-	 */
-	public Contract GetContract(byte[] addr) throws Exception {
-		OValue oValue = dao.getContractDao().get(OEntityBuilder.byteKey2OKey(addr)).get();
-		ContractValue.Builder oContractValue = ContractValue.newBuilder();
-		oContractValue.mergeFrom(oValue.getExtdata());
-
-		Contract.Builder oContract = Contract.newBuilder();
-		oContract.setAddress(ByteString.copyFrom(addr));
-		oContract.setValue(oContractValue);
-		return oContract.build();
 	}
 
 	/**
@@ -217,40 +193,6 @@ public class AccountHelper implements ActorService {
 		oAccountValue.addTokens(oAccountTokenValue);
 		putAccountValue(addr, oAccountValue.build());
 		return oAccountTokenValue.getBalance();
-	}
-
-	/**
-	 * 增加加密Token账户余额
-	 * 
-	 * @param addr
-	 * @param symbol
-	 * @param hash
-	 * @return
-	 * @throws Exception
-	 */
-	public synchronized long addCryptoBalance(byte[] addr, String symbol, byte[] hash) throws Exception {
-		throw new Exception("未实现该方法");
-		// Account.Builder oAccount = GetAccount(addr).toBuilder();
-		// AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
-		//
-		// for (int i = 0; i < oAccountValue.getCryptosList().size(); i++) {
-		// if (oAccountValue.getCryptosList().get(i).getSymbol().equals(symbol))
-		// {
-		// oAccountValue.getCryptosList().set(i,
-		// oAccountValue.getCryptos(i).toBuilder().addTokens(token).build());
-		// putAccountValue(addr, oAccountValue.build());
-		// return oAccountValue.getCryptosList().get(i).getTokensCount();
-		// }
-		// }
-		//
-		// // 如果是第一个，直接增加一个
-		// AccountCryptoValue.Builder oAccountCryptoValue =
-		// AccountCryptoValue.newBuilder();
-		// oAccountCryptoValue.setSymbol(symbol);
-		// oAccountCryptoValue.addTokens(token);
-		// oAccountValue.addCryptos(oAccountCryptoValue.build());
-		// putAccountValue(addr, oAccountValue.build());
-		// return 1;
 	}
 
 	/**
@@ -398,6 +340,21 @@ public class AccountHelper implements ActorService {
 		oAccountValue.setNonce(oAccountValue.getNonce() + nonce);
 		putAccountValue(addr, oAccountValue.build());
 		return oAccountValue.getNonce();
+	}
+
+	public synchronized boolean isContract(byte[] addr) {
+		Account.Builder oAccount = GetAccount(addr).toBuilder();
+		if (oAccount == null) {
+			log.error("account not found::" + encApi.hexEnc(addr));
+			return false;
+		}
+		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
+		if (oAccountValue.getCodeHash() == null || oAccountValue.getCode() == null
+				|| oAccountValue.getCodeHash().equals(ByteString.EMPTY)
+				|| oAccountValue.getCode().equals(ByteString.EMPTY)) {
+			return false;
+		}
+		return true;
 	}
 
 	/**
@@ -549,11 +506,6 @@ public class AccountHelper implements ActorService {
 	private void putAccountValue(byte[] addr, AccountValue oAccountValue) {
 		dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(addr),
 				OEntityBuilder.byteValue2OValue(oAccountValue.toByteArray()));
-	}
-
-	private void putContractValue(byte[] addr, ContractValue oContractValue) {
-		dao.getContractDao().put(OEntityBuilder.byteKey2OKey(addr),
-				OEntityBuilder.byteValue2OValue(oContractValue.toByteArray()));
 	}
 
 	public void BatchPutAccounts(LinkedList<OKey> keys, LinkedList<OValue> values) {
