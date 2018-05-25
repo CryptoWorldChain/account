@@ -206,7 +206,7 @@ public class BlockHelper implements ActorService {
 		try {
 			oParentBlock = getBlock(oBlockHeader.getParentHash().toByteArray()).build();
 		} catch (Exception e) {
-			log.error("parent block not found::" + (oBlockHeader.getNumber() - 1));
+			log.error("parent block not found::" + (oBlockHeader.getNumber() - 1) + " current::" + currentLastBlockNumber);
 		}
 		if (oParentBlock == null) {
 			oAddBlockResponse.setRetCode(-1);
@@ -234,6 +234,10 @@ public class BlockHelper implements ActorService {
 					} else if (childs.size() > 1) {
 
 					}
+					
+					currentLastBlockNumber = blockChainHelper.getLastBlockNumber();
+					log.debug("success add block, current number is::" + currentLastBlockNumber);
+					oAddBlockResponse.setCurrentNumber(currentLastBlockNumber);
 				} catch (Exception e) {
 					oAddBlockResponse.setRetCode(-2);
 					if (e.getMessage() != null)
