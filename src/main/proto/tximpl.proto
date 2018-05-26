@@ -79,6 +79,7 @@ message MultiTransactionImpl {
     string txHash = 1;
 	MultiTransactionBodyImpl txBody = 2;
 	MultiTransactionNodeImpl node = 3;
+	string status = 4;
 } 
 
 message MultiTransactionBodyImpl {
