@@ -208,6 +208,9 @@ public class AccountHelper implements ActorService {
 	public synchronized long addCryptoBalance(byte[] addr, String symbol, AccountCryptoToken.Builder token)
 			throws Exception {
 		Account.Builder oAccount = GetAccount(addr).toBuilder();
+		if (oAccount == null) {
+			throw new Exception("account not founded::" + encApi.hexEnc(addr));
+		}
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 
 		for (int i = 0; i < oAccountValue.getCryptosList().size(); i++) {
@@ -254,6 +257,9 @@ public class AccountHelper implements ActorService {
 	public synchronized long addCryptoBalances(byte[] addr, String symbol, ArrayList<AccountCryptoToken.Builder> tokens)
 			throws Exception {
 		Account.Builder oAccount = GetAccount(addr).toBuilder();
+		if (oAccount == null) {
+			throw new Exception("account not founded::" + encApi.hexEnc(addr));
+		}
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 
 		int symbolIndex = 0;
