@@ -51,28 +51,18 @@ public class CacheBlockHashMapDB implements ActorService {
 			return storage.get(key);
 		}
 	}
+	
+	public byte[] getAndDelete(byte[] key) {
+		try (ALock l = readLock.lock()) {
+			byte[] ret = storage.get(key);
+			storage.remove(key);
+			return ret;
+		}
+	}
 
 	public void delete(byte[] key) {
 		try (ALock l = writeLock.lock()) {
 			storage.remove(key);
 		}
-	}
-
-	public Set<byte[]> keys() {
-		try (ALock l = readLock.lock()) {
-			return getStorage().keySet();
-		}
-	}
-
-	public void updateBatch(Map<byte[], byte[]> rows) {
-		try (ALock l = writeLock.lock()) {
-			for (Map.Entry<byte[], byte[]> entry : rows.entrySet()) {
-				put(entry.getKey(), entry.getValue());
-			}
-		}
-	}
-
-	public Map<byte[], byte[]> getStorage() {
-		return storage;
 	}
 }

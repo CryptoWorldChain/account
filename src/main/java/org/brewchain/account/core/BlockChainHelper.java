@@ -25,6 +25,7 @@ import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -148,26 +149,24 @@ public class BlockChainHelper implements ActorService {
 		OValue[] values = new OValue[] { OEntityBuilder.byteValue2OValue(oBlock.toByteArray()) };
 
 		dao.getBlockDao().batchPuts(keys, values);
-		oCacheHashMapDB.put(oBlock.getHeader().getBlockHash().toByteArray(), oBlock.toByteArray());
+		oCacheHashMapDB.put(oBlock.getHeader().getParentHash().toByteArray(), oBlock.toByteArray());
 		return true;
 	}
 
 	public List<BlockEntity> tryGetChildBlock(byte[] parentHash) {
 		List<BlockEntity> list = new ArrayList<BlockEntity>();
-		for (Iterator<Map.Entry<byte[], byte[]>> it = oCacheHashMapDB.getStorage().entrySet().iterator(); it
-				.hasNext();) {
+
+		byte[] blockEntityHash = oCacheHashMapDB.get(parentHash);
+		if (blockEntityHash != null) {
+			BlockEntity.Builder oBlock = BlockEntity.newBuilder();
 			try {
-				Map.Entry<byte[], byte[]> item = it.next();
-				BlockEntity.Builder oBlock = BlockEntity.newBuilder();
-				oBlock.mergeFrom(item.getValue());
-				if (FastByteComparisons.equal(parentHash, oBlock.getHeader().getParentHash().toByteArray())) {
-					list.add(oBlock.build());
-				}
-				it.remove();
-			} catch (Exception e) {
+				oBlock.mergeFrom(blockEntityHash);
+				list.add(oBlock.build());
+			} catch (InvalidProtocolBufferException e) {
 				log.error("error on init block from cache::" + e.getMessage());
 			}
-		}
+
+		} 
 		return list;
 	}
 

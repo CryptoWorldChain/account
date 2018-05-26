@@ -192,7 +192,7 @@ public class BlockHelper implements ActorService {
 	}
 
 	public synchronized AddBlockResponse ApplyBlock(BlockEntity oBlockEntity) {
-
+		log.debug("request apply block::" + oBlockEntity.getHeader().getNumber());
 		AddBlockResponse.Builder oAddBlockResponse = AddBlockResponse.newBuilder();
 		BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
 		int currentLastBlockNumber;
@@ -202,8 +202,9 @@ public class BlockHelper implements ActorService {
 			oAddBlockResponse.setRetCode(-2);
 			return oAddBlockResponse.build();
 		}
-		log.debug("receive block number::" + oBlockEntity.getHeader().getNumber() + " current::"
-				+ currentLastBlockNumber);
+		log.debug(
+				"receive block number::" + oBlockEntity.getHeader().getNumber() + " current::" + currentLastBlockNumber
+						+ " hash::" + encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()));
 		// 上一个区块是否存在
 		BlockEntity oParentBlock = null;
 		try {
@@ -213,8 +214,8 @@ public class BlockHelper implements ActorService {
 		if (oParentBlock == null) {
 			oAddBlockResponse.setRetCode(-1);
 			oAddBlockResponse.setCurrentNumber(currentLastBlockNumber);
-			log.error("parent block not found::" + (oBlockHeader.getNumber() - 1) + " current::"
-					+ currentLastBlockNumber);
+			log.error("parent block not found:: parent::" + (oBlockHeader.getNumber() - 1) + " block::"
+					+ oBlockHeader.getNumber() + " current::" + currentLastBlockNumber);
 			// 暂存
 			blockChainHelper.cacheBlock(oBlockEntity);
 		} else {
@@ -224,7 +225,7 @@ public class BlockHelper implements ActorService {
 				oAddBlockResponse.setCurrentNumber(currentLastBlockNumber);
 
 				log.error("parent block number error: parent::" + oParentBlock.getHeader().getNumber() + " block::"
-						+ (oBlockHeader.getNumber() - 1) + " current::" + currentLastBlockNumber);
+						+ oBlockHeader.getNumber() + " current::" + currentLastBlockNumber);
 				// 暂存
 				blockChainHelper.cacheBlock(oBlockEntity);
 			} else {
@@ -237,7 +238,7 @@ public class BlockHelper implements ActorService {
 					if (childs.size() == 1) {
 						oAddBlockResponse = ApplyBlock(childs.get(0)).toBuilder();
 					} else if (childs.size() > 1) {
-
+						oAddBlockResponse = ApplyBlock(childs.get(0)).toBuilder();
 					}
 
 					currentLastBlockNumber = blockChainHelper.getLastBlockNumber();
@@ -254,6 +255,8 @@ public class BlockHelper implements ActorService {
 			}
 		}
 
+		log.debug("return apply block::" + " block::" + oBlockEntity.getHeader().getNumber() + " current::"
+				+ oAddBlockResponse.getCurrentNumber());
 		return oAddBlockResponse.build();
 	}
 
