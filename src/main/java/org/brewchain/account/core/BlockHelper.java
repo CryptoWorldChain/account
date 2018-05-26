@@ -52,7 +52,7 @@ public class BlockHelper implements ActorService {
 	EncAPI encApi;
 	@ActorRequire(name = "Def_Daos", scope = "global")
 	DefDaos dao;
-	
+
 	// @ActorRequire(name = "Block_StorageDB", scope = "global")
 	// BlockStorageDB oBlockStorageDB;
 	//
@@ -130,7 +130,7 @@ public class BlockHelper implements ActorService {
 		// oBlockMiner.setAddress(value);
 
 		oBlockHeader.setTxTrieRoot(ByteString.copyFrom(oTrieImpl.getRootHash()));
-		//accountHelper.getStateRoot(addr);
+		// accountHelper.getStateRoot(addr);
 		oBlockHeader.setBlockHash(ByteString.copyFrom(encApi.sha256Encode(oBlockHeader.build().toByteArray())));
 		oBlockEntity.setHeader(oBlockHeader);
 		oBlockEntity.setBody(oBlockBody);
@@ -192,6 +192,7 @@ public class BlockHelper implements ActorService {
 	}
 
 	public synchronized AddBlockResponse ApplyBlock(BlockEntity oBlockEntity) {
+
 		AddBlockResponse.Builder oAddBlockResponse = AddBlockResponse.newBuilder();
 		BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
 		int currentLastBlockNumber;
@@ -201,17 +202,19 @@ public class BlockHelper implements ActorService {
 			oAddBlockResponse.setRetCode(-2);
 			return oAddBlockResponse.build();
 		}
+		log.debug("receive block number::" + oBlockEntity.getHeader().getNumber() + " current::"
+				+ currentLastBlockNumber);
 		// 上一个区块是否存在
 		BlockEntity oParentBlock = null;
 		try {
 			oParentBlock = getBlock(oBlockHeader.getParentHash().toByteArray()).build();
 		} catch (Exception e) {
-			log.error("parent block not found::" + (oBlockHeader.getNumber() - 1) + " current::" + currentLastBlockNumber);
 		}
 		if (oParentBlock == null) {
 			oAddBlockResponse.setRetCode(-1);
 			oAddBlockResponse.setCurrentNumber(currentLastBlockNumber);
-
+			log.error("parent block not found::" + (oBlockHeader.getNumber() - 1) + " current::"
+					+ currentLastBlockNumber);
 			// 暂存
 			blockChainHelper.cacheBlock(oBlockEntity);
 		} else {
@@ -220,6 +223,8 @@ public class BlockHelper implements ActorService {
 				oAddBlockResponse.setRetCode(-1);
 				oAddBlockResponse.setCurrentNumber(currentLastBlockNumber);
 
+				log.error("parent block number error: parent::" + oParentBlock.getHeader().getNumber() + " block::"
+						+ (oBlockHeader.getNumber() - 1) + " current::" + currentLastBlockNumber);
 				// 暂存
 				blockChainHelper.cacheBlock(oBlockEntity);
 			} else {
@@ -234,7 +239,7 @@ public class BlockHelper implements ActorService {
 					} else if (childs.size() > 1) {
 
 					}
-					
+
 					currentLastBlockNumber = blockChainHelper.getLastBlockNumber();
 					log.debug("success add block, current number is::" + currentLastBlockNumber);
 					oAddBlockResponse.setCurrentNumber(currentLastBlockNumber);
@@ -242,6 +247,9 @@ public class BlockHelper implements ActorService {
 					oAddBlockResponse.setRetCode(-2);
 					if (e.getMessage() != null)
 						oAddBlockResponse.setRetMsg(e.getMessage());
+
+					if (e != null && e.getMessage() != null)
+						log.error("append block error::" + e.getMessage());
 				}
 			}
 		}
