@@ -22,21 +22,21 @@ import onight.tfw.ntrans.api.ActorService;
 @Slf4j
 @Data
 public class CacheBlockHashMapDB implements ActorService {
-	protected final ConcurrentHashMap<byte[], byte[]> storage;
+	protected final ConcurrentHashMap<String, byte[]> storage;
 
 	protected ReadWriteLock rwLock = new ReentrantReadWriteLock();
 	protected ALock readLock = new ALock(rwLock.readLock());
 	protected ALock writeLock = new ALock(rwLock.writeLock());
 
 	public CacheBlockHashMapDB() {
-		this(new ConcurrentHashMap<byte[], byte[]>());
+		this(new ConcurrentHashMap<String, byte[]>());
 	}
 
-	public CacheBlockHashMapDB(ConcurrentHashMap<byte[], byte[]> storage) {
+	public CacheBlockHashMapDB(ConcurrentHashMap<String, byte[]> storage) {
 		this.storage = storage;
 	}
 
-	public void put(byte[] key, byte[] val) {
+	public void put(String key, byte[] val) {
 		if (val == null) {
 			delete(key);
 		} else {
@@ -46,13 +46,13 @@ public class CacheBlockHashMapDB implements ActorService {
 		}
 	}
 
-	public byte[] get(byte[] key) {
+	public byte[] get(String key) {
 		try (ALock l = readLock.lock()) {
 			return storage.get(key);
 		}
 	}
 	
-	public byte[] getAndDelete(byte[] key) {
+	public byte[] getAndDelete(String key) {
 		try (ALock l = readLock.lock()) {
 			byte[] ret = storage.get(key);
 			storage.remove(key);
@@ -60,7 +60,7 @@ public class CacheBlockHashMapDB implements ActorService {
 		}
 	}
 
-	public void delete(byte[] key) {
+	public void delete(String key) {
 		try (ALock l = writeLock.lock()) {
 			storage.remove(key);
 		}

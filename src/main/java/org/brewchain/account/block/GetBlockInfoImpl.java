@@ -1,6 +1,11 @@
 package org.brewchain.account.block;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map.Entry;
+
 import org.brewchain.account.core.BlockChainHelper;
+import org.brewchain.account.core.CacheBlockHashMapDB;
 import org.brewchain.account.core.WaitBlockHashMapDB;
 import org.brewchain.account.core.WaitSendHashMapDB;
 import org.brewchain.account.gens.Blockimpl.PBCTCommand;
@@ -33,6 +38,8 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 	WaitSendHashMapDB oSendingHashMapDB; // 保存待广播交易
 	@ActorRequire(name = "WaitBlock_HashMapDB", scope = "global")
 	WaitBlockHashMapDB oPendingHashMapDB; // 保存待打包block的交易
+	@ActorRequire(name = "CacheBlock_HashMapDB", scope = "global")
+	CacheBlockHashMapDB oCacheHashMapDB;
 
 	@Override
 	public String[] getCmds() {
@@ -53,10 +60,13 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 			oRespBlockInfo.setCache(blockChainHelper.getBlockCacheFormatString());
 			oRespBlockInfo.setWaitSync(oSendingHashMapDB.keys().size());
 			oRespBlockInfo.setWaitBlock(oPendingHashMapDB.keys().size());
+			for (Entry<String, byte[]> entry : oCacheHashMapDB.getStorage().entrySet()) {
+				oRespBlockInfo.addTemp(entry.getKey());
+			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
-//			e.printStackTrace();
-			log.error("GetBlockInfoImpl error",e);
+			// e.printStackTrace();
+			log.error("GetBlockInfoImpl error", e);
 		}
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespBlockInfo.build()));
 	}

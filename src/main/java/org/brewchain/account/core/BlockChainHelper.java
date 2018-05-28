@@ -149,24 +149,27 @@ public class BlockChainHelper implements ActorService {
 		OValue[] values = new OValue[] { OEntityBuilder.byteValue2OValue(oBlock.toByteArray()) };
 
 		dao.getBlockDao().batchPuts(keys, values);
-		oCacheHashMapDB.put(oBlock.getHeader().getParentHash().toByteArray(), oBlock.toByteArray());
+		log.debug("cache block, parent::" + encApi.hexEnc(oBlock.getHeader().getParentHash().toByteArray()));
+		oCacheHashMapDB.put(encApi.hexEnc(oBlock.getHeader().getParentHash().toByteArray()), oBlock.toByteArray());
 		return true;
 	}
 
 	public List<BlockEntity> tryGetChildBlock(byte[] parentHash) {
 		List<BlockEntity> list = new ArrayList<BlockEntity>();
 
-		byte[] blockEntityHash = oCacheHashMapDB.get(parentHash);
+		byte[] blockEntityHash = oCacheHashMapDB.getAndDelete(encApi.hexEnc(parentHash));
 		if (blockEntityHash != null) {
-			BlockEntity.Builder oBlock = BlockEntity.newBuilder();
+			BlockEntity.Builder oBlock;
 			try {
-				oBlock.mergeFrom(blockEntityHash);
+				log.debug("get cache block, parent::" + encApi.hexEnc(parentHash));
+				oBlock = BlockEntity.newBuilder().mergeFrom(blockEntityHash);
 				list.add(oBlock.build());
 			} catch (InvalidProtocolBufferException e) {
 				log.error("error on init block from cache::" + e.getMessage());
 			}
-
-		} 
+		} else {
+			log.debug("cache block not found, parent::" + encApi.hexEnc(parentHash));
+		}
 		return list;
 	}
 

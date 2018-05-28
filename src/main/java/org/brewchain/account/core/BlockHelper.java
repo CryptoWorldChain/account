@@ -235,6 +235,9 @@ public class BlockHelper implements ActorService {
 					// 检查
 					List<BlockEntity> childs = blockChainHelper
 							.tryGetChildBlock(oBlockEntity.getHeader().getBlockHash().toByteArray());
+					
+					log.debug("success add block, current number is::" + currentLastBlockNumber+ " next block count::" + childs.size());
+
 					if (childs.size() == 1) {
 						oAddBlockResponse = ApplyBlock(childs.get(0)).toBuilder();
 					} else if (childs.size() > 1) {
@@ -242,7 +245,6 @@ public class BlockHelper implements ActorService {
 					}
 
 					currentLastBlockNumber = blockChainHelper.getLastBlockNumber();
-					log.debug("success add block, current number is::" + currentLastBlockNumber);
 					oAddBlockResponse.setCurrentNumber(currentLastBlockNumber);
 				} catch (Exception e) {
 					oAddBlockResponse.setRetCode(-2);
