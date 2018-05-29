@@ -11,6 +11,7 @@ import java.util.TimerTask;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Validate;
+import org.apache.felix.ipojo.util.Log;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.doublyll.DoubleLinkedList;
 import org.brewchain.account.doublyll.Node;
@@ -19,7 +20,9 @@ import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.brewchain.account.util.ByteUtil;
 import org.brewchain.account.util.FastByteComparisons;
 import org.brewchain.account.util.NodeDef;
+import org.brewchain.account.util.NodeDef.NodeAccount;
 import org.brewchain.account.util.OEntityBuilder;
+import org.brewchain.bcapi.gens.Oentity.KeyStoreValue;
 import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.fc.brewchain.bcapi.EncAPI;
@@ -116,32 +119,28 @@ public class BlockChainHelper implements ActorService {
 	 * @return
 	 */
 	public boolean appendBlock(BlockEntity oBlock) {
+		if (blockCache.insertAfter(oBlock.getHeader().getBlockHash().toByteArray(), oBlock.getHeader().getNumber(),
+				oBlock.getHeader().getParentHash().toByteArray())) {
+			OKey[] keys = new OKey[] { OEntityBuilder.byteKey2OKey(oBlock.getHeader().getBlockHash()),
+					OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK) };
+			OValue[] values = new OValue[] { OEntityBuilder.byteValue2OValue(oBlock.toByteArray()),
+					OEntityBuilder.byteValue2OValue(oBlock.getHeader().getBlockHash()) };
+			dao.getBlockDao().batchPuts(keys, values);
 
-		OKey[] keys = new OKey[] { OEntityBuilder.byteKey2OKey(oBlock.getHeader().getBlockHash()),
-				OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK) };
-		OValue[] values = new OValue[] { OEntityBuilder.byteValue2OValue(oBlock.toByteArray()),
-				OEntityBuilder.byteValue2OValue(oBlock.getHeader().getBlockHash()) };
+			if (oBlock.getBody() != null) {
+				LinkedList<OKey> txBlockKeyList = new LinkedList<OKey>();
+				LinkedList<OValue> txBlockValueList = new LinkedList<OValue>();
 
-		dao.getBlockDao().batchPuts(keys, values);
-
-		if (oBlock.getBody() != null) {
-			LinkedList<OKey> txBlockKeyList = new LinkedList<OKey>();
-			LinkedList<OValue> txBlockValueList = new LinkedList<OValue>();
-
-			for (MultiTransaction oMultiTransaction : oBlock.getBody().getTxsList()) {
-				txBlockKeyList.add(OEntityBuilder.byteKey2OKey(oMultiTransaction.getTxHash()));
-				txBlockValueList.add(OEntityBuilder.byteValue2OValue(oBlock.getHeader().getBlockHash()));
+				for (MultiTransaction oMultiTransaction : oBlock.getBody().getTxsList()) {
+					txBlockKeyList.add(OEntityBuilder.byteKey2OKey(oMultiTransaction.getTxHash()));
+					txBlockValueList.add(OEntityBuilder.byteValue2OValue(oBlock.getHeader().getBlockHash()));
+				}
+				dao.getTxblockDao().batchPuts(txBlockKeyList.toArray(new OKey[0]),
+						txBlockValueList.toArray(new OValue[0]));
 			}
-
-			dao.getTxblockDao().batchPuts(txBlockKeyList.toArray(new OKey[0]), txBlockValueList.toArray(new OValue[0]));
-
+			return true;
 		}
-		// log.debug(String.format("添加区块 %s hash %s",
-		// oBlock.getHeader().getNumber(),
-		// encApi.hexEnc(oBlock.getHeader().getBlockHash().toByteArray())));
-
-		return blockCache.insertAfter(oBlock.getHeader().getBlockHash().toByteArray(), oBlock.getHeader().getNumber(),
-				oBlock.getHeader().getParentHash().toByteArray());
+		return false;
 	}
 
 	public boolean cacheBlock(BlockEntity oBlock) {
@@ -321,49 +320,30 @@ public class BlockChainHelper implements ActorService {
 			oNodeDef.setBcuid(bcuid);
 			oNodeDef.setAddress(address);
 			oNodeDef.setNode(name);
-			KeyConstant.node = oNodeDef;
-			log.debug("节点信息::" + KeyConstant.node);
+//			
+//			OValue oOValue = dao.getAccountDao()
+//					.get(OEntityBuilder.byteKey2OKey("org.bc.manage.node.account".getBytes())).get();
+//			if (oOValue == null || oOValue.getExtdata() == null || oOValue.getExtdata().equals(ByteString.EMPTY)) {
+//
+//			} else {
+//				KeyStoreValue oKeyStoreValue = KeyStoreValue.parseFrom(oOValue.getExtdata().toByteArray());
+//				NodeAccount oNodeAccount = oNodeDef.new NodeAccount();
+//				oNodeAccount.setAddress(oKeyStoreValue.getAddress());
+//				oNodeAccount.setBcuid(oKeyStoreValue.getBcuid());
+//				oNodeAccount.setPriKey(oKeyStoreValue.getPrivKey());
+//				oNodeAccount.setPubKey(oKeyStoreValue.getPubKey());
+//				oNodeDef.setoAccount(oNodeAccount);
+//			}
 
-			while (dao != null && blockCache != null) {
-				reloadBlockCache();
-				break;
-			}
-			// 配置项检查
-			log.debug("节点启动！");
+			KeyConstant.node = oNodeDef;
+			reloadBlockCache();
+			log.debug("block load complete");
 		} catch (Exception e) {
-			// e.printStackTrace();
-			log.error("节点异常", e);
+			blockCache.clear();
+			oCacheHashMapDB.clear();
+			log.error("error on start node account::", e);
 		}
 	}
-
-	// @Validate
-	// public void startup() {
-	// try {
-	// // 开一线程，来监控对象注入状态，只有所有对象都注入成功了之后才执行
-	// // reloadBlockCache();
-	// final Timer timer = new Timer();
-	// // 设定定时任务
-	// timer.schedule(new TimerTask() {
-	// // 定时任务执行方法
-	// @Override
-	// public void run() {
-	// try {
-	// while (dao != null && blockCache != null) {
-	// reloadBlockCache();
-	// break;
-	// }
-	// // 配置项检查
-	// log.debug("节点启动！");
-	// } catch (Exception e) {
-	// e.printStackTrace();
-	// }
-	// }
-	// }, 1000 * 20);
-	// log.debug("等待节点启动中。。。");
-	// } catch (Exception e) {
-	// e.printStackTrace();
-	// }
-	// }
 
 	/**
 	 * 该方法会移除本地缓存，然后取数据库中保存的最后一个块的信息，重新构造缓存。该方法可能会带来很大开销。在缓存加载后节点才启动完成。在启动完成之前
@@ -372,7 +352,6 @@ public class BlockChainHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public void reloadBlockCache() throws Exception {
-		// 数据库中的最后一个块
 		BlockEntity.Builder oBlockEntity;
 		OValue oOValue = dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get();
 		if (oOValue == null || oOValue.getExtdata() == null || oOValue.getExtdata().equals(ByteString.EMPTY)) {
@@ -387,8 +366,6 @@ public class BlockChainHelper implements ActorService {
 		}
 		int blockNumber = oBlockEntity.getHeader().getNumber();
 		blockCache.insertFirst(oBlockEntity.getHeader().getBlockHash().toByteArray(), blockNumber);
-		log.debug("genesis hash::" + encApi.hexEnc(blockCache.getFirst().data));
-		log.debug("genesis hash::" + encApi.hexEnc(blockCache.last()));
 
 		// 开始遍历区块
 		while (blockNumber >= 0) {
@@ -399,18 +376,28 @@ public class BlockChainHelper implements ActorService {
 				if (oBlockEntity.getHeader().getNumber() == KeyConstant.GENESIS_NUMBER) {
 					break;
 				} else {
-					throw new Exception(String.format("块数据错误，索引为 %s 的块 %s 没有父块", oBlockEntity.getHeader().getNumber(),
+					throw new Exception(String.format("block db error，block %s can not find parent block, hash::%s",
+							oBlockEntity.getHeader().getNumber(),
 							encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray())));
 				}
 			}
-			BlockEntity loopBlockEntity = getBlock(oBlockEntity.getHeader().getParentHash().toByteArray()).build();
+			BlockEntity loopBlockEntity = null;
+
+			try {
+				loopBlockEntity = getBlock(oBlockEntity.getHeader().getParentHash().toByteArray()).build();
+			} catch (Exception e) {
+				log.error("block not found:: hash::"
+						+ encApi.hexEnc(oBlockEntity.getHeader().getParentHash().toByteArray()) + " current::"
+						+ oBlockEntity.getHeader().getNumber());
+				throw e;
+			}
 
 			if (blockNumber != loopBlockEntity.getHeader().getNumber()) {
-				throw new Exception(
-						String.format("期望的块索引 %s 实际得到的块索引 %s", blockNumber, loopBlockEntity.getHeader().getNumber()));
+				throw new Exception(String.format("respect block number %s ,get block number %s", blockNumber,
+						loopBlockEntity.getHeader().getNumber()));
 			}
 			blockCache.insertFirst(loopBlockEntity.getHeader().getBlockHash().toByteArray(), blockNumber);
-			log.info(String.format("加载第 %s 块Block", blockNumber));
+			log.info(String.format("load block %s from datasource", blockNumber));
 			if (blockNumber == 0) {
 				break;
 			}

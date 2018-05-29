@@ -32,7 +32,7 @@ import onight.tfw.ntrans.api.ActorService;
 import onight.tfw.ntrans.api.annotation.ActorRequire;
 
 /**
- * @author sean 用于账户的存储逻辑封装
+ * @author
  * 
  */
 @NActorProvider
@@ -254,7 +254,7 @@ public class AccountHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public synchronized long addCryptoBalances(byte[] addr, String symbol, ArrayList<AccountCryptoToken.Builder> tokens)
+	public synchronized long newCryptoBalances(byte[] addr, String symbol, ArrayList<AccountCryptoToken.Builder> tokens)
 			throws Exception {
 		Account.Builder oAccount = GetAccount(addr).toBuilder();
 		if (oAccount == null) {
@@ -272,33 +272,19 @@ public class AccountHelper implements ActorService {
 			}
 		}
 
+		AccountCryptoValue.Builder oAccountCryptoValue;
 		if (isExistsSymbol) {
-			AccountCryptoValue.Builder oAccountCryptoValue = oAccountValue.getCryptos(symbolIndex).toBuilder();
-			boolean isTokenExists = false;
-			for (AccountCryptoToken.Builder token : tokens) {
-				for (int k = 0; k < oAccountCryptoValue.getTokensCount(); k++) {
-					if (oAccountCryptoValue.getTokens(k).getHash().equals(token.getHash())) {
-						isTokenExists = true;
-						break;
-					}
-				}
-				if (!isTokenExists) {
-					oAccountCryptoValue.addTokens(token);
-				}
-			}
-			oAccountValue.setCryptos(symbolIndex, oAccountCryptoValue);
-			putAccountValue(addr, oAccountValue.build());
-			return oAccountValue.getCryptosList().get(symbolIndex).getTokensCount();
+			oAccountCryptoValue = oAccountValue.getCryptos(symbolIndex).toBuilder();
 		} else {
-			AccountCryptoValue.Builder oAccountCryptoValue = AccountCryptoValue.newBuilder();
+			oAccountCryptoValue = AccountCryptoValue.newBuilder();
 			oAccountCryptoValue.setSymbol(symbol);
-			for (AccountCryptoToken.Builder token : tokens) {
-				oAccountCryptoValue.addTokens(token);
-			}
-			oAccountValue.addCryptos(oAccountCryptoValue.build());
-			putAccountValue(addr, oAccountValue.build());
-			return tokens.size();
 		}
+		for (AccountCryptoToken.Builder token : tokens) {
+			oAccountCryptoValue.addTokens(token);
+		}
+		oAccountValue.addCryptos(oAccountCryptoValue.build());
+		putAccountValue(addr, oAccountValue.build());
+		return tokens.size();
 	}
 
 	/**

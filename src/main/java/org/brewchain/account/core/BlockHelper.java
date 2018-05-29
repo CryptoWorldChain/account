@@ -110,8 +110,9 @@ public class BlockHelper implements ActorService {
 
 		// 确保时间戳不重复
 		long currentTimestamp = new Date().getTime();
-		oBlockHeader.setTimestamp(new Date().getTime() == oBestBlockHeader.getTimestamp()
-				? oBestBlockHeader.getTimestamp() + 1 : currentTimestamp);
+		oBlockHeader.setTimestamp(
+				new Date().getTime() == oBestBlockHeader.getTimestamp() ? oBestBlockHeader.getTimestamp() + 1
+						: currentTimestamp);
 		oBlockHeader.setNumber(oBestBlockHeader.getNumber() + 1);
 		oBlockHeader.setReward(ByteString.copyFrom(ByteUtil.intToBytes(KeyConstant.BLOCK_REWARD)));
 		oBlockHeader.setExtraData(ByteString.copyFrom(extraData));
@@ -204,16 +205,28 @@ public class BlockHelper implements ActorService {
 		}
 		log.debug(
 				"receive block number::" + oBlockEntity.getHeader().getNumber() + " current::" + currentLastBlockNumber
-						+ " hash::" + encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()));
+						+ " hash::" + encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()) + " parent::"
+						+ encApi.hexEnc(oBlockEntity.getHeader().getParentHash().toByteArray()));
 		// 上一个区块是否存在
 		BlockEntity oParentBlock = null;
 		try {
 			oParentBlock = getBlock(oBlockHeader.getParentHash().toByteArray()).build();
 		} catch (Exception e) {
+			log.error("try get parent block error::" + e.getMessage());
 		}
 		if (oParentBlock == null) {
 			oAddBlockResponse.setRetCode(-1);
 			oAddBlockResponse.setCurrentNumber(currentLastBlockNumber);
+
+			try {
+				// TODO for test
+				BlockEntity parentBlock = blockChainHelper.getBlockByNumber(currentLastBlockNumber);
+				log.error("parent block not found:: current::" + currentLastBlockNumber + " hash::"
+						+ encApi.hexEnc(parentBlock.getHeader().getBlockHash().toByteArray()));
+			} catch (Exception e) {
+				// TODO: handle exception
+			}
+
 			log.error("parent block not found:: parent::" + (oBlockHeader.getNumber() - 1) + " block::"
 					+ oBlockHeader.getNumber() + " current::" + currentLastBlockNumber);
 			// 暂存
@@ -235,12 +248,12 @@ public class BlockHelper implements ActorService {
 					// 检查
 					List<BlockEntity> childs = blockChainHelper
 							.tryGetChildBlock(oBlockEntity.getHeader().getBlockHash().toByteArray());
-					
-					log.debug("success add block, current number is::" + currentLastBlockNumber+ " next block count::" + childs.size());
 
-					if (childs.size() == 1) {
-						oAddBlockResponse = ApplyBlock(childs.get(0)).toBuilder();
-					} else if (childs.size() > 1) {
+					log.debug("success add block, current number is::" + currentLastBlockNumber + " next block count::"
+							+ childs.size());
+
+					if (childs.size() >= 1) {
+						log.debug("find child block, begin apply:: child::" + childs.get(0).getHeader().getNumber());
 						oAddBlockResponse = ApplyBlock(childs.get(0)).toBuilder();
 					}
 
@@ -281,7 +294,6 @@ public class BlockHelper implements ActorService {
 
 			// 交易必须都存在
 			MultiTransaction oMultiTransaction = transactionHelper.GetTransaction(txHash.toByteArray());
-			txs.add(oMultiTransaction);
 			// 验证交易是否被篡改
 			// 1. 重新Hash，比对交易Hash
 
@@ -295,6 +307,10 @@ public class BlockHelper implements ActorService {
 			oTrieImpl.put(oMultiTransaction.getTxHash().toByteArray(), oMultiTransaction.toByteArray());
 
 			bb.addTxs(oMultiTransaction);
+
+			if (oMultiTransaction.getStatus() == null || oMultiTransaction.getStatus().isEmpty()) {
+				txs.add(oMultiTransaction);
+			}
 		}
 		if (!FastByteComparisons.equal(oBlockEntity.getHeader().getTxTrieRoot().toByteArray(),
 				oTrieImpl.getRootHash())) {
@@ -305,12 +321,16 @@ public class BlockHelper implements ActorService {
 
 		oBlockEntity = oBlockEntity.toBuilder().setBody(bb).build();
 
+		// TODO 事务
+		
 		// 执行交易
 		transactionHelper.ExecuteTransaction(txs);
 
 		// 添加块
-		blockChainHelper.appendBlock(oBlockEntity);
-
+		if (!blockChainHelper.appendBlock(oBlockEntity)) {
+			log.error("append block error");
+			throw new Exception("block executed, but fail to add to db.");
+		}
 		// 应用奖励
 		// applyReward(oBlockEntity);
 		log.info(String.format("LOGFILTER %s %s %s %s 执行区块[%s]", KeyConstant.node.getNode(), "account", "apply",
