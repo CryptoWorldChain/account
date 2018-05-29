@@ -4,6 +4,7 @@ public class NodeDef {
 	private String node;
 	private String bcuid;
 	private String address;
+	private NodeAccount oAccount;
 
 	public String getNode() {
 		return node;
@@ -29,4 +30,51 @@ public class NodeDef {
 		this.address = address;
 	}
 
+	public NodeAccount getoAccount() {
+		return oAccount;
+	}
+
+	public void setoAccount(NodeAccount oAccount) {
+		this.oAccount = oAccount;
+	}
+
+	public class NodeAccount {
+		private String address;
+		private String priKey;
+		private String pubKey;
+		private String bcuid;
+
+		public String getAddress() {
+			return address;
+		}
+
+		public void setAddress(String address) {
+			this.address = address;
+		}
+
+		public String getPriKey() {
+			return priKey;
+		}
+
+		public void setPriKey(String priKey) {
+			this.priKey = priKey;
+		}
+
+		public String getPubKey() {
+			return pubKey;
+		}
+
+		public void setPubKey(String pubKey) {
+			this.pubKey = pubKey;
+		}
+
+		public String getBcuid() {
+			return bcuid;
+		}
+
+		public void setBcuid(String bcuid) {
+			this.bcuid = bcuid;
+		}
+
+	}
 }

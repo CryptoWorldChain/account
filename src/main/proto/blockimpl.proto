@@ -13,13 +13,17 @@ enum PBCTCommand {
 	BIO = 3; // Block信息
 	GLB = 4; 
 	GBH = 5; 
+	GBN = 6; // 根据高度获取block
+}
+
+message ReqGetBlockByNumber {
+	int32 number = 1;
 }
 
 message ReqGetBlock {
     int32 txCount = 1;
 	string extraData = 2;
 }
-
 
 message RespGetBlock {
 	BlockHeaderImpl header = 1;

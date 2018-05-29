@@ -51,7 +51,7 @@ public class CacheBlockHashMapDB implements ActorService {
 			return storage.get(key);
 		}
 	}
-	
+
 	public byte[] getAndDelete(String key) {
 		try (ALock l = readLock.lock()) {
 			byte[] ret = storage.get(key);
@@ -63,6 +63,12 @@ public class CacheBlockHashMapDB implements ActorService {
 	public void delete(String key) {
 		try (ALock l = writeLock.lock()) {
 			storage.remove(key);
+		}
+	}
+
+	public void clear() {
+		try (ALock l = writeLock.lock()) {
+			storage.clear();
 		}
 	}
 }

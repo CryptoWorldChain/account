@@ -212,7 +212,6 @@ public class TransactionHelper implements ActorService {
 
 			oAccountHelper.BatchPutAccounts(keys, values);
 		}
-
 	}
 
 	/**
