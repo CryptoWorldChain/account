@@ -105,6 +105,11 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 
 			// 判断发送方余额是否足够
 			long balance = senderAccountValue.getBalance();
+			
+			if(balance < 0){
+				throw new Exception(String.format("发送金额 %s 小于 0, 不能继续交易", balance));
+			}
+			
 			if (balance - oInput.getAmount() - oInput.getFeeLimit() >= 0) {
 				// 余额足够
 			} else {
@@ -121,6 +126,11 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
 			outputsTotal += oOutput.getAmount();
+			
+			long balance = oOutput.getAmount();
+			if(balance < 0){
+				throw new Exception(String.format("接收金额 %s 小于0, 不能继续交易", balance));
+			}
 
 			// 取接收方账户
 			if (!receivers.containsKey(oOutput.getAddress())) {
