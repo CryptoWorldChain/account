@@ -57,7 +57,7 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 		oRespBlockInfo.setBlockCount(blockChainHelper.getBlockCount());
 		try {
 			oRespBlockInfo.setNumber(blockChainHelper.getLastBlockNumber());
-			oRespBlockInfo.setCache(blockChainHelper.getBlockCacheFormatString());
+			//oRespBlockInfo.setCache(blockChainHelper.getBlockCacheFormatString());
 			oRespBlockInfo.setWaitSync(oSendingHashMapDB.keys().size());
 			oRespBlockInfo.setWaitBlock(oPendingHashMapDB.keys().size());
 			for (Entry<String, byte[]> entry : oCacheHashMapDB.getStorage().entrySet()) {
