@@ -139,6 +139,31 @@ public class AccountHelper implements ActorService {
 		}
 		return null;
 	}
+	
+	/**
+	 * 获取用户账户，如果用户不存在，则创建账户
+	 * @param addr
+	 * @return
+	 */
+	public Account GetAccountOrCreate(byte[] addr) {
+		try {
+			OValue oValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(addr)).get();
+			AccountValue.Builder oAccountValue = AccountValue.newBuilder();
+			if(oValue != null) {
+				oAccountValue.mergeFrom(oValue.getExtdata());
+			} else {
+				CreateAccount(addr, null);
+			}
+
+			Account.Builder oAccount = Account.newBuilder();
+			oAccount.setAddress(ByteString.copyFrom(addr));
+			oAccount.setValue(oAccountValue);
+			return oAccount.build();
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
+		return null;
+	}
 
 	/**
 	 * Nonce自增1
