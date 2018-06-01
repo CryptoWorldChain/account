@@ -77,13 +77,13 @@ public class SignatureTest extends SessionModules<ReqTxTest> implements ActorSer
 		// log.debug(String.format("export %s",
 		// encApi.hexEnc(encApi.ecToKeyBytes(oRespTxTest.build().toByteArray(),
 		// base64str))));
-		ThreadSignature oThreadSignature1 = new ThreadSignature(1, encApi);
+		ThreadSignature oThreadSignature1 = new ThreadSignature(oRespTxTest.build().toByteArray(), encApi);
 		oThreadSignature1.start();
 		
-		ThreadSignature oThreadSignature2 = new ThreadSignature(2, encApi);
+		ThreadSignature oThreadSignature2 = new ThreadSignature(oRespTxTest.build().toByteArray(), encApi);
 		oThreadSignature2.start();
 		
-		ThreadSignature oThreadSignature3 = new ThreadSignature(2, encApi);
+		ThreadSignature oThreadSignature3 = new ThreadSignature(oRespTxTest.build().toByteArray(), encApi);
 		oThreadSignature3.start();
 
 		oRespTxTest.setRetCode(-1);

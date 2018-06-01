@@ -39,6 +39,16 @@ public class BlockChainStore implements ActorService {
 		this.blocks = new ConcurrentHashMap<String, BlockEntity>();
 	}
 
+	public void rollBackTo(int blockNumber) {
+		try (ALock lr = readLock.lock()) {
+			try (ALock lw = writeLock.lock()) {
+				while (getLastBlockNumber() > blockNumber) {
+					this.storage.remove(getLastBlockNumber());
+				}
+			}
+		}
+	}
+
 	public byte[] getBlockHashByNumber(int blockNumber) {
 		try (ALock l = readLock.lock()) {
 			return storage.get(blockNumber).get(0);

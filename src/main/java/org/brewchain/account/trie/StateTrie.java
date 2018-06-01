@@ -1,30 +1,54 @@
 package org.brewchain.account.trie;
 
-import org.apache.commons.lang3.text.StrBuilder;
-import org.bouncycastle.util.encoders.Hex;
-import org.brewchain.account.util.ByteUtil;
-import org.brewchain.account.util.FastByteComparisons;
-import org.brewchain.account.util.RLP;
-import org.fc.brewchain.bcapi.EncAPI;
-
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
-import onight.tfw.ntrans.api.ActorService;
-import onight.tfw.ntrans.api.annotation.ActorRequire;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.*;
-
 import static org.apache.commons.lang3.concurrent.ConcurrentUtils.constantFuture;
 import static org.brewchain.account.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.brewchain.account.util.RLP.EMPTY_ELEMENT_RLP;
 import static org.brewchain.account.util.RLP.encodeElement;
 import static org.brewchain.account.util.RLP.encodeList;
 
-public class TrieImpl implements ActorService {
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+import org.apache.commons.lang3.text.StrBuilder;
+import org.apache.felix.ipojo.annotations.Instantiate;
+import org.apache.felix.ipojo.annotations.Provides;
+import org.bouncycastle.util.encoders.Hex;
+import org.brewchain.account.dao.DefDaos;
+import org.brewchain.account.trie.CacheTrie.Node;
+import org.brewchain.account.trie.CacheTrie.NodeType;
+import org.brewchain.account.trie.CacheTrie.ScanAction;
+import org.brewchain.account.util.ByteUtil;
+import org.brewchain.account.util.FastByteComparisons;
+import org.brewchain.account.util.OEntityBuilder;
+import org.brewchain.account.util.RLP;
+import org.brewchain.bcapi.gens.Oentity.OValue;
+import org.fc.brewchain.bcapi.EncAPI;
+
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.protobuf.ByteString;
+
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
+import onight.osgi.annotation.NActorProvider;
+import onight.tfw.ntrans.api.ActorService;
+import onight.tfw.ntrans.api.annotation.ActorRequire;
+
+@NActorProvider
+@Provides(specifications = { ActorService.class }, strategy = "SINGLETON")
+@Instantiate(name = "State_Trie")
+@Slf4j
+@Data
+public class StateTrie implements ActorService {
+	@ActorRequire(name = "Def_Daos", scope = "global")
+	DefDaos dao;
+	@ActorRequire(name = "bc_encoder", scope = "global")
+	EncAPI encApi;
+
 	private final static Object NULL_NODE = new Object();
 	private final static int MIN_BRANCHES_CONCURRENTLY = 3;
 	private static ExecutorService executor;
@@ -83,6 +107,7 @@ public class TrieImpl implements ActorService {
 			if (rlp != null || parsedRlp != null || hash == null)
 				return true;
 			rlp = getHash(hash);
+			log.error("hash::" + Hex.toHexString(hash));
 			return rlp != null;
 		}
 
@@ -167,8 +192,8 @@ public class TrieImpl implements ActorService {
 					rlp = ret;
 					return ret;
 				} else {
-					//hash = encApi.sha3Encode(ret);
-					hash = ret;
+					hash = encApi.sha3Encode(ret);
+					// hash = ret;
 					addHash(hash, ret);
 					return encodeElement(hash);
 				}
@@ -425,26 +450,17 @@ public class TrieImpl implements ActorService {
 		void doOnValue(byte[] nodeHash, Node node, byte[] key, byte[] value);
 	}
 
-	private TrieCache cache;
+	// private TrieCache cache;
 	private Node root;
 	private boolean async = true;
 
-	public TrieImpl() {
-		this((byte[]) null);
-	}
-
-	public TrieImpl(byte[] root) {
-		this(new TrieCache(), root);
-	}
-
-	public TrieImpl(TrieCache cache) {
-		this(cache, null);
-	}
-
-	public TrieImpl(TrieCache cache, byte[] root) {
-		this.cache = cache;
-		setRoot(root);
-	}
+	// public StateTrie() {
+	// this((byte[]) null);
+	// }
+	//
+	// public StateTrie(byte[] root) {
+	// setRoot(root);
+	// }
 
 	public void setAsync(boolean async) {
 		this.async = async;
@@ -470,15 +486,25 @@ public class TrieImpl implements ActorService {
 	}
 
 	private byte[] getHash(byte[] hash) {
-		return cache.get(hash);
+		OValue v;
+		try {
+			v = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(hash)).get();
+			if (v != null && v.getExtdata() != null && !v.getExtdata().equals(ByteString.EMPTY)) {
+				return v.getExtdata().toByteArray();
+			}
+		} catch (Exception e) {
+			log.error(e.getMessage());
+		}
+
+		return null;
 	}
 
 	private void addHash(byte[] hash, byte[] ret) {
-		cache.put(hash, ret);
+		dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(hash), OEntityBuilder.byteValue2OValue(ret));
 	}
 
 	private void deleteHash(byte[] hash) {
-		cache.delete(hash);
+		dao.getAccountDao().delete(OEntityBuilder.byteKey2OKey(hash));
 	}
 
 	public byte[] get(byte[] key) {
@@ -497,6 +523,7 @@ public class TrieImpl implements ActorService {
 			if (k.isEmpty())
 				return n.branchNodeGetValue();
 			Node childNode = n.branchNodeGetChild(k.getHex(0));
+			// childNode.hash
 			return get(childNode, k.shift(1));
 		} else {
 			TrieKey k1 = k.matchAndShift(n.kvNodeGetKey());
@@ -650,7 +677,7 @@ public class TrieImpl implements ActorService {
 	}
 
 	public void clear() {
-		throw new RuntimeException("Not implemented yet");
+		
 	}
 
 	public boolean flush() {
@@ -672,7 +699,7 @@ public class TrieImpl implements ActorService {
 		if (o == null || getClass() != o.getClass())
 			return false;
 
-		TrieImpl trieImpl1 = (TrieImpl) o;
+		CacheTrie trieImpl1 = (CacheTrie) o;
 
 		return FastByteComparisons.equal(getRootHash(), trieImpl1.getRootHash());
 

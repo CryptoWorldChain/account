@@ -6,11 +6,13 @@ import java.util.Map;
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
+import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.gens.Act.Account;
 import org.brewchain.account.gens.Act.AccountTokenValue;
 import org.brewchain.account.gens.Act.AccountValue;
 import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.brewchain.account.gens.Tx.MultiTransaction.Builder;
+import org.brewchain.account.trie.DBTrie;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.bcapi.gens.Oentity.OValue;
@@ -23,8 +25,8 @@ import com.google.protobuf.ByteString;
 public class ActuatorTokenTransaction extends AbstractTransactionActuator implements iTransactionActuator {
 
 	public ActuatorTokenTransaction(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
-			BlockHelper oBlockHelper, EncAPI encApi) {
-		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi);
+			BlockHelper oBlockHelper, EncAPI encApi, DefDaos dao) {
+		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi, dao);
 	}
 
 	/*
@@ -93,8 +95,8 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 	@Override
 	public void onExecute(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
 			Map<ByteString, Account> receivers) throws Exception {
-		LinkedList<OKey> keys = new LinkedList<OKey>();
-		LinkedList<OValue> values = new LinkedList<OValue>();
+		LinkedList<OKey> keys = new LinkedList<>();
+		LinkedList<AccountValue> values = new LinkedList<>();
 
 		String token = "";
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
@@ -119,10 +121,19 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			// 不论任何交易类型，都默认执行账户余额的更改
 			senderAccountValue.setBalance(senderAccountValue.getBalance() - oInput.getAmount() - oInput.getFee());
 			senderAccountValue.setNonce(senderAccountValue.getNonce() + 1);
+
+			DBTrie oCacheTrie = new DBTrie(this.dao);
+			if (senderAccountValue.getStorage() == null) {
+				oCacheTrie.setRoot(null);
+			} else {
+				oCacheTrie.setRoot(senderAccountValue.getStorage().toByteArray());
+			}
+			oCacheTrie.put(sender.getAddress().toByteArray(), senderAccountValue.build().toByteArray());
+			senderAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
 			
 			keys.add(OEntityBuilder.byteKey2OKey(sender.getAddress().toByteArray()));
-			values.add(OEntityBuilder.byteValue2OValue(senderAccountValue.build().toByteArray()));
-			
+			values.add(senderAccountValue.build());
+
 		}
 
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
@@ -150,9 +161,18 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 				receiverAccountValue.addTokens(oAccountTokenValue);
 			}
 
-			keys.add(OEntityBuilder.byteKey2OKey(receiver.getAddress().toByteArray()));
-			values.add(OEntityBuilder.byteValue2OValue(receiverAccountValue.build().toByteArray()));
+			DBTrie oCacheTrie = new DBTrie(this.dao);
+			if (receiverAccountValue.getStorage() == null) {
+				oCacheTrie.setRoot(null);
+			} else {
+				oCacheTrie.setRoot(receiverAccountValue.getStorage().toByteArray());
+			}
+			oCacheTrie.put(receiver.getAddress().toByteArray(), receiverAccountValue.build().toByteArray());
+			receiverAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
 			
+			keys.add(OEntityBuilder.byteKey2OKey(receiver.getAddress().toByteArray()));
+			values.add(receiverAccountValue.build());
+
 		}
 		this.keys.addAll(keys);
 		this.values.addAll(values);

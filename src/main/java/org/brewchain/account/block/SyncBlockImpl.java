@@ -76,7 +76,7 @@ public class SyncBlockImpl extends SessionModules<ReqSyncBlock> {
 			oBlockEntity.setHeader(oBlockHeader);
 			oBlockEntity.setMiner(oBlockMiner);
 			// 如果节点已经启动，则重新加载全部block
-			blockHelper.ApplyBlock(oBlockEntity.build());
+			blockHelper.ApplyBlock(oBlockEntity);
 			oRespSyncBlock.setRetCode(1);
 		} catch (Exception e) {
 			oRespSyncBlock.setRetCode(-1);

@@ -46,7 +46,7 @@ public class ThreadBlock extends Thread {
 					//oSyncBlock.setBody(newBlock.getBody());
 					log.debug(String.format("==> 第 %s 块 hash %s 创建成功", oSyncBlock.getHeader().getNumber(),
 							encApi.hexEnc(oSyncBlock.getHeader().getBlockHash().toByteArray())));
-					blockHelper.ApplyBlock(oSyncBlock.build());
+					blockHelper.ApplyBlock(oSyncBlock);
 					log.debug(String.format("==> 第 %s 块 hash %s 父hash %s 交易 %s 笔", oSyncBlock.getHeader().getNumber(),
 							encApi.hexEnc(oSyncBlock.getHeader().getBlockHash().toByteArray()),
 							encApi.hexEnc(oSyncBlock.getHeader().getParentHash().toByteArray()),

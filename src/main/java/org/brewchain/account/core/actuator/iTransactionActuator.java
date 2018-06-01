@@ -4,6 +4,7 @@ import java.util.LinkedList;
 import java.util.Map;
 
 import org.brewchain.account.gens.Act.Account;
+import org.brewchain.account.gens.Act.AccountValue;
 import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.brewchain.account.gens.Tx.MultiTransaction.Builder;
 import org.brewchain.bcapi.gens.Oentity.OKey;
@@ -14,9 +15,9 @@ import com.google.protobuf.ByteString;
 public interface iTransactionActuator {
 	boolean needSignature();
 	LinkedList<OKey> getKeys();
-	LinkedList<OValue> getValues();
+	LinkedList<AccountValue> getValues();
 	LinkedList<OKey> getTxKeys();
-	LinkedList<OValue> getTxValues();
+	LinkedList<MultiTransaction> getTxValues();
 	/**
 	 * 交易签名校验
 	 * 

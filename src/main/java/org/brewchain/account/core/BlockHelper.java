@@ -9,7 +9,8 @@ import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.doublyll.DoubleLinkedList;
-import org.brewchain.account.trie.TrieImpl;
+import org.brewchain.account.trie.CacheTrie;
+import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.util.ByteUtil;
 import org.brewchain.account.util.FastByteComparisons;
 import org.brewchain.account.util.OEntityBuilder;
@@ -52,6 +53,10 @@ public class BlockHelper implements ActorService {
 	EncAPI encApi;
 	@ActorRequire(name = "Def_Daos", scope = "global")
 	DefDaos dao;
+	@ActorRequire(name = "CacheBlock_HashMapDB", scope = "global")
+	CacheBlockHashMapDB oCacheHashMapDB;
+	@ActorRequire(name = "State_Trie", scope = "global")
+	StateTrie stateTrie;
 
 	// @ActorRequire(name = "Block_StorageDB", scope = "global")
 	// BlockStorageDB oBlockStorageDB;
@@ -118,7 +123,7 @@ public class BlockHelper implements ActorService {
 		oBlockHeader.setExtraData(ByteString.copyFrom(extraData));
 		oBlockHeader.setNonce(ByteString.copyFrom(ByteUtil.EMPTY_BYTE_ARRAY));
 		// 构造MPT Trie
-		TrieImpl oTrieImpl = new TrieImpl();
+		CacheTrie oTrieImpl = new CacheTrie();
 		for (int i = 0; i < txs.size(); i++) {
 			oBlockHeader.addTxHashs(txs.get(i).getTxHash());
 			oBlockBody.addTxs(txs.get(i));
@@ -131,7 +136,6 @@ public class BlockHelper implements ActorService {
 		// oBlockMiner.setAddress(value);
 
 		oBlockHeader.setTxTrieRoot(ByteString.copyFrom(oTrieImpl.getRootHash()));
-		// accountHelper.getStateRoot(addr);
 		oBlockHeader.setBlockHash(ByteString.copyFrom(encApi.sha256Encode(oBlockHeader.build().toByteArray())));
 		oBlockEntity.setHeader(oBlockHeader);
 		oBlockEntity.setBody(oBlockBody);
@@ -140,8 +144,7 @@ public class BlockHelper implements ActorService {
 		log.info(String.format("LOGFILTER %s %s %s %s 创建区块[%s]", KeyConstant.node.getNode(), "account", "create",
 				"block", encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray())));
 
-		// ApplyBlock(oBlockEntity.build());
-
+		appendBlock(oBlockEntity);// ApplyBlock(oBlockEntity);
 		return oBlockEntity;
 	}
 
@@ -173,7 +176,7 @@ public class BlockHelper implements ActorService {
 		oBlockHeader.setExtraData(ByteString.copyFrom(extraData));
 		oBlockHeader.setNonce(ByteString.copyFrom(ByteUtil.EMPTY_BYTE_ARRAY));
 		// 构造MPT Trie
-		TrieImpl oTrieImpl = new TrieImpl();
+		CacheTrie oTrieImpl = new CacheTrie();
 		for (int i = 0; i < txs.size(); i++) {
 			oBlockHeader.addTxHashs(txs.get(i).getTxHash());
 			oBlockBody.addTxs(txs.get(i));
@@ -188,11 +191,11 @@ public class BlockHelper implements ActorService {
 		blockChainHelper.newBlock(oBlockEntity.build());
 	}
 
-	public AddBlockResponse ApplyBlock(ByteString bs) throws Exception {
-		return ApplyBlock(BlockEntity.newBuilder().mergeFrom(bs).build());
+	public synchronized AddBlockResponse ApplyBlock(ByteString bs) throws Exception {
+		return ApplyBlock(BlockEntity.newBuilder().mergeFrom(bs));
 	}
 
-	public synchronized AddBlockResponse ApplyBlock(BlockEntity oBlockEntity) {
+	public synchronized AddBlockResponse ApplyBlock(BlockEntity.Builder oBlockEntity) {
 		log.debug("request apply block::" + oBlockEntity.getHeader().getNumber());
 		AddBlockResponse.Builder oAddBlockResponse = AddBlockResponse.newBuilder();
 		BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
@@ -207,6 +210,7 @@ public class BlockHelper implements ActorService {
 				"receive block number::" + oBlockEntity.getHeader().getNumber() + " current::" + currentLastBlockNumber
 						+ " hash::" + encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()) + " parent::"
 						+ encApi.hexEnc(oBlockEntity.getHeader().getParentHash().toByteArray()));
+
 		// 上一个区块是否存在
 		BlockEntity oParentBlock = null;
 		try {
@@ -214,9 +218,12 @@ public class BlockHelper implements ActorService {
 		} catch (Exception e) {
 			log.error("try get parent block error::" + e.getMessage());
 		}
-		if (oParentBlock == null) {
+		if (oParentBlock == null || oParentBlock.getHeader().getNumber() + 1 != oBlockHeader.getNumber()) {
 			oAddBlockResponse.setRetCode(-1);
 			oAddBlockResponse.setCurrentNumber(currentLastBlockNumber);
+
+			// 暂存
+			blockChainHelper.cacheBlock(oBlockEntity.build());
 
 			try {
 				// TODO for test
@@ -229,44 +236,32 @@ public class BlockHelper implements ActorService {
 
 			log.error("parent block not found:: parent::" + (oBlockHeader.getNumber() - 1) + " block::"
 					+ oBlockHeader.getNumber() + " current::" + currentLastBlockNumber);
-			// 暂存
-			blockChainHelper.cacheBlock(oBlockEntity);
+
 		} else {
-			if (oParentBlock.getHeader().getNumber() + 1 != oBlockHeader.getNumber()
-					|| currentLastBlockNumber != oParentBlock.getHeader().getNumber()) {
-				oAddBlockResponse.setRetCode(-1);
-				oAddBlockResponse.setCurrentNumber(currentLastBlockNumber);
+			try {
+				addBlock(oBlockEntity, oParentBlock);
+				// 检查
+				List<BlockEntity> childs = blockChainHelper
+						.tryGetChildBlock(oBlockEntity.getHeader().getBlockHash().toByteArray());
 
-				log.error("parent block number error: parent::" + oParentBlock.getHeader().getNumber() + " block::"
-						+ oBlockHeader.getNumber() + " current::" + currentLastBlockNumber);
-				// 暂存
-				blockChainHelper.cacheBlock(oBlockEntity);
-			} else {
-				try {
-					addBlock(oBlockEntity);
+				log.debug("success add block, current number is::" + currentLastBlockNumber + " next block count::"
+						+ childs.size());
 
-					// 检查
-					List<BlockEntity> childs = blockChainHelper
-							.tryGetChildBlock(oBlockEntity.getHeader().getBlockHash().toByteArray());
-
-					log.debug("success add block, current number is::" + currentLastBlockNumber + " next block count::"
-							+ childs.size());
-
-					if (childs.size() >= 1) {
-						log.debug("find child block, begin apply:: child::" + childs.get(0).getHeader().getNumber());
-						oAddBlockResponse = ApplyBlock(childs.get(0)).toBuilder();
-					}
-
-					currentLastBlockNumber = blockChainHelper.getLastBlockNumber();
-					oAddBlockResponse.setCurrentNumber(currentLastBlockNumber);
-				} catch (Exception e) {
-					oAddBlockResponse.setRetCode(-2);
-					if (e.getMessage() != null)
-						oAddBlockResponse.setRetMsg(e.getMessage());
-
-					if (e != null && e.getMessage() != null)
-						log.error("append block error::" + e.getMessage());
+				if (childs.size() >= 1) {
+					log.debug("find child block, begin apply:: child::" + childs.get(0).getHeader().getNumber());
+					oAddBlockResponse = ApplyBlock(childs.get(0).toBuilder()).toBuilder();
 				}
+
+				currentLastBlockNumber = blockChainHelper.getLastBlockNumber();
+				oAddBlockResponse.setRetCode(1);
+				oAddBlockResponse.setCurrentNumber(currentLastBlockNumber);
+			} catch (Exception e) {
+				oAddBlockResponse.setRetCode(-2);
+				if (e.getMessage() != null)
+					oAddBlockResponse.setRetMsg(e.getMessage());
+
+				if (e != null && e.getMessage() != null)
+					log.error("append block error::" + e.getMessage());
 			}
 		}
 
@@ -275,16 +270,10 @@ public class BlockHelper implements ActorService {
 		return oAddBlockResponse.build();
 	}
 
-	/**
-	 * 执行区块。比较交易完整性，执行交易。
-	 * 
-	 * @param oBlockEntity
-	 * @throws Exception
-	 */
-	private synchronized void addBlock(BlockEntity oBlockEntity) throws Exception {
+	private synchronized byte[] processBlock(BlockEntity.Builder oBlockEntity) throws Exception {
 		BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
 		LinkedList<MultiTransaction> txs = new LinkedList<MultiTransaction>();
-		TrieImpl oTrieImpl = new TrieImpl();
+		CacheTrie oTrieImpl = new CacheTrie();
 
 		BlockBody.Builder bb = oBlockEntity.getBody().toBuilder();
 		// 校验交易完整性
@@ -319,15 +308,26 @@ public class BlockHelper implements ActorService {
 					encApi.hexEnc(oTrieImpl.getRootHash())));
 		}
 
-		oBlockEntity = oBlockEntity.toBuilder().setBody(bb).build();
+		oBlockEntity.setBody(bb);
 
 		// TODO 事务
-		
-		// 执行交易
-		transactionHelper.ExecuteTransaction(txs);
 
+		// 执行交易
+		byte[] stateRoot = transactionHelper.ExecuteTransaction(txs);
+		return stateRoot;
+	}
+
+	/**
+	 * 执行区块。比较交易完整性，执行交易。
+	 * 
+	 * @param oBlockEntity
+	 * @throws Exception
+	 */
+	private synchronized void appendBlock(BlockEntity.Builder oBlockEntity) throws Exception {
+		byte[] stateRoot = processBlock(oBlockEntity);
+		oBlockEntity.setHeader(oBlockEntity.getHeaderBuilder().setStateRoot(ByteString.copyFrom(stateRoot)));
 		// 添加块
-		if (!blockChainHelper.appendBlock(oBlockEntity)) {
+		if (!blockChainHelper.appendBlock(oBlockEntity.build())) {
 			log.error("append block error");
 			throw new Exception("block executed, but fail to add to db.");
 		}
@@ -335,6 +335,23 @@ public class BlockHelper implements ActorService {
 		// applyReward(oBlockEntity);
 		log.info(String.format("LOGFILTER %s %s %s %s 执行区块[%s]", KeyConstant.node.getNode(), "account", "apply",
 				"block", encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray())));
+	}
+
+	private synchronized void addBlock(BlockEntity.Builder oBlockEntity, BlockEntity parentBlock) throws Exception {
+		byte[] stateRoot = processBlock(oBlockEntity);
+		if (!FastByteComparisons.equal(stateRoot, oBlockEntity.getHeader().getStateRoot().toByteArray())) {
+			blockChainHelper.rollBackTo(parentBlock);
+		} else {
+			// 添加块
+			if (!blockChainHelper.appendBlock(oBlockEntity.build())) {
+				log.error("append block error");
+				throw new Exception("block executed, but fail to add to db.");
+			}
+			// 应用奖励
+			// applyReward(oBlockEntity);
+			log.info(String.format("LOGFILTER %s %s %s %s 执行区块[%s]", KeyConstant.node.getNode(), "account", "apply",
+					"block", encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray())));
+		}
 	}
 
 	/**

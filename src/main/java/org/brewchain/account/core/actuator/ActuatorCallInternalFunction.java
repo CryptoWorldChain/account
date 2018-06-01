@@ -6,6 +6,7 @@ import org.brewchain.account.call.gens.Call.InternalCallArguments;
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
+import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.function.InternalFunction;
 import org.brewchain.account.gens.Act.Account;
 import org.brewchain.account.gens.Tx.MultiTransaction;
@@ -48,8 +49,8 @@ public class ActuatorCallInternalFunction extends AbstractTransactionActuator im
 	}
 
 	public ActuatorCallInternalFunction(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
-			BlockHelper oBlockHelper, EncAPI encApi) {
-		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi);
+			BlockHelper oBlockHelper, EncAPI encApi, DefDaos dao) {
+		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi, dao);
 		// TODO Auto-generated constructor stub
 	}
 

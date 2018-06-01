@@ -87,8 +87,8 @@ public class BlockSingleTest extends SessionModules<ReqTxTest> implements ActorS
 			oSyncBlock.setHeader(oBlockHeader);
 			oSyncBlock1.setHeader(oBlockHeader1);
 
-			log.debug(" after " + blockHelper.ApplyBlock(oSyncBlock.build()));
-			log.debug(" before " + blockHelper.ApplyBlock(oSyncBlock1.build()));
+			log.debug(" after " + blockHelper.ApplyBlock(oSyncBlock));
+			log.debug(" before " + blockHelper.ApplyBlock(oSyncBlock1));
 
 		} catch (Exception e2) {
 			// TODO Auto-generated catch block

@@ -86,6 +86,7 @@ public class GetAccountImpl extends SessionModules<ReqGetAccount> {
 				oAccountTokenValueImpl.setToken(oAccountTokenValue.getToken());
 				oAccountValueImpl.addTokens(oAccountTokenValueImpl);
 			}
+			oAccountValueImpl.setStorage(encApi.hexEnc(oAccountValue.getStorage().toByteArray()));
 			oAccountValueImpl.setCode(oAccountValue.getCode().toStringUtf8());
 			oRespGetAccount.setAccount(oAccountValueImpl);
 			oRespGetAccount.setRetCode(1);

@@ -7,6 +7,7 @@ import java.util.Map;
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
+import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.util.FastByteComparisons;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.bcapi.gens.Oentity.OKey;
@@ -20,17 +21,19 @@ import org.brewchain.account.gens.Tx.MultiTransactionBody;
 import org.brewchain.account.gens.Tx.MultiTransactionInput;
 import org.brewchain.account.gens.Tx.MultiTransactionOutput;
 import org.brewchain.account.gens.Tx.MultiTransactionSignature;
+import org.brewchain.account.trie.CacheTrie;
+import org.brewchain.account.trie.DBTrie;
 import org.brewchain.account.gens.Tx.MultiTransaction.Builder;
 
 import com.google.protobuf.ByteString;
 
 public abstract class AbstractTransactionActuator implements iTransactionActuator {
 
-	protected LinkedList<OKey> keys = new LinkedList<OKey>();
-	protected LinkedList<OValue> values = new LinkedList<OValue>();
-	
-	protected LinkedList<OKey> txKeys = new LinkedList<OKey>();
-	protected LinkedList<OValue> txValues = new LinkedList<OValue>();
+	protected LinkedList<OKey> keys = new LinkedList<>();
+	protected LinkedList<AccountValue> values = new LinkedList<>();
+
+	protected LinkedList<OKey> txKeys = new LinkedList<>();
+	protected LinkedList<MultiTransaction> txValues = new LinkedList<>();
 
 	@Override
 	public LinkedList<OKey> getKeys() {
@@ -38,17 +41,17 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	}
 
 	@Override
-	public LinkedList<OValue> getValues() {
+	public LinkedList<AccountValue> getValues() {
 		return values;
 	}
-	
+
 	@Override
 	public LinkedList<OKey> getTxKeys() {
 		return txKeys;
 	}
 
 	@Override
-	public LinkedList<OValue> getTxValues() {
+	public LinkedList<MultiTransaction> getTxValues() {
 		return txValues;
 	}
 
@@ -76,13 +79,15 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	protected TransactionHelper oTransactionHelper;
 	protected BlockHelper oBlockHelper;
 	protected EncAPI encApi;
+	protected DefDaos dao;
 
 	public AbstractTransactionActuator(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
-			BlockHelper oBlockHelper, EncAPI encApi) {
+			BlockHelper oBlockHelper, EncAPI encApi, DefDaos dao) {
 		this.oAccountHelper = oAccountHelper;
 		this.oTransactionHelper = oTransactionHelper;
 		this.oBlockHelper = oBlockHelper;
 		this.encApi = encApi;
+		this.dao = dao;
 	}
 
 	@Override
@@ -137,8 +142,8 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	public void onExecute(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
 			Map<ByteString, Account> receivers) throws Exception {
 
-		LinkedList<OKey> keys = new LinkedList<OKey>();
-		LinkedList<OValue> values = new LinkedList<OValue>();
+		LinkedList<OKey> keys = new LinkedList<>();
+		LinkedList<AccountValue> values = new LinkedList<>();
 
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			// 取发送方账户
@@ -148,9 +153,16 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			senderAccountValue.setBalance(senderAccountValue.getBalance() - oInput.getAmount() - oInput.getFee());
 
 			senderAccountValue.setNonce(senderAccountValue.getNonce() + 1);
-
+			DBTrie oCacheTrie = new DBTrie(this.dao);
+			if (senderAccountValue.getStorage() == null) {
+				oCacheTrie.setRoot(null);
+			} else {
+				oCacheTrie.setRoot(senderAccountValue.getStorage().toByteArray());
+			}
+			oCacheTrie.put(sender.getAddress().toByteArray(), senderAccountValue.build().toByteArray());
+			senderAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
 			keys.add(OEntityBuilder.byteKey2OKey(sender.getAddress().toByteArray()));
-			values.add(OEntityBuilder.byteValue2OValue(senderAccountValue.build().toByteArray()));
+			values.add(senderAccountValue.build());
 		}
 
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
@@ -158,8 +170,16 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			AccountValue.Builder receiverAccountValue = receiver.getValue().toBuilder();
 			receiverAccountValue.setBalance(receiverAccountValue.getBalance() + oOutput.getAmount());
 
+			DBTrie oCacheTrie = new DBTrie(this.dao);
+			if (receiverAccountValue.getStorage() == null) {
+				oCacheTrie.setRoot(null);
+			} else {
+				oCacheTrie.setRoot(receiverAccountValue.getStorage().toByteArray());
+			}
+			oCacheTrie.put(receiver.getAddress().toByteArray(), receiverAccountValue.build().toByteArray());
+			receiverAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
 			keys.add(OEntityBuilder.byteKey2OKey(receiver.getAddress().toByteArray()));
-			values.add(OEntityBuilder.byteValue2OValue(receiverAccountValue.build().toByteArray()));
+			values.add(receiverAccountValue.build());
 		}
 
 		this.keys.addAll(keys);
@@ -171,7 +191,6 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	public void onExecuteDone(MultiTransaction oMultiTransaction) throws Exception {
 		oTransactionHelper.setTransactionDone(oMultiTransaction.getTxHash().toByteArray());
 	}
-	
 
 	@Override
 	public void onExecuteError(MultiTransaction oMultiTransaction) throws Exception {

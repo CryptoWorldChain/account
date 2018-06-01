@@ -5,6 +5,7 @@ import java.util.Map;
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
+import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.gens.Act.Account;
 import org.brewchain.account.gens.Act.AccountValue;
 import org.brewchain.account.gens.Tx.MultiTransaction;
@@ -22,8 +23,8 @@ import com.google.protobuf.ByteString;
 public class ActuatorCreateToken extends AbstractTransactionActuator implements iTransactionActuator {
 
 	public ActuatorCreateToken(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
-			BlockHelper oBlockHelper, EncAPI encApi) {
-		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi);
+			BlockHelper oBlockHelper, EncAPI encApi, DefDaos dao) {
+		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi, dao);
 	}
 
 	@Override

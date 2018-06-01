@@ -1,5 +1,6 @@
 package org.brewchain.account.core;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -8,8 +9,11 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
+import org.brewchain.account.gens.Block.BlockEntity;
 import org.brewchain.account.util.ALock;
 import org.brewchain.account.util.ByteArrayMap;
+
+import com.google.protobuf.InvalidProtocolBufferException;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -69,6 +73,23 @@ public class CacheBlockHashMapDB implements ActorService {
 	public void clear() {
 		try (ALock l = writeLock.lock()) {
 			storage.clear();
+		}
+	}
+
+	public BlockEntity getByNumber(int blockNumber) {
+		try (ALock l = readLock.lock()) {
+			Iterator iter = storage.entrySet().iterator();
+			while (iter.hasNext()) {
+				Map.Entry entry = (Map.Entry) iter.next();
+				try {
+					BlockEntity oBlockEntity = BlockEntity.parseFrom((byte[]) entry.getValue());
+					if (oBlockEntity != null && oBlockEntity.getHeader().getNumber() == blockNumber)
+						return oBlockEntity;
+				} catch (InvalidProtocolBufferException e) {
+					log.error("error on lookup block cache and parse, continue");
+				}
+			}
+			return null;
 		}
 	}
 }
