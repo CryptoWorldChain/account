@@ -9,12 +9,14 @@ import java.util.Map;
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
+import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.gens.Act.Account;
 import org.brewchain.account.gens.Act.AccountCryptoToken;
 import org.brewchain.account.gens.Act.AccountCryptoValue;
 import org.brewchain.account.gens.Act.AccountValue;
 import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.brewchain.account.gens.Tx.MultiTransaction.Builder;
+import org.brewchain.account.trie.DBTrie;
 import org.brewchain.account.gens.Tx.MultiTransactionInput;
 import org.brewchain.account.gens.Tx.MultiTransactionOutput;
 import org.brewchain.account.util.FastByteComparisons;
@@ -28,8 +30,8 @@ import com.google.protobuf.ByteString;
 public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator implements iTransactionActuator {
 
 	public ActuatorCryptoTokenTransaction(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
-			BlockHelper oBlockHelper, EncAPI encApi) {
-		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi);
+			BlockHelper oBlockHelper, EncAPI encApi, DefDaos dao) {
+		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi, dao);
 		// TODO Auto-generated constructor stub
 	}
 
@@ -99,8 +101,8 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 	@Override
 	public void onExecute(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
 			Map<ByteString, Account> receivers) throws Exception {
-		LinkedList<OKey> keys = new LinkedList<OKey>();
-		LinkedList<OValue> values = new LinkedList<OValue>();
+		LinkedList<OKey> keys = new LinkedList<>();
+		LinkedList<AccountValue> values = new LinkedList<>();
 
 		Map<String, AccountCryptoToken> tokens = new HashMap<String, AccountCryptoToken>();
 		// 发送方移除balance
@@ -132,8 +134,18 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 				}
 			}
 			oAccountValue.setNonce(oAccountValue.getNonce() + 1);
+			
+			DBTrie oCacheTrie = new DBTrie(this.dao);
+			if (oAccountValue.getStorage() == null) {
+				oCacheTrie.setRoot(null);
+			} else {
+				oCacheTrie.setRoot(oAccountValue.getStorage().toByteArray());
+			}
+			oCacheTrie.put(oInput.getAddress().toByteArray(), oAccountValue.build().toByteArray());
+			oAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
+			
 			keys.add(OEntityBuilder.byteKey2OKey(oInput.getAddress().toByteArray()));
-			values.add(OEntityBuilder.byteValue2OValue(oAccountValue.build().toByteArray()));
+			values.add(oAccountValue.build());
 		}
 
 		// 接收方增加balance
@@ -175,9 +187,17 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 				
 			}
 			
+			DBTrie oCacheTrie = new DBTrie(this.dao);
+			if (receiverAccountValue.getStorage() == null) {
+				oCacheTrie.setRoot(null);
+			} else {
+				oCacheTrie.setRoot(receiverAccountValue.getStorage().toByteArray());
+			}
+			oCacheTrie.put(receiver.getAddress().toByteArray(), receiverAccountValue.build().toByteArray());
+			receiverAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
 
 			keys.add(OEntityBuilder.byteKey2OKey(oOutput.getAddress().toByteArray()));
-			values.add(OEntityBuilder.byteValue2OValue(receiverAccountValue.build().toByteArray()));
+			values.add(receiverAccountValue.build());
 		}
 
 		this.keys.addAll(keys);

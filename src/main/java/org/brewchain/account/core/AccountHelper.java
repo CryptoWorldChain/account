@@ -21,6 +21,7 @@ import org.brewchain.account.gens.Act.AccountTokenValue;
 import org.brewchain.account.gens.Act.AccountValue;
 import org.brewchain.account.gens.Act.ICO;
 import org.brewchain.account.gens.Act.ICOValue;
+import org.brewchain.account.trie.StateTrie;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;
@@ -43,9 +44,10 @@ import onight.tfw.ntrans.api.annotation.ActorRequire;
 public class AccountHelper implements ActorService {
 	@ActorRequire(name = "Def_Daos", scope = "global")
 	DefDaos dao;
-
 	@ActorRequire(name = "bc_encoder", scope = "global")
 	EncAPI encApi;
+	@ActorRequire(name = "State_Trie", scope = "global")
+	StateTrie stateTrie;
 
 	public AccountHelper() {
 	}
@@ -105,6 +107,7 @@ public class AccountHelper implements ActorService {
 	 */
 	public synchronized void DeleteAccount(byte[] address) {
 		dao.getAccountDao().delete(OEntityBuilder.byteKey2OKey(address));
+		stateTrie.delete(address);
 	}
 
 	/**
@@ -126,16 +129,23 @@ public class AccountHelper implements ActorService {
 	 */
 	public Account GetAccount(byte[] addr) {
 		try {
-			OValue oValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(addr)).get();
-			AccountValue.Builder oAccountValue = AccountValue.newBuilder();
-			oAccountValue.mergeFrom(oValue.getExtdata());
-
 			Account.Builder oAccount = Account.newBuilder();
 			oAccount.setAddress(ByteString.copyFrom(addr));
+			byte[] valueHash = stateTrie.get(addr);
+			if (valueHash == null) {
+				OValue oValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(addr)).get();
+				if (oValue != null && oValue.getExtdata() != null) {
+					valueHash = oValue.getExtdata().toByteArray();
+				} else {
+					return null;
+				}
+			}
+			AccountValue.Builder oAccountValue = AccountValue.newBuilder();
+			oAccountValue.mergeFrom(valueHash);
 			oAccount.setValue(oAccountValue);
 			return oAccount.build();
 		} catch (Exception e) {
-			// TODO: handle exception
+			log.error("account not found::" + encApi.hexEnc(addr));
 		}
 		return null;
 	}
@@ -524,12 +534,18 @@ public class AccountHelper implements ActorService {
 	private void putAccountValue(byte[] addr, AccountValue oAccountValue) {
 		dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(addr),
 				OEntityBuilder.byteValue2OValue(oAccountValue.toByteArray()));
+		stateTrie.put(addr, oAccountValue.toByteArray());
 	}
 
-	public void BatchPutAccounts(LinkedList<OKey> keys, LinkedList<OValue> values) {
+	public void BatchPutAccounts(LinkedList<OKey> keys, LinkedList<AccountValue> values) {
 		OKey[] keysArray = new OKey[keys.size()];
 		OValue[] valuesArray = new OValue[values.size()];
 
-		dao.getAccountDao().batchPuts(keys.toArray(keysArray), values.toArray(valuesArray));
+		LinkedList<OValue> list = new LinkedList<>();
+		for (AccountValue accountValue : values) {
+			list.add(OEntityBuilder.byteValue2OValue(accountValue.toByteArray()));
+		}
+
+		dao.getAccountDao().batchPuts(keys.toArray(keysArray), list.toArray(valuesArray));
 	}
 }

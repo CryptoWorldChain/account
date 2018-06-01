@@ -17,6 +17,7 @@ import org.brewchain.account.doublyll.DoubleLinkedList;
 import org.brewchain.account.doublyll.Node;
 import org.brewchain.account.gens.Block.BlockEntity;
 import org.brewchain.account.gens.Tx.MultiTransaction;
+import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.util.ByteUtil;
 import org.brewchain.account.util.FastByteComparisons;
 import org.brewchain.account.util.NodeDef;
@@ -47,6 +48,8 @@ public class BlockChainHelper implements ActorService {
 	//
 	@ActorRequire(name = "BlockChainStore_HashMapDB", scope = "global")
 	BlockChainStore blockChainStore;
+	@ActorRequire(name = "State_Trie", scope = "global")
+	StateTrie stateTrie;
 
 	@ActorRequire(name = "Def_Daos", scope = "global")
 	DefDaos dao;
@@ -151,6 +154,12 @@ public class BlockChainHelper implements ActorService {
 		return true;
 		// }
 		// return false;
+	}
+
+	public void rollBackTo(BlockEntity oBlock) {
+		stateTrie.setRoot(oBlock.getHeader().getStateRoot().toByteArray());
+		blockChainStore.rollBackTo(oBlock.getHeader().getNumber());
+		appendBlock(oBlock);
 	}
 
 	public boolean cacheBlock(BlockEntity oBlock) {
@@ -290,7 +299,7 @@ public class BlockChainHelper implements ActorService {
 	public LinkedList<BlockEntity> getParentsBlocks(byte[] blockHash, byte[] endBlockHash, int maxCount)
 			throws Exception {
 		LinkedList<BlockEntity> list = new LinkedList<BlockEntity>();
-		list.addAll(blockChainStore.getChildListBlocksEndWith(encApi.hexEnc(blockHash), encApi.hexEnc(endBlockHash),
+		list.addAll(blockChainStore.getParentListBlocksEndWith(encApi.hexEnc(blockHash), encApi.hexEnc(endBlockHash),
 				maxCount));
 		// Iterator<Node> iterator = blockCache.reverseIterator();
 		// boolean st = false;
@@ -392,46 +401,44 @@ public class BlockChainHelper implements ActorService {
 			log.debug(String.format("not found last block, start empty node"));
 			return;
 		}
+		stateTrie.setRoot(oBlockEntity.getHeader().getStateRoot() == null ? null
+				: oBlockEntity.getHeader().getStateRoot().toByteArray());
+
 		int blockNumber = oBlockEntity.getHeader().getNumber();
 		blockChainStore.add(oBlockEntity.build(), encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()));
-		// blockCache.insertFirst(oBlockEntity.getHeader().getBlockHash().toByteArray(), blockNumber);
+		// blockCache.insertFirst(oBlockEntity.getHeader().getBlockHash().toByteArray(),
+		// blockNumber);
 
-		// 开始遍历区块
-		while (blockNumber >= 0) {
-			blockNumber--;
-			if (oBlockEntity.getHeader().getParentHash() == null
-					|| oBlockEntity.getHeader().getParentHash().equals(ByteString.EMPTY)) {
-				// 只有创世块？
-				if (oBlockEntity.getHeader().getNumber() == KeyConstant.GENESIS_NUMBER) {
+		byte[] parentHash = oBlockEntity.getHeader().getParentHash().toByteArray();
+
+		while (parentHash != null) {
+			BlockEntity.Builder loopBlockEntity = null;
+			try {
+				loopBlockEntity = getBlock(parentHash);
+				if (loopBlockEntity == null) {
+					// maybe wrong
 					break;
 				} else {
-					throw new Exception(String.format("block db error，block %s can not find parent block, hash::%s",
-							oBlockEntity.getHeader().getNumber(),
-							encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray())));
+					if (blockNumber - 1 != loopBlockEntity.getHeader().getNumber()) {
+						throw new Exception(String.format("respect block number %s ,get block number %s",
+								blockNumber - 1, loopBlockEntity.getHeader().getNumber()));
+					}
+					blockNumber -= 1;
+					blockChainStore.add(loopBlockEntity.build(),
+							encApi.hexEnc(loopBlockEntity.getHeader().getBlockHash().toByteArray()));
+					log.info(String.format("load block::%s number::%s from datasource",
+							encApi.hexEnc(loopBlockEntity.getHeader().getBlockHash().toByteArray()),
+							loopBlockEntity.getHeader().getNumber()));
+
+					if (loopBlockEntity.getHeader().getParentHash() != null) {
+						parentHash = loopBlockEntity.getHeader().getParentHash().toByteArray();
+					} else {
+						break;
+					}
 				}
-			}
-			BlockEntity loopBlockEntity = null;
-
-			try {
-				loopBlockEntity = getBlock(oBlockEntity.getHeader().getParentHash().toByteArray()).build();
 			} catch (Exception e) {
-				log.error("block not found:: hash::"
-						+ encApi.hexEnc(oBlockEntity.getHeader().getParentHash().toByteArray()) + " current::"
-						+ oBlockEntity.getHeader().getNumber());
-				throw e;
+				// TODO: handle exception
 			}
-
-			if (blockNumber != loopBlockEntity.getHeader().getNumber()) {
-				throw new Exception(String.format("respect block number %s ,get block number %s", blockNumber,
-						loopBlockEntity.getHeader().getNumber()));
-			}
-			blockChainStore.add(oBlockEntity.build(), encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()));
-			log.info(String.format("load block %s from datasource", blockNumber));
-			if (blockNumber == 0) {
-				break;
-			}
-
-			oBlockEntity = loopBlockEntity.toBuilder();
 		}
 
 		KeyConstant.isStart = true;

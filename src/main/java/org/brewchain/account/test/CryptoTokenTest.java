@@ -165,7 +165,7 @@ public class CryptoTokenTest extends SessionModules<ReqTxTest> implements ActorS
 			newBlock = blockHelper.CreateNewBlock(600, ByteUtil.EMPTY_BYTE_ARRAY,
 					ByteString.copyFromUtf8(coinBase).toByteArray());
 			oSyncBlock.setHeader(newBlock.getHeader());
-			blockHelper.ApplyBlock(oSyncBlock.build());
+			blockHelper.ApplyBlock(oSyncBlock);
 			log.debug("block已同步");
 
 			log.debug(String.format("账户1 DEF %s",

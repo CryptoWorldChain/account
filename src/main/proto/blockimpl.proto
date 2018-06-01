@@ -68,6 +68,7 @@ message RespBlockDetail {
 	string blockHash = 11;
 	repeated string txHashs = 12;
 	int64 sliceId = 13;
+	string stateRoot = 14;
 }
 
 message BlockHeaderImpl {

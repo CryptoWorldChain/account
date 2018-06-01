@@ -69,15 +69,16 @@ public class ThreadTest extends SessionModules<ReqTTT> implements ActorService {
 		RespTxTest.Builder oRespTxTest = RespTxTest.newBuilder();
 		oRespTxTest.setRetCode(1234);
 		List<KeyPairs> listKeys = new ArrayList<KeyPairs>();
-		if (pb.getBlock() == 1) {
-			// 创建创世块
-			try {
-				blockHelper.CreateGenesisBlock(new LinkedList<MultiTransaction>(), ByteUtil.EMPTY_BYTE_ARRAY);
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
+		// if (pb.getBlock() == 1) {
+		// // 创建创世块
+		// try {
+		// blockHelper.CreateGenesisBlock(new LinkedList<MultiTransaction>(),
+		// ByteUtil.EMPTY_BYTE_ARRAY);
+		// } catch (Exception e) {
+		// // TODO Auto-generated catch block
+		// e.printStackTrace();
+		// }
+		// }
 
 		// 创建账户 100 个
 		int accountCount = 100;
@@ -96,11 +97,11 @@ public class ThreadTest extends SessionModules<ReqTTT> implements ActorService {
 		}
 
 		try {
-			// // 开始交易测试
-			// ThreadTransaction oThreadTransaction = new
-			// ThreadTransaction(accountHelper, transactionHelper, encApi,
-			// listKeys);
-			// oThreadTransaction.start();
+			 // 开始交易测试
+			 ThreadTransaction oThreadTransaction = new
+			 ThreadTransaction(accountHelper, transactionHelper, encApi,
+			 listKeys);
+			 oThreadTransaction.start();
 			// //Thread.currentThread().sleep(50);
 			// ThreadTransaction oThreadTransaction1 = new
 			// ThreadTransaction(accountHelper, transactionHelper, encApi,
@@ -133,6 +134,19 @@ public class ThreadTest extends SessionModules<ReqTTT> implements ActorService {
 		// 开始打包
 		ThreadBlock oThreadBlock = new ThreadBlock(blockHelper, encApi);
 		oThreadBlock.start();
+//		KeyPairs oKeyPairs = encApi.genKeys();
+//		
+//		ThreadSignature oThreadBlock1 = new ThreadSignature(encApi.hexDec(oKeyPairs.getAddress()), encApi);
+//		oThreadBlock1.start();
+//		ThreadSignature oThreadBlock2 = new ThreadSignature(encApi.hexDec(oKeyPairs.getAddress()), encApi);
+//		oThreadBlock2.start();
+//		ThreadSignature oThreadBlock3 = new ThreadSignature(encApi.hexDec(oKeyPairs.getAddress()), encApi);
+//		oThreadBlock3.start();
+//		ThreadSignature oThreadBlock4 = new ThreadSignature(encApi.hexDec(oKeyPairs.getAddress()), encApi);
+//		oThreadBlock4.start();
+//		ThreadSignature oThreadBlock5 = new ThreadSignature(encApi.hexDec(oKeyPairs.getAddress()), encApi);
+//		oThreadBlock5.start();
+//		
 
 		oRespTxTest.setRetCode(-1);
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespTxTest.build()));

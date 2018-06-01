@@ -214,7 +214,7 @@ public class MultiSignatureTest extends SessionModules<ReqTxTest> implements Act
 					ByteString.copyFromUtf8(coinBase).toByteArray());
 			log.debug("创建区块 高度" + newBlock.getHeader().getNumber());
 			oSyncBlock.setHeader(newBlock.getHeader());
-			blockHelper.ApplyBlock(oSyncBlock.build());
+			blockHelper.ApplyBlock(oSyncBlock);
 			log.debug("block已同步");
 			log.debug("多重签名账户信息：" + accountHelper.GetAccount(mAddress));
 		} catch (Exception e2) {
@@ -261,7 +261,7 @@ public class MultiSignatureTest extends SessionModules<ReqTxTest> implements Act
 						ByteString.copyFromUtf8(coinBase).toByteArray());
 				log.debug("创建区块 高度" + newBlock.getHeader().getNumber());
 				oSyncBlock.setHeader(newBlock.getHeader());
-				blockHelper.ApplyBlock(oSyncBlock.build());
+				blockHelper.ApplyBlock(oSyncBlock);
 				log.debug("block已同步");
 				log.debug("多重签名账户信息：" + accountHelper.GetAccount(mAddress));
 			} catch (Exception e2) {

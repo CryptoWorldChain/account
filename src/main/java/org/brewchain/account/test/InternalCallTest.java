@@ -99,7 +99,7 @@ public class InternalCallTest extends SessionModules<ReqTxTest> implements Actor
 			newBlock = blockHelper.CreateNewBlock(600, ByteUtil.EMPTY_BYTE_ARRAY,
 					ByteString.copyFromUtf8(coinBase).toByteArray());
 			oSyncBlock.setHeader(newBlock.getHeader());
-			blockHelper.ApplyBlock(oSyncBlock.build());
+			blockHelper.ApplyBlock(oSyncBlock);
 			log.debug("block已同步");
 		} catch (Exception e2) {
 			// TODO Auto-generated catch block

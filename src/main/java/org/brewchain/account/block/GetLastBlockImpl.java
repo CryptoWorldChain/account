@@ -62,7 +62,7 @@ public class GetLastBlockImpl extends SessionModules<ReqBlockInfo> {
 			// oRespBlockDetail.setReward(ByteUtil.byteArrayToInt(oBlockEntity.getHeader().getReward().toByteArray()));
 			oRespBlockDetail.setSliceId(oBlockEntity.getHeader().getSliceId());
 			oRespBlockDetail.setTimestamp(oBlockEntity.getHeader().getTimestamp());
-
+			oRespBlockDetail.setStateRoot(encApi.hexEnc(oBlockEntity.getHeader().getStateRoot().toByteArray()));
 			for (ByteString oTxhash : oBlockEntity.getHeader().getTxHashsList()) {
 				oRespBlockDetail.addTxHashs(encApi.hexEnc(oTxhash.toByteArray()));
 			}

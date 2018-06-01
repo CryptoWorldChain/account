@@ -17,6 +17,7 @@ import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.brewchain.account.gens.Act.Account;
+import org.brewchain.account.gens.Act.AccountValue;
 import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.brewchain.account.gens.Tx.MultiTransaction.Builder;
 import org.brewchain.account.gens.Tx.MultiTransactionBody;
@@ -30,6 +31,7 @@ import org.brewchain.account.gens.Tximpl.MultiTransactionImpl;
 import org.brewchain.account.gens.Tximpl.MultiTransactionInputImpl;
 import org.brewchain.account.gens.Tximpl.MultiTransactionOutputImpl;
 import org.brewchain.account.gens.Tximpl.MultiTransactionSignatureImpl;
+import org.brewchain.account.trie.StateTrie;
 import org.fc.brewchain.bcapi.EncAPI;
 import org.fc.brewchain.bcapi.KeyPairs;
 
@@ -65,6 +67,8 @@ public class TransactionHelper implements ActorService {
 	WaitSendHashMapDB oSendingHashMapDB; // 保存待广播交易
 	@ActorRequire(name = "WaitBlock_HashMapDB", scope = "global")
 	WaitBlockHashMapDB oPendingHashMapDB; // 保存待打包block的交易
+	@ActorRequire(name = "State_Trie", scope = "global")
+	StateTrie stateTrie;
 
 	/**
 	 * 保存交易方法。 交易不会立即执行，而是等待被广播和打包。只有在Block中的交易，才会被执行。 交易签名规则 1. 清除signatures 2.
@@ -113,7 +117,7 @@ public class TransactionHelper implements ActorService {
 		}
 
 		iTransactionActuator oiTransactionActuator;
-		oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, null, null, encApi);
+		oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, null, null, encApi, dao);
 
 		// 如果交易本身需要验证签名
 		if (oiTransactionActuator.needSignature()) {
@@ -162,28 +166,28 @@ public class TransactionHelper implements ActorService {
 	 * 
 	 * @param oTransaction
 	 */
-	public void ExecuteTransaction(LinkedList<MultiTransaction> oMultiTransactions) throws Exception {
+	public byte[] ExecuteTransaction(LinkedList<MultiTransaction> oMultiTransactions) throws Exception {
 
 		for (MultiTransaction oTransaction : oMultiTransactions) {
 			LinkedList<OKey> keys = new LinkedList<OKey>();
-			LinkedList<OValue> values = new LinkedList<OValue>();
+			LinkedList<AccountValue> values = new LinkedList<AccountValue>();
 
 			iTransactionActuator oiTransactionActuator;
 			// TODO 枚举交易类型
 			if (oTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("01"))) {
-				oiTransactionActuator = new ActuatorCreateUnionAccount(this.oAccountHelper, this, null, encApi);
+				oiTransactionActuator = new ActuatorCreateUnionAccount(this.oAccountHelper, this, null, encApi, dao);
 			} else if (oTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("02"))) {
-				oiTransactionActuator = new ActuatorTokenTransaction(oAccountHelper, this, null, encApi);
+				oiTransactionActuator = new ActuatorTokenTransaction(oAccountHelper, this, null, encApi, dao);
 			} else if (oTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("03"))) {
-				oiTransactionActuator = new ActuatorUnionAccountTransaction(oAccountHelper, this, null, encApi);
+				oiTransactionActuator = new ActuatorUnionAccountTransaction(oAccountHelper, this, null, encApi, dao);
 			} else if (oTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("04"))) {
-				oiTransactionActuator = new ActuatorCallInternalFunction(oAccountHelper, this, null, encApi);
+				oiTransactionActuator = new ActuatorCallInternalFunction(oAccountHelper, this, null, encApi, dao);
 			} else if (oTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("05"))) {
-				oiTransactionActuator = new ActuatorCryptoTokenTransaction(oAccountHelper, this, null, encApi);
+				oiTransactionActuator = new ActuatorCryptoTokenTransaction(oAccountHelper, this, null, encApi, dao);
 			} else if (oTransaction.getTxBody().getOutputsCount() == 0) {
-				oiTransactionActuator = new ActuatorCreateContract(oAccountHelper, this, null, encApi);
+				oiTransactionActuator = new ActuatorCreateContract(oAccountHelper, this, null, encApi, dao);
 			} else {
-				oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, this, null, encApi);
+				oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, this, null, encApi, dao);
 			}
 
 			try {
@@ -210,8 +214,13 @@ public class TransactionHelper implements ActorService {
 			keys.addAll(oiTransactionActuator.getKeys());
 			values.addAll(oiTransactionActuator.getValues());
 
+			for (int i = 0; i < keys.size(); i++) {
+				stateTrie.put(keys.get(i).getData().toByteArray(), values.get(i).getStorage().toByteArray());
+			}
+
 			oAccountHelper.BatchPutAccounts(keys, values);
 		}
+		return stateTrie.getRootHash();
 	}
 
 	/**
@@ -449,8 +458,9 @@ public class TransactionHelper implements ActorService {
 
 		MultiTransactionImpl.Builder oMultiTransactionImpl = MultiTransactionImpl.newBuilder();
 		oMultiTransactionImpl.setTxHash(encApi.hexEnc(oTransaction.getTxHash().toByteArray()));
-		
-		oMultiTransactionImpl.setStatus(StringUtils.isNotBlank(oTransaction.getStatus()) ? oTransaction.getStatus() : "");
+
+		oMultiTransactionImpl
+				.setStatus(StringUtils.isNotBlank(oTransaction.getStatus()) ? oTransaction.getStatus() : "");
 
 		MultiTransactionBodyImpl.Builder oMultiTransactionBodyImpl = MultiTransactionBodyImpl.newBuilder();
 		oMultiTransactionBodyImpl.setData(encApi.hexEnc(oMultiTransactionBody.getData().toByteArray()));
@@ -590,19 +600,19 @@ public class TransactionHelper implements ActorService {
 		// 02 -- Token交易
 		// 03 -- 多重签名账户交易
 		if (oMultiTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("01"))) {
-			oiTransactionActuator = new ActuatorCreateUnionAccount(this.oAccountHelper, null, null, encApi);
+			oiTransactionActuator = new ActuatorCreateUnionAccount(this.oAccountHelper, null, null, encApi, dao);
 		} else if (oMultiTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("02"))) {
-			oiTransactionActuator = new ActuatorTokenTransaction(oAccountHelper, null, null, encApi);
+			oiTransactionActuator = new ActuatorTokenTransaction(oAccountHelper, null, null, encApi, dao);
 		} else if (oMultiTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("03"))) {
-			oiTransactionActuator = new ActuatorUnionAccountTransaction(oAccountHelper, null, null, encApi);
+			oiTransactionActuator = new ActuatorUnionAccountTransaction(oAccountHelper, null, null, encApi, dao);
 		} else if (oMultiTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("04"))) {
-			oiTransactionActuator = new ActuatorCallInternalFunction(oAccountHelper, null, null, encApi);
+			oiTransactionActuator = new ActuatorCallInternalFunction(oAccountHelper, null, null, encApi, dao);
 		} else if (oMultiTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("05"))) {
-			oiTransactionActuator = new ActuatorCryptoTokenTransaction(oAccountHelper, null, null, encApi);
+			oiTransactionActuator = new ActuatorCryptoTokenTransaction(oAccountHelper, null, null, encApi, dao);
 		} else if (oMultiTransaction.getTxBody().getOutputsCount() == 0) {
-			oiTransactionActuator = new ActuatorCreateContract(oAccountHelper, null, null, encApi);
+			oiTransactionActuator = new ActuatorCreateContract(oAccountHelper, null, null, encApi, dao);
 		} else {
-			oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, null, null, encApi);
+			oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, null, null, encApi, dao);
 		}
 
 		// 如果交易本身需要验证签名

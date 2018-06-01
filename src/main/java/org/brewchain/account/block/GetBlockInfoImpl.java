@@ -60,9 +60,6 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 			//oRespBlockInfo.setCache(blockChainHelper.getBlockCacheFormatString());
 			oRespBlockInfo.setWaitSync(oSendingHashMapDB.keys().size());
 			oRespBlockInfo.setWaitBlock(oPendingHashMapDB.keys().size());
-			for (Entry<String, byte[]> entry : oCacheHashMapDB.getStorage().entrySet()) {
-				oRespBlockInfo.addTemp(entry.getKey());
-			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			// e.printStackTrace();
