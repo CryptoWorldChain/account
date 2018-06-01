@@ -19,6 +19,7 @@ enum PTSTCommand {
     GBX = 8; // 根据交易获取Block测试
     DTT = 9; // 双花测试
     CCT = 10; // 创建合约交易
+    BRT = 11; // 块回滚测试
 }
 
 message ReqTxTest {

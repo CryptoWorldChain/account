@@ -151,6 +151,7 @@ public class BlockChainHelper implements ActorService {
 			dao.getTxblockDao().batchPuts(txBlockKeyList.toArray(new OKey[0]), txBlockValueList.toArray(new OValue[0]));
 		}
 		blockChainStore.add(oBlock, encApi.hexEnc(oBlock.getHeader().getBlockHash().toByteArray()));
+		stateTrie.setRoot(oBlock.getHeader().getStateRoot().toByteArray());
 		return true;
 		// }
 		// return false;

@@ -215,7 +215,7 @@ public class TransactionHelper implements ActorService {
 			values.addAll(oiTransactionActuator.getValues());
 
 			for (int i = 0; i < keys.size(); i++) {
-				stateTrie.put(keys.get(i).getData().toByteArray(), values.get(i).getStorage().toByteArray());
+				stateTrie.put(keys.get(i).getData().toByteArray(), values.get(i).toByteArray());
 			}
 
 			oAccountHelper.BatchPutAccounts(keys, values);

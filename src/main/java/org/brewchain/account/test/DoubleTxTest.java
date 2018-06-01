@@ -146,6 +146,18 @@ public class DoubleTxTest extends SessionModules<ReqTxTest> implements ActorServ
 		log.debug("root2:: " + test + " = " + new String(stateTrie.get(dog.getBytes())));
 		log.debug("root2:: " + LONG_STRING + " = " + new String(stateTrie.get(test.getBytes())));
 
+		stateTrie.setRoot(root1);
+		log.debug("root1:: " + test + " = "
+				+ (stateTrie.get(dog.getBytes()) == null ? "" : new String(stateTrie.get(dog.getBytes()))));
+		log.debug("root1:: " + LONG_STRING + " = " + new String(stateTrie.get(doge.getBytes())));
+
+		stateTrie.put("aabbcc".getBytes(), "aabbcc".getBytes());
+		log.debug("root1:: " + "aabbcc" + " = " + new String(stateTrie.get("aabbcc".getBytes())));
+
+		stateTrie.setRoot(root2);
+		log.debug("root2:: " + "aabbcc" + " = "
+				+ (stateTrie.get("aabbcc".getBytes()) == null ? "" : new String(stateTrie.get("aabbcc".getBytes()))));
+
 		//
 		// // 创建账户1
 		// KeyPairs oKeyPairs1 = encApi.genKeys();

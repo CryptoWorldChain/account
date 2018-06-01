@@ -149,9 +149,10 @@ public class AccountHelper implements ActorService {
 		}
 		return null;
 	}
-	
+
 	/**
 	 * 获取用户账户，如果用户不存在，则创建账户
+	 * 
 	 * @param addr
 	 * @return
 	 */
@@ -159,7 +160,7 @@ public class AccountHelper implements ActorService {
 		try {
 			OValue oValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(addr)).get();
 			AccountValue.Builder oAccountValue = AccountValue.newBuilder();
-			if(oValue != null) {
+			if (oValue != null) {
 				oAccountValue.mergeFrom(oValue.getExtdata());
 			} else {
 				CreateAccount(addr, null);
@@ -406,7 +407,10 @@ public class AccountHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public long getBalance(byte[] addr) throws Exception {
-		Account.Builder oAccount = GetAccount(addr).toBuilder();
+		Account oAccount = GetAccount(addr);
+		if (oAccount == null) {
+			throw new Exception("account not found");
+		}
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 		return oAccountValue.getBalance();
 	}

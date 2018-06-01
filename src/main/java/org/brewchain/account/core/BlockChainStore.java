@@ -40,11 +40,9 @@ public class BlockChainStore implements ActorService {
 	}
 
 	public void rollBackTo(int blockNumber) {
-		try (ALock lr = readLock.lock()) {
-			try (ALock lw = writeLock.lock()) {
-				while (getLastBlockNumber() > blockNumber) {
-					this.storage.remove(getLastBlockNumber());
-				}
+		try (ALock lw = writeLock.lock()) {
+			while (getLastBlockNumber() > blockNumber) {
+				this.storage.remove(getLastBlockNumber());
 			}
 		}
 	}
