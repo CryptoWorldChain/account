@@ -102,7 +102,7 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 		LinkedList<OKey> keys = new LinkedList<OKey>();
 		LinkedList<OValue> values = new LinkedList<OValue>();
 
-		Map<byte[], AccountCryptoToken> tokens = new HashMap<byte[], AccountCryptoToken>();
+		Map<String, AccountCryptoToken> tokens = new HashMap<String, AccountCryptoToken>();
 		// 发送方移除balance
 		for (int i = 0; i < oMultiTransaction.getTxBody().getInputsCount(); i++) {
 			MultiTransactionInput oInput = oMultiTransaction.getTxBody().getInputs(i);
@@ -121,8 +121,8 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 
 					for (int j = 0; j < value.getTokensCount(); j++) {
 						if (value.getTokensBuilderList().get(j).getHash().equals(oInput.getCryptoToken())) {
-							tokens.put(value.getTokensBuilderList().get(j).getHash().toByteArray(),
-									value.getTokensBuilderList().get(j).build());
+							tokens.put(encApi.hexEnc(value.getTokensBuilderList().get(j).getHash().toByteArray()),value.getTokensBuilderList().get(j).build());
+							
 							value.removeTokens(j);
 							break;
 						}
@@ -145,20 +145,36 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 
 			receiverAccountValue.setBalance(receiverAccountValue.getBalance() + oOutput.getAmount());
 
+			boolean isExistToken = false;
 			for (int k = 0; k < receiverAccountValue.getCryptosCount(); k++) {
 				if (receiverAccountValue.getCryptosList().get(k).getSymbol().equals(oOutput.getSymbol())) {
-					AccountCryptoValue.Builder oAccountCryptoValue = receiverAccountValue.getCryptosList().get(k)
-							.toBuilder();
+					AccountCryptoValue.Builder oAccountCryptoValue = receiverAccountValue.getCryptosList().get(k).toBuilder();
 
-					AccountCryptoToken.Builder oAccountCryptoToken = tokens.get(oOutput.getCryptoToken().toByteArray())
-							.toBuilder();
+					AccountCryptoToken.Builder oAccountCryptoToken = tokens.get(encApi.hexEnc(oOutput.getCryptoToken().toByteArray())).toBuilder();
 					oAccountCryptoToken.setOwner(oOutput.getAddress());
 					oAccountCryptoToken.setNonce(oAccountCryptoToken.getNonce() + 1);
 					oAccountCryptoToken.setOwnertime((new Date()).getTime());
 					oAccountCryptoValue.addTokens(oAccountCryptoToken.build());
 					receiverAccountValue.setCryptos(k, oAccountCryptoValue);
+					isExistToken = true;
+					break;
 				}
 			}
+			
+			if(!isExistToken){
+				AccountCryptoToken.Builder oAccountCryptoToken = tokens.get(encApi.hexEnc(oOutput.getCryptoToken().toByteArray())).toBuilder();
+				oAccountCryptoToken.setOwner(oOutput.getAddress());
+				oAccountCryptoToken.setNonce(oAccountCryptoToken.getNonce() + 1);
+				oAccountCryptoToken.setOwnertime(System.currentTimeMillis());
+				
+				AccountCryptoValue.Builder oAccountCryptoValue = AccountCryptoValue.newBuilder();
+				oAccountCryptoValue.addTokens(oAccountCryptoToken);
+				oAccountCryptoValue.setSymbol(oOutput.getSymbol());
+				
+				receiverAccountValue.addCryptos(oAccountCryptoValue);
+				
+			}
+			
 
 			keys.add(OEntityBuilder.byteKey2OKey(oOutput.getAddress().toByteArray()));
 			values.add(OEntityBuilder.byteValue2OValue(receiverAccountValue.build().toByteArray()));
