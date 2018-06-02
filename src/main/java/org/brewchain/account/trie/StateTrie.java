@@ -46,18 +46,15 @@ public class StateTrie {
 
 	private final static Object NULL_NODE = new Object();
 	private final static int MIN_BRANCHES_CONCURRENTLY = 3;
-	private static ExecutorService executor;
+	private static ExecutorService executor = Executors.newFixedThreadPool(4,
+			new ThreadFactoryBuilder().setNameFormat("trie-calc-thread-%d").build());;
 
 	public StateTrie(DefDaos dao, EncAPI encApi) {
 		this.dao = dao;
 		this.encApi = encApi;
 	}
 
-	public static ExecutorService getExecutor() {
-		if (executor == null) {
-			executor = Executors.newFixedThreadPool(4,
-					new ThreadFactoryBuilder().setNameFormat("trie-calc-thread-%d").build());
-		}
+	public  static ExecutorService getExecutor() {
 		return executor;
 	}
 

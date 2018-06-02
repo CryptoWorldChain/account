@@ -215,7 +215,7 @@ public class TransactionHelper implements ActorService {
 				e.printStackTrace();
 				oiTransactionActuator.onExecuteError(oTransaction);
 				// throw e;
-				log.error(String.format("error on exec tx::", e.getMessage()));
+				log.error("error on exec tx::"+e.getMessage(),e);
 			}
 
 			keys.addAll(oiTransactionActuator.getKeys());

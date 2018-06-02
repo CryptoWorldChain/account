@@ -22,7 +22,7 @@ public class CacheTrie {
 	private final static int MIN_BRANCHES_CONCURRENTLY = 3;
 	private static ExecutorService executor;
 
-	public static ExecutorService getExecutor() {
+	public synchronized static ExecutorService getExecutor() {
 		if (executor == null) {
 			executor = Executors.newFixedThreadPool(4,
 					new ThreadFactoryBuilder().setNameFormat("trie-calc-thread-%d").build());
