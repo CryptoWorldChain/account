@@ -128,9 +128,9 @@ public class BlockHelper implements ActorService {
 			oBlockBody.addTxs(txs.get(i));
 			oTrieImpl.put(txs.get(i).getTxHash().toByteArray(), txs.get(i).toByteArray());
 		}
-		oBlockMiner.setAddress(KeyConstant.node.getAddress());
+		oBlockMiner.setAddress(KeyConstant.node.getoAccount().getAddress());
 		oBlockMiner.setNode(KeyConstant.node.getNode());
-		oBlockMiner.setBcuid(KeyConstant.node.getBcuid());
+		oBlockMiner.setBcuid(KeyConstant.node.getoAccount().getBcuid());
 		oBlockMiner.setReward(KeyConstant.BLOCK_REWARD);
 		// oBlockMiner.setAddress(value);
 
@@ -328,7 +328,7 @@ public class BlockHelper implements ActorService {
 		transactionHelper.ExecuteTransaction(txs, oStateTrie);
 
 		// reward
-		// applyReward(oBlockEntity.build(), oStateTrie);
+		applyReward(oBlockEntity.build(), oStateTrie);
 
 		byte[] stateRoot = oStateTrie.getRootHash();
 		return stateRoot;
@@ -380,8 +380,8 @@ public class BlockHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public void applyReward(BlockEntity oCurrentBlock, StateTrie oStateTrie) throws Exception {
-		accountHelper.addBalance(encApi.hexDec(oCurrentBlock.getMiner().getAddress()), oCurrentBlock.getMiner().getReward(),
-				oStateTrie);
+		accountHelper.addBalance(encApi.hexDec(oCurrentBlock.getMiner().getAddress()),
+				oCurrentBlock.getMiner().getReward(), oStateTrie);
 	}
 
 	/**
@@ -443,10 +443,11 @@ public class BlockHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public LinkedList<MultiTransaction> getTransactionByAddress(byte[] address) throws Exception {
+	public LinkedList<MultiTransaction> getTransactionByAddress(byte[] address, int blockCount) throws Exception {
 		LinkedList<MultiTransaction> txs = new LinkedList<MultiTransaction>();
 		// 找到最佳块，遍历所有block
-		for (BlockEntity oBlockEntity : blockChainHelper.getParentsBlocks(blockChainHelper.GetBestBlock())) {
+		for (BlockEntity oBlockEntity : blockChainHelper.getParentsBlocks(blockChainHelper.GetBestBlock(), null,
+				blockCount)) {
 			for (MultiTransaction multiTransaction : oBlockEntity.getBody().getTxsList()) {
 				// if
 				// (multiTransaction.toBuilder().build().getTxBody().getInputs(index))

@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.brewchain.account.gens.Block.BlockEntity;
@@ -154,7 +155,7 @@ public class BlockChainStore implements ActorService {
 					if (child != null) {
 						blocks.add(child);
 					}
-					if (encApi.hexEnc(hashs.get(j)).equals(endBlockHash)) {
+					if (StringUtils.isNotBlank(endBlockHash) && encApi.hexEnc(hashs.get(j)).equals(endBlockHash)) {
 						return blocks;
 					}
 				}

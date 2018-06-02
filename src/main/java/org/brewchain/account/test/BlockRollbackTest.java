@@ -77,9 +77,9 @@ public class BlockRollbackTest extends SessionModules<ReqTxTest> implements Acto
 
 			// 账户1 转账 100000
 			MultiTransaction.Builder oMultiTransaction01 = createTransaction(
-					encApi.hexDec("307c0f1e00d69299a0a75c521efb46fe61108a6acc"),
-					"5ed9f0f16bb0ab4cd63fdbd7f411eba4a28a55df4f9edbaa89b512d2b00cd951",
-					"04c1b74b2cc18b1dab1b54bd2e452f4e058cf4bfd05fe1747692a5071c032abf8acb9912a0295cfb2ca25a68d05254ddec4d18798dce0824048b00b6dcea5bdfb1",
+					encApi.hexDec("307e3c985f1361488a314c47584f22406a60f9df1f"),
+					"e3a6aa61d1dd844899c14664921f506c0ffb7172cea1cd6a5ccdf4a99dd6cabb",
+					"040fdd87b30a77db34f5dbec226cd7b528a7dddc64680da1394ddf8b1b47b4df029b556297e0b39aa5aae038b847786a22b0fbda7bdbea6f2287c625081cb92f23",
 					encApi.hexDec(oKeyPairs1.getAddress()), 100000);
 			transactionHelper.CreateMultiTransaction(oMultiTransaction01);
 
@@ -87,9 +87,9 @@ public class BlockRollbackTest extends SessionModules<ReqTxTest> implements Acto
 
 			// 账户2 转账 100000
 			MultiTransaction.Builder oMultiTransaction02 = createTransaction(
-					encApi.hexDec("307c0f1e00d69299a0a75c521efb46fe61108a6acc"),
-					"5ed9f0f16bb0ab4cd63fdbd7f411eba4a28a55df4f9edbaa89b512d2b00cd951",
-					"04c1b74b2cc18b1dab1b54bd2e452f4e058cf4bfd05fe1747692a5071c032abf8acb9912a0295cfb2ca25a68d05254ddec4d18798dce0824048b00b6dcea5bdfb1",
+					encApi.hexDec("307e3c985f1361488a314c47584f22406a60f9df1f"),
+					"e3a6aa61d1dd844899c14664921f506c0ffb7172cea1cd6a5ccdf4a99dd6cabb",
+					"040fdd87b30a77db34f5dbec226cd7b528a7dddc64680da1394ddf8b1b47b4df029b556297e0b39aa5aae038b847786a22b0fbda7bdbea6f2287c625081cb92f23",
 					encApi.hexDec(oKeyPairs2.getAddress()), 100000);
 			transactionHelper.CreateMultiTransaction(oMultiTransaction02);
 
@@ -97,9 +97,9 @@ public class BlockRollbackTest extends SessionModules<ReqTxTest> implements Acto
 
 			// 账户3 转账 100000
 			MultiTransaction.Builder oMultiTransaction03 = createTransaction(
-					encApi.hexDec("307c0f1e00d69299a0a75c521efb46fe61108a6acc"),
-					"5ed9f0f16bb0ab4cd63fdbd7f411eba4a28a55df4f9edbaa89b512d2b00cd951",
-					"04c1b74b2cc18b1dab1b54bd2e452f4e058cf4bfd05fe1747692a5071c032abf8acb9912a0295cfb2ca25a68d05254ddec4d18798dce0824048b00b6dcea5bdfb1",
+					encApi.hexDec("307e3c985f1361488a314c47584f22406a60f9df1f"),
+					"e3a6aa61d1dd844899c14664921f506c0ffb7172cea1cd6a5ccdf4a99dd6cabb",
+					"040fdd87b30a77db34f5dbec226cd7b528a7dddc64680da1394ddf8b1b47b4df029b556297e0b39aa5aae038b847786a22b0fbda7bdbea6f2287c625081cb92f23",
 					encApi.hexDec(oKeyPairs3.getAddress()), 100000);
 			transactionHelper.CreateMultiTransaction(oMultiTransaction03);
 			BlockEntity blockInit3 = makeBlock();

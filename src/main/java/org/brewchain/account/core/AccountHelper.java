@@ -174,20 +174,13 @@ public class AccountHelper implements ActorService {
 	 * @param addr
 	 * @return
 	 */
-	public Account GetAccountOrCreate(byte[] addr) {
+	public Account GetAccountOrCreate(byte[] addr, StateTrie oStateTrie) {
 		try {
-			OValue oValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(addr)).get();
-			AccountValue.Builder oAccountValue = AccountValue.newBuilder();
-			if (oValue != null) {
-				oAccountValue.mergeFrom(oValue.getExtdata());
-			} else {
-				CreateAccount(addr, null);
+			Account oAccount = GetAccount(addr, oStateTrie);
+			if (oAccount == null) {
+				oAccount = CreateAccount(addr, null);
 			}
-
-			Account.Builder oAccount = Account.newBuilder();
-			oAccount.setAddress(ByteString.copyFrom(addr));
-			oAccount.setValue(oAccountValue);
-			return oAccount.build();
+			return oAccount;
 		} catch (Exception e) {
 			// TODO: handle exception
 		}
@@ -222,7 +215,7 @@ public class AccountHelper implements ActorService {
 	}
 
 	public synchronized long addBalance(byte[] addr, long balance, StateTrie oStateTrie) throws Exception {
-		Account.Builder oAccount = GetAccount(addr, oStateTrie).toBuilder();
+		Account.Builder oAccount = GetAccountOrCreate(addr, oStateTrie).toBuilder();
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 		oAccountValue.setBalance(oAccountValue.getBalance() + balance);
 		putAccountValue(addr, oAccountValue.build(), oStateTrie);
@@ -451,7 +444,7 @@ public class AccountHelper implements ActorService {
 	}
 
 	public int getNonce(byte[] addr, StateTrie oStateTrie) throws Exception {
-		Account.Builder oAccount = GetAccount(addr, oStateTrie).toBuilder();
+		Account.Builder oAccount = GetAccountOrCreate(addr, oStateTrie).toBuilder();
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 		return oAccountValue.getNonce();
 	}

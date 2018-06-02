@@ -599,7 +599,7 @@ public class TransactionHelper implements ActorService {
 
 		Map<ByteString, Account> receivers = new HashMap<ByteString, Account>();
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
-			receivers.put(oOutput.getAddress(), oAccountHelper.GetAccountOrCreate(oOutput.getAddress().toByteArray()));
+			receivers.put(oOutput.getAddress(), oAccountHelper.GetAccountOrCreate(oOutput.getAddress().toByteArray(), oStateTrie));
 		}
 
 		iTransactionActuator oiTransactionActuator;

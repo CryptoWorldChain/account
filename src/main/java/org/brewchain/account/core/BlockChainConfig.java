@@ -19,6 +19,7 @@ public class BlockChainConfig extends SessionModules<Message> {
 	private String coinBase = props().get("block.coinBase.hex", null);
 	private int minerReward = props().get("block.miner.reward", 0);
 	private int minerRewardWait = props().get("block.miner.reward.wait", 0);
+	private String pwd = props().get("org.bc.manage.node.dev.pwd", null);
 
 	@Override
 	public String[] getCmds() {

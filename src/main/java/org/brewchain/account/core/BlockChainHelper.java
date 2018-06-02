@@ -1,5 +1,7 @@
 package org.brewchain.account.core;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -7,7 +9,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ExecutionException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Validate;
@@ -23,9 +27,11 @@ import org.brewchain.account.util.FastByteComparisons;
 import org.brewchain.account.util.NodeDef;
 import org.brewchain.account.util.NodeDef.NodeAccount;
 import org.brewchain.account.util.OEntityBuilder;
+import org.brewchain.bcapi.backend.ODBException;
 import org.brewchain.bcapi.gens.Oentity.KeyStoreValue;
 import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.bcapi.gens.Oentity.OValue;
+import org.brewchain.manage.util.KeyStoreHelper;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;
@@ -46,6 +52,8 @@ public class BlockChainHelper implements ActorService {
 	// @ActorRequire(name = "Block_Cache_DLL", scope = "global")
 	// DoubleLinkedList blockCache;
 	//
+	@ActorRequire(name = "BlockChain_Config", scope = "global")
+	BlockChainConfig blockChainConfig;
 	@ActorRequire(name = "BlockChainStore_HashMapDB", scope = "global")
 	BlockChainStore blockChainStore;
 	@ActorRequire(name = "Def_Daos", scope = "global")
@@ -54,7 +62,9 @@ public class BlockChainHelper implements ActorService {
 	EncAPI encApi;
 	@ActorRequire(name = "CacheBlock_HashMapDB", scope = "global")
 	CacheBlockHashMapDB oCacheHashMapDB;
-
+	@ActorRequire(name = "KeyStore_Helper", scope = "global")
+	KeyStoreHelper keyStoreHelper;
+	
 	/**
 	 * 获取节点最后一个区块的Hash
 	 * 
@@ -309,8 +319,12 @@ public class BlockChainHelper implements ActorService {
 	public LinkedList<BlockEntity> getParentsBlocks(byte[] blockHash, byte[] endBlockHash, int maxCount)
 			throws Exception {
 		LinkedList<BlockEntity> list = new LinkedList<BlockEntity>();
-		list.addAll(blockChainStore.getParentListBlocksEndWith(encApi.hexEnc(blockHash), encApi.hexEnc(endBlockHash),
-				maxCount));
+		String beginHashStr = encApi.hexEnc(blockHash);
+		String endHashStr = "";
+		if (endBlockHash != null) {
+			endHashStr = encApi.hexEnc(endBlockHash);
+		}
+		list.addAll(blockChainStore.getParentListBlocksEndWith(beginHashStr, endHashStr, maxCount));
 		// Iterator<Node> iterator = blockCache.reverseIterator();
 		// boolean st = false;
 		// while (iterator.hasNext() && maxCount > 0) {
@@ -359,29 +373,84 @@ public class BlockChainHelper implements ActorService {
 
 	}
 
+	/**
+	 * get node account info.
+	 * 
+	 * return null while not found.
+	 * 
+	 * @return
+	 */
+	public KeyStoreValue getNodeAccount() {
+		OValue oOValue;
+		try {
+			oOValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey("org.bc.manage.node.account".getBytes()))
+					.get();
+			if (oOValue == null || oOValue.getExtdata() == null || oOValue.getExtdata().equals(ByteString.EMPTY)) {
+				// try read .keystore file with pwd
+				if (StringUtils.isNotBlank(blockChainConfig.getPwd())) {
+					FileReader fr = null;
+					BufferedReader br = null;
+					try {  
+						// read file
+						fr = new FileReader(".keystore");
+						br = new BufferedReader(fr);
+						String keyStoreJsonStr = "";
+
+						String line = br.readLine();
+						while (line != null) {
+							keyStoreJsonStr += line.trim().replace("\r", "").replace("\t", "");
+							line = br.readLine();
+						}
+						br.close();
+						fr.close();
+
+						KeyStoreValue oKeyStoreValue = keyStoreHelper.getKeyStore(keyStoreJsonStr,
+								blockChainConfig.getPwd());
+						if (oKeyStoreValue == null) {
+							return null;
+						} else {
+							dao.getAccountDao().put(OEntityBuilder.byteKey2OKey("org.bc.manage.node.account".getBytes()),
+									OEntityBuilder.byteValue2OValue(oKeyStoreValue.toByteArray()));
+							return oKeyStoreValue;
+						}
+					} catch (Exception e) {
+						if (br !=null ) {
+							br.close();
+						}
+						if (fr !=null) {
+							fr.close();
+						}
+						throw e;
+					}
+				}
+				return null;
+			} else {
+				KeyStoreValue oKeyStoreValue = KeyStoreValue.parseFrom(oOValue.getExtdata().toByteArray());
+				return oKeyStoreValue;
+			}
+		} catch (Exception e) {
+			log.error("fail to read node account from db");
+		}
+		return null;
+	}
+
 	public void onStart(String bcuid, String address, String name) {
 		try {
+			KeyStoreValue oKeyStoreValue = getNodeAccount();
+			if (oKeyStoreValue == null) {
+				throw new Exception("node account not found");
+			}
 			NodeDef oNodeDef = new NodeDef();
 			oNodeDef.setBcuid(bcuid);
 			oNodeDef.setAddress(address);
 			oNodeDef.setNode(name);
-			//
-			// OValue oOValue = dao.getAccountDao()
-			// .get(OEntityBuilder.byteKey2OKey("org.bc.manage.node.account".getBytes())).get();
-			// if (oOValue == null || oOValue.getExtdata() == null ||
-			// oOValue.getExtdata().equals(ByteString.EMPTY)) {
-			//
-			// } else {
-			// KeyStoreValue oKeyStoreValue =
-			// KeyStoreValue.parseFrom(oOValue.getExtdata().toByteArray());
-			// NodeAccount oNodeAccount = oNodeDef.new NodeAccount();
-			// oNodeAccount.setAddress(oKeyStoreValue.getAddress());
-			// oNodeAccount.setBcuid(oKeyStoreValue.getBcuid());
-			// oNodeAccount.setPriKey(oKeyStoreValue.getPrivKey());
-			// oNodeAccount.setPubKey(oKeyStoreValue.getPubKey());
-			// oNodeDef.setoAccount(oNodeAccount);
-			// }
 
+			NodeAccount oNodeAccount = oNodeDef.new NodeAccount();
+			oNodeAccount.setAddress(oKeyStoreValue.getAddress());
+			oNodeAccount.setBcuid(oKeyStoreValue.getBcuid());
+			oNodeAccount.setPriKey(oKeyStoreValue.getPrivKey());
+			oNodeAccount.setPubKey(oKeyStoreValue.getPubKey());
+			oNodeDef.setoAccount(oNodeAccount);
 			KeyConstant.node = oNodeDef;
 			reloadBlockCache();
 			log.debug("block load complete");
