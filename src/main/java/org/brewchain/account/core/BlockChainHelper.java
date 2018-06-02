@@ -31,8 +31,8 @@ import org.brewchain.bcapi.backend.ODBException;
 import org.brewchain.bcapi.gens.Oentity.KeyStoreValue;
 import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.bcapi.gens.Oentity.OValue;
-import org.brewchain.manage.util.KeyStoreHelper;
 import org.fc.brewchain.bcapi.EncAPI;
+import org.fc.brewchain.bcapi.KeyStoreHelper;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
