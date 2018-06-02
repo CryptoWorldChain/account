@@ -1,12 +1,15 @@
 package org.brewchain.account.doublyll;
 
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
+import org.bouncycastle.util.encoders.Base64Encoder;
 import org.brewchain.account.core.WaitBlockHashMapDB;
 import org.brewchain.account.util.ALock;
 import org.brewchain.account.util.FastByteComparisons;
@@ -144,7 +147,7 @@ public class DoubleLinkedList implements ActorService {
 			Node egungoa = first;
 
 			while ((egungoa != null) && (o == null)) {
-				if (egungoa.data.equals(elem)) {
+				if (Arrays.equals(egungoa.data,elem)) {
 					o = egungoa.data;
 					if (egungoa == first) {
 						this.removeFirst();
@@ -196,12 +199,12 @@ public class DoubleLinkedList implements ActorService {
 
 			Node current = first;
 
-			while ((current != null) && !elem.equals(current.data))
+			while ((current != null) && !Arrays.equals(elem,current.data))
 				current = current.next;
 			if (current == null)
 				return false;
 			else
-				return elem.equals(current.data);
+				return Arrays.equals(elem,current.data);
 		}
 	}
 
@@ -209,12 +212,12 @@ public class DoubleLinkedList implements ActorService {
 		try (ALock l = readLock.lock()) {
 			byte[] elementua = null;
 
-			Iterator it = iterator();
+			Iterator<?> it = iterator();
 			boolean topatua = false;
 
 			while (it.hasNext() && !topatua) {
 				elementua = (byte[]) it.next();
-				if (pElementua.equals(elementua)) {
+				if (Arrays.equals(pElementua,elementua)) {
 					topatua = true;
 				}
 			}
@@ -240,11 +243,11 @@ public class DoubleLinkedList implements ActorService {
 		return count;
 	}
 
-	public Iterator iterator() {
+	public Iterator<?> iterator() {
 		return new ListIterator();
 	}
 
-	public Iterator reverseIterator() {
+	public Iterator<?> reverseIterator() {
 		return new ReverseListIterator();
 	}
 
@@ -310,7 +313,7 @@ public class DoubleLinkedList implements ActorService {
 
 	public String formatString() {
 		String result = new String();
-		Iterator it = iterator();
+		Iterator<?> it = iterator();
 		while (it.hasNext()) {
 			byte[] elem = (byte[]) it.next();
 			result = result + "[" + encApi.hexEnc((byte[]) elem) + "] \n";
@@ -324,10 +327,10 @@ public class DoubleLinkedList implements ActorService {
 
 	public String reverseFormatString() {
 		String result = new String();
-		Iterator it = reverseIterator();
+		Iterator<?> it = reverseIterator();
 		while (it.hasNext()) {
 			byte[] elem = (byte[]) it.next();
-			result = result + "[" + elem.toString() + "] \n";
+			result = result + "[" + Base64.encodeBase64URLSafeString(elem) + "] \n";
 		}
 		return "SimpleLinkedList " + result;
 	}

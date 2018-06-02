@@ -43,17 +43,14 @@ public class DBTrie  {
 	private DefDaos dao;
 	private final static Object NULL_NODE = new Object();
 	private final static int MIN_BRANCHES_CONCURRENTLY = 3;
-	private static ExecutorService executor;
+	private static ExecutorService executor = Executors.newFixedThreadPool(4,
+			new ThreadFactoryBuilder().setNameFormat("trie-calc-thread-%d").build());;
 
 	public DBTrie(DefDaos dao) {
 		this.dao = dao;
 	}
 	
 	public static ExecutorService getExecutor() {
-		if (executor == null) {
-			executor = Executors.newFixedThreadPool(4,
-					new ThreadFactoryBuilder().setNameFormat("trie-calc-thread-%d").build());
-		}
 		return executor;
 	}
 

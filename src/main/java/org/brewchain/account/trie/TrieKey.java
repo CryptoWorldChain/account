@@ -163,7 +163,7 @@ public final class TrieKey {
         }
         return ret;
     }
-
+    
     @Override
     public boolean equals(Object obj) {
         TrieKey k = (TrieKey) obj;

@@ -7,7 +7,7 @@ public class ThreadAccount extends Thread {
 	private AccountHelper accountHelper;
 
 	public ThreadAccount(AccountHelper accountHelper) {
-		accountHelper = accountHelper;
+		this.accountHelper = accountHelper;
 	}
 
 	@Override
