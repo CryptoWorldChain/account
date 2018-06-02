@@ -13,6 +13,7 @@ import org.brewchain.account.gens.Act.AccountValue;
 import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.brewchain.account.gens.Tx.MultiTransaction.Builder;
 import org.brewchain.account.trie.DBTrie;
+import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.bcapi.gens.Oentity.OValue;
@@ -25,8 +26,8 @@ import com.google.protobuf.ByteString;
 public class ActuatorTokenTransaction extends AbstractTransactionActuator implements iTransactionActuator {
 
 	public ActuatorTokenTransaction(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
-			BlockHelper oBlockHelper, EncAPI encApi, DefDaos dao) {
-		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi, dao);
+			BlockHelper oBlockHelper, EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
+		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi, dao, oStateTrie);
 	}
 
 	/*

@@ -11,6 +11,7 @@ import org.brewchain.account.function.InternalFunction;
 import org.brewchain.account.gens.Act.Account;
 import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.brewchain.account.gens.Tx.MultiTransaction.Builder;
+import org.brewchain.account.trie.StateTrie;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;
@@ -49,8 +50,8 @@ public class ActuatorCallInternalFunction extends AbstractTransactionActuator im
 	}
 
 	public ActuatorCallInternalFunction(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
-			BlockHelper oBlockHelper, EncAPI encApi, DefDaos dao) {
-		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi, dao);
+			BlockHelper oBlockHelper, EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
+		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi, dao, oStateTrie);
 		// TODO Auto-generated constructor stub
 	}
 

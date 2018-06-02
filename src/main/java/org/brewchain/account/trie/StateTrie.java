@@ -38,20 +38,20 @@ import onight.osgi.annotation.NActorProvider;
 import onight.tfw.ntrans.api.ActorService;
 import onight.tfw.ntrans.api.annotation.ActorRequire;
 
-@NActorProvider
-@Provides(specifications = { ActorService.class }, strategy = "SINGLETON")
-@Instantiate(name = "State_Trie")
 @Slf4j
 @Data
-public class StateTrie implements ActorService {
-	@ActorRequire(name = "Def_Daos", scope = "global")
-	DefDaos dao;
-	@ActorRequire(name = "bc_encoder", scope = "global")
+public class StateTrie {
+	private DefDaos dao;
 	EncAPI encApi;
 
 	private final static Object NULL_NODE = new Object();
 	private final static int MIN_BRANCHES_CONCURRENTLY = 3;
 	private static ExecutorService executor;
+
+	public StateTrie(DefDaos dao, EncAPI encApi) {
+		this.dao = dao;
+		this.encApi = encApi;
+	}
 
 	public static ExecutorService getExecutor() {
 		if (executor == null) {
@@ -107,7 +107,6 @@ public class StateTrie implements ActorService {
 			if (rlp != null || parsedRlp != null || hash == null)
 				return true;
 			rlp = getHash(hash);
-			log.error("hash::" + Hex.toHexString(hash));
 			return rlp != null;
 		}
 
@@ -185,7 +184,7 @@ public class StateTrie implements ActorService {
 							encodeElement(value == null ? EMPTY_BYTE_ARRAY : value));
 				}
 				if (hash != null) {
-					deleteHash(hash);
+					// deleteHash(hash);
 				}
 				dirty = false;
 				if (ret.length < 32 && !forceHash) {
@@ -364,7 +363,7 @@ public class StateTrie implements ActorService {
 
 		public void dispose() {
 			if (hash != null) {
-				deleteHash(hash);
+				// deleteHash(hash);
 			}
 		}
 
@@ -493,7 +492,7 @@ public class StateTrie implements ActorService {
 				return v.getExtdata().toByteArray();
 			}
 		} catch (Exception e) {
-			log.error(e.getMessage());
+
 		}
 
 		return null;
@@ -504,6 +503,7 @@ public class StateTrie implements ActorService {
 	}
 
 	private void deleteHash(byte[] hash) {
+		log.debug("trie delete key::" + Hex.toHexString(hash));
 		dao.getAccountDao().delete(OEntityBuilder.byteKey2OKey(hash));
 	}
 
@@ -664,6 +664,7 @@ public class StateTrie implements ActorService {
 			TrieKey newKey = newKvNode.kvNodeGetKey().concat(newChild.kvNodeGetKey());
 			Node newNode = new Node(newKey, newChild.kvNodeGetValueOrNode());
 			newChild.dispose();
+			newKvNode.dispose();
 			return newNode;
 		} else {
 			// no compaction needed
@@ -677,7 +678,7 @@ public class StateTrie implements ActorService {
 	}
 
 	public void clear() {
-		
+
 	}
 
 	public boolean flush() {

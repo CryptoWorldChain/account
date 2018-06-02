@@ -23,6 +23,7 @@ import org.brewchain.account.gens.Tx.MultiTransactionOutput;
 import org.brewchain.account.gens.Tx.MultiTransactionSignature;
 import org.brewchain.account.trie.CacheTrie;
 import org.brewchain.account.trie.DBTrie;
+import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.gens.Tx.MultiTransaction.Builder;
 
 import com.google.protobuf.ByteString;
@@ -80,14 +81,16 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	protected BlockHelper oBlockHelper;
 	protected EncAPI encApi;
 	protected DefDaos dao;
+	protected StateTrie oStateTrie;
 
 	public AbstractTransactionActuator(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
-			BlockHelper oBlockHelper, EncAPI encApi, DefDaos dao) {
+			BlockHelper oBlockHelper, EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
 		this.oAccountHelper = oAccountHelper;
 		this.oTransactionHelper = oTransactionHelper;
 		this.oBlockHelper = oBlockHelper;
 		this.encApi = encApi;
 		this.dao = dao;
+		this.oStateTrie = oStateTrie;
 	}
 
 	@Override
@@ -110,11 +113,11 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 
 			// 判断发送方余额是否足够
 			long balance = senderAccountValue.getBalance();
-			
-			if(balance < 0){
+
+			if (balance < 0) {
 				throw new Exception(String.format("发送金额 %s 小于 0, 不能继续交易", balance));
 			}
-			
+
 			if (balance - oInput.getAmount() - oInput.getFeeLimit() >= 0) {
 				// 余额足够
 			} else {
@@ -131,9 +134,9 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
 			outputsTotal += oOutput.getAmount();
-			
+
 			long balance = oOutput.getAmount();
-			if(balance < 0){
+			if (balance < 0) {
 				throw new Exception(String.format("接收金额 %s 小于0, 不能继续交易", balance));
 			}
 

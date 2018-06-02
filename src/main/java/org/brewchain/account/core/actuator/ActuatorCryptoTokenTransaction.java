@@ -17,6 +17,7 @@ import org.brewchain.account.gens.Act.AccountValue;
 import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.brewchain.account.gens.Tx.MultiTransaction.Builder;
 import org.brewchain.account.trie.DBTrie;
+import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.gens.Tx.MultiTransactionInput;
 import org.brewchain.account.gens.Tx.MultiTransactionOutput;
 import org.brewchain.account.util.FastByteComparisons;
@@ -30,8 +31,8 @@ import com.google.protobuf.ByteString;
 public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator implements iTransactionActuator {
 
 	public ActuatorCryptoTokenTransaction(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
-			BlockHelper oBlockHelper, EncAPI encApi, DefDaos dao) {
-		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi, dao);
+			BlockHelper oBlockHelper, EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
+		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi, dao, oStateTrie);
 		// TODO Auto-generated constructor stub
 	}
 

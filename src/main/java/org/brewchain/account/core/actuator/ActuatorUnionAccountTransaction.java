@@ -15,6 +15,7 @@ import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.brewchain.account.gens.Tx.MultiTransaction.Builder;
 import org.brewchain.account.gens.Tx.MultiTransactionInput;
 import org.brewchain.account.gens.Tx.MultiTransactionSignature;
+import org.brewchain.account.trie.StateTrie;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;
@@ -25,8 +26,8 @@ import lombok.extern.slf4j.Slf4j;
 public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator implements iTransactionActuator {
 
 	public ActuatorUnionAccountTransaction(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
-			BlockHelper oBlockHelper, EncAPI encApi, DefDaos dao) {
-		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi, dao);
+			BlockHelper oBlockHelper, EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
+		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi, dao, oStateTrie);
 	}
 
 	@Override

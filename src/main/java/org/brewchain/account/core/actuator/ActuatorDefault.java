@@ -12,14 +12,15 @@ import org.brewchain.account.gens.Act.Account;
 import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.brewchain.account.gens.Tx.MultiTransactionInput;
 import org.brewchain.account.gens.Tx.MultiTransactionOutput;
+import org.brewchain.account.trie.StateTrie;
 
 import com.google.protobuf.ByteString;
 
 public class ActuatorDefault extends AbstractTransactionActuator implements iTransactionActuator {
 
 	public ActuatorDefault(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper, BlockHelper oBlockHelper,
-			EncAPI encApi, DefDaos dao) {
-		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi, dao);
+			EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
+		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi, dao, oStateTrie);
 		// TODO Auto-generated constructor stub
 	}
 
@@ -38,7 +39,7 @@ public class ActuatorDefault extends AbstractTransactionActuator implements iTra
 				oAccountHelper.CreateAccount(oOutput.getAddress().toByteArray(), ByteUtil.EMPTY_BYTE_ARRAY);
 			}
 		}
-		
+
 		super.onPrepareExecute(oMultiTransaction, senders, receivers);
 	}
 }

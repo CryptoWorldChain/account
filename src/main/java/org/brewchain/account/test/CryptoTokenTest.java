@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
+import org.brewchain.account.gens.Act.Account;
 import org.brewchain.account.gens.Act.AccountCryptoToken;
 import org.brewchain.account.gens.Block.BlockEntity;
 import org.brewchain.account.gens.Tx.MultiTransaction;
@@ -66,12 +67,6 @@ public class CryptoTokenTest extends SessionModules<ReqTxTest> implements ActorS
 			coinBase = "1234";
 		}
 
-		try {
-			blockHelper.CreateGenesisBlock(new LinkedList<MultiTransaction>(), ByteUtil.EMPTY_BYTE_ARRAY);
-		} catch (Exception e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
 		// 创建账户1
 		KeyPairs oKeyPairs1 = encApi.genKeys();
 		// 创建账户1
@@ -111,6 +106,11 @@ public class CryptoTokenTest extends SessionModules<ReqTxTest> implements ActorS
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+//		
+//		LinkedList<Account> accounts = new LinkedList<>();
+//		accounts.add(accountHelper.GetAccount(encApi.hexDec(oKeyPairs2.getAddress())));
+//		accounts.add(accountHelper.GetAccount(encApi.hexDec(oKeyPairs1.getAddress())));
+
 
 		MultiTransaction.Builder oMultiTransaction1 = MultiTransaction.newBuilder();
 		MultiTransactionBody.Builder oMultiTransactionBody1 = MultiTransactionBody.newBuilder();

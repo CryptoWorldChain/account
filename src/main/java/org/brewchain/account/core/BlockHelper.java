@@ -14,6 +14,7 @@ import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.util.ByteUtil;
 import org.brewchain.account.util.FastByteComparisons;
 import org.brewchain.account.util.OEntityBuilder;
+import org.brewchain.account.gens.Act.Account;
 import org.brewchain.account.gens.Block.BlockBody;
 import org.brewchain.account.gens.Block.BlockEntity;
 import org.brewchain.account.gens.Block.BlockEntityOrBuilder;
@@ -55,8 +56,6 @@ public class BlockHelper implements ActorService {
 	DefDaos dao;
 	@ActorRequire(name = "CacheBlock_HashMapDB", scope = "global")
 	CacheBlockHashMapDB oCacheHashMapDB;
-	@ActorRequire(name = "State_Trie", scope = "global")
-	StateTrie stateTrie;
 
 	// @ActorRequire(name = "Block_StorageDB", scope = "global")
 	// BlockStorageDB oBlockStorageDB;
@@ -144,7 +143,9 @@ public class BlockHelper implements ActorService {
 		log.info(String.format("LOGFILTER %s %s %s %s 创建区块[%s]", KeyConstant.node.getNode(), "account", "create",
 				"block", encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray())));
 
-		appendBlock(oBlockEntity);// ApplyBlock(oBlockEntity);
+		final StateTrie oStateTrie = new StateTrie(this.dao, this.encApi);
+		oStateTrie.setRoot(oBestBlockHeader.getStateRoot().toByteArray());
+		appendBlock(oBlockEntity, oStateTrie);// ApplyBlock(oBlockEntity);
 		return oBlockEntity;
 	}
 
@@ -155,7 +156,8 @@ public class BlockHelper implements ActorService {
 	 * @param extraData
 	 * @throws Exception
 	 */
-	public void CreateGenesisBlock(LinkedList<MultiTransaction> txs, byte[] extraData) throws Exception {
+	public void CreateGenesisBlock(LinkedList<Account> accounts, LinkedList<MultiTransaction> txs, byte[] extraData)
+			throws Exception {
 		if (blockChainHelper.isExistsGenesisBlock()) {
 			throw new Exception("不允许重复创建创世块");
 		}
@@ -182,6 +184,11 @@ public class BlockHelper implements ActorService {
 			oBlockBody.addTxs(txs.get(i));
 			oTrieImpl.put(txs.get(i).getTxHash().toByteArray(), txs.get(i).toByteArray());
 		}
+		StateTrie oStateTrie = new StateTrie(this.dao, this.encApi);
+		for (Account oAccount : accounts) {
+			oStateTrie.put(oAccount.getAddress().toByteArray(), oAccount.getValue().toByteArray());
+		}
+		oBlockHeader.setStateRoot(ByteString.copyFrom(oStateTrie.getRootHash()));
 		oBlockHeader.setTxTrieRoot(ByteString.copyFrom(oTrieImpl.getRootHash()));
 		oBlockHeader.setBlockHash(ByteString.copyFrom(encApi.sha256Encode(oBlockHeader.build().toByteArray())));
 		oBlockEntity.setHeader(oBlockHeader);
@@ -211,6 +218,11 @@ public class BlockHelper implements ActorService {
 						+ " hash::" + encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()) + " parent::"
 						+ encApi.hexEnc(oBlockEntity.getHeader().getParentHash().toByteArray()));
 
+		if (oBlockEntity.getHeader().getNumber() < (currentLastBlockNumber - KeyConstant.ROLLBACK_BLOCK)) {
+			oAddBlockResponse.setRetCode(-2);
+			oAddBlockResponse.setCurrentNumber(currentLastBlockNumber);
+			return oAddBlockResponse.build();
+		}
 		// 上一个区块是否存在
 		BlockEntity oParentBlock = null;
 		try {
@@ -270,7 +282,7 @@ public class BlockHelper implements ActorService {
 		return oAddBlockResponse.build();
 	}
 
-	private synchronized byte[] processBlock(BlockEntity.Builder oBlockEntity) throws Exception {
+	private synchronized byte[] processBlock(BlockEntity.Builder oBlockEntity, StateTrie oStateTrie) throws Exception {
 		BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
 		LinkedList<MultiTransaction> txs = new LinkedList<MultiTransaction>();
 		CacheTrie oTrieImpl = new CacheTrie();
@@ -313,7 +325,12 @@ public class BlockHelper implements ActorService {
 		// TODO 事务
 
 		// 执行交易
-		byte[] stateRoot = transactionHelper.ExecuteTransaction(txs);
+		transactionHelper.ExecuteTransaction(txs, oStateTrie);
+
+		// reward
+		// applyReward(oBlockEntity.build(), oStateTrie);
+
+		byte[] stateRoot = oStateTrie.getRootHash();
 		return stateRoot;
 	}
 
@@ -323,8 +340,8 @@ public class BlockHelper implements ActorService {
 	 * @param oBlockEntity
 	 * @throws Exception
 	 */
-	private synchronized void appendBlock(BlockEntity.Builder oBlockEntity) throws Exception {
-		byte[] stateRoot = processBlock(oBlockEntity);
+	private synchronized void appendBlock(BlockEntity.Builder oBlockEntity, StateTrie oStateTrie) throws Exception {
+		byte[] stateRoot = processBlock(oBlockEntity, oStateTrie);
 		oBlockEntity.setHeader(oBlockEntity.getHeaderBuilder().setStateRoot(ByteString.copyFrom(stateRoot)));
 		// 添加块
 		if (!blockChainHelper.appendBlock(oBlockEntity.build())) {
@@ -338,7 +355,9 @@ public class BlockHelper implements ActorService {
 	}
 
 	private synchronized void addBlock(BlockEntity.Builder oBlockEntity, BlockEntity parentBlock) throws Exception {
-		byte[] stateRoot = processBlock(oBlockEntity);
+		StateTrie oStateTrie = new StateTrie(this.dao, this.encApi);
+		oStateTrie.setRoot(parentBlock.getHeader().getStateRoot().toByteArray());
+		byte[] stateRoot = processBlock(oBlockEntity, oStateTrie);
 		if (!FastByteComparisons.equal(stateRoot, oBlockEntity.getHeader().getStateRoot().toByteArray())) {
 			blockChainHelper.rollBackTo(parentBlock);
 		} else {
@@ -360,16 +379,9 @@ public class BlockHelper implements ActorService {
 	 * @param oBlock
 	 * @throws Exception
 	 */
-	public void applyReward(BlockEntity oBlock) throws Exception {
-		// blockChainConfig.getMinerReward()
-		// 取第n块block
-		if (oBlock.getHeader().getNumber() - blockChainConfig.getMinerRewardWait() > 0) {
-			BlockEntity rewardBlock = blockChainHelper
-					.getBlockByNumber(oBlock.getHeader().getNumber() - blockChainConfig.getMinerRewardWait());
-			// TODO 待实现
-			// accountHelper.addBalance(rewardBlock.getHeader().getCoinbase().toByteArray(),
-			// blockChainConfig.getMinerReward());
-		}
+	public void applyReward(BlockEntity oCurrentBlock, StateTrie oStateTrie) throws Exception {
+		accountHelper.addBalance(encApi.hexDec(oCurrentBlock.getMiner().getAddress()), oCurrentBlock.getMiner().getReward(),
+				oStateTrie);
 	}
 
 	/**

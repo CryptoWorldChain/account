@@ -10,6 +10,7 @@ import org.brewchain.account.gens.Act.Account;
 import org.brewchain.account.gens.Act.AccountValue;
 import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.brewchain.account.gens.Tx.MultiTransactionInput;
+import org.brewchain.account.trie.StateTrie;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;
@@ -23,8 +24,8 @@ import com.google.protobuf.ByteString;
 public class ActuatorCreateToken extends AbstractTransactionActuator implements iTransactionActuator {
 
 	public ActuatorCreateToken(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
-			BlockHelper oBlockHelper, EncAPI encApi, DefDaos dao) {
-		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi, dao);
+			BlockHelper oBlockHelper, EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
+		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi, dao, oStateTrie);
 	}
 
 	@Override
@@ -41,12 +42,12 @@ public class ActuatorCreateToken extends AbstractTransactionActuator implements 
 		if (oMultiTransaction.getTxBody().getInputsCount() != 1) {
 			throw new Exception(String.format("不允许存在多个发行方"));
 		}
-		
+
 		String token = oMultiTransaction.getTxBody().getInputs(0).getToken();
 		if (token == null || token.isEmpty()) {
 			throw new Exception(String.format("Token交易中Token不允许为空"));
 		}
-		
+
 		if (token.toLowerCase().startsWith("CW")) {
 			throw new Exception(String.format("Token名称无效"));
 		}

@@ -48,9 +48,6 @@ public class BlockChainHelper implements ActorService {
 	//
 	@ActorRequire(name = "BlockChainStore_HashMapDB", scope = "global")
 	BlockChainStore blockChainStore;
-	@ActorRequire(name = "State_Trie", scope = "global")
-	StateTrie stateTrie;
-
 	@ActorRequire(name = "Def_Daos", scope = "global")
 	DefDaos dao;
 	@ActorRequire(name = "bc_encoder", scope = "global")
@@ -134,10 +131,23 @@ public class BlockChainHelper implements ActorService {
 		// if (blockCache.insertAfter(oBlock.getHeader().getBlockHash().toByteArray(),
 		// oBlock.getHeader().getNumber(),
 		// oBlock.getHeader().getParentHash().toByteArray())) {
-		OKey[] keys = new OKey[] { OEntityBuilder.byteKey2OKey(oBlock.getHeader().getBlockHash()),
-				OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK) };
-		OValue[] values = new OValue[] { OEntityBuilder.byteValue2OValue(oBlock.toByteArray()),
-				OEntityBuilder.byteValue2OValue(oBlock.getHeader().getBlockHash()) };
+		int lastNumber = 0;
+		try {
+			lastNumber = getLastBlockNumber();
+		} catch (Exception e) {
+		}
+		OKey[] keys = null;
+		OValue[] values = null;
+		if (lastNumber < oBlock.getHeader().getNumber()) {
+			keys = new OKey[] { OEntityBuilder.byteKey2OKey(oBlock.getHeader().getBlockHash()),
+					OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK) };
+			values = new OValue[] { OEntityBuilder.byteValue2OValue(oBlock.toByteArray()),
+					OEntityBuilder.byteValue2OValue(oBlock.getHeader().getBlockHash()) };
+		} else {
+			keys = new OKey[] { OEntityBuilder.byteKey2OKey(oBlock.getHeader().getBlockHash()) };
+			values = new OValue[] { OEntityBuilder.byteValue2OValue(oBlock.toByteArray()) };
+		}
+
 		dao.getBlockDao().batchPuts(keys, values);
 
 		if (oBlock.getBody() != null) {
@@ -151,14 +161,13 @@ public class BlockChainHelper implements ActorService {
 			dao.getTxblockDao().batchPuts(txBlockKeyList.toArray(new OKey[0]), txBlockValueList.toArray(new OValue[0]));
 		}
 		blockChainStore.add(oBlock, encApi.hexEnc(oBlock.getHeader().getBlockHash().toByteArray()));
-		stateTrie.setRoot(oBlock.getHeader().getStateRoot().toByteArray());
+
 		return true;
 		// }
 		// return false;
 	}
 
 	public void rollBackTo(BlockEntity oBlock) {
-		stateTrie.setRoot(oBlock.getHeader().getStateRoot().toByteArray());
 		blockChainStore.rollBackTo(oBlock.getHeader().getNumber());
 		appendBlock(oBlock);
 	}
@@ -402,8 +411,6 @@ public class BlockChainHelper implements ActorService {
 			log.debug(String.format("not found last block, start empty node"));
 			return;
 		}
-		stateTrie.setRoot(oBlockEntity.getHeader().getStateRoot() == null ? null
-				: oBlockEntity.getHeader().getStateRoot().toByteArray());
 
 		int blockNumber = oBlockEntity.getHeader().getNumber();
 		blockChainStore.add(oBlockEntity.build(), encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()));

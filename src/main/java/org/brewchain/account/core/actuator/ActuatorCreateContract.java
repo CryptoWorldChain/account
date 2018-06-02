@@ -8,6 +8,7 @@ import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.gens.Act.Account;
 import org.brewchain.account.gens.Tx.MultiTransaction;
+import org.brewchain.account.trie.StateTrie;
 import org.fc.brewchain.bcapi.EncAPI;
 import org.fc.brewchain.bcapi.KeyPairs;
 
@@ -19,8 +20,8 @@ import java.security.KeyPair;
 public class ActuatorCreateContract extends AbstractTransactionActuator implements iTransactionActuator {
 
 	public ActuatorCreateContract(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
-			BlockHelper oBlockHelper, EncAPI encApi, DefDaos dao) {
-		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi, dao);
+			BlockHelper oBlockHelper, EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
+		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi, dao, oStateTrie);
 	}
 
 	@Override

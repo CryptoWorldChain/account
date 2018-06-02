@@ -20,6 +20,8 @@ import org.brewchain.account.gens.TxTest.ReqTxTest;
 import org.brewchain.account.gens.TxTest.RespTxTest;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.util.ByteUtil;
+import org.brewchain.account.util.OEntityBuilder;
+import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.fc.brewchain.bcapi.EncAPI;
 import org.fc.brewchain.bcapi.KeyPairs;
 
@@ -49,8 +51,6 @@ public class BlockRollbackTest extends SessionModules<ReqTxTest> implements Acto
 	BlockHelper blockHelper;
 	@ActorRequire(name = "BlockChain_Helper", scope = "global")
 	BlockChainHelper blockChainHelper;
-	@ActorRequire(name = "State_Trie", scope = "global")
-	StateTrie stateTrie;
 	@ActorRequire(name = "bc_encoder", scope = "global")
 	EncAPI encApi;
 
@@ -68,50 +68,46 @@ public class BlockRollbackTest extends SessionModules<ReqTxTest> implements Acto
 	public void onPBPacket(final FramePacket pack, final ReqTxTest pb, final CompleteHandler handler) {
 		RespTxTest.Builder oRespTxTest = RespTxTest.newBuilder();
 		try {
-			stateTrie.setRoot(null);
 			// 创建账户1
 			KeyPairs oKeyPairs1 = encApi.genKeys();
-			// 创建账户1
-			accountHelper.CreateAccount(encApi.hexDec(oKeyPairs1.getAddress()), oKeyPairs1.getPubkey().getBytes());
-			// 增加账户余额1
-			try {
-				accountHelper.addBalance(encApi.hexDec(oKeyPairs1.getAddress()), 10000);
-				log.debug(String.format("创建账户1::%s Balance::10000", oKeyPairs1.getAddress()));
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-
 			// 创建账户2
 			KeyPairs oKeyPairs2 = encApi.genKeys();
-			// 创建账户2
-			accountHelper.CreateAccount(encApi.hexDec(oKeyPairs2.getAddress()), oKeyPairs2.getPubkey().getBytes());
-			// 增加账户余额2
-			try {
-				accountHelper.addBalance(encApi.hexDec(oKeyPairs2.getAddress()), 10000);
-				log.debug(String.format("创建账户2::%s Balance::10000", oKeyPairs2.getAddress()));
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-
 			// 创建账户3
 			KeyPairs oKeyPairs3 = encApi.genKeys();
-			// 创建账户3
-			accountHelper.CreateAccount(encApi.hexDec(oKeyPairs3.getAddress()), oKeyPairs3.getPubkey().getBytes());
-			// 增加账户余额2
-			try {
-				accountHelper.addBalance(encApi.hexDec(oKeyPairs3.getAddress()), 10000);
-				log.debug(String.format("创建账户3::%s Balance::10000", oKeyPairs3.getAddress()));
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+
+			// 账户1 转账 100000
+			MultiTransaction.Builder oMultiTransaction01 = createTransaction(
+					encApi.hexDec("307c0f1e00d69299a0a75c521efb46fe61108a6acc"),
+					"5ed9f0f16bb0ab4cd63fdbd7f411eba4a28a55df4f9edbaa89b512d2b00cd951",
+					"04c1b74b2cc18b1dab1b54bd2e452f4e058cf4bfd05fe1747692a5071c032abf8acb9912a0295cfb2ca25a68d05254ddec4d18798dce0824048b00b6dcea5bdfb1",
+					encApi.hexDec(oKeyPairs1.getAddress()), 100000);
+			transactionHelper.CreateMultiTransaction(oMultiTransaction01);
+
+			BlockEntity blockInit1 = makeBlock();
+
+			// 账户2 转账 100000
+			MultiTransaction.Builder oMultiTransaction02 = createTransaction(
+					encApi.hexDec("307c0f1e00d69299a0a75c521efb46fe61108a6acc"),
+					"5ed9f0f16bb0ab4cd63fdbd7f411eba4a28a55df4f9edbaa89b512d2b00cd951",
+					"04c1b74b2cc18b1dab1b54bd2e452f4e058cf4bfd05fe1747692a5071c032abf8acb9912a0295cfb2ca25a68d05254ddec4d18798dce0824048b00b6dcea5bdfb1",
+					encApi.hexDec(oKeyPairs2.getAddress()), 100000);
+			transactionHelper.CreateMultiTransaction(oMultiTransaction02);
+
+			BlockEntity blockInit2 = makeBlock();
+
+			// 账户3 转账 100000
+			MultiTransaction.Builder oMultiTransaction03 = createTransaction(
+					encApi.hexDec("307c0f1e00d69299a0a75c521efb46fe61108a6acc"),
+					"5ed9f0f16bb0ab4cd63fdbd7f411eba4a28a55df4f9edbaa89b512d2b00cd951",
+					"04c1b74b2cc18b1dab1b54bd2e452f4e058cf4bfd05fe1747692a5071c032abf8acb9912a0295cfb2ca25a68d05254ddec4d18798dce0824048b00b6dcea5bdfb1",
+					encApi.hexDec(oKeyPairs3.getAddress()), 100000);
+			transactionHelper.CreateMultiTransaction(oMultiTransaction03);
+			BlockEntity blockInit3 = makeBlock();
 
 			printAccount(encApi.hexDec(oKeyPairs1.getAddress()));
 			printAccount(encApi.hexDec(oKeyPairs2.getAddress()));
 			printAccount(encApi.hexDec(oKeyPairs3.getAddress()));
-			
+
 			// 1. 1 -> 2 400
 			MultiTransaction.Builder oMultiTransaction1 = createTransaction(oKeyPairs1, oKeyPairs2, 400);
 			transactionHelper.CreateMultiTransaction(oMultiTransaction1);
@@ -123,7 +119,8 @@ public class BlockRollbackTest extends SessionModules<ReqTxTest> implements Acto
 			printAccount(encApi.hexDec(oKeyPairs2.getAddress()));
 			printAccount(encApi.hexDec(oKeyPairs3.getAddress()));
 			log.debug("rootA " + encApi.hexEnc(blockA.getHeader().getStateRoot().toByteArray()));
-			
+			printTrieValue(blockA.getHeader().getStateRoot().toByteArray());
+
 			// 3. 2 -> 3 300
 			MultiTransaction.Builder oMultiTransaction2 = createTransaction(oKeyPairs2, oKeyPairs3, 300);
 			transactionHelper.CreateMultiTransaction(oMultiTransaction2);
@@ -135,37 +132,46 @@ public class BlockRollbackTest extends SessionModules<ReqTxTest> implements Acto
 			printAccount(encApi.hexDec(oKeyPairs2.getAddress()));
 			printAccount(encApi.hexDec(oKeyPairs3.getAddress()));
 			log.debug("rootB " + encApi.hexEnc(blockB.getHeader().getStateRoot().toByteArray()));
+			printTrieValue(blockB.getHeader().getStateRoot().toByteArray());
 
+			int count = 2;
+			while (count >= 0) {
+				// 5. 3 -> 1 900
+				MultiTransaction.Builder oMultiTransaction3 = createTransaction(oKeyPairs3, oKeyPairs1, 900);
+				transactionHelper.CreateMultiTransaction(oMultiTransaction3);
 
-			// 5. 3 -> 1 900
-			MultiTransaction.Builder oMultiTransaction3 = createTransaction(oKeyPairs3, oKeyPairs1, 900);
-			transactionHelper.CreateMultiTransaction(oMultiTransaction3);
+				// 6. make block c, print account
+				BlockEntity blockC = makeBlock();
+				log.debug("make block " + blockC.getHeader().getNumber());
+				// printAccount(encApi.hexDec(oKeyPairs1.getAddress()));
+				// printAccount(encApi.hexDec(oKeyPairs2.getAddress()));
+				// printAccount(encApi.hexDec(oKeyPairs3.getAddress()));
+				// log.debug("rootC" +
+				// encApi.hexEnc(blockC.getHeader().getStateRoot().toByteArray()));
+				printTrieValue(blockB.getHeader().getStateRoot().toByteArray());
 
-			// 6. make block c, print account
-			BlockEntity blockC = makeBlock();
-			log.debug("make block " + blockC.getHeader().getNumber());
+				count -= 1;
+			}
+
 			printAccount(encApi.hexDec(oKeyPairs1.getAddress()));
 			printAccount(encApi.hexDec(oKeyPairs2.getAddress()));
 			printAccount(encApi.hexDec(oKeyPairs3.getAddress()));
-			log.debug("rootC " + encApi.hexEnc(blockC.getHeader().getStateRoot().toByteArray()));
 
 			// 7. back to block b, print account
 			blockChainHelper.rollBackTo(blockB);
-			log.debug("roll back to rootB " + encApi.hexEnc(stateTrie.getRootHash()));
 
-			log.debug("roll back to " + blockB.getHeader().getNumber());
-			printAccount(encApi.hexDec(oKeyPairs1.getAddress()));
-			printAccount(encApi.hexDec(oKeyPairs2.getAddress()));
-			printAccount(encApi.hexDec(oKeyPairs3.getAddress()));
-//
-//			// 8. back to block a, print account
-//			blockChainHelper.rollBackTo(blockA);
-//			log.debug("roll back to rootB " + encApi.hexEnc(stateTrie.getRootHash()));
-//
-//			log.debug("roll back to " + blockA.getHeader().getNumber());
-//			printAccount(encApi.hexDec(oKeyPairs1.getAddress()));
-//			printAccount(encApi.hexDec(oKeyPairs2.getAddress()));
-//			printAccount(encApi.hexDec(oKeyPairs3.getAddress()));
+			// printAccount(encApi.hexDec(oKeyPairs1.getAddress()), oRollStateTrie);
+			// printAccount(encApi.hexDec(oKeyPairs2.getAddress()), oRollStateTrie);
+			// printAccount(encApi.hexDec(oKeyPairs3.getAddress()), oRollStateTrie);
+			// printTrieValue(blockB.getHeader().getStateRoot().toByteArray());
+
+			// // 8. back to block a, print account
+			// blockChainHelper.rollBackTo(blockA);
+
+			// log.debug("roll back to " + blockA.getHeader().getNumber());
+			// printAccount(encApi.hexDec(oKeyPairs1.getAddress()));
+			// printAccount(encApi.hexDec(oKeyPairs2.getAddress()));
+			// printAccount(encApi.hexDec(oKeyPairs3.getAddress()));
 
 			// 9. 1 -> 3 2345
 			MultiTransaction.Builder oMultiTransaction4 = createTransaction(oKeyPairs1, oKeyPairs3, 2345);
@@ -175,9 +181,11 @@ public class BlockRollbackTest extends SessionModules<ReqTxTest> implements Acto
 			BlockEntity blockD = makeBlock();
 			log.debug("make block " + blockD.getHeader().getNumber());
 			printAccount(encApi.hexDec(oKeyPairs1.getAddress()));
+			// a: 100000 - 400 - 2345 = 97255
+			// b: 100000 + 400 = 100400
+			// c: 100000 + 2345 = 102345
 			printAccount(encApi.hexDec(oKeyPairs2.getAddress()));
 			printAccount(encApi.hexDec(oKeyPairs3.getAddress()));
-
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -186,12 +194,18 @@ public class BlockRollbackTest extends SessionModules<ReqTxTest> implements Acto
 	}
 
 	private MultiTransaction.Builder createTransaction(KeyPairs from, KeyPairs to, int amount) throws Exception {
-		int nonce = accountHelper.getNonce(encApi.hexDec(from.getAddress()));
+		return createTransaction(encApi.hexDec(from.getAddress()), from.getPrikey(), from.getPubkey(),
+				encApi.hexDec(to.getAddress()), amount);
+	}
+
+	private MultiTransaction.Builder createTransaction(byte[] from, String priv, String pub, byte[] to, int amount)
+			throws Exception {
+		int nonce = accountHelper.getNonce(from);
 
 		MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 		MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
 		MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
-		oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(from.getAddress())));
+		oMultiTransactionInput4.setAddress(ByteString.copyFrom(from));
 		oMultiTransactionInput4.setAmount(amount);
 		oMultiTransactionInput4.setFee(0);
 		oMultiTransactionInput4.setFeeLimit(0);
@@ -199,7 +213,7 @@ public class BlockRollbackTest extends SessionModules<ReqTxTest> implements Acto
 		oMultiTransactionBody.addInputs(oMultiTransactionInput4);
 
 		MultiTransactionOutput.Builder oMultiTransactionOutput1 = MultiTransactionOutput.newBuilder();
-		oMultiTransactionOutput1.setAddress(ByteString.copyFrom(encApi.hexDec(to.getAddress())));
+		oMultiTransactionOutput1.setAddress(ByteString.copyFrom(to));
 		oMultiTransactionOutput1.setAmount(amount);
 		oMultiTransactionBody.addOutputs(oMultiTransactionOutput1);
 
@@ -210,9 +224,9 @@ public class BlockRollbackTest extends SessionModules<ReqTxTest> implements Acto
 		oMultiTransactionBody.setTimestamp((new Date()).getTime());
 		// 签名
 		MultiTransactionSignature.Builder oMultiTransactionSignature21 = MultiTransactionSignature.newBuilder();
-		oMultiTransactionSignature21.setPubKey(from.getPubkey());
-		oMultiTransactionSignature21.setSignature(
-				encApi.hexEnc(encApi.ecSign(from.getPrikey(), oMultiTransactionBody.build().toByteArray())));
+		oMultiTransactionSignature21.setPubKey(pub);
+		oMultiTransactionSignature21
+				.setSignature(encApi.hexEnc(encApi.ecSign(priv, oMultiTransactionBody.build().toByteArray())));
 		oMultiTransactionBody.addSignatures(oMultiTransactionSignature21);
 
 		oMultiTransaction.setTxBody(oMultiTransactionBody);
@@ -221,7 +235,11 @@ public class BlockRollbackTest extends SessionModules<ReqTxTest> implements Acto
 	}
 
 	private void printAccount(byte[] addr) throws Exception {
-		log.debug(String.format("%s %s", accountHelper.getBalance(addr), Hex.toHexString(addr)));
+		log.debug(String.format("%s %s", accountHelper.getBalance(addr), encApi.hexEnc(addr)));
+	}
+
+	private void printAccount(byte[] addr, StateTrie oStateTrie) throws Exception {
+		log.debug(String.format("%s %s", accountHelper.getBalance(addr, oStateTrie), encApi.hexEnc(addr)));
 	}
 
 	private BlockEntity makeBlock() throws Exception {
@@ -229,5 +247,28 @@ public class BlockRollbackTest extends SessionModules<ReqTxTest> implements Acto
 		BlockEntity.Builder newBlock;
 		newBlock = blockHelper.CreateNewBlock(600, ByteUtil.EMPTY_BYTE_ARRAY, ByteUtil.EMPTY_BYTE_ARRAY);
 		return newBlock.build();
+	}
+
+	private void printTrie(byte[] root) {
+		StateTrie oRollStateTrie = new StateTrie(this.dao, this.encApi);
+		oRollStateTrie.setRoot(root);
+		log.debug(oRollStateTrie.dumpStructure());
+	}
+
+	private void printTrieValue(byte[] root) {
+		try {
+			OValue oOValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(root)).get();
+			if (oOValue == null) {
+				log.debug("get trie key::" + encApi.hexEnc(root) + " value::not found ");
+
+			} else {
+				log.debug("get trie key:: " + encApi.hexEnc(root) + " value::"
+						+ encApi.hexEnc(oOValue.getExtdata().toByteArray()));
+
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
 	}
 }

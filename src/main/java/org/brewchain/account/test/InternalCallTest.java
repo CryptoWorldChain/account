@@ -63,13 +63,6 @@ public class InternalCallTest extends SessionModules<ReqTxTest> implements Actor
 			coinBase = "1234";
 		}
 
-		try {
-			blockHelper.CreateGenesisBlock(new LinkedList<MultiTransaction>(), ByteUtil.EMPTY_BYTE_ARRAY);
-		} catch (Exception e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-
 		// 发送多重签名账户创建交易并转账
 		MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 		MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
