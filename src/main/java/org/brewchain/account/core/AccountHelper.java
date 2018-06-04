@@ -595,6 +595,7 @@ public class AccountHelper implements ActorService {
 
 			oAccountCryptoToken.setOwner(ByteString.copyFrom(addr));
 			oAccountCryptoToken.setNonce(0);
+			oAccountCryptoToken.setOwnertime(new Date().getTime());
 			oAccountCryptoValue.addTokens(oAccountCryptoToken);
 		}
 

@@ -340,7 +340,7 @@ public class BlockHelper implements ActorService {
 	 * @param oBlockEntity
 	 * @throws Exception
 	 */
-	private synchronized void appendBlock(BlockEntity.Builder oBlockEntity, StateTrie oStateTrie) throws Exception {
+	public synchronized void appendBlock(BlockEntity.Builder oBlockEntity, StateTrie oStateTrie) throws Exception {
 		byte[] stateRoot = processBlock(oBlockEntity, oStateTrie);
 		oBlockEntity.setHeader(oBlockEntity.getHeaderBuilder().setStateRoot(ByteString.copyFrom(stateRoot)));
 		// 添加块
@@ -359,6 +359,8 @@ public class BlockHelper implements ActorService {
 		oStateTrie.setRoot(parentBlock.getHeader().getStateRoot().toByteArray());
 		byte[] stateRoot = processBlock(oBlockEntity, oStateTrie);
 		if (!FastByteComparisons.equal(stateRoot, oBlockEntity.getHeader().getStateRoot().toByteArray())) {
+			log.debug("begin to roll back, stateRoot::" + encApi.hexEnc(stateRoot) + " blockStateRoot::"
+					+ encApi.hexEnc(oBlockEntity.getHeader().getStateRoot().toByteArray()));
 			blockChainHelper.rollBackTo(parentBlock);
 		} else {
 			// 添加块

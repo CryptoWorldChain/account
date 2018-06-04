@@ -20,6 +20,8 @@ enum PTSTCommand {
     DTT = 9; // 双花测试
     CCT = 10; // 创建合约交易
     BRT = 11; // 块回滚测试
+    SYC = 12; // 同步交易测试
+    SYT = 13; // 同步Block
 }
 
 message ReqTxTest {

@@ -1,6 +1,7 @@
 package org.brewchain.account.core;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -42,6 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 import onight.osgi.annotation.NActorProvider;
 import onight.tfw.ntrans.api.ActorService;
 import onight.tfw.ntrans.api.annotation.ActorRequire;
+import onight.tfw.outils.conf.PropHelper;
 
 @NActorProvider
 @Instantiate(name = "BlockChain_Helper")
@@ -148,6 +150,7 @@ public class BlockChainHelper implements ActorService {
 		}
 		OKey[] keys = null;
 		OValue[] values = null;
+		log.debug("last_number::" + lastNumber + " block::" + oBlock.getHeader().getNumber());
 		if (lastNumber < oBlock.getHeader().getNumber()) {
 			keys = new OKey[] { OEntityBuilder.byteKey2OKey(oBlock.getHeader().getBlockHash()),
 					OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK) };
@@ -392,7 +395,8 @@ public class BlockChainHelper implements ActorService {
 					BufferedReader br = null;
 					try {
 						// read file
-						fr = new FileReader(".keystore");
+						fr = new FileReader("keystore" + File.separator + "keystore"
+								+ blockChainConfig.getKeystoreNumber() + ".json");
 						br = new BufferedReader(fr);
 						String keyStoreJsonStr = "";
 
@@ -436,7 +440,11 @@ public class BlockChainHelper implements ActorService {
 
 	public void onStart(String bcuid, String address, String name) {
 		try {
-			byte[] coinAddress = encApi.hexDec(getNodeAccount());
+			String coinAddressHex = getNodeAccount();
+			if (coinAddressHex == null) {
+				throw new Exception("node account not found");
+			}
+			byte[] coinAddress = encApi.hexDec(coinAddressHex);
 			if (coinAddress == null) {
 				throw new Exception("node account not found");
 			}
