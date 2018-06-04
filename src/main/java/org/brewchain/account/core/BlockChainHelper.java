@@ -380,7 +380,7 @@ public class BlockChainHelper implements ActorService {
 	 * 
 	 * @return
 	 */
-	public byte[] getNodeAccount() {
+	public String getNodeAccount() {
 		OValue oOValue;
 		try {
 			oOValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey("org.bc.manage.node.account".getBytes()))
@@ -412,7 +412,7 @@ public class BlockChainHelper implements ActorService {
 							dao.getAccountDao().put(
 									OEntityBuilder.byteKey2OKey("org.bc.manage.node.account".getBytes()),
 									OEntityBuilder.byteValue2OValue(encApi.hexDec(oKeyStoreValue.getAddress())));
-							return encApi.hexDec(oKeyStoreValue.getAddress());
+							return oKeyStoreValue.getAddress();
 						}
 					} catch (Exception e) {
 						if (br != null) {
@@ -426,7 +426,7 @@ public class BlockChainHelper implements ActorService {
 				}
 				return null;
 			} else {
-				return oOValue.getExtdata().toByteArray();
+				return encApi.hexEnc(oOValue.getExtdata().toByteArray());
 			}
 		} catch (Exception e) {
 			log.error("fail to read node account from db");
@@ -436,7 +436,7 @@ public class BlockChainHelper implements ActorService {
 
 	public void onStart(String bcuid, String address, String name) {
 		try {
-			byte[] coinAddress = getNodeAccount();
+			byte[] coinAddress = encApi.hexDec(getNodeAccount());
 			if (coinAddress == null) {
 				throw new Exception("node account not found");
 			}
