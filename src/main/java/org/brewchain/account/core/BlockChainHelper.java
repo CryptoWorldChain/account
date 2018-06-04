@@ -448,8 +448,6 @@ public class BlockChainHelper implements ActorService {
 			NodeAccount oNodeAccount = oNodeDef.new NodeAccount();
 			oNodeAccount.setAddress(oKeyStoreValue.getAddress());
 			oNodeAccount.setBcuid(oKeyStoreValue.getBcuid());
-			oNodeAccount.setPriKey(oKeyStoreValue.getPrivKey());
-			oNodeAccount.setPubKey(oKeyStoreValue.getPubKey());
 			oNodeDef.setoAccount(oNodeAccount);
 			KeyConstant.node = oNodeDef;
 			reloadBlockCache();

@@ -40,8 +40,6 @@ public class NodeDef {
 
 	public class NodeAccount {
 		private String address;
-		private String priKey;
-		private String pubKey;
 		private String bcuid;
 
 		public String getAddress() {
@@ -50,22 +48,6 @@ public class NodeDef {
 
 		public void setAddress(String address) {
 			this.address = address;
-		}
-
-		public String getPriKey() {
-			return priKey;
-		}
-
-		public void setPriKey(String priKey) {
-			this.priKey = priKey;
-		}
-
-		public String getPubKey() {
-			return pubKey;
-		}
-
-		public void setPubKey(String pubKey) {
-			this.pubKey = pubKey;
 		}
 
 		public String getBcuid() {
