@@ -490,6 +490,20 @@ public class AccountHelper implements ActorService {
 		}
 		return 0;
 	}
+	
+	public long getTokenLockedBalance(byte[] addr, String token) throws Exception {
+		return getTokenLockedBalance(addr, token, null);
+	}
+	public long getTokenLockedBalance(byte[] addr, String token, StateTrie oStateTrie) throws Exception {
+		Account.Builder oAccount = GetAccount(addr, oStateTrie).toBuilder();
+		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
+		for (int i = 0; i < oAccountValue.getTokensCount(); i++) {
+			if (oAccountValue.getTokens(i).getToken().equals(token)) {
+				return oAccountValue.getTokens(i).getLocked();
+			}
+		}
+		return 0;
+	}
 
 	/**
 	 * 获取加密Token账户的余额
