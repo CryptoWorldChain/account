@@ -84,6 +84,7 @@ public class GetAccountImpl extends SessionModules<ReqGetAccount> {
 				AccountTokenValueImpl.Builder oAccountTokenValueImpl = AccountTokenValueImpl.newBuilder();
 				oAccountTokenValueImpl.setBalance(oAccountTokenValue.getBalance());
 				oAccountTokenValueImpl.setToken(oAccountTokenValue.getToken());
+				oAccountTokenValueImpl.setLocked(oAccountTokenValue.getLocked());
 				oAccountValueImpl.addTokens(oAccountTokenValueImpl);
 			}
 			oAccountValueImpl.setStorage(encApi.hexEnc(oAccountValue.getStorage().toByteArray()));

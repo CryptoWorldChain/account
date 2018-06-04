@@ -71,7 +71,6 @@ public class BlockChainStore implements ActorService {
 		try (ALock l = writeLock.lock()) {
 			if (storage.containsKey(number)) {
 				storage.get(number).add(hash);
-
 			} else {
 				storage.put(number, new ArrayList<byte[]>() {
 					{
