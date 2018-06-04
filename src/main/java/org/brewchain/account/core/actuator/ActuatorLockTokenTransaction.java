@@ -1,6 +1,5 @@
 package org.brewchain.account.core.actuator;
 
-import java.util.LinkedList;
 import java.util.Map;
 
 import org.brewchain.account.core.AccountHelper;
@@ -11,36 +10,21 @@ import org.brewchain.account.gens.Act.Account;
 import org.brewchain.account.gens.Act.AccountTokenValue;
 import org.brewchain.account.gens.Act.AccountValue;
 import org.brewchain.account.gens.Tx.MultiTransaction;
-import org.brewchain.account.gens.Tx.MultiTransaction.Builder;
+import org.brewchain.account.gens.Tx.MultiTransactionInput;
+import org.brewchain.account.gens.Tx.MultiTransactionOutput;
 import org.brewchain.account.trie.DBTrie;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.util.OEntityBuilder;
-import org.brewchain.bcapi.gens.Oentity.OKey;
-import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.fc.brewchain.bcapi.EncAPI;
-import org.brewchain.account.gens.Tx.MultiTransactionInput;
-import org.brewchain.account.gens.Tx.MultiTransactionOutput;
 
 import com.google.protobuf.ByteString;
 
-public class ActuatorTokenTransaction extends AbstractTransactionActuator implements iTransactionActuator {
+public class ActuatorLockTokenTransaction extends AbstractTransactionActuator implements iTransactionActuator {
 
-	public ActuatorTokenTransaction(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
-			BlockHelper oBlockHelper, EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
-		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi, dao, oStateTrie);
-	}
-
-	/*
-	 * 校验交易有效性。余额，索引等
-	 * 
-	 * @see org.brewchain.account.core.transaction.AbstractTransactionActuator#
-	 * onVerify(org.brewchain.account.gens.Tx.MultiTransaction, java.util.Map,
-	 * java.util.Map)
-	 */
 	@Override
 	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
 			Map<ByteString, Account> receivers) throws Exception {
-		// 交易中的Token必须一致
+
 		String token = "";
 		long inputsTotal = 0;
 		long outputsTotal = 0;
@@ -83,34 +67,27 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 				throw new Exception(String.format("用户的交易索引 %s 与交易的索引不一致 %s", nonce, oInput.getNonce()));
 			}
 		}
-
-		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
-			outputsTotal += oOutput.getAmount();
-		}
-
-		if (inputsTotal < outputsTotal) {
-			throw new Exception(String.format("交易的输入 %S 小于输出 %s 金额", inputsTotal, outputsTotal));
-		}
 	}
 
 	@Override
 	public void onExecute(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
 			Map<ByteString, Account> receivers) throws Exception {
-		LinkedList<OKey> keys = new LinkedList<>();
-		LinkedList<AccountValue> values = new LinkedList<>();
 
-		String token = "";
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			// 取发送方账户
 			Account sender = senders.get(oInput.getAddress());
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
-
+			String token = "";
 			token = oInput.getToken();
 			boolean isExistToken = false;
 			for (int i = 0; i < senderAccountValue.getTokensCount(); i++) {
 				if (senderAccountValue.getTokens(i).getToken().equals(oInput.getToken())) {
-					senderAccountValue.setTokens(i, senderAccountValue.getTokens(i).toBuilder().setBalance(
-							senderAccountValue.getTokens(i).getBalance() - oInput.getAmount()));
+					AccountTokenValue.Builder oAccountTokenValue = senderAccountValue.getTokens(i).toBuilder();
+					oAccountTokenValue.setBalance(
+							senderAccountValue.getTokens(i).getBalance() - oInput.getAmount());
+					oAccountTokenValue.setLocked(senderAccountValue.getTokens(i).getLocked() + oInput.getAmount());
+					senderAccountValue.setTokens(i, oAccountTokenValue);
+
 					isExistToken = true;
 					break;
 				}
@@ -131,52 +108,15 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			}
 			oCacheTrie.put(sender.getAddress().toByteArray(), senderAccountValue.build().toByteArray());
 			senderAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
-			
+
 			keys.add(OEntityBuilder.byteKey2OKey(sender.getAddress().toByteArray()));
 			values.add(senderAccountValue.build());
-
 		}
-
-		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
-			Account receiver = receivers.get(oOutput.getAddress());
-			AccountValue.Builder receiverAccountValue = receiver.getValue().toBuilder();
-
-			// 不论任何交易类型，都默认执行账户余额的更改
-			receiverAccountValue.setBalance(receiverAccountValue.getBalance() + oOutput.getAmount());
-
-			boolean isExistToken = false;
-			for (int i = 0; i < receiverAccountValue.getTokensCount(); i++) {
-				if (receiverAccountValue.getTokens(i).getToken().equals(token)) {
-					receiverAccountValue.setTokens(i, receiverAccountValue.getTokens(i).toBuilder()
-							.setBalance(receiverAccountValue.getTokens(i).getBalance() + oOutput.getAmount()));
-					isExistToken = true;
-					break;
-				}
-			}
-
-			// 如果对应账户中没有该token，则直接创建
-			if (!isExistToken) {
-				AccountTokenValue.Builder oAccountTokenValue = AccountTokenValue.newBuilder();
-				oAccountTokenValue.setToken(token);
-				oAccountTokenValue.setBalance(oOutput.getAmount());
-				receiverAccountValue.addTokens(oAccountTokenValue);
-			}
-
-			DBTrie oCacheTrie = new DBTrie(this.dao);
-			if (receiverAccountValue.getStorage() == null) {
-				oCacheTrie.setRoot(null);
-			} else {
-				oCacheTrie.setRoot(receiverAccountValue.getStorage().toByteArray());
-			}
-			oCacheTrie.put(receiver.getAddress().toByteArray(), receiverAccountValue.build().toByteArray());
-			receiverAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
-			
-			keys.add(OEntityBuilder.byteKey2OKey(receiver.getAddress().toByteArray()));
-			values.add(receiverAccountValue.build());
-
-		}
-		this.keys.addAll(keys);
-		this.values.addAll(values);
-		// oAccountHelper.BatchPutAccounts(keys, values);
 	}
+
+	public ActuatorLockTokenTransaction(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
+			BlockHelper oBlockHelper, EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
+		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi, dao, oStateTrie);
+	}
+
 }

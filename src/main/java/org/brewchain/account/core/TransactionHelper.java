@@ -189,6 +189,9 @@ public class TransactionHelper implements ActorService {
 			} else if (oTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("05"))) {
 				oiTransactionActuator = new ActuatorCryptoTokenTransaction(oAccountHelper, this, null, encApi, dao,
 						oStateTrie);
+			} else if (oTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("06"))) {
+				oiTransactionActuator = new ActuatorLockTokenTransaction(oAccountHelper, this, null, encApi, dao,
+						oStateTrie);
 			} else if (oTransaction.getTxBody().getOutputsCount() == 0) {
 				oiTransactionActuator = new ActuatorCreateContract(oAccountHelper, this, null, encApi, dao, oStateTrie);
 			} else {
@@ -215,7 +218,7 @@ public class TransactionHelper implements ActorService {
 				e.printStackTrace();
 				oiTransactionActuator.onExecuteError(oTransaction);
 				// throw e;
-				log.error("error on exec tx::"+e.getMessage(),e);
+				log.error("error on exec tx::" + e.getMessage(), e);
 			}
 
 			keys.addAll(oiTransactionActuator.getKeys());
@@ -223,7 +226,8 @@ public class TransactionHelper implements ActorService {
 
 			for (int i = 0; i < keys.size(); i++) {
 				oStateTrie.put(keys.get(i).getData().toByteArray(), values.get(i).toByteArray());
-				log.debug("put trie key::" + encApi.hexEnc(keys.get(i).getData().toByteArray()) + " values::" + encApi.hexEnc(values.get(i).toByteArray()));
+				log.debug("put trie key::" + encApi.hexEnc(keys.get(i).getData().toByteArray()) + " values::"
+						+ encApi.hexEnc(values.get(i).toByteArray()));
 			}
 
 			oAccountHelper.BatchPutAccounts(keys, values);
@@ -599,7 +603,8 @@ public class TransactionHelper implements ActorService {
 
 		Map<ByteString, Account> receivers = new HashMap<ByteString, Account>();
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
-			receivers.put(oOutput.getAddress(), oAccountHelper.GetAccountOrCreate(oOutput.getAddress().toByteArray(), oStateTrie));
+			receivers.put(oOutput.getAddress(),
+					oAccountHelper.GetAccountOrCreate(oOutput.getAddress().toByteArray(), oStateTrie));
 		}
 
 		iTransactionActuator oiTransactionActuator;
@@ -621,6 +626,9 @@ public class TransactionHelper implements ActorService {
 					oStateTrie);
 		} else if (oMultiTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("05"))) {
 			oiTransactionActuator = new ActuatorCryptoTokenTransaction(oAccountHelper, null, null, encApi, dao,
+					oStateTrie);
+		} else if (oMultiTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("06"))) {
+			oiTransactionActuator = new ActuatorLockTokenTransaction(oAccountHelper, this, null, encApi, dao,
 					oStateTrie);
 		} else if (oMultiTransaction.getTxBody().getOutputsCount() == 0) {
 			oiTransactionActuator = new ActuatorCreateContract(oAccountHelper, null, null, encApi, dao, oStateTrie);

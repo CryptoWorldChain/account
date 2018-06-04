@@ -130,7 +130,7 @@ public class BlockHelper implements ActorService {
 		}
 		oBlockMiner.setAddress(KeyConstant.node.getoAccount().getAddress());
 		oBlockMiner.setNode(KeyConstant.node.getNode());
-		oBlockMiner.setBcuid(KeyConstant.node.getoAccount().getBcuid());
+		oBlockMiner.setBcuid(KeyConstant.node.getBcuid());
 		oBlockMiner.setReward(KeyConstant.BLOCK_REWARD);
 		// oBlockMiner.setAddress(value);
 
