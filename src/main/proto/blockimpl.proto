@@ -51,6 +51,7 @@ message RespBlockInfo {
 	int32 waitSync = 3;
 	int32 waitBlock = 4;
 	string cache = 5;
+	repeated string dump = 7;
 	repeated string temp = 6;
 }
 

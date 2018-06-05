@@ -17,6 +17,8 @@ import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Validate;
 import org.apache.felix.ipojo.util.Log;
+import org.brewchain.account.core.store.BlockChainTempNode;
+import org.brewchain.account.core.store.BlockChainTempStore;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.doublyll.DoubleLinkedList;
 import org.brewchain.account.doublyll.Node;
@@ -56,6 +58,8 @@ public class BlockChainHelper implements ActorService {
 	//
 	@ActorRequire(name = "BlockChain_Config", scope = "global")
 	BlockChainConfig blockChainConfig;
+	@ActorRequire(name = "BlockChainTempStore_HashMapDB", scope = "global")
+	BlockChainTempStore blockChainTempStore;
 	@ActorRequire(name = "BlockChainStore_LRUHashMapDB", scope = "global")
 	BlockChainStoreWithLRU blockChainStore;
 	@ActorRequire(name = "Def_Daos", scope = "global")
@@ -73,13 +77,22 @@ public class BlockChainHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public byte[] GetBestBlock() throws Exception {
+	public byte[] GetUnStableBestBlockHash() throws Exception {
 		OValue oOValue = dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get();
 		if (oOValue == null || oOValue.getExtdata() == null || oOValue.getExtdata().equals(ByteString.EMPTY)) {
 			log.error("");
 		}
-		return dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get().getExtdata()
-				.toByteArray();
+		return oOValue.getExtdata().toByteArray();
+		// return blockCache.last();
+	}
+
+	public BlockEntity GetUnStableBestBlock() throws Exception {
+		byte[] hash = GetUnStableBestBlockHash();
+		if (hash != null) {
+			return getBlock(hash).build();
+		} else {
+			return null;
+		}
 		// return blockCache.last();
 	}
 
@@ -99,9 +112,13 @@ public class BlockChainHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public int getLastBlockNumber() throws Exception {
-		return getBlock(GetBestBlock()).getHeader().getNumber();
+	public int getMaxCacheBlockNumber() throws Exception {
+		return blockChainTempStore.getMaxNumber();
 		// return blockCache.getLast() == null ? 0 : blockCache.getLast().num;
+	}
+
+	public int getMaxBlockNumber() {
+		return blockChainStore.getLastBlockNumber();
 	}
 
 	/**
@@ -145,7 +162,7 @@ public class BlockChainHelper implements ActorService {
 		// oBlock.getHeader().getParentHash().toByteArray())) {
 		int lastNumber = 0;
 		try {
-			lastNumber = getLastBlockNumber();
+			lastNumber = getMaxBlockNumber();
 		} catch (Exception e) {
 			lastNumber = -1;
 		}
@@ -192,27 +209,33 @@ public class BlockChainHelper implements ActorService {
 
 		dao.getBlockDao().batchPuts(keys, values);
 		log.debug("cache block, parent::" + encApi.hexEnc(oBlock.getHeader().getParentHash().toByteArray()));
-		oCacheHashMapDB.put(encApi.hexEnc(oBlock.getHeader().getParentHash().toByteArray()), oBlock.toByteArray());
+		blockChainTempStore.tryAdd(encApi.hexEnc(oBlock.getHeader().getBlockHash().toByteArray()),
+				encApi.hexEnc(oBlock.getHeader().getParentHash().toByteArray()), oBlock.getHeader().getNumber());
 		return true;
 	}
 
-	public List<BlockEntity> tryGetChildBlock(byte[] parentHash) {
-		List<BlockEntity> list = new ArrayList<BlockEntity>();
-
-		byte[] blockEntityHash = oCacheHashMapDB.getAndDelete(encApi.hexEnc(parentHash));
-		if (blockEntityHash != null) {
-			BlockEntity.Builder oBlock;
+	public BlockEntity tryGetBlockFromTempStore(byte[] parentHash) throws Exception {
+		BlockChainTempNode oBlockChainTempNode = blockChainTempStore.getAndDelete(encApi.hexEnc(parentHash));
+		if (oBlockChainTempNode != null) {
 			try {
-				log.debug("get cache block, parent::" + encApi.hexEnc(parentHash));
-				oBlock = BlockEntity.newBuilder().mergeFrom(blockEntityHash);
-				list.add(oBlock.build());
+				log.debug("get cache block, parent::" + encApi.hexEnc(parentHash) + " number::"
+						+ oBlockChainTempNode.getNumber());
+				return getBlock(encApi.hexDec(oBlockChainTempNode.getHash())).build();
 			} catch (InvalidProtocolBufferException e) {
 				log.error("error on init block from cache::" + e.getMessage());
 			}
 		} else {
 			log.debug("cache block not found, parent::" + encApi.hexEnc(parentHash));
 		}
-		return list;
+		return null;
+	}
+
+	public BlockEntity tryGetBlockFromStore(byte[] parentHash) {
+		return blockChainStore.get(encApi.hexEnc(parentHash));
+	}
+
+	public boolean isExistsBlockFromStore(byte[] parentHash) {
+		return blockChainStore.isExists(encApi.hexEnc(parentHash));
 	}
 
 	/**
@@ -381,7 +404,7 @@ public class BlockChainHelper implements ActorService {
 					BufferedReader br = null;
 					try {
 						// read file
-						
+
 						fr = new FileReader("keystore" + File.separator + "keystore"
 								+ blockChainConfig.getKeystoreNumber() + ".json");
 						br = new BufferedReader(fr);
@@ -461,21 +484,15 @@ public class BlockChainHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public void reloadBlockCache() throws Exception {
-		BlockEntity.Builder oBlockEntity;
-		OValue oOValue = dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get();
-		if (oOValue == null || oOValue.getExtdata() == null || oOValue.getExtdata().equals(ByteString.EMPTY)) {
-			log.debug("last block not found");
-			return;
-		}
-		oBlockEntity = getBlock(oOValue.getExtdata().toByteArray());
+		BlockEntity oBlockEntity;
+		oBlockEntity = GetUnStableBestBlock();
 		if (oBlockEntity == null) {
 			KeyConstant.isStart = true;
 			log.debug(String.format("not found last block, start empty node"));
 			return;
 		}
-
 		int blockNumber = oBlockEntity.getHeader().getNumber();
-		blockChainStore.add(oBlockEntity.build(), encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()));
+		blockChainStore.add(oBlockEntity, encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()));
 		// blockCache.insertFirst(oBlockEntity.getHeader().getBlockHash().toByteArray(),
 		// blockNumber);
 
@@ -509,6 +526,10 @@ public class BlockChainHelper implements ActorService {
 			} catch (Exception e) {
 				// TODO: handle exception
 			}
+		}
+
+		if (blockNumber != 0) {
+			log.error("block chain data is wrong, parent number::" + blockNumber);
 		}
 
 		KeyConstant.isStart = true;

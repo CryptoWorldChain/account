@@ -33,6 +33,8 @@ public class BlockChainConfig extends SessionModules<Message> {
 	@Override
 	public void onDaoServiceAllReady() {
 		// 校验配置是否有效
-		log.debug(String.format("配置 %s = %s", "block.miner.reward", minerReward));
+		log.info(String.format("配置 %s = %s", "block.miner.reward", minerReward));
+		log.info(String.format("配置 %s = %s", "org.bc.manage.node.dev.pwd", pwd));
+		log.info(String.format("配置 %s = %s", "org.bc.manage.node.keystore.num", keystoreNumber));
 	}
 }

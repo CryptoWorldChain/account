@@ -52,6 +52,18 @@ public class BlockChainStoreWithLRU implements ActorService {
 		this.storage = new LinkedHashMap<Integer, List<byte[]>>();
 		this.blocks = new LRUCache<String, BlockEntity>(CACHE_SIZE);
 	}
+	
+	public BlockEntity get(String hash) {
+		try (ALock l = readLock.lock()) {
+			return this.blocks.get(hash);
+		}
+	}
+	
+	public boolean isExists(String hash) {
+		try (ALock l = readLock.lock()) {
+			return this.blocks.containsKey(hash);
+		}
+	}
 
 	public void rollBackTo(int blockNumber) {
 		try (ALock lw = writeLock.lock()) {
