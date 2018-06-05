@@ -147,6 +147,7 @@ public class BlockChainHelper implements ActorService {
 		try {
 			lastNumber = getLastBlockNumber();
 		} catch (Exception e) {
+			lastNumber = -1;
 		}
 		OKey[] keys = null;
 		OValue[] values = null;
@@ -212,21 +213,6 @@ public class BlockChainHelper implements ActorService {
 			log.debug("cache block not found, parent::" + encApi.hexEnc(parentHash));
 		}
 		return list;
-	}
-
-	public boolean newBlock(BlockEntity oBlock) {
-
-		OKey[] keys = new OKey[] { OEntityBuilder.byteKey2OKey(oBlock.getHeader().getBlockHash()),
-				OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK) };
-		OValue[] values = new OValue[] { OEntityBuilder.byteValue2OValue(oBlock.toByteArray()),
-				OEntityBuilder.byteValue2OValue(oBlock.getHeader().getBlockHash()) };
-
-		dao.getBlockDao().batchPuts(keys, values);
-		blockChainStore.clear();
-		blockChainStore.add(oBlock, encApi.hexEnc(oBlock.getHeader().getBlockHash().toByteArray()));
-		// blockCache.clear();
-		// blockCache.insertFirst(oBlock.getHeader().getBlockHash().toByteArray(), 0);
-		return true;
 	}
 
 	/**
@@ -395,6 +381,7 @@ public class BlockChainHelper implements ActorService {
 					BufferedReader br = null;
 					try {
 						// read file
+						
 						fr = new FileReader("keystore" + File.separator + "keystore"
 								+ blockChainConfig.getKeystoreNumber() + ".json");
 						br = new BufferedReader(fr);
@@ -433,7 +420,7 @@ public class BlockChainHelper implements ActorService {
 				return encApi.hexEnc(oOValue.getExtdata().toByteArray());
 			}
 		} catch (Exception e) {
-			log.error("fail to read node account from db");
+			log.error("fail to read node account from db::" + e.getMessage());
 		}
 		return null;
 	}

@@ -195,7 +195,7 @@ public class BlockHelper implements ActorService {
 		oBlockEntity.setBody(oBlockBody);
 
 		// oBlockStorageDB.setLastBlock(oBlockEntity.build());
-		blockChainHelper.newBlock(oBlockEntity.build());
+		blockChainHelper.appendBlock(oBlockEntity.build());
 	}
 
 	public synchronized AddBlockResponse ApplyBlock(ByteString bs) throws Exception {
@@ -249,6 +249,10 @@ public class BlockHelper implements ActorService {
 			log.error("parent block not found:: parent::" + (oBlockHeader.getNumber() - 1) + " block::"
 					+ oBlockHeader.getNumber() + " current::" + currentLastBlockNumber);
 
+		} else if (currentLastBlockNumber >= oBlockHeader.getNumber()) {
+			log.error("drop this block , number::" + oBlockHeader.getNumber() + " current::" + currentLastBlockNumber);
+			oAddBlockResponse.setRetCode(-1);
+			oAddBlockResponse.setCurrentNumber(currentLastBlockNumber);
 		} else {
 			try {
 				addBlock(oBlockEntity, oParentBlock);
@@ -359,7 +363,7 @@ public class BlockHelper implements ActorService {
 		oStateTrie.setRoot(parentBlock.getHeader().getStateRoot().toByteArray());
 		byte[] stateRoot = processBlock(oBlockEntity, oStateTrie);
 		if (!FastByteComparisons.equal(stateRoot, oBlockEntity.getHeader().getStateRoot().toByteArray())) {
-			log.debug("begin to roll back, stateRoot::" + encApi.hexEnc(stateRoot) + " blockStateRoot::"
+			log.error("begin to roll back, stateRoot::" + encApi.hexEnc(stateRoot) + " blockStateRoot::"
 					+ encApi.hexEnc(oBlockEntity.getHeader().getStateRoot().toByteArray()));
 			blockChainHelper.rollBackTo(parentBlock);
 		} else {
