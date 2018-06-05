@@ -56,8 +56,8 @@ public class BlockChainHelper implements ActorService {
 	//
 	@ActorRequire(name = "BlockChain_Config", scope = "global")
 	BlockChainConfig blockChainConfig;
-	@ActorRequire(name = "BlockChainStore_HashMapDB", scope = "global")
-	BlockChainStore blockChainStore;
+	@ActorRequire(name = "BlockChainStore_LRUHashMapDB", scope = "global")
+	BlockChainStoreWithLRU blockChainStore;
 	@ActorRequire(name = "Def_Daos", scope = "global")
 	DefDaos dao;
 	@ActorRequire(name = "bc_encoder", scope = "global")
