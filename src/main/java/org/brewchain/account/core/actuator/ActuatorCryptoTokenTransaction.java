@@ -115,7 +115,7 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 			AccountValue.Builder oAccountValue = sender.getValue().toBuilder();
 
 			// 不论任何交易类型，都默认执行账户余额的更改
-			oAccountValue.setBalance(oAccountValue.getBalance() - oInput.getAmount() - oInput.getFee());
+			oAccountValue.setBalance(oAccountValue.getBalance() - oInput.getAmount() );
 
 			for (int k = 0; k < oAccountValue.getCryptosCount(); k++) {
 

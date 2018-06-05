@@ -1,6 +1,7 @@
 package org.brewchain.account.core;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -42,6 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 import onight.osgi.annotation.NActorProvider;
 import onight.tfw.ntrans.api.ActorService;
 import onight.tfw.ntrans.api.annotation.ActorRequire;
+import onight.tfw.outils.conf.PropHelper;
 
 @NActorProvider
 @Instantiate(name = "BlockChain_Helper")
@@ -64,7 +66,7 @@ public class BlockChainHelper implements ActorService {
 	CacheBlockHashMapDB oCacheHashMapDB;
 	@ActorRequire(name = "KeyStore_Helper", scope = "global")
 	KeyStoreHelper keyStoreHelper;
-	
+
 	/**
 	 * 获取节点最后一个区块的Hash
 	 * 
@@ -145,9 +147,11 @@ public class BlockChainHelper implements ActorService {
 		try {
 			lastNumber = getLastBlockNumber();
 		} catch (Exception e) {
+			lastNumber = -1;
 		}
 		OKey[] keys = null;
 		OValue[] values = null;
+		log.debug("last_number::" + lastNumber + " block::" + oBlock.getHeader().getNumber());
 		if (lastNumber < oBlock.getHeader().getNumber()) {
 			keys = new OKey[] { OEntityBuilder.byteKey2OKey(oBlock.getHeader().getBlockHash()),
 					OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK) };
@@ -209,21 +213,6 @@ public class BlockChainHelper implements ActorService {
 			log.debug("cache block not found, parent::" + encApi.hexEnc(parentHash));
 		}
 		return list;
-	}
-
-	public boolean newBlock(BlockEntity oBlock) {
-
-		OKey[] keys = new OKey[] { OEntityBuilder.byteKey2OKey(oBlock.getHeader().getBlockHash()),
-				OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK) };
-		OValue[] values = new OValue[] { OEntityBuilder.byteValue2OValue(oBlock.toByteArray()),
-				OEntityBuilder.byteValue2OValue(oBlock.getHeader().getBlockHash()) };
-
-		dao.getBlockDao().batchPuts(keys, values);
-		blockChainStore.clear();
-		blockChainStore.add(oBlock, encApi.hexEnc(oBlock.getHeader().getBlockHash().toByteArray()));
-		// blockCache.clear();
-		// blockCache.insertFirst(oBlock.getHeader().getBlockHash().toByteArray(), 0);
-		return true;
 	}
 
 	/**
@@ -380,7 +369,7 @@ public class BlockChainHelper implements ActorService {
 	 * 
 	 * @return
 	 */
-	public KeyStoreValue getNodeAccount() {
+	public String getNodeAccount() {
 		OValue oOValue;
 		try {
 			oOValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey("org.bc.manage.node.account".getBytes()))
@@ -390,9 +379,11 @@ public class BlockChainHelper implements ActorService {
 				if (StringUtils.isNotBlank(blockChainConfig.getPwd())) {
 					FileReader fr = null;
 					BufferedReader br = null;
-					try {  
+					try {
 						// read file
-						fr = new FileReader(".keystore");
+						
+						fr = new FileReader("keystore" + File.separator + "keystore"
+								+ blockChainConfig.getKeystoreNumber() + ".json");
 						br = new BufferedReader(fr);
 						String keyStoreJsonStr = "";
 
@@ -409,15 +400,16 @@ public class BlockChainHelper implements ActorService {
 						if (oKeyStoreValue == null) {
 							return null;
 						} else {
-							dao.getAccountDao().put(OEntityBuilder.byteKey2OKey("org.bc.manage.node.account".getBytes()),
-									OEntityBuilder.byteValue2OValue(oKeyStoreValue.toByteArray()));
-							return oKeyStoreValue;
+							dao.getAccountDao().put(
+									OEntityBuilder.byteKey2OKey("org.bc.manage.node.account".getBytes()),
+									OEntityBuilder.byteValue2OValue(encApi.hexDec(oKeyStoreValue.getAddress())));
+							return oKeyStoreValue.getAddress();
 						}
 					} catch (Exception e) {
-						if (br !=null ) {
+						if (br != null) {
 							br.close();
 						}
-						if (fr !=null) {
+						if (fr != null) {
 							fr.close();
 						}
 						throw e;
@@ -425,19 +417,22 @@ public class BlockChainHelper implements ActorService {
 				}
 				return null;
 			} else {
-				KeyStoreValue oKeyStoreValue = KeyStoreValue.parseFrom(oOValue.getExtdata().toByteArray());
-				return oKeyStoreValue;
+				return encApi.hexEnc(oOValue.getExtdata().toByteArray());
 			}
 		} catch (Exception e) {
-			log.error("fail to read node account from db");
+			log.error("fail to read node account from db::" + e.getMessage());
 		}
 		return null;
 	}
 
 	public void onStart(String bcuid, String address, String name) {
 		try {
-			KeyStoreValue oKeyStoreValue = getNodeAccount();
-			if (oKeyStoreValue == null) {
+			String coinAddressHex = getNodeAccount();
+			if (coinAddressHex == null) {
+				throw new Exception("node account not found");
+			}
+			byte[] coinAddress = encApi.hexDec(coinAddressHex);
+			if (coinAddress == null) {
 				throw new Exception("node account not found");
 			}
 			NodeDef oNodeDef = new NodeDef();
@@ -446,8 +441,8 @@ public class BlockChainHelper implements ActorService {
 			oNodeDef.setNode(name);
 
 			NodeAccount oNodeAccount = oNodeDef.new NodeAccount();
-			oNodeAccount.setAddress(oKeyStoreValue.getAddress());
-			oNodeAccount.setBcuid(oKeyStoreValue.getBcuid());
+			oNodeAccount.setAddress(encApi.hexEnc(coinAddress));
+			// oNodeAccount.setBcuid(oKeyStoreValue.getBcuid());
 			oNodeDef.setoAccount(oNodeAccount);
 			KeyConstant.node = oNodeDef;
 			reloadBlockCache();

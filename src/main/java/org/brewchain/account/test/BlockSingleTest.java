@@ -14,6 +14,8 @@ import org.brewchain.account.gens.Block.BlockEntity;
 import org.brewchain.account.gens.Block.BlockHeader;
 import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.brewchain.account.gens.Tx.MultiTransactionBody;
+import org.brewchain.account.gens.Tx.MultiTransactionInput;
+import org.brewchain.account.gens.Tx.MultiTransactionOutput;
 import org.brewchain.account.gens.Tx.MultiTransactionSignature;
 import org.brewchain.account.gens.Tx.SingleTransaction;
 import org.brewchain.account.gens.TxTest.PTSTCommand;
@@ -65,39 +67,63 @@ public class BlockSingleTest extends SessionModules<ReqTxTest> implements ActorS
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqTxTest pb, final CompleteHandler handler) {
 		RespTxTest.Builder oRespTxTest = RespTxTest.newBuilder();
-		String coinBase = this.props().get("block.coinBase", "");
-		if (coinBase == null) {
-			coinBase = "1234";
-		}
 
-		BlockEntity.Builder oSyncBlock = BlockEntity.newBuilder();
-		BlockEntity.Builder newBlock;
 		try {
-			newBlock = blockHelper.CreateNewBlock(600, ByteUtil.EMPTY_BYTE_ARRAY, ByteUtil.EMPTY_BYTE_ARRAY);
-			log.debug("创建区块 " + newBlock.toString());
-			BlockHeader.Builder oBlockHeader = newBlock.getHeader().toBuilder();
-			oBlockHeader.setNumber(pb.getBlockNumber());
+			// 创建账户1
+			KeyPairs oKeyPairs1 = encApi.genKeys();
+			// 创建账户2
+			KeyPairs oKeyPairs2 = encApi.genKeys();
+			// 创建账户3
+			KeyPairs oKeyPairs3 = encApi.genKeys();
 
-			BlockEntity.Builder oSyncBlock1 = BlockEntity.newBuilder();
-			newBlock = blockHelper.CreateNewBlock(600, ByteUtil.EMPTY_BYTE_ARRAY, ByteUtil.EMPTY_BYTE_ARRAY);
-			BlockHeader.Builder oBlockHeader1 = newBlock.getHeader().toBuilder();
-			oBlockHeader1.setNumber(pb.getBlockNumber() - 1);
-			oBlockHeader.setParentHash(oBlockHeader1.getBlockHash());
-
-			oSyncBlock.setHeader(oBlockHeader);
-			oSyncBlock1.setHeader(oBlockHeader1);
-
-			log.debug(" after " + blockHelper.ApplyBlock(oSyncBlock));
-			log.debug(" before " + blockHelper.ApplyBlock(oSyncBlock1));
-
-		} catch (Exception e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
+			// 账户1 转账 100000
+			MultiTransaction.Builder oMultiTransaction01 = createTransaction(
+					encApi.hexDec("307e3c985f1361488a314c47584f22406a60f9df1f"),
+					"e3a6aa61d1dd844899c14664921f506c0ffb7172cea1cd6a5ccdf4a99dd6cabb",
+					"040fdd87b30a77db34f5dbec226cd7b528a7dddc64680da1394ddf8b1b47b4df029b556297e0b39aa5aae038b847786a22b0fbda7bdbea6f2287c625081cb92f23",
+					encApi.hexDec(oKeyPairs1.getAddress()), 100000);
+			transactionHelper.CreateMultiTransaction(oMultiTransaction01);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-
-		log.debug("block已同步");
 
 		oRespTxTest.setRetCode(-1);
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespTxTest.build()));
+	}
+
+	private MultiTransaction.Builder createTransaction(byte[] from, String priv, String pub, byte[] to, int amount)
+			throws Exception {
+		int nonce = accountHelper.getNonce(from);
+
+		MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
+		MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
+		MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
+		oMultiTransactionInput4.setAddress(ByteString.copyFrom(from));
+		oMultiTransactionInput4.setAmount(amount);
+		oMultiTransactionInput4.setFee(0);
+		oMultiTransactionInput4.setFeeLimit(0);
+		oMultiTransactionInput4.setNonce(nonce);
+		oMultiTransactionBody.addInputs(oMultiTransactionInput4);
+
+		MultiTransactionOutput.Builder oMultiTransactionOutput1 = MultiTransactionOutput.newBuilder();
+		oMultiTransactionOutput1.setAddress(ByteString.copyFrom(to));
+		oMultiTransactionOutput1.setAmount(amount);
+		oMultiTransactionBody.addOutputs(oMultiTransactionOutput1);
+
+		oMultiTransactionBody.setData(ByteString.EMPTY);
+		oMultiTransaction.setTxHash(ByteString.EMPTY);
+		oMultiTransactionBody.clearSignatures();
+
+		oMultiTransactionBody.setTimestamp((new Date()).getTime());
+		// 签名
+		MultiTransactionSignature.Builder oMultiTransactionSignature21 = MultiTransactionSignature.newBuilder();
+		oMultiTransactionSignature21.setPubKey(pub);
+		oMultiTransactionSignature21
+				.setSignature(encApi.hexEnc(encApi.ecSign(priv, oMultiTransactionBody.build().toByteArray())));
+		oMultiTransactionBody.addSignatures(oMultiTransactionSignature21);
+
+		oMultiTransaction.setTxBody(oMultiTransactionBody);
+
+		return oMultiTransaction;
 	}
 }

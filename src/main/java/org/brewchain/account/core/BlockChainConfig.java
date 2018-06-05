@@ -16,10 +16,9 @@ import onight.osgi.annotation.NActorProvider;
 @Slf4j
 @Instantiate(name = "BlockChain_Config")
 public class BlockChainConfig extends SessionModules<Message> {
-	private String coinBase = props().get("block.coinBase.hex", null);
 	private int minerReward = props().get("block.miner.reward", 0);
-	private int minerRewardWait = props().get("block.miner.reward.wait", 0);
 	private String pwd = props().get("org.bc.manage.node.dev.pwd", null);
+	private String keystoreNumber = props().get("org.bc.manage.node.keystore.num", "1");
 
 	@Override
 	public String[] getCmds() {
@@ -34,7 +33,6 @@ public class BlockChainConfig extends SessionModules<Message> {
 	@Override
 	public void onDaoServiceAllReady() {
 		// 校验配置是否有效
-		log.debug(String.format("配置 %s = %s", "block.coinBase.hex", coinBase));
 		log.debug(String.format("配置 %s = %s", "block.miner.reward", minerReward));
 	}
 }

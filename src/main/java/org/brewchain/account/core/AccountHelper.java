@@ -255,6 +255,32 @@ public class AccountHelper implements ActorService {
 		putAccountValue(addr, oAccountValue.build(), oStateTrie);
 		return oAccountTokenValue.getBalance();
 	}
+	
+	public synchronized long addTokenLockBalance(byte[] addr, String token, long balance) throws Exception {
+		return addTokenLockBalance(addr, token, balance, null);
+	}
+
+	public synchronized long addTokenLockBalance(byte[] addr, String token, long balance, StateTrie oStateTrie)
+			throws Exception {
+		Account.Builder oAccount = GetAccount(addr, oStateTrie).toBuilder();
+		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
+
+		for (int i = 0; i < oAccountValue.getTokensCount(); i++) {
+			if (oAccountValue.getTokens(i).getToken().equals(token)) {
+				oAccountValue.setTokens(i, oAccountValue.getTokens(i).toBuilder()
+						.setLocked(oAccountValue.getTokens(i).getLocked() + balance));
+				putAccountValue(addr, oAccountValue.build(), oStateTrie);
+				return oAccountValue.getTokens(i).getBalance();
+			}
+		}
+		// 如果token账户余额不存在，直接增加一条记录
+		AccountTokenValue.Builder oAccountTokenValue = AccountTokenValue.newBuilder();
+		oAccountTokenValue.setLocked(balance);
+		oAccountTokenValue.setToken(token);
+		oAccountValue.addTokens(oAccountTokenValue);
+		putAccountValue(addr, oAccountValue.build(), oStateTrie);
+		return oAccountTokenValue.getBalance();
+	}
 
 	/**
 	 * 增加加密Token账户余额
@@ -490,6 +516,20 @@ public class AccountHelper implements ActorService {
 		}
 		return 0;
 	}
+	
+	public long getTokenLockedBalance(byte[] addr, String token) throws Exception {
+		return getTokenLockedBalance(addr, token, null);
+	}
+	public long getTokenLockedBalance(byte[] addr, String token, StateTrie oStateTrie) throws Exception {
+		Account.Builder oAccount = GetAccount(addr, oStateTrie).toBuilder();
+		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
+		for (int i = 0; i < oAccountValue.getTokensCount(); i++) {
+			if (oAccountValue.getTokens(i).getToken().equals(token)) {
+				return oAccountValue.getTokens(i).getLocked();
+			}
+		}
+		return 0;
+	}
 
 	/**
 	 * 获取加密Token账户的余额
@@ -555,6 +595,7 @@ public class AccountHelper implements ActorService {
 
 			oAccountCryptoToken.setOwner(ByteString.copyFrom(addr));
 			oAccountCryptoToken.setNonce(0);
+			oAccountCryptoToken.setOwnertime(new Date().getTime());
 			oAccountCryptoValue.addTokens(oAccountCryptoToken);
 		}
 

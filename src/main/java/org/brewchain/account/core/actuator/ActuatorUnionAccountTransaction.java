@@ -45,7 +45,7 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 		long totalAmount = 0;
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			totalAmount += oInput.getAmount();
-			totalAmount += oInput.getFee();
+			//totalAmount += oInput.getFee();
 		}
 		String key = String.format("%s_%s", new SimpleDateFormat("yyyy-MM-dd").format(new Date()),
 				encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(0).getAddress().toByteArray()));
@@ -80,7 +80,7 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 		long totalAmount = 0;
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			totalAmount += oInput.getAmount();
-			totalAmount += oInput.getFee();
+			//totalAmount += oInput.getFee();
 		}
 		String key = String.format("%s_%s", new SimpleDateFormat("yyyy-MM-dd").format(new Date()),
 				encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(0).getAddress().toByteArray()));

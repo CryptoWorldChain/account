@@ -130,7 +130,7 @@ public class BlockHelper implements ActorService {
 		}
 		oBlockMiner.setAddress(KeyConstant.node.getoAccount().getAddress());
 		oBlockMiner.setNode(KeyConstant.node.getNode());
-		oBlockMiner.setBcuid(KeyConstant.node.getoAccount().getBcuid());
+		oBlockMiner.setBcuid(KeyConstant.node.getBcuid());
 		oBlockMiner.setReward(KeyConstant.BLOCK_REWARD);
 		// oBlockMiner.setAddress(value);
 
@@ -195,7 +195,7 @@ public class BlockHelper implements ActorService {
 		oBlockEntity.setBody(oBlockBody);
 
 		// oBlockStorageDB.setLastBlock(oBlockEntity.build());
-		blockChainHelper.newBlock(oBlockEntity.build());
+		blockChainHelper.appendBlock(oBlockEntity.build());
 	}
 
 	public synchronized AddBlockResponse ApplyBlock(ByteString bs) throws Exception {
@@ -249,6 +249,10 @@ public class BlockHelper implements ActorService {
 			log.error("parent block not found:: parent::" + (oBlockHeader.getNumber() - 1) + " block::"
 					+ oBlockHeader.getNumber() + " current::" + currentLastBlockNumber);
 
+		} else if (currentLastBlockNumber >= oBlockHeader.getNumber()) {
+			log.error("drop this block , number::" + oBlockHeader.getNumber() + " current::" + currentLastBlockNumber);
+			oAddBlockResponse.setRetCode(-1);
+			oAddBlockResponse.setCurrentNumber(currentLastBlockNumber);
 		} else {
 			try {
 				addBlock(oBlockEntity, oParentBlock);
@@ -340,7 +344,7 @@ public class BlockHelper implements ActorService {
 	 * @param oBlockEntity
 	 * @throws Exception
 	 */
-	private synchronized void appendBlock(BlockEntity.Builder oBlockEntity, StateTrie oStateTrie) throws Exception {
+	public synchronized void appendBlock(BlockEntity.Builder oBlockEntity, StateTrie oStateTrie) throws Exception {
 		byte[] stateRoot = processBlock(oBlockEntity, oStateTrie);
 		oBlockEntity.setHeader(oBlockEntity.getHeaderBuilder().setStateRoot(ByteString.copyFrom(stateRoot)));
 		// 添加块
@@ -359,6 +363,8 @@ public class BlockHelper implements ActorService {
 		oStateTrie.setRoot(parentBlock.getHeader().getStateRoot().toByteArray());
 		byte[] stateRoot = processBlock(oBlockEntity, oStateTrie);
 		if (!FastByteComparisons.equal(stateRoot, oBlockEntity.getHeader().getStateRoot().toByteArray())) {
+			log.error("begin to roll back, stateRoot::" + encApi.hexEnc(stateRoot) + " blockStateRoot::"
+					+ encApi.hexEnc(oBlockEntity.getHeader().getStateRoot().toByteArray()));
 			blockChainHelper.rollBackTo(parentBlock);
 		} else {
 			// 添加块

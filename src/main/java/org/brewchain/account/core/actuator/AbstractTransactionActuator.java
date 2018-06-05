@@ -163,7 +163,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			Account sender = senders.get(oInput.getAddress());
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 
-			senderAccountValue.setBalance(senderAccountValue.getBalance() - oInput.getAmount() - oInput.getFee());
+			senderAccountValue.setBalance(senderAccountValue.getBalance() - oInput.getAmount() );
 
 			senderAccountValue.setNonce(senderAccountValue.getNonce() + 1);
 			DBTrie oCacheTrie = new DBTrie(this.dao);
