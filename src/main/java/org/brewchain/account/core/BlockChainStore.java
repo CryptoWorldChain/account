@@ -39,6 +39,18 @@ public class BlockChainStore implements ActorService {
 		this.storage = new ConcurrentHashMap<Integer, List<byte[]>>();
 		this.blocks = new ConcurrentHashMap<String, BlockEntity>();
 	}
+	
+	public BlockEntity get(String hash) {
+		try (ALock l = readLock.lock()) {
+			return this.blocks.get(hash);
+		}
+	}
+	
+	public boolean isExists(String hash) {
+		try (ALock l = readLock.lock()) {
+			return this.blocks.containsKey(hash);
+		}
+	}
 
 	public void rollBackTo(int blockNumber) {
 		try (ALock lw = writeLock.lock()) {
@@ -70,8 +82,10 @@ public class BlockChainStore implements ActorService {
 
 		try (ALock l = writeLock.lock()) {
 			if (storage.containsKey(number)) {
+				log.debug("storage exists block::" + number + " count::" + storage.get(number).size());
 				storage.get(number).add(hash);
 			} else {
+				log.debug("storage add block::" + number);
 				storage.put(number, new ArrayList<byte[]>() {
 					{
 						add(hash);
