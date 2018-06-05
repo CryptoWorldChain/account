@@ -13,6 +13,7 @@ import org.brewchain.account.gens.Block.BlockEntity;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
+import org.bouncycastle.util.encoders.Hex;
 import org.brewchain.account.util.ALock;
 import org.fc.brewchain.bcapi.EncAPI;
 
@@ -32,6 +33,7 @@ public class BlockChainTempStore implements ActorService {
 	EncAPI encApi;
 
 	private int maxNumber = 0;
+	private BlockChainTempNode maxBlock = null;
 	protected final TreeMap<String, BlockChainTempNode> storage;
 
 	protected ReadWriteLock rwLock = new ReentrantReadWriteLock();
@@ -44,23 +46,41 @@ public class BlockChainTempStore implements ActorService {
 
 	public void tryAdd(String hash, String parentHash, int number) {
 		try (ALock l = writeLock.lock()) {
+			BlockChainTempNode oNode = new BlockChainTempNode(hash, parentHash, number, false);
 			if (this.storage.containsKey(parentHash)) {
 				BlockChainTempNode oParent = this.storage.get(parentHash);
 				oParent.setChild(true);
 				this.storage.put(parentHash, oParent);
+				log.warn("may be split::" + number + " hash::" + hash + " parentHash::" + parentHash);
 			}
 			if (!this.storage.containsKey(hash)) {
-				this.storage.put(hash, new BlockChainTempNode(hash, number, false));
+				this.storage.put(hash, oNode);
 			}
 
 			if (maxNumber < number) {
 				maxNumber = number;
-			}
-
-			if (this.storage.firstEntry().getValue().getNumber() < (number - KeyConstant.ROLLBACK_BLOCK)) {
-				this.storage.remove(this.storage.firstEntry().getKey());
+				maxBlock = oNode;
 			}
 		}
+	}
+
+	public BlockChainTempNode tryAddAndPop(String hash, String parentHash, int number) {
+		try (ALock l = writeLock.lock()) {
+			tryAdd(hash, parentHash, number);
+			// loop to stable node and pop
+
+			int count = 0;
+			BlockChainTempNode oStableNode = null;
+			while (this.storage.containsKey(parentHash) && count >= KeyConstant.ROLLBACK_BLOCK) {
+				oStableNode = this.storage.get(parentHash);
+				parentHash = oStableNode.getParentHash();
+				count += 1;
+			}
+			if (oStableNode != null) {
+				return oStableNode;
+			}
+		}
+		return null;
 	}
 
 	public BlockChainTempNode getAndDelete(String hash) {

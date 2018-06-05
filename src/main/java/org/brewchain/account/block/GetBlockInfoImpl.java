@@ -63,7 +63,7 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 		RespBlockInfo.Builder oRespBlockInfo = RespBlockInfo.newBuilder();
 		oRespBlockInfo.setBlockCount(blockChainHelper.getBlockCount());
 		try {
-			oRespBlockInfo.setNumber(blockChainHelper.getMaxBlockNumber());
+			oRespBlockInfo.setNumber(blockChainHelper.getLastBlockNumber());
 			// oRespBlockInfo.setCache(blockChainHelper.getBlockCacheFormatString());
 			oRespBlockInfo.setWaitSync(oSendingHashMapDB.keys().size());
 			oRespBlockInfo.setWaitBlock(oPendingHashMapDB.keys().size());
@@ -77,7 +77,7 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 						encApi.hexEnc(list.get(i).getHeader().getBlockHash().toByteArray()),
 						encApi.hexEnc(list.get(i).getHeader().getParentHash().toByteArray())));
 
-				if (org.apache.commons.lang.StringUtils.isBlank(parent)) {
+				if (parent.isEmpty()) {
 					parent = encApi.hexEnc(list.get(i).getHeader().getParentHash().toByteArray());
 
 				} else {

@@ -107,6 +107,9 @@ public class BlockHelper implements ActorService {
 
 		// 获取本节点的最后一块Block
 		BlockEntity oBestBlockEntity = blockChainHelper.GetUnStableBestBlock();
+		if (oBestBlockEntity==null) {
+			oBestBlockEntity = blockChainHelper.GetStableBestBlock();
+		}
 		BlockHeader oBestBlockHeader = oBestBlockEntity.getHeader();
 
 		// 构造Block Header
@@ -224,7 +227,7 @@ public class BlockHelper implements ActorService {
 		BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
 		int currentLastBlockNumber;
 		try {
-			currentLastBlockNumber = blockChainHelper.getMaxCacheBlockNumber();
+			currentLastBlockNumber = blockChainHelper.getLastBlockNumber();
 		} catch (Exception e1) {
 			oAddBlockResponse.setRetCode(-2);
 			return oAddBlockResponse.build();
@@ -274,11 +277,11 @@ public class BlockHelper implements ActorService {
 				}
 
 				oAddBlockResponse.setRetCode(1);
-				oAddBlockResponse.setCurrentNumber(blockChainHelper.getMaxCacheBlockNumber());
+				oAddBlockResponse.setCurrentNumber(blockChainHelper.getLastBlockNumber());
 			} catch (Exception e) {
 				oAddBlockResponse.setRetCode(-2);
 				try {
-					oAddBlockResponse.setCurrentNumber(blockChainHelper.getMaxCacheBlockNumber());
+					oAddBlockResponse.setCurrentNumber(blockChainHelper.getLastBlockNumber());
 				} catch (Exception e2) {
 
 				}

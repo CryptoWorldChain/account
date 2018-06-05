@@ -34,66 +34,56 @@ public class BlockChainStoreWithLRU implements ActorService {
 	protected ReadWriteLock rwLock = new ReentrantReadWriteLock();
 	protected ALock readLock = new ALock(rwLock.readLock());
 	protected ALock writeLock = new ALock(rwLock.writeLock());
-	
-	private final int CACHE_SIZE = 1000;
+
+	private final int CACHE_SIZE = 6000;
 
 	public BlockChainStoreWithLRU() {
 		this.storage = new LRUCache<Integer, List<byte[]>>(CACHE_SIZE);
 		this.blocks = new LRUCache<String, BlockEntity>(CACHE_SIZE);
 	}
-	
+
 	public BlockEntity get(String hash) {
-		try (ALock l = readLock.lock()) {
-			return this.blocks.get(hash);
-		}
+		return this.blocks.get(hash);
+
 	}
-	
+
 	public boolean isExists(String hash) {
-		try (ALock l = readLock.lock()) {
-			return this.blocks.containsKey(hash);
-		}
+		return this.blocks.containsKey(hash);
+
 	}
 
 	public void rollBackTo(int blockNumber) {
-		try (ALock lw = writeLock.lock()) {
-			while (getLastBlockNumber() > blockNumber) {
-				this.storage.remove(getLastBlockNumber());
-			}
+		while (getLastBlockNumber() > blockNumber) {
+			this.storage.remove(getLastBlockNumber());
 		}
 	}
 
 	public byte[] getBlockHashByNumber(int blockNumber) {
-		try (ALock l = readLock.lock()) {
-			return storage.get(blockNumber).get(0);
-		}
+		return storage.get(blockNumber).get(0);
 	}
 
 	public BlockEntity getBlockByNumber(int blockNumber) {
-		try (ALock l = readLock.lock()) {
-			List<byte[]> hashs = this.storage.get(blockNumber);
-			if (hashs != null) {
-				return this.blocks.get(encApi.hexEnc(hashs.get(0)));
-			}
-			return null;
+		List<byte[]> hashs = this.storage.get(blockNumber);
+		if (hashs != null) {
+			return this.blocks.get(encApi.hexEnc(hashs.get(0)));
 		}
+		return null;
 	}
 
 	public void add(BlockEntity oBlock, String hexHash) {
 		int number = oBlock.getHeader().getNumber();
 		final byte[] hash = oBlock.getHeader().getBlockHash().toByteArray();
 
-		try (ALock l = writeLock.lock()) {
-			if (storage.containsKey(number)) {
-				storage.get(number).add(hash);
-			} else {
-				storage.put(number, new ArrayList<byte[]>() {
-					{
-						add(hash);
-					}
-				});
-			}
-			blocks.put(hexHash, oBlock);
+		if (storage.containsKey(number)) {
+			storage.get(number).add(hash);
+		} else {
+			storage.put(number, new ArrayList<byte[]>() {
+				{
+					add(hash);
+				}
+			});
 		}
+		blocks.put(hexHash, oBlock);
 	}
 
 	public byte[] getBestBlock() {

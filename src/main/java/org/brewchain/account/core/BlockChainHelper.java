@@ -77,12 +77,31 @@ public class BlockChainHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public byte[] GetUnStableBestBlockHash() throws Exception {
+	public byte[] GetStableBestBlockHash() throws Exception {
 		OValue oOValue = dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get();
 		if (oOValue == null || oOValue.getExtdata() == null || oOValue.getExtdata().equals(ByteString.EMPTY)) {
 			log.error("");
 		}
 		return oOValue.getExtdata().toByteArray();
+		// return blockCache.last();
+	}
+
+	public BlockEntity GetStableBestBlock() throws Exception {
+		byte[] hash = GetStableBestBlockHash();
+		if (hash != null) {
+			return getBlock(hash).build();
+		} else {
+			return null;
+		}
+		// return blockCache.last();
+	}
+
+	public byte[] GetUnStableBestBlockHash() throws Exception {
+		BlockChainTempNode oNode = blockChainTempStore.getMaxBlock();
+		if (oNode != null) {
+			return encApi.hexDec(oNode.getHash());
+		}
+		return null;
 		// return blockCache.last();
 	}
 
@@ -112,13 +131,13 @@ public class BlockChainHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public int getMaxCacheBlockNumber() throws Exception {
-		return blockChainTempStore.getMaxNumber();
+	public int getLastStableBlockNumber() throws Exception {
+		return blockChainStore.getBlockCount();
 		// return blockCache.getLast() == null ? 0 : blockCache.getLast().num;
 	}
 
-	public int getMaxBlockNumber() {
-		return blockChainStore.getLastBlockNumber();
+	public int getLastBlockNumber() {
+		return blockChainTempStore.getMaxNumber();
 	}
 
 	/**
@@ -162,24 +181,29 @@ public class BlockChainHelper implements ActorService {
 		// oBlock.getHeader().getParentHash().toByteArray())) {
 		int lastNumber = 0;
 		try {
-			lastNumber = getMaxBlockNumber();
+			lastNumber = getLastStableBlockNumber();
 		} catch (Exception e) {
 			lastNumber = -1;
 		}
-		OKey[] keys = null;
-		OValue[] values = null;
+
 		log.debug("last_number::" + lastNumber + " block::" + oBlock.getHeader().getNumber());
-		if (lastNumber < oBlock.getHeader().getNumber()) {
+
+		BlockChainTempNode oStableNode = blockChainTempStore.tryAddAndPop(
+				encApi.hexEnc(oBlock.getHeader().getBlockHash().toByteArray()),
+				encApi.hexEnc(oBlock.getHeader().getParentHash().toByteArray()), oBlock.getHeader().getNumber());
+
+		if (oStableNode == null) {
+			dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(oBlock.getHeader().getBlockHash()),
+					OEntityBuilder.byteValue2OValue(oBlock.toByteArray()));
+		} else {
+			OKey[] keys = null;
+			OValue[] values = null;
 			keys = new OKey[] { OEntityBuilder.byteKey2OKey(oBlock.getHeader().getBlockHash()),
 					OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK) };
 			values = new OValue[] { OEntityBuilder.byteValue2OValue(oBlock.toByteArray()),
-					OEntityBuilder.byteValue2OValue(oBlock.getHeader().getBlockHash()) };
-		} else {
-			keys = new OKey[] { OEntityBuilder.byteKey2OKey(oBlock.getHeader().getBlockHash()) };
-			values = new OValue[] { OEntityBuilder.byteValue2OValue(oBlock.toByteArray()) };
+					OEntityBuilder.byteValue2OValue(encApi.hexDec(oStableNode.getHash())) };
+			dao.getBlockDao().batchPuts(keys, values);
 		}
-
-		dao.getBlockDao().batchPuts(keys, values);
 
 		if (oBlock.getBody() != null) {
 			LinkedList<OKey> txBlockKeyList = new LinkedList<OKey>();
@@ -485,7 +509,7 @@ public class BlockChainHelper implements ActorService {
 	 */
 	public void reloadBlockCache() throws Exception {
 		BlockEntity oBlockEntity;
-		oBlockEntity = GetUnStableBestBlock();
+		oBlockEntity = GetStableBestBlock();
 		if (oBlockEntity == null) {
 			KeyConstant.isStart = true;
 			log.debug(String.format("not found last block, start empty node"));
