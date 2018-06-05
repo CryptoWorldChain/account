@@ -7,8 +7,12 @@ import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.gens.Act.Account;
+import org.brewchain.account.gens.Act.AccountValue;
 import org.brewchain.account.gens.Tx.MultiTransaction;
+import org.brewchain.account.gens.Tx.MultiTransactionInput;
+import org.brewchain.account.trie.DBTrie;
 import org.brewchain.account.trie.StateTrie;
+import org.brewchain.account.util.OEntityBuilder;
 import org.fc.brewchain.bcapi.EncAPI;
 import org.fc.brewchain.bcapi.KeyPairs;
 
@@ -39,5 +43,26 @@ public class ActuatorCreateContract extends AbstractTransactionActuator implemen
 		// 创建
 		oAccountHelper.CreateContract(oTransactionHelper.getContractAddressByTransaction(oMultiTransaction), null,
 				oMultiTransaction.getTxBody().getData().toByteArray());
+		
+		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
+			// 取发送方账户
+			Account sender = senders.get(oInput.getAddress());
+			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
+
+			senderAccountValue.setBalance(senderAccountValue.getBalance() - oInput.getAmount() - oInput.getFee());
+
+			senderAccountValue.setNonce(senderAccountValue.getNonce() + 1);
+			DBTrie oCacheTrie = new DBTrie(this.dao);
+			if (senderAccountValue.getStorage() == null) {
+				oCacheTrie.setRoot(null);
+			} else {
+				oCacheTrie.setRoot(senderAccountValue.getStorage().toByteArray());
+			}
+			oCacheTrie.put(sender.getAddress().toByteArray(), senderAccountValue.build().toByteArray());
+			senderAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
+			keys.add(OEntityBuilder.byteKey2OKey(sender.getAddress().toByteArray()));
+			values.add(senderAccountValue.build());
+		}
+		
 	}
 }
