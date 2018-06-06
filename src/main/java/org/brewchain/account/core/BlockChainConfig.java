@@ -10,6 +10,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import onight.oapi.scala.commons.SessionModules;
 import onight.osgi.annotation.NActorProvider;
+import onight.tfw.mservice.NodeHelper;
 
 @NActorProvider
 @Data
@@ -18,7 +19,8 @@ import onight.osgi.annotation.NActorProvider;
 public class BlockChainConfig extends SessionModules<Message> {
 	private int minerReward = props().get("block.miner.reward", 0);
 	private String pwd = props().get("org.bc.manage.node.dev.pwd", null);
-	private String keystoreNumber = props().get("org.bc.manage.node.keystore.num", "1");
+	private String keystoreNumber = props().get("org.bc.manage.node.keystore.num",
+			String.valueOf(Math.abs(NodeHelper.getCurrNodeListenOutPort() - 5100 + 1)));
 
 	@Override
 	public String[] getCmds() {

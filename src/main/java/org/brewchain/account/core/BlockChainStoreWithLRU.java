@@ -45,7 +45,7 @@ public class BlockChainStoreWithLRU implements ActorService {
 	protected ReadWriteLock rwLock = new ReentrantReadWriteLock();
 	protected ALock readLock = new ALock(rwLock.readLock());
 	protected ALock writeLock = new ALock(rwLock.writeLock());
-	
+
 	public BlockChainStoreWithLRU() {
 		this.storage = new ConcurrentHashMap<Integer, List<byte[]>>();
 		this.blocks = new LRUCache<String, BlockEntity>(KeyConstant.CACHE_SIZE);
@@ -85,7 +85,7 @@ public class BlockChainStoreWithLRU implements ActorService {
 	public void add(BlockEntity oBlock, String hexHash) {
 		int number = oBlock.getHeader().getNumber();
 		final byte[] hash = oBlock.getHeader().getBlockHash().toByteArray();
-
+		log.debug("store block number::" + number + " hash::" + hexHash);
 		if (storage.containsKey(number)) {
 			storage.get(number).add(hash);
 		} else {

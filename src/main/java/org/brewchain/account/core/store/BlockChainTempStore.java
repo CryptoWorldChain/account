@@ -34,8 +34,10 @@ public class BlockChainTempStore implements ActorService {
 	@ActorRequire(name = "bc_encoder", scope = "global")
 	EncAPI encApi;
 
-	private int maxNumber = 0;
+	private int maxNumber = -1;
+	private int maxStableNumber = -1;
 	private BlockChainTempNode maxBlock = null;
+	private BlockChainTempNode maxStableBlock = null;
 	protected final TreeMap<String, BlockChainTempNode> storage;
 
 	protected ReadWriteLock rwLock = new ReentrantReadWriteLock();
@@ -47,14 +49,12 @@ public class BlockChainTempStore implements ActorService {
 	}
 
 	public void tryAdd(String hash, String parentHash, int number) {
+		tryAdd(hash, parentHash, number, false);
+	}
+
+	public void tryAdd(String hash, String parentHash, int number, boolean isStable) {
 		try (ALock l = writeLock.lock()) {
-			BlockChainTempNode oNode = new BlockChainTempNode(hash, parentHash, number, false);
-			if (this.storage.containsKey(parentHash)) {
-				BlockChainTempNode oParent = this.storage.get(parentHash);
-				oParent.setChild(true);
-				this.storage.put(parentHash, oParent);
-				log.warn("may be split::" + number + " hash::" + hash + " parentHash::" + parentHash);
-			}
+			BlockChainTempNode oNode = new BlockChainTempNode(hash, parentHash, number, isStable);
 			if (!this.storage.containsKey(hash)) {
 				this.storage.put(hash, oNode);
 			}
@@ -63,12 +63,19 @@ public class BlockChainTempStore implements ActorService {
 				maxNumber = number;
 				maxBlock = oNode;
 			}
+
+			if (isStable) {
+				if (maxStableNumber < number) {
+					maxStableNumber = number;
+					maxStableBlock = oNode;
+				}
+			}
 		}
 	}
 
 	public BlockChainTempNode tryAddAndPop(String hash, String parentHash, int number) {
 		try (ALock l = writeLock.lock()) {
-			tryAdd(hash, parentHash, number);
+			tryAdd(hash, parentHash, number, true);
 			// loop to stable node and pop
 
 			int count = 0;
@@ -98,6 +105,47 @@ public class BlockChainTempStore implements ActorService {
 		}
 	}
 
+	public BlockChainTempNode getAndDeleteByParent(String parentHash) {
+		try (ALock l = readLock.lock()) {
+			BlockChainTempNode oNode = getByParent(parentHash);
+			if (oNode != null) {
+				this.storage.remove(oNode.getHash());
+				return oNode;
+			}
+			return null;
+		}
+	}
+
+	public BlockChainTempNode get(String hash) {
+		try (ALock l = readLock.lock()) {
+			return this.storage.get(hash);
+		}
+	}
+
+	public BlockChainTempNode getByParent(String parentHash) {
+		try (ALock l = readLock.lock()) {
+			for (Iterator<Map.Entry<String, BlockChainTempNode>> it = storage.entrySet().iterator(); it.hasNext();) {
+				Map.Entry<String, BlockChainTempNode> item = it.next();
+				if (item.getValue().getParentHash().equals(parentHash)) {
+					return item.getValue();
+				}
+			}
+			return null;
+		}
+	}
+
+	public BlockChainTempNode getByNumber(int number) {
+		try (ALock l = readLock.lock()) {
+			for (Iterator<Map.Entry<String, BlockChainTempNode>> it = storage.entrySet().iterator(); it.hasNext();) {
+				Map.Entry<String, BlockChainTempNode> item = it.next();
+				if (item.getValue().getNumber() == number) {
+					return item.getValue();
+				}
+			}
+			return null;
+		}
+	}
+
 	public int getBlockCount() {
 		return storage.size();
 	}
@@ -110,11 +158,10 @@ public class BlockChainTempStore implements ActorService {
 
 	public String dump() {
 		String dump = "";
-		for (Iterator<Map.Entry<String, BlockChainTempNode>> it =storage.entrySet().iterator(); it
-				.hasNext();) {
+		for (Iterator<Map.Entry<String, BlockChainTempNode>> it = storage.entrySet().iterator(); it.hasNext();) {
 			Map.Entry<String, BlockChainTempNode> item = it.next();
-			dump += String.format("%s : %s", item.getKey(), item.getValue().toString());
-			
+			dump += String.format("%s : %s\\n", item.getKey(), item.getValue().toString());
+
 		}
 		return dump;
 	}

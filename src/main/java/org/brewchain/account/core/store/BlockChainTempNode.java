@@ -13,18 +13,13 @@ public class BlockChainTempNode {
 	private String hash;
 	private int number;
 	private String parentHash;
-	private boolean isChild = true;
 	private boolean isStable = false;
 
-	public BlockChainTempNode(String hash, String parentHash, int number, boolean isChild) {
+	public BlockChainTempNode(String hash, String parentHash, int number, boolean isStable) {
 		this.hash = hash;
 		this.parentHash = parentHash;
 		this.number = number;
-		this.isChild = isChild;
-	}
-
-	public void setChild(boolean isChild) {
-		this.isChild = isChild;
+		this.isStable = isStable;
 	}
 
 	public void setStable(boolean isStable) {
@@ -32,7 +27,7 @@ public class BlockChainTempNode {
 	}
 
 	public String toString() {
-		return "hash::" + hash + " parent::" + parentHash + " number::" + number + " isChild::"
-				+ (isChild ? "true" : "false");
+		return "hash::" + hash + " parent::" + parentHash + " number::" + number + " stable::"
+				+ (isStable ? "true" : "false");
 	}
 }

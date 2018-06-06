@@ -1,6 +1,5 @@
 package org.brewchain.account.core;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -10,7 +9,6 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
-import org.bouncycastle.util.encoders.Hex;
 import org.brewchain.account.core.actuator.*;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.util.FastByteComparisons;
@@ -20,7 +18,6 @@ import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.brewchain.account.gens.Act.Account;
 import org.brewchain.account.gens.Act.AccountValue;
 import org.brewchain.account.gens.Tx.MultiTransaction;
-import org.brewchain.account.gens.Tx.MultiTransaction.Builder;
 import org.brewchain.account.gens.Tx.MultiTransactionBody;
 import org.brewchain.account.gens.Tx.MultiTransactionInput;
 import org.brewchain.account.gens.Tx.MultiTransactionNode;
@@ -36,7 +33,6 @@ import org.brewchain.account.trie.StateTrie;
 import org.fc.brewchain.bcapi.EncAPI;
 import org.fc.brewchain.bcapi.KeyPairs;
 
-import com.google.protobuf.AbstractMessageLite;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -68,6 +64,8 @@ public class TransactionHelper implements ActorService {
 	WaitSendHashMapDB oSendingHashMapDB; // 保存待广播交易
 	@ActorRequire(name = "WaitBlock_HashMapDB", scope = "global")
 	WaitBlockHashMapDB oPendingHashMapDB; // 保存待打包block的交易
+	@ActorRequire(name = "Block_StateTrie", scope = "global")
+	StateTrie stateTrie;
 
 	/**
 	 * 保存交易方法。 交易不会立即执行，而是等待被广播和打包。只有在Block中的交易，才会被执行。 交易签名规则 1. 清除signatures 2.
@@ -84,7 +82,7 @@ public class TransactionHelper implements ActorService {
 		oNode.setNode(KeyConstant.node.getNode());
 		oMultiTransaction.setTxNode(oNode);
 
-		MultiTransaction formatMultiTransaction = verifyAndSaveMultiTransaction(oMultiTransaction, null);
+		MultiTransaction formatMultiTransaction = verifyAndSaveMultiTransaction(oMultiTransaction);
 
 		// 保存交易到缓存中，用于广播
 		oSendingHashMapDB.put(formatMultiTransaction.getTxHash().toByteArray(), formatMultiTransaction.toByteArray());
@@ -103,12 +101,12 @@ public class TransactionHelper implements ActorService {
 	public ByteString CreateGenesisMultiTransaction(MultiTransaction.Builder oMultiTransaction) throws Exception {
 		Map<ByteString, Account> senders = new HashMap<ByteString, Account>();
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
-			senders.put(oInput.getAddress(), oAccountHelper.GetAccount(oInput.getAddress().toByteArray(), null));
+			senders.put(oInput.getAddress(), oAccountHelper.GetAccount(oInput.getAddress().toByteArray()));
 		}
 
 		Map<ByteString, Account> receivers = new HashMap<ByteString, Account>();
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
-			receivers.put(oOutput.getAddress(), oAccountHelper.GetAccount(oOutput.getAddress().toByteArray(), null));
+			receivers.put(oOutput.getAddress(), oAccountHelper.GetAccount(oOutput.getAddress().toByteArray()));
 		}
 
 		iTransactionActuator oiTransactionActuator;
@@ -143,7 +141,7 @@ public class TransactionHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public void SyncTransaction(MultiTransaction.Builder oMultiTransaction) throws Exception {
-		MultiTransaction formatMultiTransaction = verifyAndSaveMultiTransaction(oMultiTransaction, null);
+		MultiTransaction formatMultiTransaction = verifyAndSaveMultiTransaction(oMultiTransaction);
 
 		// 交易的发送地址和接收地址如果不存在，则创建
 		// 如果交易是多重签名交易，根据extraData创建
@@ -158,8 +156,7 @@ public class TransactionHelper implements ActorService {
 	 * 
 	 * @param oTransaction
 	 */
-	public void ExecuteTransaction(LinkedList<MultiTransaction> oMultiTransactions, StateTrie oStateTrie)
-			throws Exception {
+	public void ExecuteTransaction(LinkedList<MultiTransaction> oMultiTransactions) throws Exception {
 
 		for (MultiTransaction oTransaction : oMultiTransactions) {
 			LinkedList<OKey> keys = new LinkedList<OKey>();
@@ -169,39 +166,39 @@ public class TransactionHelper implements ActorService {
 			// TODO 枚举交易类型
 			if (oTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("01"))) {
 				oiTransactionActuator = new ActuatorCreateUnionAccount(this.oAccountHelper, this, null, encApi, dao,
-						oStateTrie);
+						this.stateTrie);
 			} else if (oTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("02"))) {
 				oiTransactionActuator = new ActuatorTokenTransaction(oAccountHelper, this, null, encApi, dao,
-						oStateTrie);
+						this.stateTrie);
 			} else if (oTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("03"))) {
 				oiTransactionActuator = new ActuatorUnionAccountTransaction(oAccountHelper, this, null, encApi, dao,
-						oStateTrie);
+						this.stateTrie);
 			} else if (oTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("04"))) {
 				oiTransactionActuator = new ActuatorCallInternalFunction(oAccountHelper, this, null, encApi, dao,
-						oStateTrie);
+						this.stateTrie);
 			} else if (oTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("05"))) {
 				oiTransactionActuator = new ActuatorCryptoTokenTransaction(oAccountHelper, this, null, encApi, dao,
-						oStateTrie);
+						this.stateTrie);
 			} else if (oTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("06"))) {
 				oiTransactionActuator = new ActuatorLockTokenTransaction(oAccountHelper, this, null, encApi, dao,
-						oStateTrie);
+						this.stateTrie);
 			} else if (oTransaction.getTxBody().getOutputsCount() == 0) {
-				oiTransactionActuator = new ActuatorCreateContract(oAccountHelper, this, null, encApi, dao, oStateTrie);
+				oiTransactionActuator = new ActuatorCreateContract(oAccountHelper, this, null, encApi, dao,
+						this.stateTrie);
 			} else {
-				oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, this, null, encApi, dao, oStateTrie);
+				oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, this, null, encApi, dao,
+						this.stateTrie);
 			}
 
 			try {
 				Map<ByteString, Account> senders = new HashMap<ByteString, Account>();
 				for (MultiTransactionInput oInput : oTransaction.getTxBody().getInputsList()) {
-					senders.put(oInput.getAddress(),
-							oAccountHelper.GetAccount(oInput.getAddress().toByteArray(), oStateTrie));
+					senders.put(oInput.getAddress(), oAccountHelper.GetAccount(oInput.getAddress().toByteArray()));
 				}
 
 				Map<ByteString, Account> receivers = new HashMap<ByteString, Account>();
 				for (MultiTransactionOutput oOutput : oTransaction.getTxBody().getOutputsList()) {
-					receivers.put(oOutput.getAddress(),
-							oAccountHelper.GetAccount(oOutput.getAddress().toByteArray(), oStateTrie));
+					receivers.put(oOutput.getAddress(), oAccountHelper.GetAccount(oOutput.getAddress().toByteArray()));
 				}
 
 				oiTransactionActuator.onPrepareExecute(oTransaction, senders, receivers);
@@ -211,7 +208,7 @@ public class TransactionHelper implements ActorService {
 				values.addAll(oiTransactionActuator.getValues());
 
 				for (int i = 0; i < keys.size(); i++) {
-					oStateTrie.put(keys.get(i).getData().toByteArray(), values.get(i).toByteArray());
+					this.stateTrie.put(keys.get(i).getData().toByteArray(), values.get(i).toByteArray());
 					log.debug("put trie key::" + encApi.hexEnc(keys.get(i).getData().toByteArray()) + " values::"
 							+ encApi.hexEnc(values.get(i).toByteArray()));
 				}
@@ -589,17 +586,16 @@ public class TransactionHelper implements ActorService {
 	 * @param oMultiTransaction
 	 * @throws Exception
 	 */
-	private MultiTransaction verifyAndSaveMultiTransaction(MultiTransaction.Builder oMultiTransaction,
-			StateTrie oStateTrie) throws Exception {
+	private MultiTransaction verifyAndSaveMultiTransaction(MultiTransaction.Builder oMultiTransaction)
+			throws Exception {
 		Map<ByteString, Account> senders = new HashMap<ByteString, Account>();
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
-			senders.put(oInput.getAddress(), oAccountHelper.GetAccount(oInput.getAddress().toByteArray(), oStateTrie));
+			senders.put(oInput.getAddress(), oAccountHelper.GetAccount(oInput.getAddress().toByteArray()));
 		}
 
 		Map<ByteString, Account> receivers = new HashMap<ByteString, Account>();
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
-			receivers.put(oOutput.getAddress(),
-					oAccountHelper.GetAccountOrCreate(oOutput.getAddress().toByteArray(), oStateTrie));
+			receivers.put(oOutput.getAddress(), oAccountHelper.GetAccountOrCreate(oOutput.getAddress().toByteArray()));
 		}
 
 		iTransactionActuator oiTransactionActuator;
@@ -610,25 +606,26 @@ public class TransactionHelper implements ActorService {
 		// 03 -- 多重签名账户交易
 		if (oMultiTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("01"))) {
 			oiTransactionActuator = new ActuatorCreateUnionAccount(this.oAccountHelper, null, null, encApi, dao,
-					oStateTrie);
+					this.stateTrie);
 		} else if (oMultiTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("02"))) {
-			oiTransactionActuator = new ActuatorTokenTransaction(oAccountHelper, null, null, encApi, dao, oStateTrie);
+			oiTransactionActuator = new ActuatorTokenTransaction(oAccountHelper, null, null, encApi, dao,
+					this.stateTrie);
 		} else if (oMultiTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("03"))) {
 			oiTransactionActuator = new ActuatorUnionAccountTransaction(oAccountHelper, null, null, encApi, dao,
-					oStateTrie);
+					this.stateTrie);
 		} else if (oMultiTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("04"))) {
 			oiTransactionActuator = new ActuatorCallInternalFunction(oAccountHelper, null, null, encApi, dao,
-					oStateTrie);
+					this.stateTrie);
 		} else if (oMultiTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("05"))) {
 			oiTransactionActuator = new ActuatorCryptoTokenTransaction(oAccountHelper, null, null, encApi, dao,
-					oStateTrie);
+					this.stateTrie);
 		} else if (oMultiTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("06"))) {
 			oiTransactionActuator = new ActuatorLockTokenTransaction(oAccountHelper, this, null, encApi, dao,
-					oStateTrie);
+					this.stateTrie);
 		} else if (oMultiTransaction.getTxBody().getOutputsCount() == 0) {
-			oiTransactionActuator = new ActuatorCreateContract(oAccountHelper, null, null, encApi, dao, oStateTrie);
+			oiTransactionActuator = new ActuatorCreateContract(oAccountHelper, null, null, encApi, dao, this.stateTrie);
 		} else {
-			oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, null, null, encApi, dao, oStateTrie);
+			oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, null, null, encApi, dao, this.stateTrie);
 		}
 
 		// 如果交易本身需要验证签名

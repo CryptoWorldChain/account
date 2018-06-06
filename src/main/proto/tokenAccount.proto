@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package org.brewchain.account.gens;
+import "act.proto";
+
+message TokenMappingAccount {
+    bytes hash = 1;
+    AccountCryptoToken tokenInfo = 2;
+}
