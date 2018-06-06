@@ -138,6 +138,10 @@ public class BlockHelper implements ActorService {
 		oBlockEntity.setBody(oBlockBody);
 		oBlockEntity.setMiner(oBlockMiner);
 
+		log.debug("new block, number::" + oBlockEntity.getHeader().getNumber() + " hash::"
+				+ encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()) + " parent::"
+				+ encApi.hexEnc(oBlockEntity.getHeader().getParentHash().toByteArray()));
+
 		log.info(String.format("LOGFILTER %s %s %s %s 创建区块[%s]", KeyConstant.node.getNode(), "account", "create",
 				"block", encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray())));
 

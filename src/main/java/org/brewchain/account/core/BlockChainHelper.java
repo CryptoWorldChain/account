@@ -139,7 +139,7 @@ public class BlockChainHelper implements ActorService {
 	}
 
 	public int getLastBlockNumber() {
-		if (blockChainTempStore.getMaxStableNumber() == 0) {
+		if (blockChainTempStore.getMaxStableNumber() == -1) {
 			BlockEntity oBlockEntity;
 			try {
 				oBlockEntity = GetStableBestBlock();
@@ -512,6 +512,7 @@ public class BlockChainHelper implements ActorService {
 			if (coinAddress == null) {
 				throw new Exception("node account not found");
 			}
+			log.info("start account with address::" + coinAddressHex);
 			NodeDef oNodeDef = new NodeDef();
 			oNodeDef.setBcuid(bcuid);
 			oNodeDef.setAddress(address);

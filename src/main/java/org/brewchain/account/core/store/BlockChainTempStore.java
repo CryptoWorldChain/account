@@ -34,8 +34,8 @@ public class BlockChainTempStore implements ActorService {
 	@ActorRequire(name = "bc_encoder", scope = "global")
 	EncAPI encApi;
 
-	private int maxNumber = 0;
-	private int maxStableNumber = 0;
+	private int maxNumber = -1;
+	private int maxStableNumber = -1;
 	private BlockChainTempNode maxBlock = null;
 	private BlockChainTempNode maxStableBlock = null;
 	protected final TreeMap<String, BlockChainTempNode> storage;
