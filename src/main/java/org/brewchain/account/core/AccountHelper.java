@@ -51,23 +51,23 @@ public class AccountHelper implements ActorService {
 	}
 
 	public synchronized Account CreateAccount(byte[] address, byte[] pubKey) {
-		return CreateAccount(address, pubKey, 0, 0, 0, null, null);
+		return CreateAccount(address, pubKey, 0, 0, 0, null, null, null);
 	}
 
-	public synchronized Account CreateContract(byte[] address, byte[] pubKey, byte[] code) {
+	public synchronized Account CreateContract(byte[] address, byte[] pubKey, byte[] code, byte[] exdata) {
 		if (code == null) {
 			return null;
 		}
-		return CreateAccount(address, pubKey, 0, 0, 0, null, code);
+		return CreateAccount(address, pubKey, 0, 0, 0, null, code, exdata);
 	}
 
 	public synchronized Account CreateUnionAccount(byte[] address, byte[] pubKey, long max, long acceptMax,
 			int acceptLimit, List<ByteString> addresses) {
-		return CreateAccount(address, pubKey, max, acceptMax, acceptLimit, addresses, null);
+		return CreateAccount(address, pubKey, max, acceptMax, acceptLimit, addresses, null, null);
 	}
 
 	private synchronized Account CreateAccount(byte[] address, byte[] pubKey, long max, long acceptMax, int acceptLimit,
-			List<ByteString> addresses, byte[] code) {
+			List<ByteString> addresses, byte[] code, byte[] exdata) {
 		Account.Builder oUnionAccount = Account.newBuilder();
 		AccountValue.Builder oUnionAccountValue = AccountValue.newBuilder();
 
@@ -85,6 +85,10 @@ public class AccountHelper implements ActorService {
 		if (code != null) {
 			oUnionAccountValue.setCode(ByteString.copyFrom(code));
 			oUnionAccountValue.setCodeHash(ByteString.copyFrom(encApi.sha3Encode(code)));
+		}
+		
+		if (exdata != null) {
+			oUnionAccountValue.setData(ByteString.copyFrom(exdata));
 		}
 
 		oUnionAccount.setAddress(ByteString.copyFrom(address));

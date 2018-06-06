@@ -52,7 +52,9 @@ public class LRUCache<K, V> extends LinkedHashMap<K, V> {
 			writeLock.unlock();
 		}
 	}
-	
-	
 
+	@Override
+	public String toString() {
+		return "LRUCache [MAX_CACHE_SIZE=" + MAX_CACHE_SIZE + ", globalLock=" + globalLock + ", readLock=" + readLock + ", writeLock=" + writeLock + "]";
+	}
 }
