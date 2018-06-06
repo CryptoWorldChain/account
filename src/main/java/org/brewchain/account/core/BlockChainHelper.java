@@ -37,6 +37,7 @@ import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.fc.brewchain.bcapi.EncAPI;
 import org.fc.brewchain.bcapi.KeyStoreHelper;
 
+import com.google.inject.Key;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -469,6 +470,7 @@ public class BlockChainHelper implements ActorService {
 			oNodeDef.setoAccount(oNodeAccount);
 			KeyConstant.node = oNodeDef;
 			reloadBlockCache();
+			reloadBlockCacheByNumber();
 			log.debug("block load complete");
 		} catch (Exception e) {
 			blockChainStore.clear();
@@ -483,6 +485,62 @@ public class BlockChainHelper implements ActorService {
 	 * 
 	 * @throws Exception
 	 */
+	public void reloadBlockCacheByNumber() throws Exception {
+		int bestHeight = blockChainStore.getLastBlockNumber();
+		int blockNumber = 0;
+		
+		if (bestHeight <= 0){
+			log.warn("load block empty");
+			return;
+		}
+		
+		//缓存定量的block
+		if(bestHeight > KeyConstant.CACHE_SIZE){
+			blockNumber = bestHeight - KeyConstant.CACHE_SIZE;
+		}
+		
+		log.debug(String.format("load block into cache from number = %s to number = %s", blockNumber, bestHeight));
+		
+		BlockEntity oBlockEntity = blockChainStore.getBlockByNumber(blockNumber);
+		
+		if (oBlockEntity == null) {
+			KeyConstant.isStart = true;
+			log.debug(String.format("not found number = %s block, start empty node", blockNumber));
+			return;
+		}
+
+		while (oBlockEntity != null) {
+			try {
+				if (blockNumber > bestHeight){
+					break;
+				}
+				if (blockNumber != oBlockEntity.getHeader().getNumber()) {
+					throw new Exception(String.format("respect block number %s ,get block number %s",blockNumber, oBlockEntity.getHeader().getNumber()));
+				}
+				blockChainStore.add(oBlockEntity,encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()));
+				log.info(String.format("load block::%s number::%s from datasource",encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()),oBlockEntity.getHeader().getNumber()));
+
+				if (blockNumber <= bestHeight) {
+					blockNumber += 1;
+				} else {
+					break;
+				}
+				oBlockEntity = getBlockByNumber(blockNumber);
+				if(oBlockEntity == null){
+					break;
+				}
+			} catch (Exception e) {
+				log.error("reload block error : " + e.getMessage());
+			}
+		}
+
+		if (blockNumber != bestHeight + 1) {
+			log.error("block chain data is wrong, number::" + blockNumber);
+			log.error("block chain data is wrong, the best number::" + bestHeight);
+		}
+
+		KeyConstant.isStart = true;
+	}
 	public void reloadBlockCache() throws Exception {
 		BlockEntity oBlockEntity;
 		oBlockEntity = GetUnStableBestBlock();
@@ -495,9 +553,9 @@ public class BlockChainHelper implements ActorService {
 		blockChainStore.add(oBlockEntity, encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()));
 		// blockCache.insertFirst(oBlockEntity.getHeader().getBlockHash().toByteArray(),
 		// blockNumber);
-
+		
 		byte[] parentHash = oBlockEntity.getHeader().getParentHash().toByteArray();
-
+		
 		while (parentHash != null) {
 			BlockEntity.Builder loopBlockEntity = null;
 			try {
@@ -516,7 +574,7 @@ public class BlockChainHelper implements ActorService {
 					log.info(String.format("load block::%s number::%s from datasource",
 							encApi.hexEnc(loopBlockEntity.getHeader().getBlockHash().toByteArray()),
 							loopBlockEntity.getHeader().getNumber()));
-
+					
 					if (loopBlockEntity.getHeader().getParentHash() != null) {
 						parentHash = loopBlockEntity.getHeader().getParentHash().toByteArray();
 					} else {
@@ -527,11 +585,11 @@ public class BlockChainHelper implements ActorService {
 				// TODO: handle exception
 			}
 		}
-
+		
 		if (blockNumber != 0) {
 			log.error("block chain data is wrong, parent number::" + blockNumber);
 		}
-
+		
 		KeyConstant.isStart = true;
 	}
 
