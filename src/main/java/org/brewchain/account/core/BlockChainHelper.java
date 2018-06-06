@@ -523,7 +523,7 @@ public class BlockChainHelper implements ActorService {
 			oNodeDef.setoAccount(oNodeAccount);
 			KeyConstant.node = oNodeDef;
 			reloadBlockCache();
-			reloadBlockCacheByNumber();
+			// reloadBlockCacheByNumber();
 			log.debug("block load complete");
 		} catch (Exception e) {
 			blockChainStore.clear();
