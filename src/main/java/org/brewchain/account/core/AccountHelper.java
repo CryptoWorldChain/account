@@ -269,13 +269,13 @@ public class AccountHelper implements ActorService {
 		if (oAccount == null) {
 			throw new Exception("account not founded::" + encApi.hexEnc(addr));
 		}
+		token.setOwner(ByteString.copyFrom(addr));
+		token.setNonce(token.getNonce() + 1);
+		token.setOwnertime(new Date().getTime());
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 
 		for (int i = 0; i < oAccountValue.getCryptosList().size(); i++) {
 			if (oAccountValue.getCryptosList().get(i).getSymbol().equals(symbol)) {
-				token.setOwner(ByteString.copyFrom(addr));
-				token.setNonce(token.getNonce() + 1);
-
 				AccountCryptoValue.Builder oAccountCryptoValue = oAccountValue.getCryptos(i).toBuilder();
 				boolean isTokenExists = false;
 				for (int k = 0; k < oAccountCryptoValue.getTokensCount(); k++) {
@@ -288,7 +288,7 @@ public class AccountHelper implements ActorService {
 					oAccountCryptoValue.addTokens(token);
 					oAccountValue.setCryptos(i, oAccountCryptoValue);
 				}
-
+				tokenMappingAccount(token);
 				putAccountValue(addr, oAccountValue.build());
 				return oAccountValue.getCryptosList().get(i).getTokensCount();
 			}
@@ -299,6 +299,7 @@ public class AccountHelper implements ActorService {
 		oAccountCryptoValue.setSymbol(symbol);
 		oAccountCryptoValue.addTokens(token);
 		oAccountValue.addCryptos(oAccountCryptoValue.build());
+		tokenMappingAccount(token);
 		putAccountValue(addr, oAccountValue.build());
 		return 1;
 	}
@@ -521,6 +522,7 @@ public class AccountHelper implements ActorService {
 			oAccountCryptoToken.setNonce(0);
 			oAccountCryptoToken.setOwnertime(new Date().getTime());
 			oAccountCryptoValue.addTokens(oAccountCryptoToken);
+			tokenMappingAccount(oAccountCryptoToken);
 		}
 
 		oAccountValue.addCryptos(oAccountCryptoValue);
@@ -590,4 +592,26 @@ public class AccountHelper implements ActorService {
 		
 		dao.getAccountDao().batchPuts(keys.toArray(keysArray), list.toArray(valuesArray));
 	}
+	
+	public void tokenMappingAccount(AccountCryptoToken.Builder acBuilder) {
+		dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(acBuilder.getHash()),
+				OEntityBuilder.byteValue2OValue(acBuilder.build().toByteArray()));
+	}
+	
+	/**
+	 * 根据token的hash获取此token的信息
+	 * @param tokenHash
+	 * @return
+	 */
+	public AccountCryptoToken.Builder getCryptoTokenByTokenHash(ByteString tokenHash) {
+		AccountCryptoToken.Builder cryptoTokenBuild = null;
+		try {
+			OValue otValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(tokenHash)).get();
+			cryptoTokenBuild = AccountCryptoToken.parseFrom(otValue.getExtdata()).toBuilder();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return cryptoTokenBuild;
+	}
+	
 }

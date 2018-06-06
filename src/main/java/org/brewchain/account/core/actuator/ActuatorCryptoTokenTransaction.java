@@ -170,6 +170,9 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 					oAccountCryptoValue.addTokens(oAccountCryptoToken.build());
 					receiverAccountValue.setCryptos(k, oAccountCryptoValue);
 					isExistToken = true;
+					
+					//update token mapping acocunt
+					this.dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(oAccountCryptoToken.getHash()), OEntityBuilder.byteValue2OValue(oAccountCryptoToken.build().toByteArray()));
 					break;
 				}
 			}
@@ -185,7 +188,8 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 				oAccountCryptoValue.setSymbol(oOutput.getSymbol());
 				
 				receiverAccountValue.addCryptos(oAccountCryptoValue);
-				
+				//update token mapping acocunt
+				this.dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(oAccountCryptoToken.getHash()), OEntityBuilder.byteValue2OValue(oAccountCryptoToken.build().toByteArray()));
 			}
 			
 			DBTrie oCacheTrie = new DBTrie(this.dao);
