@@ -100,7 +100,7 @@ public class BlockHelper implements ActorService {
 		BlockMiner.Builder oBlockMiner = BlockMiner.newBuilder();
 
 		// 获取本节点的最后一块Block
-		BlockEntity oBestBlockEntity = blockChainHelper.GetUnStableBestBlock();
+		BlockEntity oBestBlockEntity = blockChainHelper.GetStableBestBlock();
 		if (oBestBlockEntity == null) {
 			oBestBlockEntity = blockChainHelper.GetStableBestBlock();
 		}
