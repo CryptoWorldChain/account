@@ -53,7 +53,9 @@ public class BlockRollbackTest extends SessionModules<ReqTxTest> implements Acto
 	BlockChainHelper blockChainHelper;
 	@ActorRequire(name = "bc_encoder", scope = "global")
 	EncAPI encApi;
-
+	@ActorRequire(name = "Block_StateTrie", scope = "global")
+	StateTrie stateTrie;
+	
 	@Override
 	public String[] getCmds() {
 		return new String[] { PTSTCommand.BRT.name() };
@@ -239,7 +241,7 @@ public class BlockRollbackTest extends SessionModules<ReqTxTest> implements Acto
 	}
 
 	private void printAccount(byte[] addr, StateTrie oStateTrie) throws Exception {
-		log.debug(String.format("%s %s", accountHelper.getBalance(addr, oStateTrie), encApi.hexEnc(addr)));
+		log.debug(String.format("%s %s", accountHelper.getBalance(addr), encApi.hexEnc(addr)));
 	}
 
 	private BlockEntity makeBlock() throws Exception {
@@ -250,9 +252,8 @@ public class BlockRollbackTest extends SessionModules<ReqTxTest> implements Acto
 	}
 
 	private void printTrie(byte[] root) {
-		StateTrie oRollStateTrie = new StateTrie(this.dao, this.encApi);
-		oRollStateTrie.setRoot(root);
-		log.debug(oRollStateTrie.dumpStructure());
+		this.stateTrie.setRoot(root);
+		log.debug(this.stateTrie.dumpStructure());
 	}
 
 	private void printTrieValue(byte[] root) {

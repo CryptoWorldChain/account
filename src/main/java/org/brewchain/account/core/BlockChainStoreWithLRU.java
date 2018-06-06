@@ -1,17 +1,25 @@
 package org.brewchain.account.core;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
+import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.gens.Block.BlockEntity;
 import org.brewchain.account.util.ALock;
+import org.brewchain.account.util.LRUCache;
+import org.brewchain.account.util.OEntityBuilder;
+import org.brewchain.bcapi.backend.ODBException;
+import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.fc.brewchain.bcapi.EncAPI;
+
+import com.google.protobuf.InvalidProtocolBufferException;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -21,56 +29,54 @@ import onight.tfw.ntrans.api.annotation.ActorRequire;
 
 @NActorProvider
 @Provides(specifications = { ActorService.class }, strategy = "SINGLETON")
-@Instantiate(name = "BlockChainStore_HashMapDB")
+@Instantiate(name = "BlockChainStore_LRUHashMapDB")
 @Slf4j
 @Data
-public class BlockChainStore implements ActorService {
+public class BlockChainStoreWithLRU implements ActorService {
 	@ActorRequire(name = "bc_encoder", scope = "global")
 	EncAPI encApi;
 
-	protected final ConcurrentHashMap<Integer, List<byte[]>> storage;
-	protected final ConcurrentHashMap<String, BlockEntity> blocks;
+	@ActorRequire(name = "Def_Daos", scope = "global")
+	DefDaos dao;
+
+	protected final LinkedHashMap<Integer, List<byte[]>> storage;
+	protected final LRUCache<String, BlockEntity> blocks;
 
 	protected ReadWriteLock rwLock = new ReentrantReadWriteLock();
 	protected ALock readLock = new ALock(rwLock.readLock());
 	protected ALock writeLock = new ALock(rwLock.writeLock());
 
-	public BlockChainStore() {
-		this.storage = new ConcurrentHashMap<Integer, List<byte[]>>();
-		this.blocks = new ConcurrentHashMap<String, BlockEntity>();
+	public BlockChainStoreWithLRU() {
+		this.storage = new LinkedHashMap<Integer, List<byte[]>>();
+		this.blocks = new LRUCache<String, BlockEntity>(KeyConstant.CACHE_SIZE);
 	}
-	
+
 	public BlockEntity get(String hash) {
-		try (ALock l = readLock.lock()) {
-			return this.blocks.get(hash);
-		}
+		return this.blocks.get(hash);
+
 	}
-	
+
 	public boolean isExists(String hash) {
-		try (ALock l = readLock.lock()) {
-			return this.blocks.containsKey(hash);
-		}
+		return this.blocks.containsKey(hash);
+
 	}
 
 	public void rollBackTo(int blockNumber) {
-		try (ALock lw = writeLock.lock()) {
-			while (getLastBlockNumber() > blockNumber) {
-				this.storage.remove(getLastBlockNumber());
-			}
+		while (getLastBlockNumber() > blockNumber) {
+			this.storage.remove(getLastBlockNumber());
 		}
 	}
 
 	public byte[] getBlockHashByNumber(int blockNumber) {
-		try (ALock l = readLock.lock()) {
-			return storage.get(blockNumber).get(0);
-		}
+		return storage.get(blockNumber).get(0);
 	}
 
 	public BlockEntity getBlockByNumber(int blockNumber) {
 		try (ALock l = readLock.lock()) {
 			List<byte[]> hashs = this.storage.get(blockNumber);
 			if (hashs != null) {
-				return this.blocks.get(encApi.hexEnc(hashs.get(0)));
+				BlockEntity blockEntity = getBlockEntityByHash(hashs.get(0));
+				return blockEntity;
 			}
 			return null;
 		}
@@ -79,21 +85,17 @@ public class BlockChainStore implements ActorService {
 	public void add(BlockEntity oBlock, String hexHash) {
 		int number = oBlock.getHeader().getNumber();
 		final byte[] hash = oBlock.getHeader().getBlockHash().toByteArray();
-
-		try (ALock l = writeLock.lock()) {
-			if (storage.containsKey(number)) {
-				log.debug("storage exists block::" + number + " count::" + storage.get(number).size());
-				storage.get(number).add(hash);
-			} else {
-				log.debug("storage add block::" + number);
-				storage.put(number, new ArrayList<byte[]>() {
-					{
-						add(hash);
-					}
-				});
-			}
-			blocks.put(hexHash, oBlock);
+		log.debug("store block number::" + number + " hash::" + hexHash);
+		if (storage.containsKey(number)) {
+			storage.get(number).add(hash);
+		} else {
+			storage.put(number, new ArrayList<byte[]>() {
+				{
+					add(hash);
+				}
+			});
 		}
+		blocks.put(hexHash, oBlock);
 	}
 
 	public byte[] getBestBlock() {
@@ -124,6 +126,33 @@ public class BlockChainStore implements ActorService {
 		}
 	}
 
+	/**
+	 * 通过 hash 查询 BlockEntity 先从 this.blocks 中进行查询，如果查询不到，从数据库中进行查询
+	 * 
+	 * @param hash
+	 * @return
+	 */
+	public BlockEntity getBlockEntityByHash(byte[] hash) {
+		if (hash != null) {
+			BlockEntity blockEntity = this.blocks.get(encApi.hexEnc(hash));
+			if (blockEntity == null) {
+				OValue v = null;
+				try {
+					v = dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(hash)).get();
+					if (v != null) {
+						blockEntity = BlockEntity.parseFrom(v.getExtdata());
+					}
+				} catch (ODBException | InterruptedException | ExecutionException | InvalidProtocolBufferException e) {
+					log.error(String.format("dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(%s)).get()", hash));
+					return null;
+				}
+			}
+			return blockEntity;
+		} else {
+			return null;
+		}
+	}
+
 	public List<BlockEntity> getChildListBlocksEndWith(String blockHash, String endBlockHash, int maxCount) {
 		BlockEntity firstBlock = this.blocks.get(blockHash);
 		if (firstBlock == null)
@@ -137,7 +166,7 @@ public class BlockChainStore implements ActorService {
 			List<byte[]> hashs = this.storage.get(number + i);
 			if (hashs != null) {
 				for (int j = 0; j < hashs.size(); j++) {
-					BlockEntity child = this.blocks.get(encApi.hexEnc(hashs.get(j)));
+					BlockEntity child = getBlockEntityByHash(hashs.get(j));
 					if (child != null) {
 						blocks.add(child);
 					}
@@ -164,7 +193,7 @@ public class BlockChainStore implements ActorService {
 			List<byte[]> hashs = this.storage.get(number - i);
 			if (hashs != null) {
 				for (int j = 0; j < hashs.size(); j++) {
-					BlockEntity child = this.blocks.get(encApi.hexEnc(hashs.get(j)));
+					BlockEntity child = getBlockEntityByHash(hashs.get(j));
 					if (child != null) {
 						blocks.add(child);
 					}
