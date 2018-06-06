@@ -534,18 +534,15 @@ public class BlockChainHelper implements ActorService {
 			return;
 		}
 
-		while (oBlockEntity != null) {
+		while (oBlockEntity != null && blockNumber <= bestHeight) {
 			try {
-				if (blockNumber > bestHeight){
-					break;
-				}
 				if (blockNumber != oBlockEntity.getHeader().getNumber()) {
 					throw new Exception(String.format("respect block number %s ,get block number %s",blockNumber, oBlockEntity.getHeader().getNumber()));
 				}
 				blockChainStore.add(oBlockEntity,encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()));
 				log.info(String.format("load block::%s number::%s from datasource",encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()),oBlockEntity.getHeader().getNumber()));
 
-				if (blockNumber <= bestHeight) {
+				if (blockNumber < bestHeight) {
 					blockNumber += 1;
 				} else {
 					break;
@@ -559,7 +556,7 @@ public class BlockChainHelper implements ActorService {
 			}
 		}
 
-		if (blockNumber != bestHeight + 1) {
+		if (blockNumber != bestHeight) {
 			log.error("block chain data is wrong, number::" + blockNumber);
 			log.error("block chain data is wrong, the best number::" + bestHeight);
 		}
