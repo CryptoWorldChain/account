@@ -1,8 +1,8 @@
 package org.brewchain.account.core;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -39,7 +39,7 @@ public class BlockChainStoreWithLRU implements ActorService {
 	@ActorRequire(name = "Def_Daos", scope = "global")
 	DefDaos dao;
 
-	protected final LinkedHashMap<Integer, List<byte[]>> storage;
+	protected final ConcurrentHashMap<Integer, List<byte[]>> storage;
 	protected final LRUCache<String, BlockEntity> blocks;
 
 	protected ReadWriteLock rwLock = new ReentrantReadWriteLock();
@@ -47,7 +47,7 @@ public class BlockChainStoreWithLRU implements ActorService {
 	protected ALock writeLock = new ALock(rwLock.writeLock());
 	
 	public BlockChainStoreWithLRU() {
-		this.storage = new LinkedHashMap<Integer, List<byte[]>>();
+		this.storage = new ConcurrentHashMap<Integer, List<byte[]>>();
 		this.blocks = new LRUCache<String, BlockEntity>(KeyConstant.CACHE_SIZE);
 	}
 
