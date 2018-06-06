@@ -458,7 +458,9 @@ public class BlockChainHelper implements ActorService {
 					BufferedReader br = null;
 					try {
 						// read file
-
+						log.debug("keystore" + File.separator + "keystore"
+								+ blockChainConfig.getKeystoreNumber() + ".json");
+						
 						fr = new FileReader("keystore" + File.separator + "keystore"
 								+ blockChainConfig.getKeystoreNumber() + ".json");
 						br = new BufferedReader(fr);
@@ -504,24 +506,27 @@ public class BlockChainHelper implements ActorService {
 
 	public void onStart(String bcuid, String address, String name) {
 		try {
-			String coinAddressHex = getNodeAccount();
-			if (coinAddressHex == null) {
-				throw new Exception("node account not found");
-			}
-			byte[] coinAddress = encApi.hexDec(coinAddressHex);
-			if (coinAddress == null) {
-				throw new Exception("node account not found");
-			}
-			log.info("start account with address::" + coinAddressHex);
 			NodeDef oNodeDef = new NodeDef();
+
 			oNodeDef.setBcuid(bcuid);
 			oNodeDef.setAddress(address);
 			oNodeDef.setNode(name);
 
-			NodeAccount oNodeAccount = oNodeDef.new NodeAccount();
-			oNodeAccount.setAddress(encApi.hexEnc(coinAddress));
-			// oNodeAccount.setBcuid(oKeyStoreValue.getBcuid());
-			oNodeDef.setoAccount(oNodeAccount);
+			if (StringUtils.isNotBlank(bcuid)) {
+				NodeAccount oNodeAccount = oNodeDef.new NodeAccount();
+				String coinAddressHex = getNodeAccount();
+				if (coinAddressHex == null) {
+					throw new Exception("node account not found");
+				}
+				byte[] coinAddress = encApi.hexDec(coinAddressHex);
+				if (coinAddress == null) {
+					throw new Exception("node account not found");
+				}
+				log.info("start account with address::" + coinAddressHex);
+				oNodeAccount.setAddress(encApi.hexEnc(coinAddress));
+				oNodeDef.setoAccount(oNodeAccount);
+			}
+
 			KeyConstant.node = oNodeDef;
 			reloadBlockCache();
 			// reloadBlockCacheByNumber();
