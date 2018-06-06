@@ -50,7 +50,8 @@ public class DoubleTxTest extends SessionModules<ReqTxTest> implements ActorServ
 	DefDaos dao;
 	@ActorRequire(name = "Transaction_Helper", scope = "global")
 	TransactionHelper transactionHelper;
-
+	@ActorRequire(name = "Block_StateTrie", scope = "global")
+	StateTrie stateTrie;
 	@ActorRequire(name = "Block_Helper", scope = "global")
 	BlockHelper blockHelper;
 	@ActorRequire(name = "BlockChain_Helper", scope = "global")
@@ -116,67 +117,60 @@ public class DoubleTxTest extends SessionModules<ReqTxTest> implements ActorServ
 		// encApi.hexEnc(stateTrie.getRootHash()));
 
 		// StateTrie trie = new StateTrie();
-		StateTrie newStateTrie = new StateTrie(this.dao, this.encApi);
 		// newStateTrie.setRoot(null);
-		newStateTrie.put(cat.getBytes(), dog.getBytes());
-		log.debug(dog + " = " + new String(newStateTrie.get(cat.getBytes())));
+		this.stateTrie.put(cat.getBytes(), dog.getBytes());
+		log.debug(dog + " = " + new String(this.stateTrie.get(cat.getBytes())));
 
-		newStateTrie.put(ca.getBytes(), dude.getBytes());
-		log.debug(dude + " = " + new String(newStateTrie.get(ca.getBytes())));
+		this.stateTrie.put(ca.getBytes(), dude.getBytes());
+		log.debug(dude + " = " + new String(this.stateTrie.get(ca.getBytes())));
 
-		newStateTrie.put(doge.getBytes(), LONG_STRING.getBytes());
-		log.debug(LONG_STRING + " = " + new String(newStateTrie.get(doge.getBytes())));
+		this.stateTrie.put(doge.getBytes(), LONG_STRING.getBytes());
+		log.debug(LONG_STRING + " = " + new String(this.stateTrie.get(doge.getBytes())));
 
-		byte[] root1 = newStateTrie.getRootHash();
+		byte[] root1 = this.stateTrie.getRootHash();
 
-		StateTrie newStateTrie2 = new StateTrie(this.dao, this.encApi);
 
-		newStateTrie2.setRoot(root1);
-		newStateTrie2.put("aabbcc".getBytes(), "aabbcc".getBytes());
+		this.stateTrie.setRoot(root1);
+		this.stateTrie.put("aabbcc".getBytes(), "aabbcc".getBytes());
 		log.debug("root1:: " + test + " = "
-				+ (newStateTrie2.get(dog.getBytes()) == null ? "" : new String(newStateTrie2.get(dog.getBytes()))));
+				+ (this.stateTrie.get(dog.getBytes()) == null ? "" : new String(this.stateTrie.get(dog.getBytes()))));
 		log.debug("root1:: " + LONG_STRING + " = "
-				+ (newStateTrie2.get(doge.getBytes()) == null ? "" : new String(newStateTrie2.get(doge.getBytes()))));
-		log.debug("root1:: " + "aabbcc" + " = " + (newStateTrie2.get("aabbcc".getBytes()) == null ? ""
-				: new String(newStateTrie2.get("aabbcc".getBytes()))));
+				+ (this.stateTrie.get(doge.getBytes()) == null ? "" : new String(this.stateTrie.get(doge.getBytes()))));
+		log.debug("root1:: " + "aabbcc" + " = " + (this.stateTrie.get("aabbcc".getBytes()) == null ? ""
+				: new String(this.stateTrie.get("aabbcc".getBytes()))));
 
-		byte[] root11 = newStateTrie2.getRootHash();
-		StateTrie newStateTrie3 = new StateTrie(this.dao, this.encApi);
+		byte[] root11 = this.stateTrie.getRootHash();
 
-		newStateTrie3.setRoot(root11);
-		newStateTrie2.put("aabbcc".getBytes(), "aabbccdd".getBytes());
-		newStateTrie3.put("aabbccdd".getBytes(), "aabbccdd".getBytes());
+		this.stateTrie.setRoot(root11);
+		this.stateTrie.put("aabbcc".getBytes(), "aabbccdd".getBytes());
+		this.stateTrie.put("aabbccdd".getBytes(), "aabbccdd".getBytes());
 		log.debug("root1:: " + test + " = "
-				+ (newStateTrie3.get(dog.getBytes()) == null ? "" : new String(newStateTrie3.get(dog.getBytes()))));
+				+ (this.stateTrie.get(dog.getBytes()) == null ? "" : new String(this.stateTrie.get(dog.getBytes()))));
 		log.debug("root1:: " + LONG_STRING + " = "
-				+ (newStateTrie3.get(doge.getBytes()) == null ? "" : new String(newStateTrie3.get(doge.getBytes()))));
-		log.debug("root1:: " + "aabbcc" + " = " + (newStateTrie3.get("aabbcc".getBytes()) == null ? ""
-				: new String(newStateTrie3.get("aabbcc".getBytes()))));
-		log.debug("root1:: " + "aabbccdd" + " = " + (newStateTrie3.get("aabbccdd".getBytes()) == null ? ""
-				: new String(newStateTrie3.get("aabbccdd".getBytes()))));
-
-		StateTrie newStateTrie1 = new StateTrie(this.dao, this.encApi);
+				+ (this.stateTrie.get(doge.getBytes()) == null ? "" : new String(this.stateTrie.get(doge.getBytes()))));
+		log.debug("root1:: " + "aabbcc" + " = " + (this.stateTrie.get("aabbcc".getBytes()) == null ? ""
+				: new String(this.stateTrie.get("aabbcc".getBytes()))));
+		log.debug("root1:: " + "aabbccdd" + " = " + (this.stateTrie.get("aabbccdd".getBytes()) == null ? ""
+				: new String(this.stateTrie.get("aabbccdd".getBytes()))));
 
 		// stateTrie.setRoot(null);
-		newStateTrie1.put(dog.getBytes(), test.getBytes());
-		log.debug(test + " = " + new String(newStateTrie1.get(dog.getBytes())));
+		this.stateTrie.put(dog.getBytes(), test.getBytes());
+		log.debug(test + " = " + new String(this.stateTrie.get(dog.getBytes())));
 
-		newStateTrie1.put(test.getBytes(), LONG_STRING.getBytes());
-		log.debug(LONG_STRING + " = " + new String(newStateTrie1.get(test.getBytes())));
+		this.stateTrie.put(test.getBytes(), LONG_STRING.getBytes());
+		log.debug(LONG_STRING + " = " + new String(this.stateTrie.get(test.getBytes())));
 
-		byte[] root2 = newStateTrie1.getRootHash();
+		byte[] root2 = this.stateTrie.getRootHash();
 
-		StateTrie newStateTrie12 = new StateTrie(this.dao, this.encApi);
-
-		newStateTrie12.setRoot(root2);
+		this.stateTrie.setRoot(root2);
 		log.debug("root2:: " + test + " = "
-				+ (newStateTrie12.get(dog.getBytes()) == null ? "" : new String(newStateTrie12.get(dog.getBytes()))));
+				+ (this.stateTrie.get(dog.getBytes()) == null ? "" : new String(this.stateTrie.get(dog.getBytes()))));
 		log.debug("root2:: " + LONG_STRING + " = "
-				+ (newStateTrie12.get(test.getBytes()) == null ? "" : new String(newStateTrie12.get(test.getBytes()))));
+				+ (this.stateTrie.get(test.getBytes()) == null ? "" : new String(this.stateTrie.get(test.getBytes()))));
 
-		newStateTrie12.setRoot(root2);
-		log.debug("root2:: " + "aabbcc" + " = " + (newStateTrie12.get("aabbcc".getBytes()) == null ? ""
-				: new String(newStateTrie12.get("aabbcc".getBytes()))));
+		this.stateTrie.setRoot(root2);
+		log.debug("root2:: " + "aabbcc" + " = " + (this.stateTrie.get("aabbcc".getBytes()) == null ? ""
+				: new String(this.stateTrie.get("aabbcc".getBytes()))));
 
 		//
 		// // 创建账户1

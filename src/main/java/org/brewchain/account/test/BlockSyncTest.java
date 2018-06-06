@@ -58,7 +58,9 @@ public class BlockSyncTest extends SessionModules<ReqTxTest> implements ActorSer
 	BlockChainHelper blockChainHelper;
 	@ActorRequire(name = "bc_encoder", scope = "global")
 	EncAPI encApi;
-
+	@ActorRequire(name = "Block_StateTrie", scope = "global")
+	StateTrie stateTrie;
+	
 	@Override
 	public String[] getCmds() {
 		return new String[] { PTSTCommand.SYC.name() };
@@ -142,9 +144,7 @@ public class BlockSyncTest extends SessionModules<ReqTxTest> implements ActorSer
 	private void sendBlock(BlockEntity.Builder oBlockEntity, BlockEntity oBestBlock) {
 		try {
 			BlockHeader oBestBlockHeader = oBestBlock.getHeader();
-
-			final StateTrie oStateTrie = new StateTrie(this.dao, this.encApi);
-			oStateTrie.setRoot(oBestBlockHeader.getStateRoot().toByteArray());
+			this.stateTrie.setRoot(oBestBlockHeader.getStateRoot().toByteArray());
 			blockHelper.ApplyBlock(oBlockEntity);// ApplyBlock(oBlockEntity);
 		} catch (Exception e) {
 			e.printStackTrace();

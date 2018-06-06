@@ -87,7 +87,7 @@ public class BlockChainStoreWithLRU implements ActorService {
 	public void add(BlockEntity oBlock, String hexHash) {
 		int number = oBlock.getHeader().getNumber();
 		final byte[] hash = oBlock.getHeader().getBlockHash().toByteArray();
-
+		log.debug("store block hash::" + hexHash);
 		if (storage.containsKey(number)) {
 			storage.get(number).add(hash);
 		} else {

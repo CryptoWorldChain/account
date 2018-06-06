@@ -132,12 +132,12 @@ public class BlockChainHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public int getLastStableBlockNumber() throws Exception {
-		return blockChainStore.getBlockCount();
+		return blockChainStore.getBlockCount() - 1;
 		// return blockCache.getLast() == null ? 0 : blockCache.getLast().num;
 	}
 
 	public int getLastBlockNumber() {
-		return blockChainTempStore.getMaxNumber();
+		return blockChainTempStore.getMaxStableNumber();
 	}
 
 	/**
@@ -191,19 +191,33 @@ public class BlockChainHelper implements ActorService {
 		BlockChainTempNode oStableNode = blockChainTempStore.tryAddAndPop(
 				encApi.hexEnc(oBlock.getHeader().getBlockHash().toByteArray()),
 				encApi.hexEnc(oBlock.getHeader().getParentHash().toByteArray()), oBlock.getHeader().getNumber());
-		
+
+		log.debug("dump cache::" + blockChainTempStore.dump());
+
 		if (oStableNode == null) {
+			log.debug("not found stable node");
 			dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(oBlock.getHeader().getBlockHash()),
 					OEntityBuilder.byteValue2OValue(oBlock.toByteArray()));
 		} else {
 			OKey[] keys = null;
 			OValue[] values = null;
+
 			log.info("stable block number:: " + oStableNode.getNumber() + " hash::" + oStableNode.getHash());
 			keys = new OKey[] { OEntityBuilder.byteKey2OKey(oBlock.getHeader().getBlockHash()),
 					OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK) };
 			values = new OValue[] { OEntityBuilder.byteValue2OValue(oBlock.toByteArray()),
 					OEntityBuilder.byteValue2OValue(encApi.hexDec(oStableNode.getHash())) };
 			dao.getBlockDao().batchPuts(keys, values);
+
+			BlockEntity stableBlock;
+			try {
+				stableBlock = getBlock(encApi.hexDec(oStableNode.getHash())).build();
+				blockChainStore.add(stableBlock, encApi.hexEnc(stableBlock.getHeader().getBlockHash().toByteArray()));
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
 		}
 
 		if (oBlock.getBody() != null) {
@@ -216,7 +230,6 @@ public class BlockChainHelper implements ActorService {
 			}
 			dao.getTxblockDao().batchPuts(txBlockKeyList.toArray(new OKey[0]), txBlockValueList.toArray(new OValue[0]));
 		}
-		blockChainStore.add(oBlock, encApi.hexEnc(oBlock.getHeader().getBlockHash().toByteArray()));
 
 		return true;
 		// }
@@ -239,8 +252,8 @@ public class BlockChainHelper implements ActorService {
 		return true;
 	}
 
-	public BlockEntity tryGetBlockFromTempStore(byte[] parentHash) throws Exception {
-		BlockChainTempNode oBlockChainTempNode = blockChainTempStore.getAndDelete(encApi.hexEnc(parentHash));
+	public BlockEntity tryGetAndDeleteBlockFromTempStore(byte[] parentHash) throws Exception {
+		BlockChainTempNode oBlockChainTempNode = blockChainTempStore.getAndDeleteByParent(encApi.hexEnc(parentHash));
 		if (oBlockChainTempNode != null) {
 			try {
 				log.debug("get cache block, parent::" + encApi.hexEnc(parentHash) + " number::"
@@ -253,6 +266,11 @@ public class BlockChainHelper implements ActorService {
 			log.debug("cache block not found, parent::" + encApi.hexEnc(parentHash));
 		}
 		return null;
+	}
+
+	public BlockChainTempNode tryGetBlockTempNodeFromTempStore(byte[] hash) {
+		BlockChainTempNode oBlockChainTempNode = blockChainTempStore.get(encApi.hexEnc(hash));
+		return oBlockChainTempNode;
 	}
 
 	public BlockEntity tryGetBlockFromStore(byte[] parentHash) {
@@ -389,25 +407,19 @@ public class BlockChainHelper implements ActorService {
 	 */
 	public BlockEntity getBlockByNumber(int number) throws Exception {
 		// 判断从前遍历还是从后遍历
-		BlockEntity oBlockEntity = blockChainStore.getBlockByNumber(number);
-		if (oBlockEntity == null) {
-			throw new Exception(String.format("缓存中没有找到高度为 %s 的区块", number));
+		BlockEntity oBlockEntity = null;
+		BlockChainTempNode oNode = blockChainTempStore.getByNumber(number);
+		if (oNode == null) {
+			oBlockEntity = blockChainStore.getBlockByNumber(number);
+			if (oBlockEntity == null) {
+				throw new Exception(String.format("缓存中没有找到高度为 %s 的区块", number));
+			} else {
+				return oBlockEntity;
+			}
 		} else {
+			oBlockEntity = getBlock(encApi.hexDec(oNode.getHash())).build();
 			return oBlockEntity;
 		}
-		// Iterator<Node> iterator;
-		// if (getBlockCount() / 2 > number) {
-		// iterator = blockCache.iterator();
-		// } else {
-		// iterator = blockCache.reverseIterator();
-		// }
-		// while (iterator.hasNext()) {
-		// Node cur = iterator.next();
-		// if (cur.num == number) {
-		// return getBlock(cur.data).build();
-		// }
-		// }
-
 	}
 
 	/**
