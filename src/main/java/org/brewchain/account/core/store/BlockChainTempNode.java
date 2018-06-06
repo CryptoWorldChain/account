@@ -12,15 +12,27 @@ import lombok.Data;
 public class BlockChainTempNode {
 	private String hash;
 	private int number;
+	private String parentHash;
 	private boolean isChild = true;
-	
-	public BlockChainTempNode(String hash,int number,boolean isChild) {
+	private boolean isStable = false;
+
+	public BlockChainTempNode(String hash, String parentHash, int number, boolean isChild) {
 		this.hash = hash;
+		this.parentHash = parentHash;
 		this.number = number;
 		this.isChild = isChild;
 	}
-	
+
 	public void setChild(boolean isChild) {
 		this.isChild = isChild;
+	}
+
+	public void setStable(boolean isStable) {
+		this.isStable = isStable;
+	}
+
+	public String toString() {
+		return "hash::" + hash + " parent::" + parentHash + " number::" + number + " isChild::"
+				+ (isChild ? "true" : "false");
 	}
 }

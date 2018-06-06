@@ -35,7 +35,7 @@ import onight.tfw.ntrans.api.annotation.ActorRequire;
 public class BlockChainStoreWithLRU implements ActorService {
 	@ActorRequire(name = "bc_encoder", scope = "global")
 	EncAPI encApi;
-	
+
 	@ActorRequire(name = "Def_Daos", scope = "global")
 	DefDaos dao;
 
@@ -50,40 +50,34 @@ public class BlockChainStoreWithLRU implements ActorService {
 		this.storage = new LinkedHashMap<Integer, List<byte[]>>();
 		this.blocks = new LRUCache<String, BlockEntity>(KeyConstant.CACHE_SIZE);
 	}
-	
+
 	public BlockEntity get(String hash) {
-		try (ALock l = readLock.lock()) {
-			return this.blocks.get(hash);
-		}
+		return this.blocks.get(hash);
+
 	}
-	
+
 	public boolean isExists(String hash) {
-		try (ALock l = readLock.lock()) {
-			return this.blocks.containsKey(hash);
-		}
+		return this.blocks.containsKey(hash);
+
 	}
 
 	public void rollBackTo(int blockNumber) {
-		try (ALock lw = writeLock.lock()) {
-			while (getLastBlockNumber() > blockNumber) {
-				this.storage.remove(getLastBlockNumber());
-			}
+		while (getLastBlockNumber() > blockNumber) {
+			this.storage.remove(getLastBlockNumber());
 		}
 	}
 
 	public byte[] getBlockHashByNumber(int blockNumber) {
-		try (ALock l = readLock.lock()) {
-			return storage.get(blockNumber).get(0);
-		}
+		return storage.get(blockNumber).get(0);
 	}
 
 	public BlockEntity getBlockByNumber(int blockNumber) {
 		try (ALock l = readLock.lock()) {
 			List<byte[]> hashs = this.storage.get(blockNumber);
-			if(hashs != null){
+			if (hashs != null) {
 				BlockEntity blockEntity = getBlockEntityByHash(hashs.get(0));
 				return blockEntity;
-			}				
+			}
 			return null;
 		}
 	}
@@ -92,18 +86,16 @@ public class BlockChainStoreWithLRU implements ActorService {
 		int number = oBlock.getHeader().getNumber();
 		final byte[] hash = oBlock.getHeader().getBlockHash().toByteArray();
 
-		try (ALock l = writeLock.lock()) {
-			if (storage.containsKey(number)) {
-				storage.get(number).add(hash);
-			} else {
-				storage.put(number, new ArrayList<byte[]>() {
-					{
-						add(hash);
-					}
-				});
-			}
-			blocks.put(hexHash, oBlock);
+		if (storage.containsKey(number)) {
+			storage.get(number).add(hash);
+		} else {
+			storage.put(number, new ArrayList<byte[]>() {
+				{
+					add(hash);
+				}
+			});
 		}
+		blocks.put(hexHash, oBlock);
 	}
 
 	public byte[] getBestBlock() {
@@ -133,21 +125,21 @@ public class BlockChainStoreWithLRU implements ActorService {
 			storage.clear();
 		}
 	}
-	
+
 	/**
-	 * 通过 hash 查询 BlockEntity 
-	 * 先从 this.blocks 中进行查询，如果查询不到，从数据库中进行查询
+	 * 通过 hash 查询 BlockEntity 先从 this.blocks 中进行查询，如果查询不到，从数据库中进行查询
+	 * 
 	 * @param hash
 	 * @return
 	 */
-	public BlockEntity getBlockEntityByHash(byte[] hash){
-		if(hash != null){
+	public BlockEntity getBlockEntityByHash(byte[] hash) {
+		if (hash != null) {
 			BlockEntity blockEntity = this.blocks.get(encApi.hexEnc(hash));
-			if(blockEntity == null){
+			if (blockEntity == null) {
 				OValue v = null;
 				try {
 					v = dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(hash)).get();
-					if(v != null){
+					if (v != null) {
 						blockEntity = BlockEntity.parseFrom(v.getExtdata());
 					}
 				} catch (ODBException | InterruptedException | ExecutionException | InvalidProtocolBufferException e) {

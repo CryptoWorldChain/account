@@ -61,13 +61,14 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqBlockInfo pb, final CompleteHandler handler) {
 		RespBlockInfo.Builder oRespBlockInfo = RespBlockInfo.newBuilder();
-		oRespBlockInfo.setBlockCount(blockChainHelper.getBlockCount());
 		try {
-			oRespBlockInfo.setNumber(blockChainHelper.getMaxBlockNumber());
-			// oRespBlockInfo.setCache(blockChainHelper.getBlockCacheFormatString());
+			oRespBlockInfo.setBlockCount(blockChainHelper.getLastStableBlockNumber());
+
+			oRespBlockInfo.setNumber(blockChainHelper.getLastBlockNumber());
+			oRespBlockInfo.setCache(blockChainHelper.getBlockCacheDump());
 			oRespBlockInfo.setWaitSync(oSendingHashMapDB.keys().size());
 			oRespBlockInfo.setWaitBlock(oPendingHashMapDB.keys().size());
-			LinkedList<BlockEntity> list = blockChainHelper.getParentsBlocks(blockChainHelper.GetUnStableBestBlockHash(), null,
+			LinkedList<BlockEntity> list = blockChainHelper.getParentsBlocks(blockChainHelper.GetStableBestBlockHash(), null,
 					1000000);
 			int curr = 0;
 			String retCache = "";
@@ -77,7 +78,7 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 						encApi.hexEnc(list.get(i).getHeader().getBlockHash().toByteArray()),
 						encApi.hexEnc(list.get(i).getHeader().getParentHash().toByteArray())));
 
-				if (org.apache.commons.lang.StringUtils.isBlank(parent)) {
+				if (parent.isEmpty()) {
 					parent = encApi.hexEnc(list.get(i).getHeader().getParentHash().toByteArray());
 
 				} else {

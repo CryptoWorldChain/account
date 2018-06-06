@@ -54,7 +54,7 @@ public class StateTrie {
 		this.encApi = encApi;
 	}
 
-	public  static ExecutorService getExecutor() {
+	public static ExecutorService getExecutor() {
 		return executor;
 	}
 
@@ -360,7 +360,9 @@ public class StateTrie {
 
 		public void dispose() {
 			if (hash != null) {
-				// deleteHash(hash);
+				if (!FastByteComparisons.equal(hash, root.hash)) {
+					deleteHash(hash);
+				}
 			}
 		}
 
@@ -496,6 +498,7 @@ public class StateTrie {
 	}
 
 	private void addHash(byte[] hash, byte[] ret) {
+		log.debug("trie add key::" + Hex.toHexString(hash));
 		dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(hash), OEntityBuilder.byteValue2OValue(ret));
 	}
 
