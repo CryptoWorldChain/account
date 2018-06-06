@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 
 import org.brewchain.account.core.BlockChainHelper;
 import org.brewchain.account.core.CacheBlockHashMapDB;
+import org.brewchain.account.core.KeyConstant;
 import org.brewchain.account.core.WaitBlockHashMapDB;
 import org.brewchain.account.core.WaitSendHashMapDB;
 import org.brewchain.account.dao.DefDaos;
@@ -16,6 +17,7 @@ import org.brewchain.account.gens.Blockimpl.PBCTModule;
 import org.brewchain.account.gens.Blockimpl.ReqBlockInfo;
 import org.brewchain.account.gens.Blockimpl.RespBlockInfo;
 import org.brewchain.account.trie.StateTrie;
+import org.brewchain.account.util.OEntityBuilder;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.sleepycat.utilint.StringUtils;
@@ -68,8 +70,9 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 			oRespBlockInfo.setCache(blockChainHelper.getBlockCacheDump());
 			oRespBlockInfo.setWaitSync(oSendingHashMapDB.keys().size());
 			oRespBlockInfo.setWaitBlock(oPendingHashMapDB.keys().size());
-			LinkedList<BlockEntity> list = blockChainHelper.getParentsBlocks(blockChainHelper.GetStableBestBlockHash(), null,
-					1000000);
+			LinkedList<BlockEntity> list = blockChainHelper.getParentsBlocks(dao.getBlockDao()
+					.get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get().getExtdata().toByteArray(),
+					null, 1000000);
 			int curr = 0;
 			String retCache = "";
 			String parent = "";

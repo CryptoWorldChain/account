@@ -79,9 +79,10 @@ public class BlockChainHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public byte[] GetStableBestBlockHash() throws Exception {
-		OValue oOValue = dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get();
+		OValue oOValue = dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK)).get();
 		if (oOValue == null || oOValue.getExtdata() == null || oOValue.getExtdata().equals(ByteString.EMPTY)) {
-			log.error("");
+			oOValue = dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get();
+			return oOValue.getExtdata().toByteArray();
 		}
 		return oOValue.getExtdata().toByteArray();
 		// return blockCache.last();
@@ -138,6 +139,16 @@ public class BlockChainHelper implements ActorService {
 	}
 
 	public int getLastBlockNumber() {
+		if (blockChainTempStore.getMaxStableNumber() == 0) {
+			BlockEntity oBlockEntity;
+			try {
+				oBlockEntity = GetStableBestBlock();
+				return oBlockEntity.getHeader().getNumber();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 		return blockChainTempStore.getMaxStableNumber();
 	}
 
@@ -195,19 +206,25 @@ public class BlockChainHelper implements ActorService {
 
 		log.debug("dump cache::" + blockChainTempStore.dump());
 
+		OKey[] keys = null;
+		OValue[] values = null;
+
 		if (oStableNode == null) {
 			log.debug("not found stable node");
-			dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(oBlock.getHeader().getBlockHash()),
-					OEntityBuilder.byteValue2OValue(oBlock.toByteArray()));
-		} else {
-			OKey[] keys = null;
-			OValue[] values = null;
+			keys = new OKey[] { OEntityBuilder.byteKey2OKey(oBlock.getHeader().getBlockHash()),
+					OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK) };
+			values = new OValue[] { OEntityBuilder.byteValue2OValue(oBlock.toByteArray()),
+					OEntityBuilder.byteValue2OValue(encApi.hexDec(blockChainTempStore.getMaxStableBlock().getHash())) };
 
+			dao.getBlockDao().batchPuts(keys, values);
+		} else {
 			log.info("stable block number:: " + oStableNode.getNumber() + " hash::" + oStableNode.getHash());
 			keys = new OKey[] { OEntityBuilder.byteKey2OKey(oBlock.getHeader().getBlockHash()),
-					OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK) };
+					OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK),
+					OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK) };
 			values = new OValue[] { OEntityBuilder.byteValue2OValue(oBlock.toByteArray()),
-					OEntityBuilder.byteValue2OValue(encApi.hexDec(oStableNode.getHash())) };
+					OEntityBuilder.byteValue2OValue(encApi.hexDec(oStableNode.getHash())),
+					OEntityBuilder.byteValue2OValue(encApi.hexDec(blockChainTempStore.getMaxStableBlock().getHash())) };
 			dao.getBlockDao().batchPuts(keys, values);
 
 			BlockEntity stableBlock;
@@ -218,7 +235,6 @@ public class BlockChainHelper implements ActorService {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-
 		}
 
 		if (oBlock.getBody() != null) {
@@ -503,11 +519,11 @@ public class BlockChainHelper implements ActorService {
 
 			NodeAccount oNodeAccount = oNodeDef.new NodeAccount();
 			oNodeAccount.setAddress(encApi.hexEnc(coinAddress));
-			// oNodeAccount.setBcuid(oKeyStoreValue.getBcuid());
+			oNodeAccount.setBcuid(oKeyStoreValue.getBcuid());
 			oNodeDef.setoAccount(oNodeAccount);
 			KeyConstant.node = oNodeDef;
 			reloadBlockCache();
-			reloadBlockCacheByNumber();
+			// reloadBlockCacheByNumber();
 			log.debug("block load complete");
 		} catch (Exception e) {
 			blockChainStore.clear();
@@ -517,29 +533,26 @@ public class BlockChainHelper implements ActorService {
 	}
 
 	/**
-	 * 该方法会移除本地缓存，然后取数据库中保存的最后一个块的信息，重新构造缓存。该方法可能会带来很大开销。在缓存加载后节点才启动完成。在启动完成之前
-	 * ，所有接口均无法使用。
-	 * 
 	 * @throws Exception
 	 */
 	public void reloadBlockCacheByNumber() throws Exception {
 		int bestHeight = blockChainStore.getLastBlockNumber();
 		int blockNumber = 0;
-		
-		if (bestHeight <= 0){
+
+		if (bestHeight <= 0) {
 			log.warn("load block empty");
 			return;
 		}
-		
-		//缓存定量的block
-		if(bestHeight > KeyConstant.CACHE_SIZE){
+
+		// 缓存定量的block
+		if (bestHeight > KeyConstant.CACHE_SIZE) {
 			blockNumber = bestHeight - KeyConstant.CACHE_SIZE;
 		}
-		
+
 		log.debug(String.format("load block into cache from number = %s to number = %s", blockNumber, bestHeight));
-		
+
 		BlockEntity oBlockEntity = blockChainStore.getBlockByNumber(blockNumber);
-		
+
 		if (oBlockEntity == null) {
 			KeyConstant.isStart = true;
 			log.debug(String.format("not found number = %s block, start empty node", blockNumber));
@@ -549,10 +562,13 @@ public class BlockChainHelper implements ActorService {
 		while (oBlockEntity != null && blockNumber <= bestHeight) {
 			try {
 				if (blockNumber != oBlockEntity.getHeader().getNumber()) {
-					throw new Exception(String.format("respect block number %s ,get block number %s",blockNumber, oBlockEntity.getHeader().getNumber()));
+					throw new Exception(String.format("respect block number %s ,get block number %s", blockNumber,
+							oBlockEntity.getHeader().getNumber()));
 				}
-				blockChainStore.add(oBlockEntity,encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()));
-				log.info(String.format("load block::%s number::%s from datasource",encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()),oBlockEntity.getHeader().getNumber()));
+				blockChainStore.add(oBlockEntity, encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()));
+				log.info(String.format("load block::%s number::%s from datasource",
+						encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()),
+						oBlockEntity.getHeader().getNumber()));
 
 				if (blockNumber < bestHeight) {
 					blockNumber += 1;
@@ -560,7 +576,7 @@ public class BlockChainHelper implements ActorService {
 					break;
 				}
 				oBlockEntity = getBlockByNumber(blockNumber);
-				if(oBlockEntity == null){
+				if (oBlockEntity == null) {
 					break;
 				}
 			} catch (Exception e) {
@@ -575,6 +591,7 @@ public class BlockChainHelper implements ActorService {
 
 		KeyConstant.isStart = true;
 	}
+
 	public void reloadBlockCache() throws Exception {
 		BlockEntity oBlockEntity;
 		oBlockEntity = GetStableBestBlock();
@@ -587,9 +604,9 @@ public class BlockChainHelper implements ActorService {
 		blockChainStore.add(oBlockEntity, encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()));
 		// blockCache.insertFirst(oBlockEntity.getHeader().getBlockHash().toByteArray(),
 		// blockNumber);
-		
+
 		byte[] parentHash = oBlockEntity.getHeader().getParentHash().toByteArray();
-		
+
 		while (parentHash != null) {
 			BlockEntity.Builder loopBlockEntity = null;
 			try {
@@ -608,7 +625,7 @@ public class BlockChainHelper implements ActorService {
 					log.info(String.format("load block::%s number::%s from datasource",
 							encApi.hexEnc(loopBlockEntity.getHeader().getBlockHash().toByteArray()),
 							loopBlockEntity.getHeader().getNumber()));
-					
+
 					if (loopBlockEntity.getHeader().getParentHash() != null) {
 						parentHash = loopBlockEntity.getHeader().getParentHash().toByteArray();
 					} else {
@@ -619,11 +636,11 @@ public class BlockChainHelper implements ActorService {
 				// TODO: handle exception
 			}
 		}
-		
+
 		if (blockNumber != 0) {
 			log.error("block chain data is wrong, parent number::" + blockNumber);
 		}
-		
+
 		KeyConstant.isStart = true;
 	}
 

@@ -67,7 +67,7 @@ public class BlockChainTempStore implements ActorService {
 			if (isStable) {
 				if (maxStableNumber < number) {
 					maxStableNumber = number;
-					maxBlock = oNode;
+					maxStableBlock = oNode;
 				}
 			}
 		}
