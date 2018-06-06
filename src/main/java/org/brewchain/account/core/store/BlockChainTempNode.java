@@ -16,7 +16,7 @@ public class BlockChainTempNode {
 	private boolean isChild = true;
 	private boolean isStable = false;
 
-	public BlockChainTempNode(String hash,String parentHash, int number, boolean isChild) {
+	public BlockChainTempNode(String hash, String parentHash, int number, boolean isChild) {
 		this.hash = hash;
 		this.parentHash = parentHash;
 		this.number = number;
@@ -26,8 +26,13 @@ public class BlockChainTempNode {
 	public void setChild(boolean isChild) {
 		this.isChild = isChild;
 	}
-	
+
 	public void setStable(boolean isStable) {
 		this.isStable = isStable;
+	}
+
+	public String toString() {
+		return "hash::" + hash + " parent::" + parentHash + " number::" + number + " isChild::"
+				+ (isChild ? "true" : "false");
 	}
 }

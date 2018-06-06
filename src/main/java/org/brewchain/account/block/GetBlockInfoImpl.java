@@ -61,13 +61,14 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqBlockInfo pb, final CompleteHandler handler) {
 		RespBlockInfo.Builder oRespBlockInfo = RespBlockInfo.newBuilder();
-		oRespBlockInfo.setBlockCount(blockChainHelper.getBlockCount());
 		try {
+			oRespBlockInfo.setBlockCount(blockChainHelper.getLastStableBlockNumber());
+
 			oRespBlockInfo.setNumber(blockChainHelper.getLastBlockNumber());
-			// oRespBlockInfo.setCache(blockChainHelper.getBlockCacheFormatString());
+			oRespBlockInfo.setCache(blockChainHelper.getBlockCacheDump());
 			oRespBlockInfo.setWaitSync(oSendingHashMapDB.keys().size());
 			oRespBlockInfo.setWaitBlock(oPendingHashMapDB.keys().size());
-			LinkedList<BlockEntity> list = blockChainHelper.getParentsBlocks(blockChainHelper.GetUnStableBestBlockHash(), null,
+			LinkedList<BlockEntity> list = blockChainHelper.getParentsBlocks(blockChainHelper.GetStableBestBlockHash(), null,
 					1000000);
 			int curr = 0;
 			String retCache = "";

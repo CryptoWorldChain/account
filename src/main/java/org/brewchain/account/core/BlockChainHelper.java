@@ -191,13 +191,14 @@ public class BlockChainHelper implements ActorService {
 		BlockChainTempNode oStableNode = blockChainTempStore.tryAddAndPop(
 				encApi.hexEnc(oBlock.getHeader().getBlockHash().toByteArray()),
 				encApi.hexEnc(oBlock.getHeader().getParentHash().toByteArray()), oBlock.getHeader().getNumber());
-
+		
 		if (oStableNode == null) {
 			dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(oBlock.getHeader().getBlockHash()),
 					OEntityBuilder.byteValue2OValue(oBlock.toByteArray()));
 		} else {
 			OKey[] keys = null;
 			OValue[] values = null;
+			log.info("stable block number:: " + oStableNode.getNumber() + " hash::" + oStableNode.getHash());
 			keys = new OKey[] { OEntityBuilder.byteKey2OKey(oBlock.getHeader().getBlockHash()),
 					OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK) };
 			values = new OValue[] { OEntityBuilder.byteValue2OValue(oBlock.toByteArray()),
@@ -567,5 +568,9 @@ public class BlockChainHelper implements ActorService {
 			BlockEntity.Builder oBlockEntity = BlockEntity.parseFrom(v.getExtdata()).toBuilder();
 			return oBlockEntity;
 		}
+	}
+
+	public String getBlockCacheDump() {
+		return blockChainTempStore.dump();
 	}
 }

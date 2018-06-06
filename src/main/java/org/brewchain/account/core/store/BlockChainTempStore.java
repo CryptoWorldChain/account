@@ -1,7 +1,9 @@
 package org.brewchain.account.core.store;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -9,7 +11,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.brewchain.account.core.KeyConstant;
 import org.brewchain.account.gens.Block.BlockEntity;
-
+import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
@@ -71,12 +73,14 @@ public class BlockChainTempStore implements ActorService {
 
 			int count = 0;
 			BlockChainTempNode oStableNode = null;
-			while (this.storage.containsKey(parentHash) && count >= KeyConstant.ROLLBACK_BLOCK) {
+			while (this.storage.containsKey(parentHash)) {
+				count += 1;
 				oStableNode = this.storage.get(parentHash);
 				parentHash = oStableNode.getParentHash();
-				count += 1;
+
 			}
-			if (oStableNode != null) {
+			if (oStableNode != null && count >= KeyConstant.ROLLBACK_BLOCK) {
+				storage.remove(oStableNode.getHash());
 				return oStableNode;
 			}
 		}
@@ -102,5 +106,16 @@ public class BlockChainTempStore implements ActorService {
 		try (ALock l = writeLock.lock()) {
 			storage.clear();
 		}
+	}
+
+	public String dump() {
+		String dump = "";
+		for (Iterator<Map.Entry<String, BlockChainTempNode>> it =storage.entrySet().iterator(); it
+				.hasNext();) {
+			Map.Entry<String, BlockChainTempNode> item = it.next();
+			dump += String.format("%s : %s", item.getKey(), item.getValue().toString());
+			
+		}
+		return dump;
 	}
 }
