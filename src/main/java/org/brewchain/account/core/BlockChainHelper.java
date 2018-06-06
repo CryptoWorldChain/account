@@ -519,11 +519,11 @@ public class BlockChainHelper implements ActorService {
 
 			NodeAccount oNodeAccount = oNodeDef.new NodeAccount();
 			oNodeAccount.setAddress(encApi.hexEnc(coinAddress));
-			oNodeAccount.setBcuid(oKeyStoreValue.getBcuid());
+			// oNodeAccount.setBcuid(oKeyStoreValue.getBcuid());
 			oNodeDef.setoAccount(oNodeAccount);
 			KeyConstant.node = oNodeDef;
 			reloadBlockCache();
-			// reloadBlockCacheByNumber();
+			reloadBlockCacheByNumber();
 			log.debug("block load complete");
 		} catch (Exception e) {
 			blockChainStore.clear();
