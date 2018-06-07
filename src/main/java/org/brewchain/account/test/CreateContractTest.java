@@ -104,9 +104,9 @@ public class CreateContractTest extends SessionModules<ReqCreateContract> implem
 					+ encApi.hexEnc(transactionHelper.getContractAddressByTransaction(oMultiTransaction.build())));
 			transactionHelper.CreateMultiTransaction(oMultiTransaction);
 
-			transactionHelper.parseToImpl(oMultiTransaction.build());
-			transactionHelper.CreateMultiTransaction(
-					transactionHelper.parse(transactionHelper.parseToImpl(oMultiTransaction.build()).build()));
+//			transactionHelper.parseToImpl(oMultiTransaction.build());
+//			transactionHelper.CreateMultiTransaction(
+//					transactionHelper.parse(transactionHelper.parseToImpl(oMultiTransaction.build()).build()));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
