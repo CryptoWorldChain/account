@@ -48,14 +48,18 @@ public class BlockChainTempStore implements ActorService {
 		this.storage = new TreeMap<String, BlockChainTempNode>();
 	}
 
-	public void tryAdd(String hash, String parentHash, int number) {
-		tryAdd(hash, parentHash, number, false);
+	public BlockChainTempNode tryAdd(String hash, String parentHash, int number) {
+		return tryAdd(hash, parentHash, number, false);
 	}
 
-	public void tryAdd(String hash, String parentHash, int number, boolean isStable) {
+	public BlockChainTempNode tryAdd(String hash, String parentHash, int number, boolean isStable) {
 		try (ALock l = writeLock.lock()) {
 			BlockChainTempNode oNode = new BlockChainTempNode(hash, parentHash, number, isStable);
 			if (!this.storage.containsKey(hash)) {
+				this.storage.put(hash, oNode);
+			} else {
+				oNode = this.storage.get(hash);
+				oNode.increaseSyncCount();
 				this.storage.put(hash, oNode);
 			}
 
@@ -70,6 +74,7 @@ public class BlockChainTempStore implements ActorService {
 					maxStableBlock = oNode;
 				}
 			}
+			return oNode;
 		}
 	}
 

@@ -101,9 +101,6 @@ public class BlockHelper implements ActorService {
 
 		// 获取本节点的最后一块Block
 		BlockEntity oBestBlockEntity = blockChainHelper.GetStableBestBlock();
-		if (oBestBlockEntity == null) {
-			oBestBlockEntity = blockChainHelper.GetStableBestBlock();
-		}
 		BlockHeader oBestBlockHeader = oBestBlockEntity.getHeader();
 
 		// 构造Block Header
@@ -250,9 +247,17 @@ public class BlockHelper implements ActorService {
 			oAddBlockResponse.setCurrentNumber(currentLastBlockNumber);
 
 			// 暂存
-			blockChainHelper.cacheBlock(oBlockEntity.build());
+			BlockChainTempNode oTempNode = blockChainHelper.cacheBlock(oBlockEntity.build());
 			log.error("parent block not found:: parent::" + (oBlockHeader.getNumber() - 1) + " block::"
-					+ oBlockHeader.getNumber() + " current::" + currentLastBlockNumber);
+					+ oBlockHeader.getNumber() + " current::" + currentLastBlockNumber + " count::"
+					+ oTempNode.getSyncCount());
+
+			if (oTempNode.getSyncCount() > 2 && oTempNode.getNumber() == (currentLastBlockNumber - 1)) {
+				log.warn("begin to request parent parent block::" + (currentLastBlockNumber - 1));
+				oAddBlockResponse.setRetCode(-1);
+				oAddBlockResponse.setCurrentNumber(currentLastBlockNumber - 1);
+				return oAddBlockResponse.build();
+			}
 		} else if (blockChainHelper.isExistsBlockFromStore(oBlockHeader.getBlockHash().toByteArray())) {
 			log.warn("exists, drop it, number::" + oBlockHeader.getNumber());
 			oAddBlockResponse.setRetCode(-1);

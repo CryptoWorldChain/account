@@ -39,13 +39,13 @@ public class BlockChainStore implements ActorService {
 		this.storage = new ConcurrentHashMap<Integer, List<byte[]>>();
 		this.blocks = new ConcurrentHashMap<String, BlockEntity>();
 	}
-	
+
 	public BlockEntity get(String hash) {
 		try (ALock l = readLock.lock()) {
 			return this.blocks.get(hash);
 		}
 	}
-	
+
 	public boolean isExists(String hash) {
 		try (ALock l = readLock.lock()) {
 			return this.blocks.containsKey(hash);
@@ -91,6 +91,9 @@ public class BlockChainStore implements ActorService {
 						add(hash);
 					}
 				});
+			}
+			if (blocks.size() == KeyConstant.CACHE_SIZE) {
+				
 			}
 			blocks.put(hexHash, oBlock);
 		}

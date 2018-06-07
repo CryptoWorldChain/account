@@ -63,6 +63,5 @@ public class ActuatorCreateContract extends AbstractTransactionActuator implemen
 			keys.add(OEntityBuilder.byteKey2OKey(sender.getAddress().toByteArray()));
 			values.add(senderAccountValue.build());
 		}
-		
 	}
 }

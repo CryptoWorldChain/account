@@ -97,6 +97,22 @@ public class BlockChainHelper implements ActorService {
 		}
 		// return blockCache.last();
 	}
+	
+	public byte[] GetStoreBestBlockHash() throws Exception {
+		OValue  oOValue = dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get();
+		return oOValue.getExtdata().toByteArray();
+		// return blockCache.last();
+	}
+
+	public BlockEntity GetStoreBestBlock() throws Exception {
+		byte[] hash = GetStoreBestBlockHash();
+		if (hash != null) {
+			return getBlock(hash).build();
+		} else {
+			return null;
+		}
+		// return blockCache.last();
+	}
 
 	public byte[] GetUnStableBestBlockHash() throws Exception {
 		BlockChainTempNode oNode = blockChainTempStore.getMaxBlock();
@@ -204,8 +220,6 @@ public class BlockChainHelper implements ActorService {
 				encApi.hexEnc(oBlock.getHeader().getBlockHash().toByteArray()),
 				encApi.hexEnc(oBlock.getHeader().getParentHash().toByteArray()), oBlock.getHeader().getNumber());
 
-		log.debug("dump cache::" + blockChainTempStore.dump());
-
 		OKey[] keys = null;
 		OValue[] values = null;
 
@@ -258,15 +272,14 @@ public class BlockChainHelper implements ActorService {
 		appendBlock(oBlock);
 	}
 
-	public boolean cacheBlock(BlockEntity oBlock) {
+	public BlockChainTempNode cacheBlock(BlockEntity oBlock) {
 		OKey[] keys = new OKey[] { OEntityBuilder.byteKey2OKey(oBlock.getHeader().getBlockHash()) };
 		OValue[] values = new OValue[] { OEntityBuilder.byteValue2OValue(oBlock.toByteArray()) };
 
 		dao.getBlockDao().batchPuts(keys, values);
 		log.debug("cache block, parent::" + encApi.hexEnc(oBlock.getHeader().getParentHash().toByteArray()));
-		blockChainTempStore.tryAdd(encApi.hexEnc(oBlock.getHeader().getBlockHash().toByteArray()),
+		return blockChainTempStore.tryAdd(encApi.hexEnc(oBlock.getHeader().getBlockHash().toByteArray()),
 				encApi.hexEnc(oBlock.getHeader().getParentHash().toByteArray()), oBlock.getHeader().getNumber());
-		return true;
 	}
 
 	public BlockEntity tryGetAndDeleteBlockFromTempStore(byte[] parentHash) throws Exception {
@@ -283,6 +296,11 @@ public class BlockChainHelper implements ActorService {
 			log.debug("cache block not found, parent::" + encApi.hexEnc(parentHash));
 		}
 		return null;
+	}
+	
+
+	public void increaseSyncCount(String hash) {
+		
 	}
 
 	public BlockChainTempNode tryGetBlockTempNodeFromTempStore(byte[] hash) {

@@ -14,6 +14,7 @@ public class BlockChainTempNode {
 	private int number;
 	private String parentHash;
 	private boolean isStable = false;
+	private int syncCount = 0;
 
 	public BlockChainTempNode(String hash, String parentHash, int number, boolean isStable) {
 		this.hash = hash;
@@ -29,5 +30,9 @@ public class BlockChainTempNode {
 	public String toString() {
 		return "hash::" + hash + " parent::" + parentHash + " number::" + number + " stable::"
 				+ (isStable ? "true" : "false");
+	}
+	
+	public void increaseSyncCount() {
+		this.syncCount += 1;
 	}
 }
