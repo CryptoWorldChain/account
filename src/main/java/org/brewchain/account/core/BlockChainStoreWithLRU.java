@@ -1,7 +1,10 @@
 package org.brewchain.account.core;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -53,13 +56,37 @@ public class BlockChainStoreWithLRU implements ActorService {
 	}
 
 	public BlockEntity get(String hash) {
-		return this.blocks.get(hash);
-
+		BlockEntity block = this.blocks.get(hash);
+		if(block == null){
+			block = getFromDB(hash);
+		}
+		return block;
+	}
+	
+	public BlockEntity getFromDB(String hash){
+		BlockEntity block = null;
+		OValue v = null;
+		try {
+			v = dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(encApi.hexDec(hash))).get();
+			if (v != null) {
+				block = BlockEntity.parseFrom(v.getExtdata());
+				add(block, encApi.hexEnc(block.getHeader().getBlockHash().toByteArray()));
+			}
+		} catch (ODBException | InterruptedException | ExecutionException | InvalidProtocolBufferException e) {
+			log.error("get block from db error :: " + e.getMessage());
+		}
+		
+		return block;
 	}
 
 	public boolean isExists(String hash) {
-		return this.blocks.containsKey(hash);
-
+		boolean flag = this.blocks.containsKey(hash);
+		if(!flag) {
+			if(getFromDB(hash) != null){
+				flag = true;
+			}
+		}
+		return flag;
 	}
 
 	public void rollBackTo(int blockNumber) {
@@ -99,7 +126,7 @@ public class BlockChainStoreWithLRU implements ActorService {
 			}
 		}
 	}
-
+	
 	public byte[] getBestBlock() {
 		try (ALock l = readLock.lock()) {
 			if (getLastBlockNumber() < 0) {
@@ -138,16 +165,7 @@ public class BlockChainStoreWithLRU implements ActorService {
 		if (hash != null) {
 			BlockEntity blockEntity = this.blocks.get(encApi.hexEnc(hash));
 			if (blockEntity == null) {
-				OValue v = null;
-				try {
-					v = dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(hash)).get();
-					if (v != null) {
-						blockEntity = BlockEntity.parseFrom(v.getExtdata());
-					}
-				} catch (ODBException | InterruptedException | ExecutionException | InvalidProtocolBufferException e) {
-					log.error(String.format("dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(%s)).get()", hash));
-					return null;
-				}
+				blockEntity = getFromDB(encApi.hexEnc(hash));
 			}
 			return blockEntity;
 		} else {
@@ -157,9 +175,12 @@ public class BlockChainStoreWithLRU implements ActorService {
 
 	public List<BlockEntity> getChildListBlocksEndWith(String blockHash, String endBlockHash, int maxCount) {
 		BlockEntity firstBlock = this.blocks.get(blockHash);
-		if (firstBlock == null)
-			return new ArrayList<>();
-
+		if (firstBlock == null) {
+			firstBlock = getFromDB(blockHash);
+			if(firstBlock == null)
+				return new ArrayList<>();
+		}
+		
 		List<BlockEntity> blocks = new ArrayList<>();
 		int number = firstBlock.getHeader().getNumber();
 		blocks.add(firstBlock);
@@ -171,7 +192,7 @@ public class BlockChainStoreWithLRU implements ActorService {
 				if (child != null) {
 					blocks.add(child);
 				}
-				if (encApi.hexEnc(hash).equals(endBlockHash)) {
+				if (StringUtils.isNotBlank(endBlockHash) && hash!= null && encApi.hexEnc(hash).equals(endBlockHash)) {
 					return blocks;
 				}
 			}
@@ -182,9 +203,13 @@ public class BlockChainStoreWithLRU implements ActorService {
 
 	public List<BlockEntity> getParentListBlocksEndWith(String blockHash, String endBlockHash, int maxCount) {
 		BlockEntity firstBlock = this.blocks.get(blockHash);
-		if (firstBlock == null)
-			return new ArrayList<>();
-
+		if (firstBlock == null) {
+			firstBlock = getFromDB(blockHash);
+			if(firstBlock == null){
+				return new ArrayList<>();
+			}
+		}
+		
 		List<BlockEntity> blocks = new ArrayList<>();
 		int number = firstBlock.getHeader().getNumber();
 		blocks.add(firstBlock);
@@ -195,7 +220,7 @@ public class BlockChainStoreWithLRU implements ActorService {
 			if (child != null) {
 				blocks.add(child);
 			}
-			if (StringUtils.isNotBlank(endBlockHash) && encApi.hexEnc(hash).equals(endBlockHash)) {
+			if (StringUtils.isNotBlank(endBlockHash) && hash != null && encApi.hexEnc(hash).equals(endBlockHash)) {
 				return blocks;
 			}
 		}
