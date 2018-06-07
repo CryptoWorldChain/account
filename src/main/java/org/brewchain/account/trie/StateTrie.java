@@ -365,9 +365,9 @@ public class StateTrie implements ActorService {
 
 		public void dispose() {
 			if (hash != null) {
-				if (!FastByteComparisons.equal(hash, root.hash)) {
-					deleteHash(hash);
-				}
+//				if (!FastByteComparisons.equal(hash, root.hash)) {
+//					deleteHash(hash);
+//				}
 			}
 		}
 

@@ -356,7 +356,7 @@ public class DBTrie  {
 
 		public void dispose() {
 			if (hash != null) {
-				deleteHash(hash);
+				//deleteHash(hash);
 			}
 		}
 

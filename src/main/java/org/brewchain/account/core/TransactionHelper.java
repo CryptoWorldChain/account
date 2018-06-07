@@ -78,7 +78,7 @@ public class TransactionHelper implements ActorService {
 		// 节点
 		MultiTransactionNode.Builder oNode = MultiTransactionNode.newBuilder();
 		oNode.setBcuid(KeyConstant.node.getBcuid());
-		oNode.setAddress(KeyConstant.node.getAddress());
+		oNode.setAddress(KeyConstant.node.getoAccount().getAddress());
 		oNode.setNode(KeyConstant.node.getNode());
 		oMultiTransaction.setTxNode(oNode);
 
@@ -193,12 +193,12 @@ public class TransactionHelper implements ActorService {
 			try {
 				Map<ByteString, Account> senders = new HashMap<ByteString, Account>();
 				for (MultiTransactionInput oInput : oTransaction.getTxBody().getInputsList()) {
-					senders.put(oInput.getAddress(), oAccountHelper.GetAccount(oInput.getAddress().toByteArray()));
+					senders.put(oInput.getAddress(), oAccountHelper.GetAccountOrCreate(oInput.getAddress().toByteArray()));
 				}
 
 				Map<ByteString, Account> receivers = new HashMap<ByteString, Account>();
 				for (MultiTransactionOutput oOutput : oTransaction.getTxBody().getOutputsList()) {
-					receivers.put(oOutput.getAddress(), oAccountHelper.GetAccount(oOutput.getAddress().toByteArray()));
+					receivers.put(oOutput.getAddress(), oAccountHelper.GetAccountOrCreate(oOutput.getAddress().toByteArray()));
 				}
 
 				oiTransactionActuator.onPrepareExecute(oTransaction, senders, receivers);
@@ -590,7 +590,7 @@ public class TransactionHelper implements ActorService {
 			throws Exception {
 		Map<ByteString, Account> senders = new HashMap<ByteString, Account>();
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
-			senders.put(oInput.getAddress(), oAccountHelper.GetAccount(oInput.getAddress().toByteArray()));
+			senders.put(oInput.getAddress(), oAccountHelper.GetAccountOrCreate(oInput.getAddress().toByteArray()));
 		}
 
 		Map<ByteString, Account> receivers = new HashMap<ByteString, Account>();
