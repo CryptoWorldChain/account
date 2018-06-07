@@ -42,7 +42,7 @@ public class ActuatorCreateContract extends AbstractTransactionActuator implemen
 			Map<ByteString, Account> receivers) throws Exception {
 		// 创建
 		oAccountHelper.CreateContract(oTransactionHelper.getContractAddressByTransaction(oMultiTransaction), null,
-				oMultiTransaction.getTxBody().getData().toByteArray());
+				oMultiTransaction.getTxBody().getData().toByteArray(), oMultiTransaction.getTxBody().getExdata().toByteArray());
 		
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			// 取发送方账户
