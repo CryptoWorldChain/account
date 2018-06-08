@@ -2,12 +2,6 @@ syntax = "proto3";
 
 package org.brewchain.account.gens;
 
-// bc_unsend_tx -- 未发送交易
-// { bc_unsend_tx, 'txHash1' }, { bc_unsend_tx, 'txHash2' }, { bc_unsend_tx, 'txHash3' }
-
-// bc_wait_tx -- 已确认未block交易
-// 
-
 message SingleTransaction {
 	bytes txHash = 1;
 	int32 nonce = 2;
@@ -70,4 +64,8 @@ message MultiTransactionNode {
 	string node = 1;
 	string address = 2;
 	string bcuid = 3;
+}
+
+message BroadcastTransactionMsg {
+	repeated string txHexStr = 1;
 }

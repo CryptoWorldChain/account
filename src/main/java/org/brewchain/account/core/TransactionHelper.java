@@ -17,6 +17,7 @@ import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.brewchain.account.gens.Act.Account;
 import org.brewchain.account.gens.Act.AccountValue;
+import org.brewchain.account.gens.Tx.BroadcastTransactionMsg;
 import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.brewchain.account.gens.Tx.MultiTransactionBody;
 import org.brewchain.account.gens.Tx.MultiTransactionInput;
@@ -140,11 +141,8 @@ public class TransactionHelper implements ActorService {
 	 * @param oTransaction
 	 * @throws Exception
 	 */
-	public void SyncTransaction(MultiTransaction.Builder oMultiTransaction) throws Exception {
+	public void syncTransaction(MultiTransaction.Builder oMultiTransaction) throws Exception {
 		MultiTransaction formatMultiTransaction = verifyAndSaveMultiTransaction(oMultiTransaction);
-
-		// 交易的发送地址和接收地址如果不存在，则创建
-		// 如果交易是多重签名交易，根据extraData创建
 
 		// 保存交易到缓存中，用于打包
 		oPendingHashMapDB.put(formatMultiTransaction.getTxHash().toByteArray(), formatMultiTransaction.toByteArray());
@@ -193,12 +191,14 @@ public class TransactionHelper implements ActorService {
 			try {
 				Map<ByteString, Account> senders = new HashMap<ByteString, Account>();
 				for (MultiTransactionInput oInput : oTransaction.getTxBody().getInputsList()) {
-					senders.put(oInput.getAddress(), oAccountHelper.GetAccountOrCreate(oInput.getAddress().toByteArray()));
+					senders.put(oInput.getAddress(),
+							oAccountHelper.GetAccountOrCreate(oInput.getAddress().toByteArray()));
 				}
 
 				Map<ByteString, Account> receivers = new HashMap<ByteString, Account>();
 				for (MultiTransactionOutput oOutput : oTransaction.getTxBody().getOutputsList()) {
-					receivers.put(oOutput.getAddress(), oAccountHelper.GetAccountOrCreate(oOutput.getAddress().toByteArray()));
+					receivers.put(oOutput.getAddress(),
+							oAccountHelper.GetAccountOrCreate(oOutput.getAddress().toByteArray()));
 				}
 
 				oiTransactionActuator.onPrepareExecute(oTransaction, senders, receivers);
@@ -253,6 +253,26 @@ public class TransactionHelper implements ActorService {
 			}
 		}
 		return list;
+	}
+
+	public BroadcastTransactionMsg getWaitSendTxToSend(int count) throws InvalidProtocolBufferException {
+		BroadcastTransactionMsg.Builder oBroadcastTransactionMsg = BroadcastTransactionMsg.newBuilder();
+		int total = 0;
+
+		for (Iterator<Map.Entry<byte[], byte[]>> it = oSendingHashMapDB.getStorage().entrySet().iterator(); it
+				.hasNext();) {
+			Map.Entry<byte[], byte[]> item = it.next();
+			MultiTransaction.Builder oTransaction = MultiTransaction.newBuilder();
+			oTransaction.mergeFrom(item.getValue());
+			oBroadcastTransactionMsg.addTxHexStr(encApi.hexEnc(oTransaction.build().toByteArray()));
+			oPendingHashMapDB.put(item.getKey(), item.getValue());
+			it.remove();
+			total += 1;
+			if (count == total) {
+				break;
+			}
+		}
+		return oBroadcastTransactionMsg.build();
 	}
 
 	/**

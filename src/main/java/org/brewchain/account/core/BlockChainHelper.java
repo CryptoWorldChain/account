@@ -97,9 +97,9 @@ public class BlockChainHelper implements ActorService {
 		}
 		// return blockCache.last();
 	}
-	
+
 	public byte[] GetStoreBestBlockHash() throws Exception {
-		OValue  oOValue = dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get();
+		OValue oOValue = dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get();
 		return oOValue.getExtdata().toByteArray();
 		// return blockCache.last();
 	}
@@ -297,10 +297,9 @@ public class BlockChainHelper implements ActorService {
 		}
 		return null;
 	}
-	
 
 	public void increaseSyncCount(String hash) {
-		
+
 	}
 
 	public BlockChainTempNode tryGetBlockTempNodeFromTempStore(byte[] hash) {
@@ -470,17 +469,19 @@ public class BlockChainHelper implements ActorService {
 			oOValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey("org.bc.manage.node.account".getBytes()))
 					.get();
 			if (oOValue == null || oOValue.getExtdata() == null || oOValue.getExtdata().equals(ByteString.EMPTY)) {
+				// get net config
+
 				// try read .keystore file with pwd
 				if (StringUtils.isNotBlank(blockChainConfig.getPwd())) {
 					FileReader fr = null;
 					BufferedReader br = null;
 					try {
 						// read file
-						log.debug("keystore" + File.separator + "keystore"
+						log.debug("keystore" + File.separator + blockChainConfig.getNet() + File.separator + "keystore"
 								+ blockChainConfig.getKeystoreNumber() + ".json");
-						
-						fr = new FileReader("keystore" + File.separator + "keystore"
-								+ blockChainConfig.getKeystoreNumber() + ".json");
+
+						fr = new FileReader("keystore" + File.separator + blockChainConfig.getNet() + File.separator
+								+ "keystore" + blockChainConfig.getKeystoreNumber() + ".json");
 						br = new BufferedReader(fr);
 						String keyStoreJsonStr = "";
 
