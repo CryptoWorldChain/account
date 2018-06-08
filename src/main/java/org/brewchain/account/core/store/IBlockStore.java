@@ -5,7 +5,10 @@ import org.brewchain.account.gens.Block.BlockEntity;
 public interface IBlockStore {
 	boolean containKey(String hash);
 
-	BlockStoreNodeValue get(String hash);
+	BlockEntity get(String hash);
 
-	BlockStoreSummary tryAdd(BlockEntity block);
+	boolean add(BlockEntity block);
+	
+	BlockEntity getBlockByNumber(int number);
+	
 }

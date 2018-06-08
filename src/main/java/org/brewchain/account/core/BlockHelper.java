@@ -286,16 +286,18 @@ public class BlockHelper implements ActorService {
 					log.debug("begin to exce and add block::" + oBlockEntity.getHeader().getNumber());
 					try {
 						if (addBlock(oBlockEntity, oParentBlock)) {
-							// 检查
-							BlockEntity child = blockChainHelper.tryGetAndDeleteBlockFromTempStore(
-									oBlockEntity.getHeader().getBlockHash().toByteArray());
-
 							log.debug("success add block::" + oBlockEntity.getHeader().getNumber()
 									+ ", current number is::" + currentLastBlockNumber);
 
-							if (child != null) {
-								log.debug("find child block, begin apply:: child::" + child.getHeader().getNumber());
-								oAddBlockResponse = ApplyBlock(child.toBuilder()).toBuilder();
+							// 检查
+							BlockEntity child = blockChainHelper.tryGetAndDeleteBlockFromTempStore(
+									oBlockEntity.getHeader().getBlockHash().toByteArray());
+							while (child != null) {
+								log.debug("get child block::" + child.getHeader().getNumber());
+								addBlock(child.toBuilder(), oBlockEntity.build());
+								oBlockEntity = child.toBuilder();
+								child = blockChainHelper.tryGetAndDeleteBlockFromTempStore(
+										oBlockEntity.getHeader().getBlockHash().toByteArray());
 							}
 						}
 

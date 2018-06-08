@@ -29,8 +29,9 @@ public class BlockStoreNodeValue {
 		}
 	}
 
-	public void increaseRetryTimes() {
+	public int increaseRetryTimes() {
 		retryTimes += 1;
+		return retryTimes;
 	}
 
 	public void setConnect() {

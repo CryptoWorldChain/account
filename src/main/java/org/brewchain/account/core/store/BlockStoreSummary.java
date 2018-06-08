@@ -5,8 +5,8 @@ import lombok.Data;
 @Data
 public class BlockStoreSummary {
 	private BLOCK_BEHAVIOR behavior;
-	
+
 	public enum BLOCK_BEHAVIOR {
-		EXISTS_DROP, EXISTS_PREV, NOT_EXISTS_CACHE, NOT_EXISTS_APPLY
+		DROP, EXISTS_DROP, EXISTS_PREV, CACHE, APPLY, APPLY_CHILD, STORE, DONE
 	}
 }

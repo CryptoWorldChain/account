@@ -49,16 +49,22 @@ public class BlockChainConfig extends SessionModules<Message> {
 		String network = "";
 		try {
 			File networkFile = new File(".chainnet");
-			while (!networkFile.exists() || !networkFile.canRead()) {
-				log.debug("waiting chain_net config...");
-				Thread.sleep(1000);
+			if (!networkFile.exists() || !networkFile.canRead()) {
+				// read default config
+				network = props().get("org.bc.manage.node.net", null);
 			}
+			if (network == null || network.isEmpty()) {
+				while (!networkFile.exists() || !networkFile.canRead()) {
+					log.debug("waiting chain_net config...");
+					Thread.sleep(1000);
+				}
 
-			FileReader fr = new FileReader(networkFile.getPath());
-			BufferedReader br = new BufferedReader(fr);
-			network = br.readLine().trim().replace("\r", "").replace("\t", "");
-			br.close();
-			fr.close();
+				FileReader fr = new FileReader(networkFile.getPath());
+				BufferedReader br = new BufferedReader(fr);
+				network = br.readLine().trim().replace("\r", "").replace("\t", "");
+				br.close();
+				fr.close();
+			}
 		} catch (Exception e) {
 			log.error("fail to read net config");
 		}

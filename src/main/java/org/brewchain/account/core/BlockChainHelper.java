@@ -115,7 +115,7 @@ public class BlockChainHelper implements ActorService {
 	}
 
 	public byte[] GetUnStableBestBlockHash() throws Exception {
-		BlockChainTempNode oNode = blockChainTempStore.getMaxBlock();
+		BlockChainTempNode oNode = blockChainTempStore.getMaxStableBlock();
 		if (oNode != null) {
 			return encApi.hexDec(oNode.getHash());
 		}

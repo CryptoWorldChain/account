@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -13,6 +14,7 @@ import org.brewchain.account.core.actuator.*;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.util.FastByteComparisons;
 import org.brewchain.account.util.OEntityBuilder;
+import org.brewchain.bcapi.backend.ODBException;
 import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.brewchain.account.gens.Act.Account;
@@ -608,6 +610,12 @@ public class TransactionHelper implements ActorService {
 	 */
 	private MultiTransaction verifyAndSaveMultiTransaction(MultiTransaction.Builder oMultiTransaction)
 			throws Exception {
+
+		if (isExistsTransaction(oMultiTransaction.build())) {
+			log.warn("transaction exists, drop it");
+			throw new Exception("transaction exists, drop it");
+		}
+
 		Map<ByteString, Account> senders = new HashMap<ByteString, Account>();
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			senders.put(oInput.getAddress(), oAccountHelper.GetAccountOrCreate(oInput.getAddress().toByteArray()));
@@ -706,5 +714,21 @@ public class TransactionHelper implements ActorService {
 				encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(0).getAddress().toByteArray()),
 				oMultiTransaction.getTxBody().getInputs(0).getNonce()));
 		return encApi.hexDec(pair.getAddress());
+	}
+
+	public boolean isExistsTransaction(MultiTransaction oMultiTransaction) {
+		OValue oOValue;
+		try {
+			oOValue = dao.getTxsDao().get(OEntityBuilder.byteKey2OKey(oMultiTransaction.getTxHash().toByteArray()))
+					.get();
+			if (oOValue == null || oOValue.getExtdata() == null) {
+				return false;
+			} else {
+				return true;
+			}
+		} catch (Exception e) {
+			
+		}
+		return false;
 	}
 }
