@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.brewchain.account.core.KeyConstant;
@@ -88,6 +89,16 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 		return false;
 	}
 
+	public BlockStoreNodeValue getNode(String hash) {
+		try (ALock l = writeLock.lock()) {
+			BlockStoreNodeValue oBlockStoreNodeValue = this.storage.get(hash);
+			if (oBlockStoreNodeValue != null) {
+				return oBlockStoreNodeValue;
+			}
+			return null;
+		}
+	}
+
 	public int increaseRetryTimes(String hash) {
 		try (ALock l = writeLock.lock()) {
 			if (this.storage.containsKey(hash)) {
@@ -118,7 +129,7 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 			}
 			BlockStoreNodeValue oNode = this.storage.get(hash);
 			if (!oNode.isConnect()) {
-				oNode.setConnect();
+				oNode.connect();
 				this.storage.put(hash, oNode);
 				dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK),
 						OEntityBuilder.byteValue2OValue(encApi.hexDec(oNode.getBlockHash())));
@@ -172,7 +183,7 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 		try (ALock l = readLock.lock()) {
 			for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.entrySet().iterator(); it.hasNext();) {
 				Map.Entry<String, BlockStoreNodeValue> item = it.next();
-				if (item.getValue().getNumber() == number) {
+				if (item.getValue().getNumber() == number && item.getValue().isConnect()) {
 					return item.getValue().getBlockEntity();
 				}
 			}
@@ -180,4 +191,74 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 		return null;
 	}
 
+	public void put(String hash, BlockEntity block) {
+		try (ALock l = writeLock.lock()) {
+			BlockStoreNodeValue oBlockStoreNodeValue = this.storage.get(hash);
+			if (oBlockStoreNodeValue != null) {
+				oBlockStoreNodeValue.setBlockEntity(block);
+				this.storage.put(hash, oBlockStoreNodeValue);
+			}
+		}
+	}
+
+	@Override
+	public BlockEntity rollBackTo(int number) {
+		BlockEntity oBlockEntity = getBlockByNumber(number);
+		if (oBlockEntity != null) {
+			try (ALock l = writeLock.lock()) {
+				String hash = encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray());
+				if (this.storage.containsKey(hash)) {
+					BlockStoreNodeValue oNode = this.storage.get(hash);
+					while (StringUtils.isNotBlank(hash)) {
+						boolean isExistsChild = false;
+						for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.entrySet().iterator(); it
+								.hasNext();) {
+							Map.Entry<String, BlockStoreNodeValue> item = it.next();
+							if (item.getValue().getParentHash().equals(hash) && item.getValue().isConnect()) {
+								BlockStoreNodeValue newValue = item.getValue();
+								newValue.disConnect();
+								this.storage.put(item.getKey(), newValue);
+								hash = item.getValue().getBlockHash();
+								isExistsChild = true;
+							}
+						}
+						if (!isExistsChild) {
+							hash = null;
+						}
+					}
+
+					dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK),
+							OEntityBuilder.byteValue2OValue(encApi.hexDec(oNode.getBlockHash())));
+					return oNode.getBlockEntity();
+				} else {
+					return null;
+				}
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public void clear() {
+		for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.entrySet().iterator(); it.hasNext();) {
+			Map.Entry<String, BlockStoreNodeValue> item = it.next();
+			if (!item.getValue().isConnect()) {
+				this.storage.remove(item.getKey());
+			}
+		}
+	}
+
+	public void disconnectAll(BlockEntity block) {
+		for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.entrySet().iterator(); it.hasNext();) {
+			Map.Entry<String, BlockStoreNodeValue> item = it.next();
+			if (item.getValue().isConnect()) {
+				BlockStoreNodeValue newValue = item.getValue();
+				newValue.disConnect();
+				this.storage.put(item.getKey(), newValue);
+			}
+		}
+
+		dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK),
+				OEntityBuilder.byteValue2OValue(block.getHeader().getBlockHash().toByteArray()));
+	}
 }

@@ -34,11 +34,11 @@ public class BlockStoreNodeValue {
 		return retryTimes;
 	}
 
-	public void setConnect() {
+	public void connect() {
 		this.isConnect = true;
 	}
 
-	public void setDisConnect() {
+	public void disConnect() {
 		this.isConnect = false;
 	}
 }

@@ -11,4 +11,7 @@ public interface IBlockStore {
 	
 	BlockEntity getBlockByNumber(int number);
 	
+	BlockEntity rollBackTo(int number);
+	
+	void clear();
 }

@@ -41,4 +41,16 @@ public class BlockStableStore implements IBlockStore, ActorService {
 		return null;
 	}
 
+	@Override
+	public BlockEntity rollBackTo(int number) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void clear() {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

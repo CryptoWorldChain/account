@@ -67,7 +67,7 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 			oRespBlockInfo.setBlockCount(blockChainHelper.getLastStableBlockNumber());
 
 			oRespBlockInfo.setNumber(blockChainHelper.getLastBlockNumber());
-			oRespBlockInfo.setCache(blockChainHelper.getBlockCacheDump());
+			//oRespBlockInfo.setCache(blockChainHelper.getBlockCacheDump());
 			oRespBlockInfo.setWaitSync(oSendingHashMapDB.keys().size());
 			oRespBlockInfo.setWaitBlock(oPendingHashMapDB.keys().size());
 			LinkedList<BlockEntity> list = blockChainHelper.getParentsBlocks(dao.getBlockDao()
