@@ -5,18 +5,20 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
-import org.brewchain.account.core.actuator.*;
+import org.brewchain.account.core.actuator.ActuatorCallInternalFunction;
+import org.brewchain.account.core.actuator.ActuatorCreateContract;
+import org.brewchain.account.core.actuator.ActuatorCreateUnionAccount;
+import org.brewchain.account.core.actuator.ActuatorCryptoTokenTransaction;
+import org.brewchain.account.core.actuator.ActuatorDefault;
+import org.brewchain.account.core.actuator.ActuatorLockTokenTransaction;
+import org.brewchain.account.core.actuator.ActuatorTokenTransaction;
+import org.brewchain.account.core.actuator.ActuatorUnionAccountTransaction;
+import org.brewchain.account.core.actuator.iTransactionActuator;
 import org.brewchain.account.dao.DefDaos;
-import org.brewchain.account.util.FastByteComparisons;
-import org.brewchain.account.util.OEntityBuilder;
-import org.brewchain.bcapi.backend.ODBException;
-import org.brewchain.bcapi.gens.Oentity.OKey;
-import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.brewchain.account.gens.Act.Account;
 import org.brewchain.account.gens.Act.AccountValue;
 import org.brewchain.account.gens.Tx.BroadcastTransactionMsg;
@@ -33,6 +35,9 @@ import org.brewchain.account.gens.Tximpl.MultiTransactionInputImpl;
 import org.brewchain.account.gens.Tximpl.MultiTransactionOutputImpl;
 import org.brewchain.account.gens.Tximpl.MultiTransactionSignatureImpl;
 import org.brewchain.account.trie.StateTrie;
+import org.brewchain.account.util.OEntityBuilder;
+import org.brewchain.bcapi.gens.Oentity.OKey;
+import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.fc.brewchain.bcapi.EncAPI;
 import org.fc.brewchain.bcapi.KeyPairs;
 
@@ -88,11 +93,11 @@ public class TransactionHelper implements ActorService {
 		MultiTransaction formatMultiTransaction = verifyAndSaveMultiTransaction(oMultiTransaction);
 
 		// 保存交易到缓存中，用于广播
-		oSendingHashMapDB.put(formatMultiTransaction.getTxHash().toByteArray(), formatMultiTransaction.toByteArray());
+		oSendingHashMapDB.put(encApi.hexEnc(formatMultiTransaction.getTxHash().toByteArray()), formatMultiTransaction.toByteArray());
 
 		// 保存交易到缓存中，用于打包
 		// 如果指定了委托，并且委托是本节点
-		oPendingHashMapDB.put(formatMultiTransaction.getTxHash().toByteArray(), formatMultiTransaction.toByteArray());
+		oPendingHashMapDB.put(encApi.hexEnc(formatMultiTransaction.getTxHash().toByteArray()), formatMultiTransaction.toByteArray());
 
 		// {node} {component} {opt} {type} {msg}
 		log.info(String.format("LOGFILTER %s %s %s %s 创建交易[%s]", KeyConstant.node.getNode(), "account", "create",
@@ -147,7 +152,7 @@ public class TransactionHelper implements ActorService {
 		MultiTransaction formatMultiTransaction = verifyAndSaveMultiTransaction(oMultiTransaction);
 
 		// 保存交易到缓存中，用于打包
-		oPendingHashMapDB.put(formatMultiTransaction.getTxHash().toByteArray(), formatMultiTransaction.toByteArray());
+		oPendingHashMapDB.put(encApi.hexEnc(formatMultiTransaction.getTxHash().toByteArray()), formatMultiTransaction.toByteArray());
 
 	}
 
@@ -241,9 +246,8 @@ public class TransactionHelper implements ActorService {
 		List<MultiTransaction> list = new LinkedList<MultiTransaction>();
 		int total = 0;
 
-		for (Iterator<Map.Entry<byte[], byte[]>> it = oSendingHashMapDB.getStorage().entrySet().iterator(); it
-				.hasNext();) {
-			Map.Entry<byte[], byte[]> item = it.next();
+		for (Iterator<Map.Entry<String, byte[]>> it = oSendingHashMapDB.getStorage().entrySet().iterator(); it.hasNext();) {
+			Map.Entry<String, byte[]> item = it.next();
 			MultiTransaction.Builder oTransaction = MultiTransaction.newBuilder();
 			oTransaction.mergeFrom(item.getValue());
 			list.add(oTransaction.build());
@@ -261,9 +265,9 @@ public class TransactionHelper implements ActorService {
 		BroadcastTransactionMsg.Builder oBroadcastTransactionMsg = BroadcastTransactionMsg.newBuilder();
 		int total = 0;
 
-		for (Iterator<Map.Entry<byte[], byte[]>> it = oSendingHashMapDB.getStorage().entrySet().iterator(); it
+		for (Iterator<Map.Entry<String, byte[]>> it = oSendingHashMapDB.getStorage().entrySet().iterator(); it
 				.hasNext();) {
-			Map.Entry<byte[], byte[]> item = it.next();
+			Map.Entry<String, byte[]> item = it.next();
 			MultiTransaction.Builder oTransaction = MultiTransaction.newBuilder();
 			oTransaction.mergeFrom(item.getValue());
 			oBroadcastTransactionMsg.addTxHexStr(encApi.hexEnc(oTransaction.build().toByteArray()));
@@ -288,9 +292,9 @@ public class TransactionHelper implements ActorService {
 		LinkedList<MultiTransaction> list = new LinkedList<MultiTransaction>();
 		int total = 0;
 
-		for (Iterator<Map.Entry<byte[], byte[]>> it = oPendingHashMapDB.getStorage().entrySet().iterator(); it
+		for (Iterator<Map.Entry<String, byte[]>> it = oPendingHashMapDB.getStorage().entrySet().iterator(); it
 				.hasNext();) {
-			Map.Entry<byte[], byte[]> item = it.next();
+			Map.Entry<String, byte[]> item = it.next();
 			MultiTransaction.Builder oTransaction = MultiTransaction.newBuilder();
 			oTransaction.mergeFrom(item.getValue());
 			list.add(oTransaction.build());
@@ -303,11 +307,11 @@ public class TransactionHelper implements ActorService {
 		return list;
 	}
 
-	public void removeWaitBlockTx(byte[] txHash) throws InvalidProtocolBufferException {
-		for (Iterator<Map.Entry<byte[], byte[]>> it = oPendingHashMapDB.getStorage().entrySet().iterator(); it
+	public void removeWaitBlockTx(String txHash) throws InvalidProtocolBufferException {
+		for (Iterator<Map.Entry<String, byte[]>> it = oPendingHashMapDB.getStorage().entrySet().iterator(); it
 				.hasNext();) {
-			Map.Entry<byte[], byte[]> item = it.next();
-			if (FastByteComparisons.equal(item.getKey(), txHash)) {
+			Map.Entry<String, byte[]> item = it.next();
+			if (item.getKey().equals(txHash)) {
 				it.remove();
 				return;
 			}
