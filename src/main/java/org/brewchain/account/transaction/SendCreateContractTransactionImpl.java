@@ -54,11 +54,11 @@ public class SendCreateContractTransactionImpl extends SessionModules<ReqCreateC
 			MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 
 			MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
-			oMultiTransactionBody.setData(ByteString.copyFrom(encApi.hexDec(pb.getData())));
+			oMultiTransactionBody.setData(ByteString.copyFromUtf8(pb.getData()));
 			for (String delegate : pb.getDelegateList()) {
 				oMultiTransactionBody.addDelegate(ByteString.copyFrom(encApi.hexDec(delegate)));
 			}
-			oMultiTransactionBody.setExdata(ByteString.copyFrom(encApi.hexDec(pb.getExdata())));
+			oMultiTransactionBody.setExdata(ByteString.copyFromUtf8(pb.getExdata()));
 
 			MultiTransactionInput.Builder oMultiTransactionInput = MultiTransactionInput.newBuilder();
 			oMultiTransactionInput.setAddress(ByteString.copyFrom(encApi.hexDec(pb.getInput().getAddress())));

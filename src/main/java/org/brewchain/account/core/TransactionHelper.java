@@ -490,11 +490,15 @@ public class TransactionHelper implements ActorService {
 				.setStatus(StringUtils.isNotBlank(oTransaction.getStatus()) ? oTransaction.getStatus() : "");
 
 		MultiTransactionBodyImpl.Builder oMultiTransactionBodyImpl = MultiTransactionBodyImpl.newBuilder();
-		oMultiTransactionBodyImpl.setData(encApi.hexEnc(oMultiTransactionBody.getData().toByteArray()));
+		
+		oMultiTransactionBodyImpl.setData(oMultiTransactionBody.getData().toStringUtf8());
+		
 		for (ByteString delegate : oMultiTransactionBody.getDelegateList()) {
 			oMultiTransactionBodyImpl.addDelegate(encApi.hexEnc(delegate.toByteArray()));
 		}
-		oMultiTransactionBodyImpl.setExdata(encApi.hexEnc(oMultiTransactionBody.getExdata().toByteArray()));
+		
+		oMultiTransactionBodyImpl.setExdata(oMultiTransactionBody.getExdata().toStringUtf8());
+		
 		for (MultiTransactionInput input : oMultiTransactionBody.getInputsList()) {
 			MultiTransactionInputImpl.Builder oMultiTransactionInputImpl = MultiTransactionInputImpl.newBuilder();
 			oMultiTransactionInputImpl.setAddress(encApi.hexEnc(input.getAddress().toByteArray()));
@@ -535,11 +539,11 @@ public class TransactionHelper implements ActorService {
 		oMultiTransaction.setTxHash(ByteString.copyFrom(encApi.hexDec(oTransaction.getTxHash())));
 
 		MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
-		oMultiTransactionBody.setData(ByteString.copyFrom(encApi.hexDec(oMultiTransactionBodyImpl.getData())));
+		oMultiTransactionBody.setData(ByteString.copyFromUtf8(oMultiTransactionBodyImpl.getData()));
 		for (String delegate : oMultiTransactionBodyImpl.getDelegateList()) {
 			oMultiTransactionBody.addDelegate(ByteString.copyFrom(encApi.hexDec(delegate)));
 		}
-		oMultiTransactionBody.setExdata(ByteString.copyFrom(encApi.hexDec(oMultiTransactionBodyImpl.getExdata())));
+		oMultiTransactionBody.setExdata(ByteString.copyFromUtf8(oMultiTransactionBodyImpl.getExdata()));
 		for (MultiTransactionInputImpl input : oMultiTransactionBodyImpl.getInputsList()) {
 			MultiTransactionInput.Builder oMultiTransactionInput = MultiTransactionInput.newBuilder();
 			oMultiTransactionInput.setAddress(ByteString.copyFrom(encApi.hexDec(input.getAddress())));
