@@ -7,6 +7,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
+import org.brewchain.account.core.KeyConstant;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.gens.Block.BlockEntity;
 import org.brewchain.account.util.ALock;
@@ -44,6 +45,11 @@ public class BlockStableStore implements IBlockStore, ActorService {
 	protected ReadWriteLock rwLock = new ReentrantReadWriteLock();
 	protected ALock readLock = new ALock(rwLock.readLock());
 	protected ALock writeLock = new ALock(rwLock.writeLock());
+	
+	public BlockStableStore() {
+		this.storage = new ConcurrentHashMap<Integer, byte[]>();
+		this.blocks = new LRUCache<String, BlockEntity>(KeyConstant.CACHE_SIZE);
+	}
 
 	@Override
 	public boolean containKey(String hash) {
