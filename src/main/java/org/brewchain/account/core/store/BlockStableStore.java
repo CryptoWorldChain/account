@@ -69,6 +69,7 @@ public class BlockStableStore implements IBlockStore, ActorService {
 	public boolean add(BlockEntity block) {
 		int number = block.getHeader().getNumber();
 		byte[] hash  = block.getHeader().getBlockHash().toByteArray();
+		
 		//storage
 		this.storage.put(number, hash);
 		if(maxNumber < number){
@@ -89,6 +90,27 @@ public class BlockStableStore implements IBlockStore, ActorService {
 			block = get(encApi.hexEnc(hash));
 		}
 		return block;
+	}
+	
+	public BlockEntity rollBackTo(int number){
+		BlockEntity block = null;
+		byte[] hash = null;
+		while (getLastBlockNumber() > number) {
+			hash = this.storage.remove(getLastBlockNumber());
+		}
+		if(hash != null){
+			block = get(encApi.hexEnc(hash));
+		}
+		return block;
+	}
+	
+	public int getLastBlockNumber() {
+		try (ALock l = readLock.lock()) {
+			if (storage.size() > 0) {
+				return storage.size() - 1;
+			}
+			return -1;
+		}
 	}
 	
 	public BlockEntity getFromDB(String hash){
