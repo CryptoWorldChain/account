@@ -97,4 +97,5 @@ message AddBlockResponse {
 	int32 retCode = 1;
 	int32 currentNumber = 2;
 	string retMsg = 3;
+	repeated string txHashs = 4;
 }

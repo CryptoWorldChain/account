@@ -619,7 +619,7 @@ public class TransactionHelper implements ActorService {
 	private MultiTransaction verifyAndSaveMultiTransaction(MultiTransaction.Builder oMultiTransaction)
 			throws Exception {
 
-		if (isExistsTransaction(oMultiTransaction.build())) {
+		if (isExistsTransaction(oMultiTransaction.getTxHash().toByteArray())) {
 			log.warn("transaction exists, drop it");
 			throw new Exception("transaction exists, drop it");
 		}
@@ -724,10 +724,10 @@ public class TransactionHelper implements ActorService {
 		return encApi.hexDec(pair.getAddress());
 	}
 
-	public boolean isExistsTransaction(MultiTransaction oMultiTransaction) {
+	public boolean isExistsTransaction(byte[] txHash) {
 		OValue oOValue;
 		try {
-			oOValue = dao.getTxsDao().get(OEntityBuilder.byteKey2OKey(oMultiTransaction.getTxHash().toByteArray()))
+			oOValue = dao.getTxsDao().get(OEntityBuilder.byteKey2OKey(txHash))
 					.get();
 			if (oOValue == null || oOValue.getExtdata() == null) {
 				return false;

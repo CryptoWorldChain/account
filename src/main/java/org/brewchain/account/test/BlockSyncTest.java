@@ -145,7 +145,7 @@ public class BlockSyncTest extends SessionModules<ReqTxTest> implements ActorSer
 		try {
 			BlockHeader oBestBlockHeader = oBestBlock.getHeader();
 			this.stateTrie.setRoot(oBestBlockHeader.getStateRoot().toByteArray());
-			blockHelper.ApplyBlock(oBlockEntity);// ApplyBlock(oBlockEntity);
+			blockHelper.ApplyBlock(oBlockEntity.build());// ApplyBlock(oBlockEntity);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
