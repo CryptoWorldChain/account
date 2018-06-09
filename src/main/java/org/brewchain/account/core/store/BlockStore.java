@@ -37,7 +37,7 @@ public class BlockStore implements ActorService {
 	private BlockStableStore stableStore = new BlockStableStore();
 	private BlockUnStableStore unStableStore = new BlockUnStableStore();
 
-	public BlockStoreSummary appendBlock(BlockEntity block) {
+	public BlockStoreSummary addBlock(BlockEntity block) {
 		BlockStoreSummary oBlockStoreSummary = new BlockStoreSummary();
 		String hash = encApi.hexEnc(block.getHeader().getBlockHash().toByteArray());
 
@@ -82,7 +82,7 @@ public class BlockStore implements ActorService {
 				maxConnectBlock = block;
 			}
 
-			if (unStableStore.tryPop(oBlockStoreNodeValue)) {
+			if (unStableStore.tryPop(hash, oBlockStoreNodeValue)) {
 				if (stableStore.add(oBlockStoreNodeValue.getBlockEntity())) {
 					if (maxStableNumber < oBlockStoreNodeValue.getBlockEntity().getHeader().getNumber()) {
 						maxStableNumber = oBlockStoreNodeValue.getBlockEntity().getHeader().getNumber();
@@ -90,7 +90,7 @@ public class BlockStore implements ActorService {
 					}
 				}
 			}
-			if (unStableStore.isExistsUnConnectChild(hash)) {
+			if (unStableStore.containsUnConnectChild(hash)) {
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY_CHILD);
 				return oBlockStoreSummary;
 			} else {
@@ -116,6 +116,10 @@ public class BlockStore implements ActorService {
 			oBlockEntity = stableStore.get(hash);
 		}
 		return oBlockEntity;
+	}
+
+	public List<BlockEntity> getReadyConnectBlock(String hash) {
+		return unStableStore.getUnConnectChild(hash);
 	}
 
 	public List<BlockEntity> getChildListBlocksEndWith(String blockHash, String endBlockHash, int maxCount) {
