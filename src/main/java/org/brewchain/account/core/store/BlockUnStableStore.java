@@ -52,7 +52,7 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 	@Override
 	public boolean containKey(String hash) {
 		try (ALock l = readLock.lock()) {
-			return this.storage.contains(hash);
+			return this.storage.containsKey(hash);
 		}
 	}
 
@@ -78,6 +78,7 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 				if (!this.storage.containsKey(hash)) {
 					oNode = new BlockStoreNodeValue(hash, parentHash, block.getHeader().getNumber(), block);
 					this.storage.put(hash, oNode);
+					log.debug("add block number::" + oNode.getNumber() + " hash::" + oNode.getBlockHash());
 					dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(block.getHeader().getBlockHash()),
 							OEntityBuilder.byteValue2OValue(block.toByteArray()));
 				}
@@ -89,12 +90,17 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 		return false;
 	}
 
+	public int size() {
+		return this.storage.size();
+	}
+
 	public BlockStoreNodeValue getNode(String hash) {
 		try (ALock l = writeLock.lock()) {
 			BlockStoreNodeValue oBlockStoreNodeValue = this.storage.get(hash);
 			if (oBlockStoreNodeValue != null) {
 				return oBlockStoreNodeValue;
 			}
+			log.warn(" not found hash::" + hash);
 			return null;
 		}
 	}
@@ -114,7 +120,7 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 
 	public boolean isConnect(String hash) {
 		try (ALock l = readLock.lock()) {
-			if (this.storage.contains(hash)) {
+			if (this.storage.containsKey(hash)) {
 				BlockStoreNodeValue oNode = this.storage.get(hash);
 				return oNode.isConnect();
 			}
@@ -133,6 +139,10 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 				this.storage.put(hash, oNode);
 				dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK),
 						OEntityBuilder.byteValue2OValue(encApi.hexDec(oNode.getBlockHash())));
+				log.debug("success connect block number::" + oNode.getNumber() + " hash::" + oNode.getBlockHash()
+						+ " stateroot::"
+						+ encApi.hexEnc(oNode.getBlockEntity().getHeader().getStateRoot().toByteArray()));
+				
 			}
 		}
 	}
@@ -164,18 +174,22 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 		return list;
 	}
 
-	public boolean tryPop(String hash, BlockStoreNodeValue oBlockStoreNodeValue) {
+	public BlockStoreNodeValue tryPop(String hash) {
+		BlockStoreNodeValue oBlockStoreNodeValue = this.storage.get(hash);
 		int count = 0;
-		while (this.storage.containsKey(hash)) {
+		BlockStoreNodeValue oParent = this.storage.get(oBlockStoreNodeValue.getParentHash());
+		while (oParent != null) {
 			count += 1;
-			oBlockStoreNodeValue = this.storage.get(hash);
-			hash = oBlockStoreNodeValue.getParentHash();
+			oBlockStoreNodeValue = oParent;
+			oParent = this.storage.get(oParent.getParentHash());
 		}
 		if (oBlockStoreNodeValue != null && count >= KeyConstant.STABLE_BLOCK) {
-			storage.remove(hash);
-			return true;
+			storage.remove(oBlockStoreNodeValue.getBlockHash());
+			log.debug("stable block number::" + oBlockStoreNodeValue.getNumber() + " hash::"
+					+ oBlockStoreNodeValue.getBlockHash());
+			return oBlockStoreNodeValue;
 		}
-		return false;
+		return null;
 	}
 
 	@Override
@@ -196,7 +210,13 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 			BlockStoreNodeValue oBlockStoreNodeValue = this.storage.get(hash);
 			if (oBlockStoreNodeValue != null) {
 				oBlockStoreNodeValue.setBlockEntity(block);
+				log.debug("put block number::" + oBlockStoreNodeValue.getNumber() + " hash::"
+						+ oBlockStoreNodeValue.getBlockHash() + " stateroot::" + encApi.hexEnc(
+								oBlockStoreNodeValue.getBlockEntity().getHeader().getStateRoot().toByteArray()));
 				this.storage.put(hash, oBlockStoreNodeValue);
+
+				dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(block.getHeader().getBlockHash()),
+						OEntityBuilder.byteValue2OValue(block.toByteArray()));
 			}
 		}
 	}

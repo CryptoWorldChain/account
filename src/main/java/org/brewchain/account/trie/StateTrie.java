@@ -365,9 +365,7 @@ public class StateTrie implements ActorService {
 
 		public void dispose() {
 			if (hash != null) {
-//				if (!FastByteComparisons.equal(hash, root.hash)) {
-//					deleteHash(hash);
-//				}
+				deleteHash(hash);
 			}
 		}
 
@@ -508,8 +506,8 @@ public class StateTrie implements ActorService {
 	}
 
 	private void deleteHash(byte[] hash) {
-		log.debug("trie delete key::" + Hex.toHexString(hash));
-		dao.getAccountDao().delete(OEntityBuilder.byteKey2OKey(hash));
+		log.debug("trie delete key::" + Hex.toHexString(hash) + " root::" + Hex.toHexString(this.root.hash));
+		// dao.getAccountDao().delete(OEntityBuilder.byteKey2OKey(hash));
 	}
 
 	public byte[] get(byte[] key) {

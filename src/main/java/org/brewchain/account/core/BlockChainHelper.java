@@ -86,7 +86,7 @@ public class BlockChainHelper implements ActorService {
 	 */
 	public byte[] GetStableBestBlockHash() throws Exception {
 		BlockEntity block = this.blockStore.getMaxStableBlock();
-		if (block== null) {
+		if (block == null) {
 			return null;
 		}
 		return block.getHeader().getBlockHash().toByteArray();
@@ -99,23 +99,7 @@ public class BlockChainHelper implements ActorService {
 		// return blockCache.last();
 	}
 
-	public byte[] GetStoreBestBlockHash() throws Exception {
-		OValue oOValue = dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get();
-		return oOValue.getExtdata().toByteArray();
-		// return blockCache.last();
-	}
-
-	public BlockEntity GetStoreBestBlock() throws Exception {
-		byte[] hash = GetStoreBestBlockHash();
-		if (hash != null) {
-			return getBlockByHash(hash);
-		} else {
-			return null;
-		}
-		// return blockCache.last();
-	}
-
-	public byte[] GetUnStableBestBlockHash() throws Exception {
+	public byte[] GetConnectBestBlockHash() throws Exception {
 		BlockEntity oBlock = blockStore.getMaxConnectBlock();
 		if (oBlock != null) {
 			return oBlock.getHeader().getBlockHash().toByteArray();
@@ -124,13 +108,8 @@ public class BlockChainHelper implements ActorService {
 		// return blockCache.last();
 	}
 
-	public BlockEntity GetUnStableBestBlock() throws Exception {
-		byte[] hash = GetUnStableBestBlockHash();
-		if (hash != null) {
-			return getBlockByHash(hash);
-		} else {
-			return null;
-		}
+	public BlockEntity GetConnectBestBlock() throws Exception {
+		return blockStore.getMaxConnectBlock();
 		// return blockCache.last();
 	}
 
@@ -156,7 +135,8 @@ public class BlockChainHelper implements ActorService {
 	}
 
 	public int getLastBlockNumber() {
-		return blockStore.getMaxConnectNumber();
+		return blockStore.getMaxConnectNumber() == -1 ? blockStore.getMaxStableNumber()
+				: blockStore.getMaxConnectNumber();
 	}
 
 	/**
@@ -265,21 +245,24 @@ public class BlockChainHelper implements ActorService {
 	public BlockStoreSummary stableBlock(BlockEntity oBlock) {
 		return blockStore.stableBlock(oBlock);
 	}
-//	public void rollBackTo(BlockEntity oBlock) {
-//		blockChainStore.rollBackTo(oBlock.getHeader().getNumber());
-//		appendBlock(oBlock);
-//	}
+
+	// public void rollBackTo(BlockEntity oBlock) {
+	// blockChainStore.rollBackTo(oBlock.getHeader().getNumber());
+	// appendBlock(oBlock);
+	// }
 	public BlockEntity getChildBlock(BlockEntity oBlock) {
-		List<BlockEntity> list = blockStore.getReadyConnectBlock(encApi.hexEnc(oBlock.getHeader().getBlockHash().toByteArray()));
+		List<BlockEntity> list = blockStore
+				.getReadyConnectBlock(encApi.hexEnc(oBlock.getHeader().getBlockHash().toByteArray()));
 		if (list.size() > 0) {
 			return list.get(0);
-		} 
+		}
 		return null;
 	}
+
 	public BlockEntity rollbackTo(BlockEntity block) {
 		return blockStore.rollBackTo(block.getHeader().getNumber());
 	}
-	
+
 	public BlockStoreSummary addBlock(BlockEntity oBlock) {
 		return blockStore.addBlock(oBlock);
 		// OKey[] keys = new OKey[] {

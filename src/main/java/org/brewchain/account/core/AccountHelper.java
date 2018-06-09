@@ -217,7 +217,7 @@ public class AccountHelper implements ActorService {
 	 */
 	public synchronized long addTokenBalance(byte[] addr, String token, long balance)
 			throws Exception {
-		Account.Builder oAccount = GetAccount(addr).toBuilder();
+		Account.Builder oAccount = GetAccountOrCreate(addr).toBuilder();
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 
 		for (int i = 0; i < oAccountValue.getTokensCount(); i++) {

@@ -60,13 +60,17 @@ public class BlockStore implements ActorService {
 		if (oBlockEntity == null) {
 			log.warn(String.format("not found last block, start empty node"));
 		}
+		stableStore.add(oBlockEntity);
+		if (maxStableNumber < oBlockEntity.getHeader().getNumber()) {
+			maxStableNumber = oBlockEntity.getHeader().getNumber();
+			maxStableBlock = oBlockEntity;
+		}
+
 		int blockNumber = oBlockEntity.getHeader().getNumber();
 		int maxBlockNumber = blockNumber;
 		String parentHash = encApi.hexEnc(oBlockEntity.getHeader().getParentHash().toByteArray());
-
 		while (StringUtils.isNotBlank(parentHash)) {
 			BlockEntity loopBlockEntity = null;
-
 			loopBlockEntity = getBlockByHash(parentHash);
 			if (loopBlockEntity == null) {
 				break;
@@ -77,10 +81,28 @@ public class BlockStore implements ActorService {
 				}
 				blockNumber -= 1;
 				if (maxBlockNumber > (blockNumber + KeyConstant.STABLE_BLOCK)) {
+					log.debug("load block into stable cache number::" + loopBlockEntity.getHeader().getNumber()
+							+ " hash::" + encApi.hexEnc(loopBlockEntity.getHeader().getBlockHash().toByteArray())
+							+ " stateroot::" + encApi.hexEnc(loopBlockEntity.getHeader().getStateRoot().toByteArray()));
 					stableStore.add(loopBlockEntity);
+					if (maxStableNumber < loopBlockEntity.getHeader().getNumber()) {
+						maxStableNumber = loopBlockEntity.getHeader().getNumber();
+						maxStableBlock = loopBlockEntity;
+					}
 				} else {
+					log.debug("load block into unstable cache number::" + loopBlockEntity.getHeader().getNumber()
+							+ " hash::" + encApi.hexEnc(loopBlockEntity.getHeader().getBlockHash().toByteArray())
+							+ " stateroot::" + encApi.hexEnc(loopBlockEntity.getHeader().getStateRoot().toByteArray()));
 					unStableStore.add(loopBlockEntity);
 					unStableStore.connect(parentHash);
+					if (maxReceiveNumber < loopBlockEntity.getHeader().getNumber()) {
+						maxReceiveNumber = loopBlockEntity.getHeader().getNumber();
+						maxReceiveBlock = loopBlockEntity;
+					}
+					if (maxConnectNumber < loopBlockEntity.getHeader().getNumber()) {
+						maxConnectNumber = loopBlockEntity.getHeader().getNumber();
+						maxConnectBlock = loopBlockEntity;
+					}
 				}
 				if (loopBlockEntity.getHeader().getParentHash() != null) {
 					parentHash = encApi.hexEnc(loopBlockEntity.getHeader().getParentHash().toByteArray());
@@ -116,17 +138,27 @@ public class BlockStore implements ActorService {
 			}
 		}
 		if (unStableStore.add(block)) {
-			BlockStoreNodeValue oParent = unStableStore.getNode(parentHash);
-			if (oParent == null) {
-				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.CACHE);
-			} else if ((oParent.getNumber() + 1) != block.getHeader().getNumber()) {
-				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.CACHE);
-			} else if (!oParent.isConnect()) {
-				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.CACHE);
-			} else if (unStableStore.increaseRetryTimes(hash) > 3) {
-				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_PREV);
+			BlockStoreNodeValue oParentNode = unStableStore.getNode(parentHash);
+			BlockEntity oParent = null;
+			if (oParentNode == null && block.getHeader().getNumber() == 1) {
+				oParent = stableStore.get(encApi.hexEnc(block.getHeader().getParentHash().toByteArray()));
+				if (oParent.getHeader().getNumber() == 0) {
+					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
+				} else {
+					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.ERROR);
+				}
 			} else {
-				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
+				if (oParentNode == null) {
+					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.CACHE);
+				} else if (oParentNode != null && (oParentNode.getNumber() + 1) != block.getHeader().getNumber()) {
+					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.CACHE);
+				} else if (oParentNode != null && !oParentNode.isConnect()) {
+					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.CACHE);
+				} else if (unStableStore.increaseRetryTimes(hash) > 3) {
+					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_PREV);
+				} else {
+					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
+				}
 			}
 		} else {
 			oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
@@ -136,8 +168,12 @@ public class BlockStore implements ActorService {
 
 	public BlockStoreSummary connectBlock(BlockEntity block) throws BlockNotFoundInStoreException {
 		BlockStoreSummary oBlockStoreSummary = new BlockStoreSummary();
+
 		String hash = encApi.hexEnc(block.getHeader().getBlockHash().toByteArray());
-		if (unStableStore.containKey(hash)) {
+		log.debug("connect block number::" + block.getHeader().getNumber() + " hash::" + hash + " stateroot::"
+				+ encApi.hexEnc(block.getHeader().getStateRoot().toByteArray()));
+
+		if (unStableStore.containKey(hash) || block.getHeader().getNumber() == 1) {
 			unStableStore.put(hash, block);
 			unStableStore.connect(hash);
 			BlockStoreNodeValue oBlockStoreNodeValue = null;
@@ -147,7 +183,8 @@ public class BlockStore implements ActorService {
 				maxConnectBlock = block;
 			}
 
-			if (unStableStore.tryPop(hash, oBlockStoreNodeValue)) {
+			oBlockStoreNodeValue = unStableStore.tryPop(hash);
+			if (oBlockStoreNodeValue != null) {
 				stableBlock(oBlockStoreNodeValue.getBlockEntity());
 			}
 			if (unStableStore.containsUnConnectChild(hash)) {
@@ -158,7 +195,8 @@ public class BlockStore implements ActorService {
 				return oBlockStoreSummary;
 			}
 		} else {
-			throw new BlockNotFoundInStoreException("not found the block from block store::" + hash);
+			throw new BlockNotFoundInStoreException(
+					"not found the block from block store::" + hash + " number::" + block.getHeader().getNumber());
 		}
 	}
 

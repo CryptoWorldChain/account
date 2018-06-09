@@ -102,7 +102,10 @@ public class BlockHelper implements ActorService {
 		BlockMiner.Builder oBlockMiner = BlockMiner.newBuilder();
 
 		// 获取本节点的最后一块Block
-		BlockEntity oBestBlockEntity = blockChainHelper.GetStableBestBlock();
+		BlockEntity oBestBlockEntity = blockChainHelper.GetConnectBestBlock();
+		if (oBestBlockEntity == null) {
+			oBestBlockEntity = blockChainHelper.GetStableBestBlock();
+		}
 		BlockHeader oBestBlockHeader = oBestBlockEntity.getHeader();
 
 		// 构造Block Header
@@ -137,10 +140,6 @@ public class BlockHelper implements ActorService {
 		oBlockEntity.setBody(oBlockBody);
 		oBlockEntity.setMiner(oBlockMiner);
 
-		log.debug("new block, number::" + oBlockEntity.getHeader().getNumber() + " hash::"
-				+ encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()) + " parent::"
-				+ encApi.hexEnc(oBlockEntity.getHeader().getParentHash().toByteArray()));
-
 		BlockStoreSummary oSummary = blockChainHelper.addBlock(oBlockEntity.build());
 		switch (oSummary.getBehavior()) {
 		case APPLY:
@@ -149,8 +148,13 @@ public class BlockHelper implements ActorService {
 			oBlockEntity.setHeader(oBlockEntity.getHeaderBuilder().setStateRoot(ByteString.copyFrom(stateRoot)));
 			blockChainHelper.connectBlock(oBlockEntity.build());
 
-			log.info(String.format("LOGFILTER %s %s %s %s 执行区块[%s]", KeyConstant.node.getNode(), "account", "apply",
-					"block", encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray())));
+			log.info(String.format("LOGFILTER %s %s %s %s 执行区块[%s]", KeyConstant.node.getoAccount().getAddress(),
+					"account", "apply", "block", encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray())));
+
+			log.debug("new block, number::" + oBlockEntity.getHeader().getNumber() + " hash::"
+					+ encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()) + " parent::"
+					+ encApi.hexEnc(oBlockEntity.getHeader().getParentHash().toByteArray()) + " state::"
+					+ encApi.hexEnc(oBlockEntity.getHeader().getStateRoot().toByteArray()));
 
 			return oBlockEntity;
 		default:
@@ -213,10 +217,11 @@ public class BlockHelper implements ActorService {
 
 	public synchronized AddBlockResponse ApplyBlock(BlockEntity oBlockEntity) {
 		AddBlockResponse.Builder oAddBlockResponse = AddBlockResponse.newBuilder();
-
+		log.debug("receive block number::" + oBlockEntity.getHeader().getNumber() + " hash::"
+				+ encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()) + " stateroot::"
+				+ encApi.hexEnc(oBlockEntity.getHeader().getStateRoot().toByteArray()));
 		BlockStoreSummary oBlockStoreSummary = blockChainHelper.addBlock(oBlockEntity);
-		while (oBlockStoreSummary.getBehavior() != BLOCK_BEHAVIOR.DONE
-				|| oBlockStoreSummary.getBehavior() != BLOCK_BEHAVIOR.ERROR) {
+		while (oBlockStoreSummary.getBehavior() != BLOCK_BEHAVIOR.DONE) {
 			switch (oBlockStoreSummary.getBehavior()) {
 			case DROP:
 				log.info("drop block number::" + oBlockEntity.getHeader().getNumber());
@@ -236,6 +241,17 @@ public class BlockHelper implements ActorService {
 				break;
 			case APPLY:
 				log.info("begin to apply block number::" + oBlockEntity.getHeader().getNumber());
+
+				for (ByteString txHash : oBlockEntity.getHeader().getTxHashsList()) {
+					if (!transactionHelper.isExistsTransaction(txHash.toByteArray())) {
+						oAddBlockResponse.addTxHashs(encApi.hexEnc(txHash.toByteArray()));
+					}
+				}
+				if (oAddBlockResponse.getTxHashsCount() > 0) {
+					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.ERROR);
+					break;
+				}
+
 				BlockEntity parentBlock;
 				try {
 					parentBlock = blockChainHelper
@@ -251,7 +267,7 @@ public class BlockHelper implements ActorService {
 					if (!FastByteComparisons.equal(stateRoot, oBlockEntity.getHeader().getStateRoot().toByteArray())) {
 						log.error("begin to roll back, stateRoot::" + encApi.hexEnc(stateRoot) + " blockStateRoot::"
 								+ encApi.hexEnc(oBlockEntity.getHeader().getStateRoot().toByteArray()));
-
+						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.ERROR);
 					} else {
 						oBlockStoreSummary = blockChainHelper.connectBlock(oBlockEntity);
 					}
@@ -268,7 +284,6 @@ public class BlockHelper implements ActorService {
 			case STORE:
 			case DONE:
 				log.info("apply done number::" + blockChainHelper.getLastBlockNumber());
-				oAddBlockResponse.setCurrentNumber(blockChainHelper.getLastBlockNumber());
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 				break;
 			case ERROR:
@@ -277,6 +292,9 @@ public class BlockHelper implements ActorService {
 				break;
 			}
 		}
+
+		oAddBlockResponse.setCurrentNumber(blockChainHelper.getLastBlockNumber());
+		log.debug("return apply current::" + oAddBlockResponse.getCurrentNumber());
 		return oAddBlockResponse.build();
 		//
 		// BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
@@ -418,6 +436,7 @@ public class BlockHelper implements ActorService {
 
 			// 交易必须都存在
 			MultiTransaction oMultiTransaction = transactionHelper.GetTransaction(txHash.toByteArray());
+
 			// 验证交易是否被篡改
 			// 1. 重新Hash，比对交易Hash
 
@@ -457,29 +476,36 @@ public class BlockHelper implements ActorService {
 		return stateRoot;
 	}
 
-//	private synchronized boolean addBlock(BlockEntity oBlockEntity, BlockEntity parentBlock) throws Exception {
-//		this.stateTrie.setRoot(parentBlock.getHeader().getStateRoot().toByteArray());
-//		byte[] stateRoot = processBlock(oBlockEntity);
-//		log.debug("=====sync-> " + oBlockEntity.getHeader().getNumber() + " parent::"
-//				+ encApi.hexEnc(parentBlock.getHeader().getStateRoot().toByteArray()) + " current::"
-//				+ encApi.hexEnc(oBlockEntity.getHeader().getStateRoot().toByteArray()) + " exec::"
-//				+ encApi.hexEnc(stateRoot));
-//		if (!FastByteComparisons.equal(stateRoot, oBlockEntity.getHeader().getStateRoot().toByteArray())) {
-//			log.error("begin to roll back, stateRoot::" + encApi.hexEnc(stateRoot) + " blockStateRoot::"
-//					+ encApi.hexEnc(oBlockEntity.getHeader().getStateRoot().toByteArray()));
-//			blockChainHelper.rollBackTo(parentBlock);
-//			return false;
-//		} else {
-//			// 添加块
-//			if (!blockChainHelper.appendBlock(oBlockEntity.build())) {
-//				log.error("append block error");
-//				throw new Exception("block executed, but fail to add to db.");
-//			}
-//			log.info(String.format("LOGFILTER %s %s %s %s 执行区块[%s]", KeyConstant.node.getNode(), "account", "apply",
-//					"block", encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray())));
-//			return true;
-//		}
-//	}
+	// private synchronized boolean addBlock(BlockEntity oBlockEntity, BlockEntity
+	// parentBlock) throws Exception {
+	// this.stateTrie.setRoot(parentBlock.getHeader().getStateRoot().toByteArray());
+	// byte[] stateRoot = processBlock(oBlockEntity);
+	// log.debug("=====sync-> " + oBlockEntity.getHeader().getNumber() + " parent::"
+	// + encApi.hexEnc(parentBlock.getHeader().getStateRoot().toByteArray()) + "
+	// current::"
+	// + encApi.hexEnc(oBlockEntity.getHeader().getStateRoot().toByteArray()) + "
+	// exec::"
+	// + encApi.hexEnc(stateRoot));
+	// if (!FastByteComparisons.equal(stateRoot,
+	// oBlockEntity.getHeader().getStateRoot().toByteArray())) {
+	// log.error("begin to roll back, stateRoot::" + encApi.hexEnc(stateRoot) + "
+	// blockStateRoot::"
+	// + encApi.hexEnc(oBlockEntity.getHeader().getStateRoot().toByteArray()));
+	// blockChainHelper.rollBackTo(parentBlock);
+	// return false;
+	// } else {
+	// // 添加块
+	// if (!blockChainHelper.appendBlock(oBlockEntity.build())) {
+	// log.error("append block error");
+	// throw new Exception("block executed, but fail to add to db.");
+	// }
+	// log.info(String.format("LOGFILTER %s %s %s %s 执行区块[%s]",
+	// KeyConstant.node.getNode(), "account", "apply",
+	// "block",
+	// encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray())));
+	// return true;
+	// }
+	// }
 
 	/**
 	 * 区块奖励
@@ -488,7 +514,7 @@ public class BlockHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public void applyReward(BlockEntity oCurrentBlock) throws Exception {
-		accountHelper.addBalance(encApi.hexDec(oCurrentBlock.getMiner().getAddress()),
+		accountHelper.addTokenBalance(encApi.hexDec(oCurrentBlock.getMiner().getAddress()), "CWS",
 				oCurrentBlock.getMiner().getReward());
 	}
 
@@ -513,7 +539,7 @@ public class BlockHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public BlockEntity.Builder GetBestBlock() throws Exception {
-		return blockChainHelper.GetUnStableBestBlock().toBuilder();
+		return blockChainHelper.GetConnectBestBlock().toBuilder();
 	}
 
 	/**
@@ -554,7 +580,7 @@ public class BlockHelper implements ActorService {
 	public LinkedList<MultiTransaction> getTransactionByAddress(byte[] address, int blockCount) throws Exception {
 		LinkedList<MultiTransaction> txs = new LinkedList<MultiTransaction>();
 		// 找到最佳块，遍历所有block
-		for (BlockEntity oBlockEntity : blockChainHelper.getParentsBlocks(blockChainHelper.GetUnStableBestBlockHash(),
+		for (BlockEntity oBlockEntity : blockChainHelper.getParentsBlocks(blockChainHelper.GetConnectBestBlockHash(),
 				null, blockCount)) {
 			for (MultiTransaction multiTransaction : oBlockEntity.getBody().getTxsList()) {
 				// if
