@@ -95,8 +95,9 @@ public class BlockStableStore implements IBlockStore, ActorService {
 	public BlockEntity rollBackTo(int number){
 		BlockEntity block = null;
 		byte[] hash = null;
-		while (getLastBlockNumber() > number) {
-			hash = this.storage.remove(getLastBlockNumber());
+		int lastBlockNumber = 0;
+		while ((lastBlockNumber = getLastBlockNumber()) > number) {
+			hash = this.storage.remove(lastBlockNumber);
 		}
 		if(hash != null){
 			block = get(encApi.hexEnc(hash));
