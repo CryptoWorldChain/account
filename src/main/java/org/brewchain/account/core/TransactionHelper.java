@@ -11,6 +11,7 @@ import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.brewchain.account.core.actuator.*;
 import org.brewchain.account.dao.DefDaos;
+import org.brewchain.account.enums.TransTypeEnum;
 import org.brewchain.account.util.FastByteComparisons;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.bcapi.gens.Oentity.OKey;
@@ -163,33 +164,53 @@ public class TransactionHelper implements ActorService {
 			LinkedList<AccountValue> values = new LinkedList<AccountValue>();
 
 			iTransactionActuator oiTransactionActuator;
-			// TODO 枚举交易类型
-			if (oTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("01"))) {
-				oiTransactionActuator = new ActuatorCreateUnionAccount(this.oAccountHelper, this, null, encApi, dao,
-						this.stateTrie);
-			} else if (oTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("02"))) {
-				oiTransactionActuator = new ActuatorTokenTransaction(oAccountHelper, this, null, encApi, dao,
-						this.stateTrie);
-			} else if (oTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("03"))) {
-				oiTransactionActuator = new ActuatorUnionAccountTransaction(oAccountHelper, this, null, encApi, dao,
-						this.stateTrie);
-			} else if (oTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("04"))) {
-				oiTransactionActuator = new ActuatorCallInternalFunction(oAccountHelper, this, null, encApi, dao,
-						this.stateTrie);
-			} else if (oTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("05"))) {
-				oiTransactionActuator = new ActuatorCryptoTokenTransaction(oAccountHelper, this, null, encApi, dao,
-						this.stateTrie);
-			} else if (oTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("06"))) {
-				oiTransactionActuator = new ActuatorLockTokenTransaction(oAccountHelper, this, null, encApi, dao,
-						this.stateTrie);
-			} else if (oTransaction.getTxBody().getOutputsCount() == 0) {
-				oiTransactionActuator = new ActuatorCreateContract(oAccountHelper, this, null, encApi, dao,
-						this.stateTrie);
-			} else {
-				oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, this, null, encApi, dao,
-						this.stateTrie);
+			switch (TransTypeEnum.transf(oTransaction.getTxBody().getType())) {
+				case TYPE_CreateUnionAccount: {
+					oiTransactionActuator = new ActuatorCreateUnionAccount(this.oAccountHelper, this, null, encApi, dao,
+							this.stateTrie);
+				}
+					break;
+				case TYPE_TokenTransaction: {
+					oiTransactionActuator = new ActuatorTokenTransaction(oAccountHelper, this, null, encApi, dao,
+							this.stateTrie);
+				}
+					break;
+				case TYPE_UnionAccountTransaction: {
+					oiTransactionActuator = new ActuatorUnionAccountTransaction(oAccountHelper, this, null, encApi, dao,
+							this.stateTrie);
+				}
+					break;
+				case TYPE_CallInternalFunction: {
+					oiTransactionActuator = new ActuatorCallInternalFunction(oAccountHelper, this, null, encApi, dao,
+							this.stateTrie);
+				}
+					break;
+				case TYPE_CryptoTokenTransaction: {
+					oiTransactionActuator = new ActuatorCryptoTokenTransaction(oAccountHelper, this, null, encApi, dao,
+							this.stateTrie);
+				}
+					break;
+				case TYPE_LockTokenTransaction: {
+					oiTransactionActuator = new ActuatorLockTokenTransaction(oAccountHelper, this, null, encApi, dao,
+							this.stateTrie);
+				}
+					break;
+				case TYPE_CreateContract: {
+					oiTransactionActuator = new ActuatorCreateContract(oAccountHelper, this, null, encApi, dao,
+							this.stateTrie);
+				}
+					break;
+				case TYPE_ExcuteContract: {
+					oiTransactionActuator = new ActuatorExecuteContract(oAccountHelper, this, null, encApi, dao,
+							this.stateTrie);
+				}
+					break;
+				default:
+					oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, this, null, encApi, dao,
+							this.stateTrie);
+					break;
 			}
-
+			
 			try {
 				Map<ByteString, Account> senders = new HashMap<ByteString, Account>();
 				for (MultiTransactionInput oInput : oTransaction.getTxBody().getInputsList()) {
@@ -351,7 +372,7 @@ public class TransactionHelper implements ActorService {
 	 * @param oTransaction
 	 * @throws Exception
 	 */
-	private void getTransactionHash(MultiTransaction.Builder oTransaction) throws Exception {
+	public void getTransactionHash(MultiTransaction.Builder oTransaction) throws Exception {
 		if (oTransaction.getTxBody().getSignaturesCount() == 0) {
 			throw new Exception("交易需要签名后才能设置交易Hash");
 		}
@@ -586,7 +607,7 @@ public class TransactionHelper implements ActorService {
 	 * @param oMultiTransaction
 	 * @throws Exception
 	 */
-	private MultiTransaction verifyAndSaveMultiTransaction(MultiTransaction.Builder oMultiTransaction)
+	public MultiTransaction verifyAndSaveMultiTransaction(MultiTransaction.Builder oMultiTransaction)
 			throws Exception {
 		Map<ByteString, Account> senders = new HashMap<ByteString, Account>();
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
@@ -604,28 +625,51 @@ public class TransactionHelper implements ActorService {
 		// 01 -- 创建多重签名账户交易
 		// 02 -- Token交易
 		// 03 -- 多重签名账户交易
-		if (oMultiTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("01"))) {
-			oiTransactionActuator = new ActuatorCreateUnionAccount(this.oAccountHelper, null, null, encApi, dao,
+		switch (TransTypeEnum.transf(oMultiTransaction.getTxBody().getType())) {
+		case TYPE_CreateUnionAccount: {
+			oiTransactionActuator = new ActuatorCreateUnionAccount(this.oAccountHelper, this, null, encApi, dao,
 					this.stateTrie);
-		} else if (oMultiTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("02"))) {
-			oiTransactionActuator = new ActuatorTokenTransaction(oAccountHelper, null, null, encApi, dao,
+		}
+			break;
+		case TYPE_TokenTransaction: {
+			oiTransactionActuator = new ActuatorTokenTransaction(oAccountHelper, this, null, encApi, dao,
 					this.stateTrie);
-		} else if (oMultiTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("03"))) {
-			oiTransactionActuator = new ActuatorUnionAccountTransaction(oAccountHelper, null, null, encApi, dao,
+		}
+			break;
+		case TYPE_UnionAccountTransaction: {
+			oiTransactionActuator = new ActuatorUnionAccountTransaction(oAccountHelper, this, null, encApi, dao,
 					this.stateTrie);
-		} else if (oMultiTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("04"))) {
-			oiTransactionActuator = new ActuatorCallInternalFunction(oAccountHelper, null, null, encApi, dao,
+		}
+			break;
+		case TYPE_CallInternalFunction: {
+			oiTransactionActuator = new ActuatorCallInternalFunction(oAccountHelper, this, null, encApi, dao,
 					this.stateTrie);
-		} else if (oMultiTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("05"))) {
-			oiTransactionActuator = new ActuatorCryptoTokenTransaction(oAccountHelper, null, null, encApi, dao,
+		}
+			break;
+		case TYPE_CryptoTokenTransaction: {
+			oiTransactionActuator = new ActuatorCryptoTokenTransaction(oAccountHelper, this, null, encApi, dao,
 					this.stateTrie);
-		} else if (oMultiTransaction.getTxBody().getData().equals(ByteString.copyFromUtf8("06"))) {
+		}
+			break;
+		case TYPE_LockTokenTransaction: {
 			oiTransactionActuator = new ActuatorLockTokenTransaction(oAccountHelper, this, null, encApi, dao,
 					this.stateTrie);
-		} else if (oMultiTransaction.getTxBody().getOutputsCount() == 0) {
-			oiTransactionActuator = new ActuatorCreateContract(oAccountHelper, null, null, encApi, dao, this.stateTrie);
-		} else {
-			oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, null, null, encApi, dao, this.stateTrie);
+		}
+			break;
+		case TYPE_CreateContract: {
+			oiTransactionActuator = new ActuatorCreateContract(oAccountHelper, this, null, encApi, dao,
+					this.stateTrie);
+		}
+			break;
+		case TYPE_ExcuteContract: {
+			oiTransactionActuator = new ActuatorExecuteContract(oAccountHelper, this, null, encApi, dao,
+					this.stateTrie);
+		}
+			break;
+		default:
+			oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, this, null, encApi, dao,
+					this.stateTrie);
+			break;
 		}
 
 		// 如果交易本身需要验证签名
@@ -649,7 +693,7 @@ public class TransactionHelper implements ActorService {
 		return multiTransaction;
 	}
 
-	private void verifySignature(String pubKey, String signature, byte[] tx) throws Exception {
+	public void verifySignature(String pubKey, String signature, byte[] tx) throws Exception {
 		if (encApi.ecVerify(pubKey, tx, encApi.hexDec(signature))) {
 
 		} else {

@@ -44,6 +44,8 @@ dependencies {
     compile "com.cedarsoftware:java-util:1.8.0"
     
     compile 'com.google.guava:guava:19.0'    
+    
+    compile ("org.brewchain:org.brewchain.EvmApi:1.0.0")
 }
 
 jar {

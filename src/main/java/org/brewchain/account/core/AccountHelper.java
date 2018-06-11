@@ -68,7 +68,7 @@ public class AccountHelper implements ActorService {
 		return CreateAccount(address, pubKey, max, acceptMax, acceptLimit, addresses, null, null);
 	}
 
-	private synchronized Account CreateAccount(byte[] address, byte[] pubKey, long max, long acceptMax, int acceptLimit,
+	public synchronized Account CreateAccount(byte[] address, byte[] pubKey, long max, long acceptMax, int acceptLimit,
 			List<ByteString> addresses, byte[] code, byte[] exdata) {
 		Account.Builder oUnionAccount = Account.newBuilder();
 		AccountValue.Builder oUnionAccountValue = AccountValue.newBuilder();
@@ -574,7 +574,7 @@ public class AccountHelper implements ActorService {
 		return false;
 	}
 
-	private void putAccountValue(byte[] addr, AccountValue oAccountValue) {
+	public void putAccountValue(byte[] addr, AccountValue oAccountValue) {
 		dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(addr),
 				OEntityBuilder.byteValue2OValue(oAccountValue.toByteArray()));
 		if (this.stateTrie != null) {
