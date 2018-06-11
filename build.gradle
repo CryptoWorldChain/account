@@ -7,7 +7,7 @@ buildscript {
 	dependencies { 
 		classpath "onight.osgi:zpp-gradle:3.0.0"
 		classpath "org.brewchain:org.brewchain.bcapi:3.3.3"
-		classpath "org.brewchain:org.brewchain.EvmApi:1.0.0"
+		classpath "org.brewchain:org.brewchain.evmapi:1.0.0"
 	 }
 }
 
@@ -46,7 +46,7 @@ dependencies {
     
     compile 'com.google.guava:guava:19.0'    
     
-    compile ("org.brewchain:org.brewchain.EvmApi:1.0.0")
+    compile ("org.brewchain:org.brewchain.evmapi:1.0.0")
 }
 
 jar {

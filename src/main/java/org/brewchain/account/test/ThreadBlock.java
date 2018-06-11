@@ -3,16 +3,10 @@ package org.brewchain.account.test;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockHelper;
-import org.brewchain.account.gens.Block.BlockEntity;
-import org.brewchain.account.gens.Tx.MultiTransaction;
-import org.brewchain.account.gens.Tx.MultiTransactionInput;
-import org.brewchain.account.gens.Tx.MultiTransactionOutput;
-import org.brewchain.account.gens.Tx.MultiTransactionSignature;
 import org.brewchain.account.util.ByteUtil;
+import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.fc.brewchain.bcapi.EncAPI;
-import org.fc.brewchain.bcapi.KeyPairs;
 
 import com.google.protobuf.ByteString;
 

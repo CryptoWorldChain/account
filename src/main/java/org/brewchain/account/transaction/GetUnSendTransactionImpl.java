@@ -3,8 +3,11 @@ package org.brewchain.account.transaction;
 import java.util.List;
 
 import org.brewchain.account.core.TransactionHelper;
-import org.brewchain.account.gens.Tx.MultiTransaction;
-import org.brewchain.account.gens.Tximpl.*;
+import org.brewchain.account.gens.Tximpl.PTXTCommand;
+import org.brewchain.account.gens.Tximpl.PTXTModule;
+import org.brewchain.account.gens.Tximpl.ReqGetTxToSync;
+import org.brewchain.account.gens.Tximpl.RespGetTxToSync;
+import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;

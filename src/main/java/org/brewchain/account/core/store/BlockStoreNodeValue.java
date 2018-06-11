@@ -1,7 +1,7 @@
 package org.brewchain.account.core.store;
 
-import org.brewchain.account.core.store.BlockStore.IllegalOperationException;
-import org.brewchain.account.gens.Block.BlockEntity;
+import org.brewchain.evmapi.gens.Block.BlockEntity;
+
 import lombok.Data;
 
 @Data

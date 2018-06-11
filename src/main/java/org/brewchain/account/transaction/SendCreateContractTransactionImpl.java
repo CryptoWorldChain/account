@@ -2,14 +2,14 @@ package org.brewchain.account.transaction;
 
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.TransactionHelper;
-import org.brewchain.account.gens.Tx.MultiTransaction;
-import org.brewchain.account.gens.Tx.MultiTransactionBody;
-import org.brewchain.account.gens.Tx.MultiTransactionInput;
-import org.brewchain.account.gens.Tx.MultiTransactionSignature;
 import org.brewchain.account.gens.Tximpl.PTXTCommand;
 import org.brewchain.account.gens.Tximpl.PTXTModule;
 import org.brewchain.account.gens.Tximpl.ReqCreateContractTransaction;
 import org.brewchain.account.gens.Tximpl.RespCreateContractTransaction;
+import org.brewchain.evmapi.gens.Tx.MultiTransaction;
+import org.brewchain.evmapi.gens.Tx.MultiTransactionBody;
+import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
+import org.brewchain.evmapi.gens.Tx.MultiTransactionSignature;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;

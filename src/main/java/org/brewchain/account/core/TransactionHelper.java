@@ -1,5 +1,7 @@
 package org.brewchain.account.core;
 
+import static java.util.Arrays.copyOfRange;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -21,20 +23,6 @@ import org.brewchain.account.core.actuator.ActuatorUnionAccountTransaction;
 import org.brewchain.account.core.actuator.iTransactionActuator;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.enums.TransTypeEnum;
-import org.brewchain.account.util.FastByteComparisons;
-import org.brewchain.account.util.OEntityBuilder;
-import org.brewchain.bcapi.gens.Oentity.OKey;
-import org.brewchain.bcapi.gens.Oentity.OValue;
-import org.brewchain.account.gens.Act.Account;
-import org.brewchain.account.gens.Act.AccountValue;
-import org.brewchain.account.gens.Tx.BroadcastTransactionMsg;
-import org.brewchain.account.gens.Tx.MultiTransaction;
-import org.brewchain.account.gens.Tx.MultiTransactionBody;
-import org.brewchain.account.gens.Tx.MultiTransactionInput;
-import org.brewchain.account.gens.Tx.MultiTransactionNode;
-import org.brewchain.account.gens.Tx.MultiTransactionOutput;
-import org.brewchain.account.gens.Tx.MultiTransactionSignature;
-import org.brewchain.account.gens.Tx.SingleTransaction;
 import org.brewchain.account.gens.Tximpl.MultiTransactionBodyImpl;
 import org.brewchain.account.gens.Tximpl.MultiTransactionImpl;
 import org.brewchain.account.gens.Tximpl.MultiTransactionInputImpl;
@@ -44,6 +32,16 @@ import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.bcapi.gens.Oentity.OValue;
+import org.brewchain.evmapi.gens.Act.Account;
+import org.brewchain.evmapi.gens.Act.AccountValue;
+import org.brewchain.evmapi.gens.Tx.BroadcastTransactionMsg;
+import org.brewchain.evmapi.gens.Tx.MultiTransaction;
+import org.brewchain.evmapi.gens.Tx.MultiTransactionBody;
+import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
+import org.brewchain.evmapi.gens.Tx.MultiTransactionNode;
+import org.brewchain.evmapi.gens.Tx.MultiTransactionOutput;
+import org.brewchain.evmapi.gens.Tx.MultiTransactionSignature;
+import org.brewchain.evmapi.gens.Tx.SingleTransaction;
 import org.fc.brewchain.bcapi.EncAPI;
 import org.fc.brewchain.bcapi.KeyPairs;
 
@@ -55,8 +53,6 @@ import lombok.extern.slf4j.Slf4j;
 import onight.osgi.annotation.iPojoBean;
 import onight.tfw.ntrans.api.ActorService;
 import onight.tfw.ntrans.api.annotation.ActorRequire;
-
-import static java.util.Arrays.copyOfRange;
 
 /**
  * @author

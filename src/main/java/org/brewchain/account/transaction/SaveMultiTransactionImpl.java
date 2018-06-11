@@ -1,8 +1,11 @@
 package org.brewchain.account.transaction;
 
 import org.brewchain.account.core.TransactionHelper;
-import org.brewchain.account.gens.Tx.MultiTransaction;
-import org.brewchain.account.gens.Tximpl.*;
+import org.brewchain.account.gens.Tximpl.PTXTCommand;
+import org.brewchain.account.gens.Tximpl.PTXTModule;
+import org.brewchain.account.gens.Tximpl.ReqCreateMultiTransaction;
+import org.brewchain.account.gens.Tximpl.RespCreateTransaction;
+import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import lombok.Data;

@@ -2,15 +2,14 @@ package org.brewchain.account.block;
 
 import org.brewchain.account.core.BlockChainHelper;
 import org.brewchain.account.core.BlockHelper;
-import org.brewchain.account.gens.Block.BlockEntity;
 import org.brewchain.account.gens.Blockimpl.BlockHeaderImpl;
 import org.brewchain.account.gens.Blockimpl.BlockMinerImpl;
 import org.brewchain.account.gens.Blockimpl.PBCTCommand;
 import org.brewchain.account.gens.Blockimpl.PBCTModule;
-import org.brewchain.account.gens.Blockimpl.ReqGetBlock;
 import org.brewchain.account.gens.Blockimpl.ReqGetBlockByNumber;
 import org.brewchain.account.gens.Blockimpl.RespGetBlock;
 import org.brewchain.account.util.ByteUtil;
+import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;

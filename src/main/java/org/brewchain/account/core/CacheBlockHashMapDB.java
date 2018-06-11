@@ -2,16 +2,14 @@ package org.brewchain.account.core;
 
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
-import org.brewchain.account.gens.Block.BlockEntity;
 import org.brewchain.account.util.ALock;
-import org.brewchain.account.util.ByteArrayMap;
+import org.brewchain.evmapi.gens.Block.BlockEntity;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 

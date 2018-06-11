@@ -7,19 +7,17 @@ import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.dao.DefDaos;
-import org.brewchain.account.gens.Act.Account;
-import org.brewchain.account.gens.Act.AccountTokenValue;
-import org.brewchain.account.gens.Act.AccountValue;
-import org.brewchain.account.gens.Tx.MultiTransaction;
-import org.brewchain.account.gens.Tx.MultiTransaction.Builder;
 import org.brewchain.account.trie.DBTrie;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.bcapi.gens.Oentity.OKey;
-import org.brewchain.bcapi.gens.Oentity.OValue;
+import org.brewchain.evmapi.gens.Act.Account;
+import org.brewchain.evmapi.gens.Act.AccountTokenValue;
+import org.brewchain.evmapi.gens.Act.AccountValue;
+import org.brewchain.evmapi.gens.Tx.MultiTransaction;
+import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
+import org.brewchain.evmapi.gens.Tx.MultiTransactionOutput;
 import org.fc.brewchain.bcapi.EncAPI;
-import org.brewchain.account.gens.Tx.MultiTransactionInput;
-import org.brewchain.account.gens.Tx.MultiTransactionOutput;
 
 import com.google.protobuf.ByteString;
 

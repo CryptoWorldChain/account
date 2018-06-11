@@ -1,13 +1,20 @@
 package org.brewchain.account.account;
 
 import org.brewchain.account.core.AccountHelper;
-import org.brewchain.account.gens.Act.Account;
-import org.brewchain.account.gens.Act.AccountCryptoToken;
-import org.brewchain.account.gens.Act.AccountCryptoValue;
-import org.brewchain.account.gens.Act.AccountTokenValue;
-import org.brewchain.account.gens.Act.AccountValue;
-import org.brewchain.account.gens.Actimpl.*;
+import org.brewchain.account.gens.Actimpl.AccountCryptoTokenImpl;
+import org.brewchain.account.gens.Actimpl.AccountCryptoValueImpl;
+import org.brewchain.account.gens.Actimpl.AccountTokenValueImpl;
+import org.brewchain.account.gens.Actimpl.AccountValueImpl;
+import org.brewchain.account.gens.Actimpl.PACTCommand;
+import org.brewchain.account.gens.Actimpl.PACTModule;
+import org.brewchain.account.gens.Actimpl.ReqGetAccount;
+import org.brewchain.account.gens.Actimpl.RespGetAccount;
 import org.brewchain.account.util.ByteUtil;
+import org.brewchain.evmapi.gens.Act.Account;
+import org.brewchain.evmapi.gens.Act.AccountCryptoToken;
+import org.brewchain.evmapi.gens.Act.AccountCryptoValue;
+import org.brewchain.evmapi.gens.Act.AccountTokenValue;
+import org.brewchain.evmapi.gens.Act.AccountValue;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;

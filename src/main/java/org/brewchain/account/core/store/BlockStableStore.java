@@ -9,12 +9,12 @@ import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.brewchain.account.core.KeyConstant;
 import org.brewchain.account.dao.DefDaos;
-import org.brewchain.account.gens.Block.BlockEntity;
 import org.brewchain.account.util.ALock;
 import org.brewchain.account.util.LRUCache;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.bcapi.backend.ODBException;
 import org.brewchain.bcapi.gens.Oentity.OValue;
+import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.InvalidProtocolBufferException;

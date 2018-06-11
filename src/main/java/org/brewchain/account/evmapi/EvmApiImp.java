@@ -6,11 +6,11 @@ import java.util.List;
 
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.TransactionHelper;
-import org.brewchain.account.gens.Act.Account;
-import org.brewchain.account.gens.Act.AccountCryptoToken;
-import org.brewchain.account.gens.Act.AccountValue;
-import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.brewchain.evm.api.EvmApi;
+import org.brewchain.evmapi.gens.Act.Account;
+import org.brewchain.evmapi.gens.Act.AccountCryptoToken;
+import org.brewchain.evmapi.gens.Act.AccountValue;
+import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;

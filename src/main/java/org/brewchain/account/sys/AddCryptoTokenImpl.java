@@ -1,11 +1,11 @@
 package org.brewchain.account.sys;
 
 import org.brewchain.account.core.AccountHelper;
-import org.brewchain.account.gens.Act.AccountCryptoToken;
 import org.brewchain.account.gens.Sys.PSYSCommand;
 import org.brewchain.account.gens.Sys.PSYSModule;
 import org.brewchain.account.gens.Sys.ReqAddCryptoToken;
 import org.brewchain.account.gens.Sys.RespAddCryptoToken;
+import org.brewchain.evmapi.gens.Act.AccountCryptoToken;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;

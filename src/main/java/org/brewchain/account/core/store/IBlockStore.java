@@ -1,6 +1,6 @@
 package org.brewchain.account.core.store;
 
-import org.brewchain.account.gens.Block.BlockEntity;
+import org.brewchain.evmapi.gens.Block.BlockEntity;
 
 public interface IBlockStore {
 	boolean containKey(String hash);

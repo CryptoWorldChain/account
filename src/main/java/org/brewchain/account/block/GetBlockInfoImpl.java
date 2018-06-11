@@ -1,9 +1,6 @@
 package org.brewchain.account.block;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.Map.Entry;
 
 import org.brewchain.account.core.BlockChainHelper;
 import org.brewchain.account.core.CacheBlockHashMapDB;
@@ -11,16 +8,13 @@ import org.brewchain.account.core.KeyConstant;
 import org.brewchain.account.core.WaitBlockHashMapDB;
 import org.brewchain.account.core.WaitSendHashMapDB;
 import org.brewchain.account.dao.DefDaos;
-import org.brewchain.account.gens.Block.BlockEntity;
 import org.brewchain.account.gens.Blockimpl.PBCTCommand;
 import org.brewchain.account.gens.Blockimpl.PBCTModule;
 import org.brewchain.account.gens.Blockimpl.ReqBlockInfo;
 import org.brewchain.account.gens.Blockimpl.RespBlockInfo;
-import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.util.OEntityBuilder;
+import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.fc.brewchain.bcapi.EncAPI;
-
-import com.sleepycat.utilint.StringUtils;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;

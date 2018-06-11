@@ -6,21 +6,16 @@ import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.dao.DefDaos;
-import org.brewchain.account.gens.Act.Account;
-import org.brewchain.account.gens.Act.AccountValue;
-import org.brewchain.account.gens.Tx.MultiTransaction;
-import org.brewchain.account.gens.Tx.MultiTransactionInput;
-import org.brewchain.account.trie.CacheTrie;
 import org.brewchain.account.trie.DBTrie;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.util.OEntityBuilder;
+import org.brewchain.evmapi.gens.Act.Account;
+import org.brewchain.evmapi.gens.Act.AccountValue;
+import org.brewchain.evmapi.gens.Tx.MultiTransaction;
+import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
 import org.fc.brewchain.bcapi.EncAPI;
-import org.fc.brewchain.bcapi.KeyPairs;
 
 import com.google.protobuf.ByteString;
-import static java.util.Arrays.copyOfRange;
-
-import java.security.KeyPair;
 
 public class ActuatorCreateContract extends AbstractTransactionActuator implements iTransactionActuator {
 

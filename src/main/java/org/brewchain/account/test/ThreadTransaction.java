@@ -8,11 +8,11 @@ import java.util.TimerTask;
 
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.TransactionHelper;
-import org.brewchain.account.gens.Tx.MultiTransaction;
-import org.brewchain.account.gens.Tx.MultiTransactionBody;
-import org.brewchain.account.gens.Tx.MultiTransactionInput;
-import org.brewchain.account.gens.Tx.MultiTransactionOutput;
-import org.brewchain.account.gens.Tx.MultiTransactionSignature;
+import org.brewchain.evmapi.gens.Tx.MultiTransaction;
+import org.brewchain.evmapi.gens.Tx.MultiTransactionBody;
+import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
+import org.brewchain.evmapi.gens.Tx.MultiTransactionOutput;
+import org.brewchain.evmapi.gens.Tx.MultiTransactionSignature;
 import org.fc.brewchain.bcapi.EncAPI;
 import org.fc.brewchain.bcapi.KeyPairs;
 

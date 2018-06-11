@@ -1,12 +1,12 @@
 package org.brewchain.account.transaction;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.brewchain.account.core.TransactionHelper;
-import org.brewchain.account.gens.Tx.MultiTransaction;
-import org.brewchain.account.gens.Tximpl.*;
-
-import com.google.protobuf.ByteString;
+import org.brewchain.account.gens.Tximpl.MultiTransactionImpl;
+import org.brewchain.account.gens.Tximpl.PTXTCommand;
+import org.brewchain.account.gens.Tximpl.PTXTModule;
+import org.brewchain.account.gens.Tximpl.ReqSyncTx;
+import org.brewchain.account.gens.Tximpl.RespSyncTx;
+import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;

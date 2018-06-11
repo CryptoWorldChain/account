@@ -1,18 +1,14 @@
 package org.brewchain.account.transaction;
 
-import java.util.Iterator;
-
 import org.brewchain.account.core.TransactionHelper;
-import org.brewchain.account.gens.Tx.MultiTransaction;
-import org.brewchain.account.gens.Tx.MultiTransactionBody;
-import org.brewchain.account.gens.Tx.MultiTransactionInput;
-import org.brewchain.account.gens.Tx.MultiTransactionOutput;
-import org.brewchain.account.gens.Tx.MultiTransactionSignature;
-import org.brewchain.account.gens.Tximpl.*;
+import org.brewchain.account.gens.Tximpl.MultiTransactionImpl;
+import org.brewchain.account.gens.Tximpl.PTXTCommand;
+import org.brewchain.account.gens.Tximpl.PTXTModule;
+import org.brewchain.account.gens.Tximpl.ReqGetTxByHash;
+import org.brewchain.account.gens.Tximpl.RespGetTxByHash;
 import org.brewchain.account.util.ByteUtil;
+import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import org.fc.brewchain.bcapi.EncAPI;
-
-import com.google.protobuf.ByteString;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
