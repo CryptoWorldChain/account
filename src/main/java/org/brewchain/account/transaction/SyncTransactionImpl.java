@@ -41,7 +41,7 @@ public class SyncTransactionImpl extends SessionModules<ReqSyncTx> {
 		for (MultiTransactionImpl oTransaction : pb.getTxsList()) {
 			try {
 				MultiTransaction.Builder oMultiTransaction = transactionHelper.parse(oTransaction);
-				transactionHelper.SyncTransaction(oMultiTransaction);
+				transactionHelper.syncTransaction(oMultiTransaction);
 			} catch (Exception e) {
 				oRespSyncTx.addErrList(oTransaction.getTxHash());
 				oRespSyncTx.setRetCode(-1);

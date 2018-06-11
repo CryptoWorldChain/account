@@ -160,7 +160,7 @@ public class BlockRollbackTest extends SessionModules<ReqTxTest> implements Acto
 			printAccount(encApi.hexDec(oKeyPairs3.getAddress()));
 
 			// 7. back to block b, print account
-			blockChainHelper.rollBackTo(blockB);
+			blockChainHelper.rollbackTo(blockB);
 
 			// printAccount(encApi.hexDec(oKeyPairs1.getAddress()), oRollStateTrie);
 			// printAccount(encApi.hexDec(oKeyPairs2.getAddress()), oRollStateTrie);

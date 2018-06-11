@@ -9,7 +9,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.brewchain.account.util.ALock;
-import org.brewchain.account.util.ByteArrayMap;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -22,21 +21,21 @@ import onight.tfw.ntrans.api.ActorService;
 @Slf4j
 @Data
 public class WaitSendHashMapDB implements ActorService {
-	protected final ConcurrentHashMap<byte[], byte[]> storage;
+	protected final ConcurrentHashMap<String, byte[]> storage;
 
 	protected ReadWriteLock rwLock = new ReentrantReadWriteLock();
 	protected ALock readLock = new ALock(rwLock.readLock());
 	protected ALock writeLock = new ALock(rwLock.writeLock());
 
 	public WaitSendHashMapDB() {
-		this(new ConcurrentHashMap<byte[], byte[]>());
+		this(new ConcurrentHashMap<String, byte[]>());
 	}
 
-	public WaitSendHashMapDB(ConcurrentHashMap<byte[], byte[]> storage) {
+	public WaitSendHashMapDB(ConcurrentHashMap<String, byte[]> storage) {
 		this.storage = storage;
 	}
 
-	public void put(byte[] key, byte[] val) {
+	public void put(String key, byte[] val) {
 		if (val == null) {
 			delete(key);
 		} else {
@@ -46,33 +45,33 @@ public class WaitSendHashMapDB implements ActorService {
 		}
 	}
 
-	public byte[] get(byte[] key) {
+	public byte[] get(String key) {
 		try (ALock l = readLock.lock()) {
 			return storage.get(key);
 		}
 	}
 
-	public void delete(byte[] key) {
+	public void delete(String key) {
 		try (ALock l = writeLock.lock()) {
 			storage.remove(key);
 		}
 	}
 
-	public Set<byte[]> keys() {
+	public Set<String> keys() {
 		try (ALock l = readLock.lock()) {
 			return getStorage().keySet();
 		}
 	}
 
-	public void updateBatch(Map<byte[], byte[]> rows) {
+	public void updateBatch(Map<String, byte[]> rows) {
 		try (ALock l = writeLock.lock()) {
-			for (Map.Entry<byte[], byte[]> entry : rows.entrySet()) {
+			for (Map.Entry<String, byte[]> entry : rows.entrySet()) {
 				put(entry.getKey(), entry.getValue());
 			}
 		}
 	}
 
-	public Map<byte[], byte[]> getStorage() {
+	public Map<String, byte[]> getStorage() {
 		return storage;
 	}
 }

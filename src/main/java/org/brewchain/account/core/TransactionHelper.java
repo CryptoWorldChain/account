@@ -9,7 +9,16 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
-import org.brewchain.account.core.actuator.*;
+import org.brewchain.account.core.actuator.ActuatorCallInternalFunction;
+import org.brewchain.account.core.actuator.ActuatorCreateContract;
+import org.brewchain.account.core.actuator.ActuatorCreateUnionAccount;
+import org.brewchain.account.core.actuator.ActuatorCryptoTokenTransaction;
+import org.brewchain.account.core.actuator.ActuatorDefault;
+import org.brewchain.account.core.actuator.ActuatorExecuteContract;
+import org.brewchain.account.core.actuator.ActuatorLockTokenTransaction;
+import org.brewchain.account.core.actuator.ActuatorTokenTransaction;
+import org.brewchain.account.core.actuator.ActuatorUnionAccountTransaction;
+import org.brewchain.account.core.actuator.iTransactionActuator;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.enums.TransTypeEnum;
 import org.brewchain.account.util.FastByteComparisons;
@@ -18,6 +27,7 @@ import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.brewchain.account.gens.Act.Account;
 import org.brewchain.account.gens.Act.AccountValue;
+import org.brewchain.account.gens.Tx.BroadcastTransactionMsg;
 import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.brewchain.account.gens.Tx.MultiTransactionBody;
 import org.brewchain.account.gens.Tx.MultiTransactionInput;
@@ -31,6 +41,9 @@ import org.brewchain.account.gens.Tximpl.MultiTransactionInputImpl;
 import org.brewchain.account.gens.Tximpl.MultiTransactionOutputImpl;
 import org.brewchain.account.gens.Tximpl.MultiTransactionSignatureImpl;
 import org.brewchain.account.trie.StateTrie;
+import org.brewchain.account.util.OEntityBuilder;
+import org.brewchain.bcapi.gens.Oentity.OKey;
+import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.fc.brewchain.bcapi.EncAPI;
 import org.fc.brewchain.bcapi.KeyPairs;
 
@@ -42,6 +55,8 @@ import lombok.extern.slf4j.Slf4j;
 import onight.osgi.annotation.iPojoBean;
 import onight.tfw.ntrans.api.ActorService;
 import onight.tfw.ntrans.api.annotation.ActorRequire;
+
+import static java.util.Arrays.copyOfRange;
 
 /**
  * @author
@@ -86,11 +101,11 @@ public class TransactionHelper implements ActorService {
 		MultiTransaction formatMultiTransaction = verifyAndSaveMultiTransaction(oMultiTransaction);
 
 		// 保存交易到缓存中，用于广播
-		oSendingHashMapDB.put(formatMultiTransaction.getTxHash().toByteArray(), formatMultiTransaction.toByteArray());
+		oSendingHashMapDB.put(encApi.hexEnc(formatMultiTransaction.getTxHash().toByteArray()), formatMultiTransaction.toByteArray());
 
 		// 保存交易到缓存中，用于打包
 		// 如果指定了委托，并且委托是本节点
-		oPendingHashMapDB.put(formatMultiTransaction.getTxHash().toByteArray(), formatMultiTransaction.toByteArray());
+		oPendingHashMapDB.put(encApi.hexEnc(formatMultiTransaction.getTxHash().toByteArray()), formatMultiTransaction.toByteArray());
 
 		// {node} {component} {opt} {type} {msg}
 		log.info(String.format("LOGFILTER %s %s %s %s 创建交易[%s]", KeyConstant.node.getNode(), "account", "create",
@@ -141,14 +156,11 @@ public class TransactionHelper implements ActorService {
 	 * @param oTransaction
 	 * @throws Exception
 	 */
-	public void SyncTransaction(MultiTransaction.Builder oMultiTransaction) throws Exception {
+	public void syncTransaction(MultiTransaction.Builder oMultiTransaction) throws Exception {
 		MultiTransaction formatMultiTransaction = verifyAndSaveMultiTransaction(oMultiTransaction);
 
-		// 交易的发送地址和接收地址如果不存在，则创建
-		// 如果交易是多重签名交易，根据extraData创建
-
 		// 保存交易到缓存中，用于打包
-		oPendingHashMapDB.put(formatMultiTransaction.getTxHash().toByteArray(), formatMultiTransaction.toByteArray());
+		oPendingHashMapDB.put(encApi.hexEnc(formatMultiTransaction.getTxHash().toByteArray()), formatMultiTransaction.toByteArray());
 
 	}
 
@@ -214,12 +226,14 @@ public class TransactionHelper implements ActorService {
 			try {
 				Map<ByteString, Account> senders = new HashMap<ByteString, Account>();
 				for (MultiTransactionInput oInput : oTransaction.getTxBody().getInputsList()) {
-					senders.put(oInput.getAddress(), oAccountHelper.GetAccountOrCreate(oInput.getAddress().toByteArray()));
+					senders.put(oInput.getAddress(),
+							oAccountHelper.GetAccountOrCreate(oInput.getAddress().toByteArray()));
 				}
 
 				Map<ByteString, Account> receivers = new HashMap<ByteString, Account>();
 				for (MultiTransactionOutput oOutput : oTransaction.getTxBody().getOutputsList()) {
-					receivers.put(oOutput.getAddress(), oAccountHelper.GetAccountOrCreate(oOutput.getAddress().toByteArray()));
+					receivers.put(oOutput.getAddress(),
+							oAccountHelper.GetAccountOrCreate(oOutput.getAddress().toByteArray()));
 				}
 
 				oiTransactionActuator.onPrepareExecute(oTransaction, senders, receivers);
@@ -260,9 +274,8 @@ public class TransactionHelper implements ActorService {
 		List<MultiTransaction> list = new LinkedList<MultiTransaction>();
 		int total = 0;
 
-		for (Iterator<Map.Entry<byte[], byte[]>> it = oSendingHashMapDB.getStorage().entrySet().iterator(); it
-				.hasNext();) {
-			Map.Entry<byte[], byte[]> item = it.next();
+		for (Iterator<Map.Entry<String, byte[]>> it = oSendingHashMapDB.getStorage().entrySet().iterator(); it.hasNext();) {
+			Map.Entry<String, byte[]> item = it.next();
 			MultiTransaction.Builder oTransaction = MultiTransaction.newBuilder();
 			oTransaction.mergeFrom(item.getValue());
 			list.add(oTransaction.build());
@@ -276,6 +289,26 @@ public class TransactionHelper implements ActorService {
 		return list;
 	}
 
+	public BroadcastTransactionMsg getWaitSendTxToSend(int count) throws InvalidProtocolBufferException {
+		BroadcastTransactionMsg.Builder oBroadcastTransactionMsg = BroadcastTransactionMsg.newBuilder();
+		int total = 0;
+
+		for (Iterator<Map.Entry<String, byte[]>> it = oSendingHashMapDB.getStorage().entrySet().iterator(); it
+				.hasNext();) {
+			Map.Entry<String, byte[]> item = it.next();
+			MultiTransaction.Builder oTransaction = MultiTransaction.newBuilder();
+			oTransaction.mergeFrom(item.getValue());
+			oBroadcastTransactionMsg.addTxHexStr(encApi.hexEnc(oTransaction.build().toByteArray()));
+			oPendingHashMapDB.put(item.getKey(), item.getValue());
+			it.remove();
+			total += 1;
+			if (count == total) {
+				break;
+			}
+		}
+		return oBroadcastTransactionMsg.build();
+	}
+
 	/**
 	 * 从待打包交易列表中，查询出等待打包的交易。
 	 * 
@@ -287,9 +320,9 @@ public class TransactionHelper implements ActorService {
 		LinkedList<MultiTransaction> list = new LinkedList<MultiTransaction>();
 		int total = 0;
 
-		for (Iterator<Map.Entry<byte[], byte[]>> it = oPendingHashMapDB.getStorage().entrySet().iterator(); it
+		for (Iterator<Map.Entry<String, byte[]>> it = oPendingHashMapDB.getStorage().entrySet().iterator(); it
 				.hasNext();) {
-			Map.Entry<byte[], byte[]> item = it.next();
+			Map.Entry<String, byte[]> item = it.next();
 			MultiTransaction.Builder oTransaction = MultiTransaction.newBuilder();
 			oTransaction.mergeFrom(item.getValue());
 			list.add(oTransaction.build());
@@ -302,11 +335,11 @@ public class TransactionHelper implements ActorService {
 		return list;
 	}
 
-	public void removeWaitBlockTx(byte[] txHash) throws InvalidProtocolBufferException {
-		for (Iterator<Map.Entry<byte[], byte[]>> it = oPendingHashMapDB.getStorage().entrySet().iterator(); it
+	public void removeWaitBlockTx(String txHash) throws InvalidProtocolBufferException {
+		for (Iterator<Map.Entry<String, byte[]>> it = oPendingHashMapDB.getStorage().entrySet().iterator(); it
 				.hasNext();) {
-			Map.Entry<byte[], byte[]> item = it.next();
-			if (FastByteComparisons.equal(item.getKey(), txHash)) {
+			Map.Entry<String, byte[]> item = it.next();
+			if (item.getKey().equals(txHash)) {
 				it.remove();
 				return;
 			}
@@ -489,11 +522,15 @@ public class TransactionHelper implements ActorService {
 				.setStatus(StringUtils.isNotBlank(oTransaction.getStatus()) ? oTransaction.getStatus() : "");
 
 		MultiTransactionBodyImpl.Builder oMultiTransactionBodyImpl = MultiTransactionBodyImpl.newBuilder();
-		oMultiTransactionBodyImpl.setData(encApi.hexEnc(oMultiTransactionBody.getData().toByteArray()));
+		
+		oMultiTransactionBodyImpl.setData(oMultiTransactionBody.getData().toStringUtf8());
+		
 		for (ByteString delegate : oMultiTransactionBody.getDelegateList()) {
 			oMultiTransactionBodyImpl.addDelegate(encApi.hexEnc(delegate.toByteArray()));
 		}
-		oMultiTransactionBodyImpl.setExdata(encApi.hexEnc(oMultiTransactionBody.getExdata().toByteArray()));
+		
+		oMultiTransactionBodyImpl.setExdata(oMultiTransactionBody.getExdata().toStringUtf8());
+		
 		for (MultiTransactionInput input : oMultiTransactionBody.getInputsList()) {
 			MultiTransactionInputImpl.Builder oMultiTransactionInputImpl = MultiTransactionInputImpl.newBuilder();
 			oMultiTransactionInputImpl.setAddress(encApi.hexEnc(input.getAddress().toByteArray()));
@@ -534,11 +571,11 @@ public class TransactionHelper implements ActorService {
 		oMultiTransaction.setTxHash(ByteString.copyFrom(encApi.hexDec(oTransaction.getTxHash())));
 
 		MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
-		oMultiTransactionBody.setData(ByteString.copyFrom(encApi.hexDec(oMultiTransactionBodyImpl.getData())));
+		oMultiTransactionBody.setData(ByteString.copyFromUtf8(oMultiTransactionBodyImpl.getData()));
 		for (String delegate : oMultiTransactionBodyImpl.getDelegateList()) {
 			oMultiTransactionBody.addDelegate(ByteString.copyFrom(encApi.hexDec(delegate)));
 		}
-		oMultiTransactionBody.setExdata(ByteString.copyFrom(encApi.hexDec(oMultiTransactionBodyImpl.getExdata())));
+		oMultiTransactionBody.setExdata(ByteString.copyFromUtf8(oMultiTransactionBodyImpl.getExdata()));
 		for (MultiTransactionInputImpl input : oMultiTransactionBodyImpl.getInputsList()) {
 			MultiTransactionInput.Builder oMultiTransactionInput = MultiTransactionInput.newBuilder();
 			oMultiTransactionInput.setAddress(ByteString.copyFrom(encApi.hexDec(input.getAddress())));
@@ -609,6 +646,12 @@ public class TransactionHelper implements ActorService {
 	 */
 	public MultiTransaction verifyAndSaveMultiTransaction(MultiTransaction.Builder oMultiTransaction)
 			throws Exception {
+
+		if (isExistsTransaction(oMultiTransaction.getTxHash().toByteArray())) {
+			log.warn("transaction exists, drop it");
+			throw new Exception("transaction exists, drop it");
+		}
+
 		Map<ByteString, Account> senders = new HashMap<ByteString, Account>();
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			senders.put(oInput.getAddress(), oAccountHelper.GetAccountOrCreate(oInput.getAddress().toByteArray()));
@@ -729,6 +772,24 @@ public class TransactionHelper implements ActorService {
 		KeyPairs pair = encApi.genKeys(String.format("%s%s",
 				encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(0).getAddress().toByteArray()),
 				oMultiTransaction.getTxBody().getInputs(0).getNonce()));
-		return encApi.hexDec(pair.getAddress());
+		
+		byte[] addrHash = encApi.hexDec(pair.getAddress());
+		return  copyOfRange(addrHash, 12, addrHash.length);
+	}
+
+	public boolean isExistsTransaction(byte[] txHash) {
+		OValue oOValue;
+		try {
+			oOValue = dao.getTxsDao().get(OEntityBuilder.byteKey2OKey(txHash))
+					.get();
+			if (oOValue == null || oOValue.getExtdata() == null) {
+				return false;
+			} else {
+				return true;
+			}
+		} catch (Exception e) {
+			
+		}
+		return false;
 	}
 }

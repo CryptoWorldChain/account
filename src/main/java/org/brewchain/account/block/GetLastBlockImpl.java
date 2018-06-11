@@ -49,7 +49,7 @@ public class GetLastBlockImpl extends SessionModules<ReqBlockInfo> {
 	public void onPBPacket(final FramePacket pack, final ReqBlockInfo pb, final CompleteHandler handler) {
 		RespBlockDetail.Builder oRespBlockDetail = RespBlockDetail.newBuilder();
 		try {
-			BlockEntity oBlockEntity = blockChainHelper.GetUnStableBestBlock();
+			BlockEntity oBlockEntity = blockChainHelper.GetConnectBestBlock();
 			BlockMinerImpl.Builder oBlockMinerImpl = BlockMinerImpl.newBuilder();
 			
 			oRespBlockDetail.setBlockHash(encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()));
