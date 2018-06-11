@@ -208,6 +208,7 @@ public class BlockHelper implements ActorService {
 		oBlockEntity.setBody(oBlockBody);
 
 		// oBlockStorageDB.setLastBlock(oBlockEntity.build());
+		blockChainHelper.addBlock(oBlockEntity.build());
 		blockChainHelper.stableBlock(oBlockEntity.build());
 	}
 

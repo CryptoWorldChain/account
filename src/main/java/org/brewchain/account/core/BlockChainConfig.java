@@ -25,7 +25,7 @@ public class BlockChainConfig extends SessionModules<Message> {
 	private String pwd = props().get("org.bc.manage.node.dev.pwd", null);
 	private String keystoreNumber = props().get("org.bc.manage.node.keystore.num",
 			String.valueOf(Math.abs(NodeHelper.getCurrNodeListenOutPort() - 5100 + 1)));
-	private String net = props().get("org.bc.manage.node.net", readNet());
+	private String net = readNet();
 
 	@Override
 	public String[] getCmds() {

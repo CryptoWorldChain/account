@@ -85,6 +85,7 @@ public class BlockStableStore implements IBlockStore, ActorService {
 		// blocks
 		this.blocks.put(encApi.hexEnc(hash), block);
 
+		log.debug("stable block number::" + block.getHeader().getNumber() + " hash::" + encApi.hexEnc(hash));
 		dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK),
 				OEntityBuilder.byteValue2OValue(hash));
 		return true;
@@ -132,7 +133,7 @@ public class BlockStableStore implements IBlockStore, ActorService {
 			v = dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(encApi.hexDec(hash))).get();
 			if (v != null) {
 				block = BlockEntity.parseFrom(v.getExtdata());
-				add(block);
+				this.blocks.put(encApi.hexEnc(block.getHeader().getBlockHash().toByteArray()), block);
 			}
 		} catch (ODBException | InterruptedException | ExecutionException | InvalidProtocolBufferException e) {
 			log.error("get block from db error :: " + e.getMessage());

@@ -53,61 +53,68 @@ public class BlockStore implements ActorService {
 		OValue oOValue = dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK)).get();
 		if (oOValue == null || oOValue.getExtdata() == null || oOValue.getExtdata().equals(ByteString.EMPTY)) {
 			oOValue = dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get();
+			if (oOValue == null || oOValue.getExtdata() == null || oOValue.getExtdata().equals(ByteString.EMPTY)) {
+				log.warn(String.format("not found last block, start empty node"));
+				return;
+			}
 		}
 		lastBlockHash = encApi.hexEnc(oOValue.getExtdata().toByteArray());
 
 		BlockEntity oBlockEntity = getBlockByHash(lastBlockHash);
 		if (oBlockEntity == null) {
-			log.warn(String.format("not found last block, start empty node"));
-		}
-		stableStore.add(oBlockEntity);
-		if (maxStableNumber < oBlockEntity.getHeader().getNumber()) {
-			maxStableNumber = oBlockEntity.getHeader().getNumber();
-			maxStableBlock = oBlockEntity;
-		}
+			log.error(String.format("exists last block hash, but last block not exists, start empty node"));
+		} else {
+			stableStore.add(oBlockEntity);
+			if (maxStableNumber < oBlockEntity.getHeader().getNumber()) {
+				maxStableNumber = oBlockEntity.getHeader().getNumber();
+				maxStableBlock = oBlockEntity;
+			}
 
-		int blockNumber = oBlockEntity.getHeader().getNumber();
-		int maxBlockNumber = blockNumber;
-		String parentHash = encApi.hexEnc(oBlockEntity.getHeader().getParentHash().toByteArray());
-		while (StringUtils.isNotBlank(parentHash)) {
-			BlockEntity loopBlockEntity = null;
-			loopBlockEntity = getBlockByHash(parentHash);
-			if (loopBlockEntity == null) {
-				break;
-			} else {
-				if (blockNumber - 1 != loopBlockEntity.getHeader().getNumber()) {
-					throw new Exception(String.format("respect block number %s ,get block number %s", blockNumber - 1,
-							loopBlockEntity.getHeader().getNumber()));
-				}
-				blockNumber -= 1;
-				if (maxBlockNumber > (blockNumber + KeyConstant.STABLE_BLOCK)) {
-					log.debug("load block into stable cache number::" + loopBlockEntity.getHeader().getNumber()
-							+ " hash::" + encApi.hexEnc(loopBlockEntity.getHeader().getBlockHash().toByteArray())
-							+ " stateroot::" + encApi.hexEnc(loopBlockEntity.getHeader().getStateRoot().toByteArray()));
-					stableStore.add(loopBlockEntity);
-					if (maxStableNumber < loopBlockEntity.getHeader().getNumber()) {
-						maxStableNumber = loopBlockEntity.getHeader().getNumber();
-						maxStableBlock = loopBlockEntity;
-					}
-				} else {
-					log.debug("load block into unstable cache number::" + loopBlockEntity.getHeader().getNumber()
-							+ " hash::" + encApi.hexEnc(loopBlockEntity.getHeader().getBlockHash().toByteArray())
-							+ " stateroot::" + encApi.hexEnc(loopBlockEntity.getHeader().getStateRoot().toByteArray()));
-					unStableStore.add(loopBlockEntity);
-					unStableStore.connect(parentHash);
-					if (maxReceiveNumber < loopBlockEntity.getHeader().getNumber()) {
-						maxReceiveNumber = loopBlockEntity.getHeader().getNumber();
-						maxReceiveBlock = loopBlockEntity;
-					}
-					if (maxConnectNumber < loopBlockEntity.getHeader().getNumber()) {
-						maxConnectNumber = loopBlockEntity.getHeader().getNumber();
-						maxConnectBlock = loopBlockEntity;
-					}
-				}
-				if (loopBlockEntity.getHeader().getParentHash() != null) {
-					parentHash = encApi.hexEnc(loopBlockEntity.getHeader().getParentHash().toByteArray());
-				} else {
+			int blockNumber = oBlockEntity.getHeader().getNumber();
+			int maxBlockNumber = blockNumber;
+			String parentHash = encApi.hexEnc(oBlockEntity.getHeader().getParentHash().toByteArray());
+			while (StringUtils.isNotBlank(parentHash)) {
+				BlockEntity loopBlockEntity = null;
+				loopBlockEntity = getBlockByHash(parentHash);
+				if (loopBlockEntity == null) {
 					break;
+				} else {
+					if (blockNumber - 1 != loopBlockEntity.getHeader().getNumber()) {
+						throw new Exception(String.format("respect block number %s ,get block number %s",
+								blockNumber - 1, loopBlockEntity.getHeader().getNumber()));
+					}
+					blockNumber -= 1;
+					if (maxBlockNumber > (blockNumber + KeyConstant.STABLE_BLOCK)) {
+						log.debug("load block into stable cache number::" + loopBlockEntity.getHeader().getNumber()
+								+ " hash::" + encApi.hexEnc(loopBlockEntity.getHeader().getBlockHash().toByteArray())
+								+ " stateroot::"
+								+ encApi.hexEnc(loopBlockEntity.getHeader().getStateRoot().toByteArray()));
+						stableStore.add(loopBlockEntity);
+						if (maxStableNumber < loopBlockEntity.getHeader().getNumber()) {
+							maxStableNumber = loopBlockEntity.getHeader().getNumber();
+							maxStableBlock = loopBlockEntity;
+						}
+					} else {
+						log.debug("load block into unstable cache number::" + loopBlockEntity.getHeader().getNumber()
+								+ " hash::" + encApi.hexEnc(loopBlockEntity.getHeader().getBlockHash().toByteArray())
+								+ " stateroot::"
+								+ encApi.hexEnc(loopBlockEntity.getHeader().getStateRoot().toByteArray()));
+						unStableStore.add(loopBlockEntity);
+						unStableStore.connect(parentHash);
+						if (maxReceiveNumber < loopBlockEntity.getHeader().getNumber()) {
+							maxReceiveNumber = loopBlockEntity.getHeader().getNumber();
+							maxReceiveBlock = loopBlockEntity;
+						}
+						if (maxConnectNumber < loopBlockEntity.getHeader().getNumber()) {
+							maxConnectNumber = loopBlockEntity.getHeader().getNumber();
+							maxConnectBlock = loopBlockEntity;
+						}
+					}
+					if (loopBlockEntity.getHeader().getParentHash() != null) {
+						parentHash = encApi.hexEnc(loopBlockEntity.getHeader().getParentHash().toByteArray());
+					} else {
+						break;
+					}
 				}
 			}
 		}
