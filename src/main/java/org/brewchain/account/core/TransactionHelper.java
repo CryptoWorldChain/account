@@ -50,6 +50,8 @@ import onight.osgi.annotation.iPojoBean;
 import onight.tfw.ntrans.api.ActorService;
 import onight.tfw.ntrans.api.annotation.ActorRequire;
 
+import static java.util.Arrays.copyOfRange;
+
 /**
  * @author
  *
@@ -721,7 +723,9 @@ public class TransactionHelper implements ActorService {
 		KeyPairs pair = encApi.genKeys(String.format("%s%s",
 				encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(0).getAddress().toByteArray()),
 				oMultiTransaction.getTxBody().getInputs(0).getNonce()));
-		return encApi.hexDec(pair.getAddress());
+		
+		byte[] addrHash = encApi.hexDec(pair.getAddress());
+		return  copyOfRange(addrHash, 12, addrHash.length);
 	}
 
 	public boolean isExistsTransaction(byte[] txHash) {
