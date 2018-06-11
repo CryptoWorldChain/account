@@ -1,7 +1,6 @@
 syntax = "proto3";
 
 package org.brewchain.account.gens;
-import "../EvmApi/act.proto";
 
 enum PACTModule {
 	ACT = 0; // 账户，合约，合约代码

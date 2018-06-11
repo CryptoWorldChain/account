@@ -11,19 +11,23 @@ import org.brewchain.account.gens.Act.AccountCryptoToken;
 import org.brewchain.account.gens.Act.AccountValue;
 import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.brewchain.evm.api.EvmApi;
+import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import onight.tfw.ntrans.api.annotation.ActorRequire;
 
-public class EvmApiImp implements EvmApi{
+public class EvmApiImp implements EvmApi {
 
 	@ActorRequire(name = "Account_Helper", scope = "global")
 	AccountHelper accountHelper;
-	
+
 	@ActorRequire(name = "Transaction_Helper", scope = "global")
 	TransactionHelper transactionHelper;
+
+	@ActorRequire(name = "bc_encoder", scope = "global")
+	EncAPI encApi;
 
 	@Override
 	public Account CreateAccount(byte[] arg0, byte[] arg1) {
@@ -153,7 +157,7 @@ public class EvmApiImp implements EvmApi{
 	public void SyncTransaction(MultiTransaction.Builder oMultiTransaction) {
 		// TODO Auto-generated method stub
 		try {
-			transactionHelper.SyncTransaction(oMultiTransaction);
+			transactionHelper.syncTransaction(oMultiTransaction);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -384,7 +388,7 @@ public class EvmApiImp implements EvmApi{
 	public void removeWaitBlockTx(byte[] txHash) {
 		// TODO Auto-generated method stub
 		try {
-			transactionHelper.removeWaitBlockTx(txHash);
+			transactionHelper.removeWaitBlockTx(encApi.hexEnc(txHash));
 		} catch (InvalidProtocolBufferException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -447,7 +451,5 @@ public class EvmApiImp implements EvmApi{
 			e.printStackTrace();
 		}
 	}
-	
-	
 
 }
