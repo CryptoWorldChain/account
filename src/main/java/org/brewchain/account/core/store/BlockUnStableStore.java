@@ -11,6 +11,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
+import org.brewchain.account.core.BlockChainConfig;
 import org.brewchain.account.core.KeyConstant;
 import org.brewchain.account.core.store.BlockStore.BlockNotFoundInStoreException;
 import org.brewchain.account.dao.DefDaos;
@@ -35,7 +36,9 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 	DefDaos dao;
 	@ActorRequire(name = "bc_encoder", scope = "global")
 	EncAPI encApi;
-
+	@ActorRequire(name = "BlockChain_Config", scope = "global")
+	BlockChainConfig blockChainConfig;
+	
 	protected final ConcurrentHashMap<String, BlockStoreNodeValue> storage;
 
 	protected ReadWriteLock rwLock = new ReentrantReadWriteLock();
@@ -180,7 +183,7 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 			oBlockStoreNodeValue = oParent;
 			oParent = this.storage.get(oParent.getParentHash());
 		}
-		if (oBlockStoreNodeValue != null && count >= KeyConstant.STABLE_BLOCK) {
+		if (oBlockStoreNodeValue != null && count >= blockChainConfig.getStableBlocks()) {
 			storage.remove(oBlockStoreNodeValue.getBlockHash());
 			log.debug("stable block number::" + oBlockStoreNodeValue.getNumber() + " hash::"
 					+ oBlockStoreNodeValue.getBlockHash());

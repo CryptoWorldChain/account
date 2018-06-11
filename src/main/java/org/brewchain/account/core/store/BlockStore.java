@@ -8,6 +8,7 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
+import org.brewchain.account.core.BlockChainConfig;
 import org.brewchain.account.core.KeyConstant;
 import org.brewchain.account.core.store.BlockStoreSummary.BLOCK_BEHAVIOR;
 import org.brewchain.account.dao.DefDaos;
@@ -38,7 +39,9 @@ public class BlockStore implements ActorService {
 	BlockUnStableStore unStableStore;
 	@ActorRequire(name = "Def_Daos", scope = "global")
 	DefDaos dao;
-
+	@ActorRequire(name = "BlockChain_Config", scope = "global")
+	BlockChainConfig blockChainConfig;
+	
 	private int maxReceiveNumber = -1;
 	private int maxConnectNumber = -1;
 	private int maxStableNumber = -1;
@@ -82,7 +85,7 @@ public class BlockStore implements ActorService {
 								blockNumber - 1, loopBlockEntity.getHeader().getNumber()));
 					}
 					blockNumber -= 1;
-					if (maxBlockNumber > (blockNumber + KeyConstant.STABLE_BLOCK)) {
+					if (maxBlockNumber > (blockNumber + blockChainConfig.getStableBlocks())) {
 						log.debug("load block into stable cache number::" + loopBlockEntity.getHeader().getNumber()
 								+ " hash::" + encApi.hexEnc(loopBlockEntity.getHeader().getBlockHash().toByteArray())
 								+ " stateroot::"
@@ -137,7 +140,7 @@ public class BlockStore implements ActorService {
 			oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_DROP);
 			return oBlockStoreSummary;
 		} else {
-			if (maxStableNumber >= (block.getHeader().getNumber() + KeyConstant.STABLE_BLOCK)) {
+			if (maxStableNumber >= (block.getHeader().getNumber() + blockChainConfig.getStableBlocks())) {
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
 				return oBlockStoreSummary;
 			}

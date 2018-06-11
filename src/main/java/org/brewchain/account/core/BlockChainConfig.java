@@ -26,6 +26,7 @@ public class BlockChainConfig extends SessionModules<Message> {
 	private String keystoreNumber = props().get("org.bc.manage.node.keystore.num",
 			String.valueOf(Math.abs(NodeHelper.getCurrNodeListenOutPort() - 5100 + 1)));
 	private String net = readNet();
+	private int stableBlocks = props().get("org.brewchain.stable.blocks", KeyConstant.STABLE_BLOCK);
 
 	@Override
 	public String[] getCmds() {
