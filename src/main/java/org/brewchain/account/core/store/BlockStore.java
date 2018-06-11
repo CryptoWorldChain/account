@@ -80,6 +80,7 @@ public class BlockStore implements ActorService {
 						+ " hash::" + encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray())
 						+ " stateroot::" + encApi.hexEnc(oBlockEntity.getHeader().getStateRoot().toByteArray()));
 				unStableStore.add(oBlockEntity);
+				unStableStore.connect(encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()));
 				if (maxReceiveNumber < oBlockEntity.getHeader().getNumber()) {
 					maxReceiveNumber = oBlockEntity.getHeader().getNumber();
 					maxReceiveBlock = oBlockEntity;
