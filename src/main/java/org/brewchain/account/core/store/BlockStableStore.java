@@ -45,7 +45,7 @@ public class BlockStableStore implements IBlockStore, ActorService {
 	protected ReadWriteLock rwLock = new ReentrantReadWriteLock();
 	protected ALock readLock = new ALock(rwLock.readLock());
 	protected ALock writeLock = new ALock(rwLock.writeLock());
-	
+
 	public BlockStableStore() {
 		this.storage = new ConcurrentHashMap<Integer, byte[]>();
 		this.blocks = new LRUCache<String, BlockEntity>(KeyConstant.CACHE_SIZE);
@@ -75,19 +75,29 @@ public class BlockStableStore implements IBlockStore, ActorService {
 	public boolean add(BlockEntity block) {
 		int number = block.getHeader().getNumber();
 		byte[] hash = block.getHeader().getBlockHash().toByteArray();
-
 		// storage
 		this.storage.put(number, hash);
 		if (maxNumber < number) {
 			maxNumber = number;
 		}
-
 		// blocks
 		this.blocks.put(encApi.hexEnc(hash), block);
+
+//		if (block.getBody() != null) {
+//			LinkedList<OKey> txBlockKeyList = new LinkedList<OKey>();
+//			LinkedList<OValue> txBlockValueList = new LinkedList<OValue>();
+//
+//			for (MultiTransaction oMultiTransaction : block.getBody().getTxsList()) {
+//				txBlockKeyList.add(OEntityBuilder.byteKey2OKey(oMultiTransaction.getTxHash()));
+//				txBlockValueList.add(OEntityBuilder.byteValue2OValue(block.getHeader().getBlockHash()));
+//			}
+//			dao.getTxblockDao().batchPuts(txBlockKeyList.toArray(new OKey[0]), txBlockValueList.toArray(new OValue[0]));
+//		}
 
 		log.debug("stable block number::" + block.getHeader().getNumber() + " hash::" + encApi.hexEnc(hash));
 		dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK),
 				OEntityBuilder.byteValue2OValue(hash));
+
 		return true;
 	}
 

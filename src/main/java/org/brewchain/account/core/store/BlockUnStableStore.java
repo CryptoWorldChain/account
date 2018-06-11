@@ -142,7 +142,6 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 				log.debug("success connect block number::" + oNode.getNumber() + " hash::" + oNode.getBlockHash()
 						+ " stateroot::"
 						+ encApi.hexEnc(oNode.getBlockEntity().getHeader().getStateRoot().toByteArray()));
-				
 			}
 		}
 	}

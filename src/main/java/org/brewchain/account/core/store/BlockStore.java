@@ -41,7 +41,7 @@ public class BlockStore implements ActorService {
 	DefDaos dao;
 	@ActorRequire(name = "BlockChain_Config", scope = "global")
 	BlockChainConfig blockChainConfig;
-	
+
 	private int maxReceiveNumber = -1;
 	private int maxConnectNumber = -1;
 	private int maxStableNumber = -1;
@@ -65,10 +65,29 @@ public class BlockStore implements ActorService {
 		if (oBlockEntity == null) {
 			log.error(String.format("exists last block hash, but last block not exists, start empty node"));
 		} else {
-			stableStore.add(oBlockEntity);
-			if (maxStableNumber < oBlockEntity.getHeader().getNumber()) {
-				maxStableNumber = oBlockEntity.getHeader().getNumber();
-				maxStableBlock = oBlockEntity;
+			if (oBlockEntity.getHeader().getNumber() == 0) {
+				log.debug("load block into stable cache number::" + oBlockEntity.getHeader().getNumber()
+						+ " hash::" + encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray())
+						+ " stateroot::"
+						+ encApi.hexEnc(oBlockEntity.getHeader().getStateRoot().toByteArray()));
+				stableStore.add(oBlockEntity);
+				if (maxStableNumber < oBlockEntity.getHeader().getNumber()) {
+					maxStableNumber = oBlockEntity.getHeader().getNumber();
+					maxStableBlock = oBlockEntity;
+				}
+			} else {
+				log.debug("load block into unstable cache number::" + oBlockEntity.getHeader().getNumber()
+						+ " hash::" + encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray())
+						+ " stateroot::" + encApi.hexEnc(oBlockEntity.getHeader().getStateRoot().toByteArray()));
+				unStableStore.add(oBlockEntity);
+				if (maxReceiveNumber < oBlockEntity.getHeader().getNumber()) {
+					maxReceiveNumber = oBlockEntity.getHeader().getNumber();
+					maxReceiveBlock = oBlockEntity;
+				}
+				if (maxConnectNumber < oBlockEntity.getHeader().getNumber()) {
+					maxConnectNumber = oBlockEntity.getHeader().getNumber();
+					maxConnectBlock = oBlockEntity;
+				}
 			}
 
 			int blockNumber = oBlockEntity.getHeader().getNumber();
