@@ -127,7 +127,7 @@ public class BlockHelper implements ActorService {
 		for (int i = 0; i < txs.size(); i++) {
 			oBlockHeader.addTxHashs(txs.get(i).getTxHash());
 			oBlockBody.addTxs(txs.get(i));
-			oTrieImpl.put(txs.get(i).getTxHash().toByteArray(), txs.get(i).toByteArray());
+			oTrieImpl.put(txs.get(i).getTxHash().toByteArray(), transactionHelper.getTransactionContent(txs.get(i)));
 		}
 		oBlockMiner.setAddress(KeyConstant.node.getoAccount().getAddress());
 		oBlockMiner.setNode(KeyConstant.node.getNode());
@@ -155,7 +155,8 @@ public class BlockHelper implements ActorService {
 			log.debug("new block, number::" + oBlockEntity.getHeader().getNumber() + " hash::"
 					+ encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()) + " parent::"
 					+ encApi.hexEnc(oBlockEntity.getHeader().getParentHash().toByteArray()) + " state::"
-					+ encApi.hexEnc(oBlockEntity.getHeader().getStateRoot().toByteArray()));
+					+ encApi.hexEnc(oBlockEntity.getHeader().getStateRoot().toByteArray()) + " bcuid::"
+					+ oBlockMiner.getBcuid() + " address::" + oBlockMiner.getAddress());
 
 			return oBlockEntity;
 		default:
@@ -296,7 +297,7 @@ public class BlockHelper implements ActorService {
 			}
 		}
 
-		if (oAddBlockResponse.getCurrentNumber()==0) {
+		if (oAddBlockResponse.getCurrentNumber() == 0) {
 			oAddBlockResponse.setCurrentNumber(blockChainHelper.getLastBlockNumber());
 		}
 		log.debug("return apply current::" + oAddBlockResponse.getCurrentNumber());
@@ -452,7 +453,8 @@ public class BlockHelper implements ActorService {
 						encApi.hexEnc(newHash)));
 			}
 			// 2. 重构MPT Trie，比对RootHash
-			oTrieImpl.put(oMultiTransaction.getTxHash().toByteArray(), oMultiTransaction.toByteArray());
+			oTrieImpl.put(oMultiTransaction.getTxHash().toByteArray(),
+					transactionHelper.getTransactionContent(oMultiTransaction));
 
 			bb.addTxs(oMultiTransaction);
 
@@ -478,6 +480,7 @@ public class BlockHelper implements ActorService {
 		applyReward(oBlockEntity.build());
 
 		byte[] stateRoot = this.stateTrie.getRootHash();
+		log.debug("get state root::" + encApi.hexEnc(stateRoot));
 		return stateRoot;
 	}
 

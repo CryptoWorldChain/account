@@ -38,7 +38,7 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 	EncAPI encApi;
 	@ActorRequire(name = "BlockChain_Config", scope = "global")
 	BlockChainConfig blockChainConfig;
-	
+
 	protected final ConcurrentHashMap<String, BlockStoreNodeValue> storage;
 
 	protected ReadWriteLock rwLock = new ReentrantReadWriteLock();
@@ -114,6 +114,16 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 				return oNode.getRetryTimes();
 			} else {
 				return 0;
+			}
+		}
+	}
+
+	public void resetRetryTimes(String hash) {
+		try (ALock l = writeLock.lock()) {
+			if (this.storage.containsKey(hash)) {
+				BlockStoreNodeValue oNode = this.storage.get(hash);
+				oNode.setRetryTimes(0);
+				this.storage.put(hash, oNode);
 			}
 		}
 	}

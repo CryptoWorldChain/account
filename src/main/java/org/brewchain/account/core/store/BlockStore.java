@@ -156,10 +156,12 @@ public class BlockStore implements ActorService {
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_DROP);
 				return oBlockStoreSummary;
 			}
-		} else if (stableStore.containKey(hash)) {
-			oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_DROP);
-			return oBlockStoreSummary;
-		} else {
+		} 
+		// else if (stableStore.containKey(hash)) {
+		// oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_DROP);
+		// return oBlockStoreSummary;
+		// } 
+		else {
 			if (maxStableNumber >= (block.getHeader().getNumber() + blockChainConfig.getStableBlocks())) {
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
 				return oBlockStoreSummary;
@@ -189,7 +191,9 @@ public class BlockStore implements ActorService {
 				} else if (oParentNode != null && !oParentNode.isConnect()) {
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.CACHE);
 				} else if (unStableStore.increaseRetryTimes(hash) > 3) {
+					unStableStore.resetRetryTimes(hash);
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_PREV);
+					
 				} else {
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
 				}

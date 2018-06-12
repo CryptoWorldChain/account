@@ -649,12 +649,6 @@ public class TransactionHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public MultiTransaction verifyAndSaveMultiTransaction(MultiTransaction.Builder oMultiTransaction) throws Exception {
-
-		if (isExistsTransaction(oMultiTransaction.getTxHash().toByteArray())) {
-			log.warn("transaction exists, drop it");
-			throw new Exception("transaction exists, drop it");
-		}
-
 		Map<ByteString, Account> senders = new HashMap<ByteString, Account>();
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			senders.put(oInput.getAddress(), oAccountHelper.GetAccountOrCreate(oInput.getAddress().toByteArray()));
@@ -724,10 +718,16 @@ public class TransactionHelper implements ActorService {
 		// 执行交易执行前的数据校验
 		oiTransactionActuator.onPrepareExecute(oMultiTransaction.build(), senders, receivers);
 
+		oMultiTransaction.clearStatus();
 		oMultiTransaction.setTxHash(ByteString.EMPTY);
 		// 生成交易Hash
 		oMultiTransaction
 				.setTxHash(ByteString.copyFrom(encApi.sha256Encode(oMultiTransaction.getTxBody().toByteArray())));
+
+		if (isExistsTransaction(oMultiTransaction.getTxHash().toByteArray())) {
+			log.warn("transaction exists, drop it");
+			throw new Exception("transaction exists, drop it");
+		}
 
 		MultiTransaction multiTransaction = oMultiTransaction.build();
 		// 保存交易到db中
@@ -735,6 +735,15 @@ public class TransactionHelper implements ActorService {
 				OEntityBuilder.byteValue2OValue(multiTransaction.toByteArray()));
 
 		return multiTransaction;
+	}
+
+	public byte[] getTransactionContent(MultiTransaction oTransaction) {
+		// MultiTransaction newTx = oTransaction.toBuilder().
+		MultiTransaction.Builder newTx = oTransaction.newBuilder();
+		newTx.setTxBody(oTransaction.getTxBody());
+		newTx.setTxHash(oTransaction.getTxHash());
+		newTx.setTxNode(oTransaction.getTxNode());
+		return newTx.build().toByteArray();
 	}
 
 	public void verifySignature(String pubKey, String signature, byte[] tx) throws Exception {
