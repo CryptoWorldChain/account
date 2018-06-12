@@ -2,6 +2,7 @@ package org.brewchain.account.transaction;
 
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.TransactionHelper;
+import org.brewchain.account.enums.TransTypeEnum;
 import org.brewchain.account.gens.Tximpl.PTXTCommand;
 import org.brewchain.account.gens.Tximpl.PTXTModule;
 import org.brewchain.account.gens.Tximpl.ReqCreateContractTransaction;
@@ -75,6 +76,7 @@ public class SendCreateContractTransactionImpl extends SessionModules<ReqCreateC
 			oMultiTransactionSignature.setSignature(pb.getSignature().getSignature());
 			oMultiTransactionBody.addSignatures(oMultiTransactionSignature);
 			oMultiTransactionBody.setTimestamp(pb.getTimestamp());
+			oMultiTransactionBody.setType(TransTypeEnum.TYPE_CreateContract.value());
 			oMultiTransaction.setTxBody(oMultiTransactionBody);
 			oMultiTransaction.setTxHash(ByteString.EMPTY);
 

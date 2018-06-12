@@ -575,6 +575,7 @@ public class TransactionHelper implements ActorService {
 		oMultiTransaction.setTxHash(ByteString.copyFrom(encApi.hexDec(oTransaction.getTxHash())));
 
 		MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
+		oMultiTransactionBody.setType(oMultiTransactionBodyImpl.getType());
 		oMultiTransactionBody.setData(ByteString.copyFromUtf8(oMultiTransactionBodyImpl.getData()));
 		for (String delegate : oMultiTransactionBodyImpl.getDelegateList()) {
 			oMultiTransactionBody.addDelegate(ByteString.copyFrom(encApi.hexDec(delegate)));
