@@ -93,8 +93,10 @@ public class BlockStore implements ActorService {
 
 			int blockNumber = oBlockEntity.getHeader().getNumber();
 			int maxBlockNumber = blockNumber;
+			int c = 0;
 			String parentHash = encApi.hexEnc(oBlockEntity.getHeader().getParentHash().toByteArray());
-			while (StringUtils.isNotBlank(parentHash)) {
+			while (StringUtils.isNotBlank(parentHash) && c < KeyConstant.CACHE_SIZE) {
+				c += 1;
 				BlockEntity loopBlockEntity = null;
 				loopBlockEntity = getBlockByHash(parentHash);
 				if (loopBlockEntity == null) {
@@ -151,11 +153,9 @@ public class BlockStore implements ActorService {
 			maxReceiveBlock = block;
 		}
 
-		if (unStableStore.containKey(hash)) {
-			if (unStableStore.isConnect(hash)) {
-				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_DROP);
-				return oBlockStoreSummary;
-			}
+		if (unStableStore.containKey(hash) && unStableStore.isConnect(hash)) {
+			oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_DROP);
+			return oBlockStoreSummary;
 		} else if (stableStore.containKey(hash)) {
 			oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_DROP);
 			return oBlockStoreSummary;
@@ -189,7 +189,9 @@ public class BlockStore implements ActorService {
 				} else if (oParentNode != null && !oParentNode.isConnect()) {
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.CACHE);
 				} else if (unStableStore.increaseRetryTimes(hash) > 3) {
+					unStableStore.resetRetryTimes(hash);
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_PREV);
+
 				} else {
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
 				}
