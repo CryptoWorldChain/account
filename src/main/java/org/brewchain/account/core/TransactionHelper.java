@@ -527,6 +527,7 @@ public class TransactionHelper implements ActorService {
 
 		MultiTransactionBodyImpl.Builder oMultiTransactionBodyImpl = MultiTransactionBodyImpl.newBuilder();
 
+		oMultiTransactionBodyImpl.setType(oMultiTransactionBody.getType());
 		oMultiTransactionBodyImpl.setData(oMultiTransactionBody.getData().toStringUtf8());
 
 		for (ByteString delegate : oMultiTransactionBody.getDelegateList()) {
