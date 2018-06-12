@@ -235,8 +235,8 @@ public class BlockHelper implements ActorService {
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 				break;
 			case EXISTS_PREV:
-				log.info("need prev block number::" + (oBlockEntity.getHeader().getNumber() - 1));
-				oAddBlockResponse.setCurrentNumber(oBlockEntity.getHeader().getNumber() - 1);
+				log.info("need prev block number::" + (oBlockEntity.getHeader().getNumber() - 2));
+				oAddBlockResponse.setCurrentNumber(oBlockEntity.getHeader().getNumber() - 2);
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 				break;
 			case CACHE:

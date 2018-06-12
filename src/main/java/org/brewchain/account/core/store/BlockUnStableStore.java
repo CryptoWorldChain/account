@@ -78,9 +78,9 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 				if (!this.storage.containsKey(hash)) {
 					oNode = new BlockStoreNodeValue(hash, parentHash, block.getHeader().getNumber(), block);
 					this.storage.put(hash, oNode);
-					log.debug("add block number::" + oNode.getNumber() + " hash::" + oNode.getBlockHash());
-					dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(block.getHeader().getBlockHash()),
-							OEntityBuilder.byteValue2OValue(block.toByteArray()));
+					log.debug("add block into cache number::" + oNode.getNumber() + " hash::" + oNode.getBlockHash());
+					// dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(block.getHeader().getBlockHash()),
+					// OEntityBuilder.byteValue2OValue(block.toByteArray()));
 				}
 				return true;
 			} catch (Exception e) {
@@ -147,8 +147,11 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 			if (!oNode.isConnect()) {
 				oNode.connect();
 				this.storage.put(hash, oNode);
-				dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK),
-						OEntityBuilder.byteValue2OValue(encApi.hexDec(oNode.getBlockHash())));
+
+				dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK), OEntityBuilder
+						.byteValue2OValue(encApi.hexDec(oNode.getBlockHash())));
+				// dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK),
+				// OEntityBuilder.byteValue2OValue(encApi.hexDec(oNode.getBlockHash())));
 				log.debug("success connect block number::" + oNode.getNumber() + " hash::" + oNode.getBlockHash()
 						+ " stateroot::"
 						+ encApi.hexEnc(oNode.getBlockEntity().getHeader().getStateRoot().toByteArray()));
@@ -225,7 +228,7 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 				this.storage.put(hash, oBlockStoreNodeValue);
 
 				dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(block.getHeader().getBlockHash()),
-						OEntityBuilder.byteValue2OValue(block.toByteArray()));
+						OEntityBuilder.byteValue2OValue(block.toByteArray(), String.valueOf(block.getHeader().getNumber())));
 			}
 		}
 	}

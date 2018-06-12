@@ -1,6 +1,7 @@
 package org.brewchain.account.core.store;
 
 import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -15,6 +16,7 @@ import org.brewchain.account.util.LRUCache;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.bcapi.backend.ODBException;
 import org.brewchain.bcapi.gens.Oentity.OKey;
+import org.brewchain.bcapi.gens.Oentity.OPair;
 import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
@@ -98,19 +100,33 @@ public class BlockStableStore implements IBlockStore, ActorService {
 		}
 
 		log.debug("stable block number::" + block.getHeader().getNumber() + " hash::" + encApi.hexEnc(hash));
-		dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK),
-				OEntityBuilder.byteValue2OValue(hash));
+
+		dao.getBlockDao().batchPuts(
+				new OKey[] { OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK),
+						OEntityBuilder.byteKey2OKey(block.getHeader().getBlockHash().toByteArray()) },
+				new OValue[] { OEntityBuilder.byteValue2OValue(hash),
+						OEntityBuilder.byteValue2OValue(block.toByteArray(),
+								String.valueOf(block.getHeader().getNumber())) });
+		// dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK),
+		// OEntityBuilder.byteValue2OValue(hash));
 
 		return true;
 	}
 
 	@Override
 	public BlockEntity getBlockByNumber(int number) {
-		byte[] hash = this.storage.get(number);
 		BlockEntity block = null;
-		if (hash != null) {
-			block = get(encApi.hexEnc(hash));
+		try {
+			List<OPair> oPairs = dao.getBlockDao().listBySecondKey(String.valueOf(number)).get();
+			if (oPairs.size() > 0) {
+				block = BlockEntity.parseFrom(oPairs.get(0).getValue().getExtdata());
+				this.blocks.put(encApi.hexEnc(block.getHeader().getBlockHash().toByteArray()), block);
+				return block;
+			}
+		} catch (ODBException | InterruptedException | ExecutionException | InvalidProtocolBufferException e) {
+			log.error("get block from db error :: " + e.getMessage());
 		}
+
 		return block;
 	}
 
