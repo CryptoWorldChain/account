@@ -234,7 +234,8 @@ public class BlockHelper implements ActorService {
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 				break;
 			case EXISTS_PREV:
-				log.info("need prev block number::" + (blockChainHelper.getLastBlockNumber() - 1));
+				log.info("need prev block number::" + (oBlockEntity.getHeader().getNumber() - 1));
+				oAddBlockResponse.setCurrentNumber(oBlockEntity.getHeader().getNumber() - 1);
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 				break;
 			case CACHE:
@@ -295,7 +296,9 @@ public class BlockHelper implements ActorService {
 			}
 		}
 
-		oAddBlockResponse.setCurrentNumber(blockChainHelper.getLastBlockNumber());
+		if (oAddBlockResponse.getCurrentNumber()==0) {
+			oAddBlockResponse.setCurrentNumber(blockChainHelper.getLastBlockNumber());
+		}
 		log.debug("return apply current::" + oAddBlockResponse.getCurrentNumber());
 		return oAddBlockResponse.build();
 		//

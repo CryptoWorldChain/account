@@ -1,5 +1,6 @@
 package org.brewchain.account.core.store;
 
+import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -13,8 +14,10 @@ import org.brewchain.account.util.ALock;
 import org.brewchain.account.util.LRUCache;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.bcapi.backend.ODBException;
+import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
+import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -83,16 +86,16 @@ public class BlockStableStore implements IBlockStore, ActorService {
 		// blocks
 		this.blocks.put(encApi.hexEnc(hash), block);
 
-//		if (block.getBody() != null) {
-//			LinkedList<OKey> txBlockKeyList = new LinkedList<OKey>();
-//			LinkedList<OValue> txBlockValueList = new LinkedList<OValue>();
-//
-//			for (MultiTransaction oMultiTransaction : block.getBody().getTxsList()) {
-//				txBlockKeyList.add(OEntityBuilder.byteKey2OKey(oMultiTransaction.getTxHash()));
-//				txBlockValueList.add(OEntityBuilder.byteValue2OValue(block.getHeader().getBlockHash()));
-//			}
-//			dao.getTxblockDao().batchPuts(txBlockKeyList.toArray(new OKey[0]), txBlockValueList.toArray(new OValue[0]));
-//		}
+		if (block.getBody() != null) {
+			LinkedList<OKey> txBlockKeyList = new LinkedList<OKey>();
+			LinkedList<OValue> txBlockValueList = new LinkedList<OValue>();
+
+			for (MultiTransaction oMultiTransaction : block.getBody().getTxsList()) {
+				txBlockKeyList.add(OEntityBuilder.byteKey2OKey(oMultiTransaction.getTxHash()));
+				txBlockValueList.add(OEntityBuilder.byteValue2OValue(block.getHeader().getBlockHash()));
+			}
+			dao.getTxblockDao().batchPuts(txBlockKeyList.toArray(new OKey[0]), txBlockValueList.toArray(new OValue[0]));
+		}
 
 		log.debug("stable block number::" + block.getHeader().getNumber() + " hash::" + encApi.hexEnc(hash));
 		dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK),

@@ -12,6 +12,7 @@ import org.brewchain.account.core.BlockChainConfig;
 import org.brewchain.account.core.KeyConstant;
 import org.brewchain.account.core.store.BlockStoreSummary.BLOCK_BEHAVIOR;
 import org.brewchain.account.dao.DefDaos;
+import org.brewchain.account.util.FastByteComparisons;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
@@ -66,9 +67,8 @@ public class BlockStore implements ActorService {
 			log.error(String.format("exists last block hash, but last block not exists, start empty node"));
 		} else {
 			if (oBlockEntity.getHeader().getNumber() == 0) {
-				log.debug("load block into stable cache number::" + oBlockEntity.getHeader().getNumber()
-						+ " hash::" + encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray())
-						+ " stateroot::"
+				log.debug("load block into stable cache number::" + oBlockEntity.getHeader().getNumber() + " hash::"
+						+ encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()) + " stateroot::"
 						+ encApi.hexEnc(oBlockEntity.getHeader().getStateRoot().toByteArray()));
 				stableStore.add(oBlockEntity);
 				if (maxStableNumber < oBlockEntity.getHeader().getNumber()) {
@@ -76,9 +76,9 @@ public class BlockStore implements ActorService {
 					maxStableBlock = oBlockEntity;
 				}
 			} else {
-				log.debug("load block into unstable cache number::" + oBlockEntity.getHeader().getNumber()
-						+ " hash::" + encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray())
-						+ " stateroot::" + encApi.hexEnc(oBlockEntity.getHeader().getStateRoot().toByteArray()));
+				log.debug("load block into unstable cache number::" + oBlockEntity.getHeader().getNumber() + " hash::"
+						+ encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()) + " stateroot::"
+						+ encApi.hexEnc(oBlockEntity.getHeader().getStateRoot().toByteArray()));
 				unStableStore.add(oBlockEntity);
 				unStableStore.connect(encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()));
 				if (maxReceiveNumber < oBlockEntity.getHeader().getNumber()) {
@@ -177,7 +177,13 @@ public class BlockStore implements ActorService {
 				}
 			} else {
 				if (oParentNode == null) {
-					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.CACHE);
+					BlockEntity existsParent = unStableStore.getBlockByNumber(block.getHeader().getNumber() - 1);
+					if (existsParent != null) {
+						log.warn("forks, number::" + (block.getHeader().getNumber() - 1));
+						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_PREV);
+					} else {
+						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.CACHE);
+					}
 				} else if (oParentNode != null && (oParentNode.getNumber() + 1) != block.getHeader().getNumber()) {
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.CACHE);
 				} else if (oParentNode != null && !oParentNode.isConnect()) {

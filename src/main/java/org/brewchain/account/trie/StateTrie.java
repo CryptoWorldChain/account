@@ -501,7 +501,6 @@ public class StateTrie implements ActorService {
 	}
 
 	private void addHash(byte[] hash, byte[] ret) {
-		log.debug("trie add key::" + Hex.toHexString(hash));
 		dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(hash), OEntityBuilder.byteValue2OValue(ret));
 	}
 
