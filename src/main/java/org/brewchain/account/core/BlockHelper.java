@@ -221,7 +221,8 @@ public class BlockHelper implements ActorService {
 	public synchronized AddBlockResponse ApplyBlock(BlockEntity oBlockEntity) {
 		AddBlockResponse.Builder oAddBlockResponse = AddBlockResponse.newBuilder();
 		log.debug("receive block number::" + oBlockEntity.getHeader().getNumber() + " hash::"
-				+ encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()) + " stateroot::"
+				+ encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()) + " parent::"
+				+ encApi.hexEnc(oBlockEntity.getHeader().getParentHash().toByteArray()) + " stateroot::"
 				+ encApi.hexEnc(oBlockEntity.getHeader().getStateRoot().toByteArray()));
 		BlockStoreSummary oBlockStoreSummary = blockChainHelper.addBlock(oBlockEntity);
 		while (oBlockStoreSummary.getBehavior() != BLOCK_BEHAVIOR.DONE) {
@@ -235,9 +236,25 @@ public class BlockHelper implements ActorService {
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 				break;
 			case EXISTS_PREV:
-				log.info("need prev block number::" + (oBlockEntity.getHeader().getNumber() - 2));
-				oAddBlockResponse.setCurrentNumber(oBlockEntity.getHeader().getNumber() - 2);
-				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
+				log.info("block exists, but cannot find parent block number::" + oBlockEntity.getHeader().getNumber());
+				try {
+					BlockEntity pBlockEntity = blockChainHelper
+							.getBlockByHash(oBlockEntity.getHeader().getParentHash().toByteArray());
+					if (pBlockEntity != null) {
+						log.debug("find in local cache number::"
+								+ encApi.hexEnc(pBlockEntity.getHeader().getBlockHash().toByteArray()));
+						oBlockEntity = pBlockEntity;
+						oBlockStoreSummary = blockChainHelper.addBlock(oBlockEntity);
+					} else {
+						log.debug("need prev block number::" + (oBlockEntity.getHeader().getNumber() - 2));
+						oAddBlockResponse.setRetCode(-9);
+						oAddBlockResponse.setCurrentNumber(oBlockEntity.getHeader().getNumber() - 2);
+						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
+					}
+				} catch (Exception e1) {
+					log.error("exception ", e1);
+					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.ERROR);
+				}
 				break;
 			case CACHE:
 				log.info("cache block number::" + oBlockEntity.getHeader().getNumber());
@@ -292,6 +309,7 @@ public class BlockHelper implements ActorService {
 				break;
 			case ERROR:
 				log.error("fail to apply block number::" + oBlockEntity.getHeader().getNumber());
+				blockChainHelper.rollback();
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 				break;
 			}
@@ -300,7 +318,8 @@ public class BlockHelper implements ActorService {
 		if (oAddBlockResponse.getCurrentNumber() == 0) {
 			oAddBlockResponse.setCurrentNumber(blockChainHelper.getLastBlockNumber());
 		}
-		log.debug("return apply current::" + oAddBlockResponse.getCurrentNumber());
+		log.debug("return apply current::" + oAddBlockResponse.getCurrentNumber() + " retcode::"
+				+ oAddBlockResponse.getRetCode());
 		return oAddBlockResponse.build();
 		//
 		// BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();

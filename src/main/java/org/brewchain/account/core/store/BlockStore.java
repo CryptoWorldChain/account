@@ -188,7 +188,7 @@ public class BlockStore implements ActorService {
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.CACHE);
 				} else if (oParentNode != null && !oParentNode.isConnect()) {
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.CACHE);
-				} else if (unStableStore.increaseRetryTimes(hash) > 3) {
+				} else if (unStableStore.increaseRetryTimes(hash) > 2) {
 					unStableStore.resetRetryTimes(hash);
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_PREV);
 
@@ -331,6 +331,9 @@ public class BlockStore implements ActorService {
 	}
 
 	public BlockEntity rollBackTo(int number) {
+		log.info("blockstore try to rollback to number::" + number + " maxconnect::" + this.getMaxConnectNumber()
+				+ " maxstable::" + this.getMaxStableNumber());
+		
 		BlockEntity oBlockEntity = unStableStore.rollBackTo(number);
 		if (oBlockEntity == null) {
 			oBlockEntity = stableStore.rollBackTo(number);

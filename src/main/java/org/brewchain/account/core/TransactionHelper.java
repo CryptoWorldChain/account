@@ -159,12 +159,19 @@ public class TransactionHelper implements ActorService {
 	}
 
 	public void syncTransaction(MultiTransaction.Builder oMultiTransaction, boolean isBroadCast) throws Exception {
+		
+		
 		MultiTransaction formatMultiTransaction = verifyAndSaveMultiTransaction(oMultiTransaction);
 
-		if (isBroadCast)
+		if (isBroadCast) {
 			// 保存交易到缓存中，用于打包
-			oPendingHashMapDB.put(encApi.hexEnc(formatMultiTransaction.getTxHash().toByteArray()),
-					formatMultiTransaction.toByteArray());
+			log.debug("add to wait block txhash::" + encApi.hexEnc(oMultiTransaction.getTxHash().toByteArray()));
+
+						oPendingHashMapDB.put(encApi.hexEnc(formatMultiTransaction.getTxHash().toByteArray()),
+								formatMultiTransaction.toByteArray());
+		}
+		
+		log.debug("receive sync txhash::" + encApi.hexEnc(oMultiTransaction.getTxHash().toByteArray()));
 	}
 
 	/**
@@ -283,8 +290,8 @@ public class TransactionHelper implements ActorService {
 			MultiTransaction.Builder oTransaction = MultiTransaction.newBuilder();
 			oTransaction.mergeFrom(item.getValue());
 			list.add(oTransaction.build());
-			oPendingHashMapDB.put(item.getKey(), item.getValue());
 			it.remove();
+			log.debug("get and remove sycn txhash::" + item.getKey());
 			total += 1;
 			if (count == total) {
 				break;
@@ -303,8 +310,8 @@ public class TransactionHelper implements ActorService {
 			MultiTransaction.Builder oTransaction = MultiTransaction.newBuilder();
 			oTransaction.mergeFrom(item.getValue());
 			oBroadcastTransactionMsg.addTxHexStr(encApi.hexEnc(oTransaction.build().toByteArray()));
-			oPendingHashMapDB.put(item.getKey(), item.getValue());
 			it.remove();
+			log.debug("get and remove sycn txhash::" + item.getKey() + " size::" + oSendingHashMapDB.getStorage().size());
 			total += 1;
 			if (count == total) {
 				break;
@@ -331,6 +338,7 @@ public class TransactionHelper implements ActorService {
 			oTransaction.mergeFrom(item.getValue());
 			list.add(oTransaction.build());
 			it.remove();
+			log.debug("get need blocked tx and remove from cache, txhash::" + item.getKey() + " size::" + oPendingHashMapDB.getStorage().size());
 			total += 1;
 			if (count == total) {
 				break;
@@ -344,6 +352,7 @@ public class TransactionHelper implements ActorService {
 				.hasNext();) {
 			Map.Entry<String, byte[]> item = it.next();
 			if (item.getKey().equals(txHash)) {
+				log.debug("remove blocked txhash::" + txHash + " size::" + oPendingHashMapDB.getStorage().size());
 				it.remove();
 				return;
 			}
@@ -725,8 +734,7 @@ public class TransactionHelper implements ActorService {
 				.setTxHash(ByteString.copyFrom(encApi.sha256Encode(oMultiTransaction.getTxBody().toByteArray())));
 
 		if (isExistsTransaction(oMultiTransaction.getTxHash().toByteArray())) {
-			log.warn("transaction exists, drop it");
-			throw new Exception("transaction exists, drop it");
+			throw new Exception("transaction exists, drop it txhash::" + encApi.hexEnc(oMultiTransaction.getTxHash().toByteArray()));
 		}
 
 		MultiTransaction multiTransaction = oMultiTransaction.build();

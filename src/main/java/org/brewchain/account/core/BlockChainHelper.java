@@ -228,6 +228,9 @@ public class BlockChainHelper implements ActorService {
 	// blockChainStore.rollBackTo(oBlock.getHeader().getNumber());
 	// appendBlock(oBlock);
 	// }
+	public void rollback() {
+		
+	}
 	public BlockEntity getChildBlock(BlockEntity oBlock) {
 		List<BlockEntity> list = blockStore
 				.getReadyConnectBlock(encApi.hexEnc(oBlock.getHeader().getBlockHash().toByteArray()));
@@ -438,8 +441,8 @@ public class BlockChainHelper implements ActorService {
 					.get();
 			if (oOValue == null || oOValue.getExtdata() == null || oOValue.getExtdata().equals(ByteString.EMPTY)) {
 				// get net config
-
-				// try read .keystore file with pwd
+				
+				// for dev
 				if (StringUtils.isNotBlank(blockChainConfig.getPwd())) {
 					FileReader fr = null;
 					BufferedReader br = null;

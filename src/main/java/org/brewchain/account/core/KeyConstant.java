@@ -6,8 +6,6 @@ import org.brewchain.account.util.NodeDef;
 
 public class KeyConstant {
 	public static final int STABLE_BLOCK = 20;
-
-	public static final int ROLLBACK_BLOCK = 20;
 	public static final int BLOCK_REWARD = 6;
 	public static final int BLOCK_REWARD_DELAY = 5;
 	public static final String BC_UNSEND_TX = "bc_unsend_tx";
