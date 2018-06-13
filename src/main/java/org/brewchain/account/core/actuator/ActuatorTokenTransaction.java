@@ -118,7 +118,7 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			}
 
 			// 不论任何交易类型，都默认执行账户余额的更改
-			senderAccountValue.setBalance(senderAccountValue.getBalance() - oInput.getAmount() );
+			senderAccountValue.setBalance(senderAccountValue.getBalance() - oInput.getFee() );
 			senderAccountValue.setNonce(senderAccountValue.getNonce() + 1);
 
 			DBTrie oCacheTrie = new DBTrie(this.dao);

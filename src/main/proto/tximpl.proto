@@ -90,6 +90,7 @@ message MultiTransactionBodyImpl {
 	repeated string delegate = 5;
 	string data = 6;
 	int64 timestamp = 7;
+	int32 type = 8;
 }
 
 message MultiTransactionInputImpl {

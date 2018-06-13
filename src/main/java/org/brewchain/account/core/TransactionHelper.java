@@ -536,6 +536,7 @@ public class TransactionHelper implements ActorService {
 
 		MultiTransactionBodyImpl.Builder oMultiTransactionBodyImpl = MultiTransactionBodyImpl.newBuilder();
 
+		oMultiTransactionBodyImpl.setType(oMultiTransactionBody.getType());
 		oMultiTransactionBodyImpl.setData(oMultiTransactionBody.getData().toStringUtf8());
 
 		for (ByteString delegate : oMultiTransactionBody.getDelegateList()) {
@@ -584,6 +585,7 @@ public class TransactionHelper implements ActorService {
 		oMultiTransaction.setTxHash(ByteString.copyFrom(encApi.hexDec(oTransaction.getTxHash())));
 
 		MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
+		oMultiTransactionBody.setType(oMultiTransactionBodyImpl.getType());
 		oMultiTransactionBody.setData(ByteString.copyFromUtf8(oMultiTransactionBodyImpl.getData()));
 		for (String delegate : oMultiTransactionBodyImpl.getDelegateList()) {
 			oMultiTransactionBody.addDelegate(ByteString.copyFrom(encApi.hexDec(delegate)));
