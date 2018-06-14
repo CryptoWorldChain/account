@@ -56,7 +56,7 @@ public class LRUCache<K, V> {
 	public Object get(K k) {
 		if(first != null){
 			if(first.key != null && (first.key.equals(k) || first.key == k))
-				return first;
+				return first.value;
 		}
 		CacheEntity cacheEntity = caches.get(k);
 		if(cacheEntity == null){
