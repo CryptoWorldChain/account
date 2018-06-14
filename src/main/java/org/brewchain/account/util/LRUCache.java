@@ -1,60 +1,121 @@
 package org.brewchain.account.util;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.ConcurrentHashMap;
 
-public class LRUCache<K, V> extends LinkedHashMap<K, V> {
+public class LRUCache<K, V> {
 
-	
+	private ConcurrentHashMap<K, CacheEntity> caches;
 	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 2387942637668480578L;
-	
-	
-	private final int MAX_CACHE_SIZE;
-	private ReadWriteLock  globalLock ;  
-    private Lock readLock;  
-    private Lock writeLock;  
+     * The default initial capacity - MUST be a power of two.
+     */
+    static final int DEFAULT_INITIAL_CAPACITY = 1 << 10; // default: 1024
 
-	public LRUCache(int cacheSize) {
-		super((int) Math.ceil(cacheSize / 0.75) + 1, 0.75f, true);
-		MAX_CACHE_SIZE = cacheSize;
-		globalLock  = new ReentrantReadWriteLock();  
-        readLock = globalLock.readLock();  
-        writeLock = globalLock.writeLock();  
+    public int initialCapacity;
+    public float loadFactor;
+	private CacheEntity first;
+	private CacheEntity last;
+	
+	public LRUCache(int initialCapacity){
+		if(initialCapacity <= 0){
+			throw new IllegalArgumentException("Illegal initial capacity : " + initialCapacity);
+		}
+		
+		this.initialCapacity = initialCapacity;
+		
+		caches = new ConcurrentHashMap<>(initialCapacity);
 	}
 
-	@Override
-	protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
-		return size() > MAX_CACHE_SIZE;
+	public LRUCache(){
+		this(DEFAULT_INITIAL_CAPACITY);
 	}
 
-	@Override
-	public V get(Object key) {
-		try{
-			readLock.lock();
-			return super.get(key);
-		} finally {
-			readLock.unlock();
+	private static class CacheEntity {
+		Object key;
+		Object value;
+		CacheEntity prev;
+		CacheEntity next;
+	}
+
+	public void put(K k, V v) {
+		CacheEntity cacheEntity = caches.get(k);
+		if(cacheEntity == null){
+			if(caches.size() >= this.initialCapacity){
+				caches.remove(k);
+				removeLast();
+			}
+			
+			cacheEntity = new CacheEntity();
+			cacheEntity.key = k;
+		}
+		
+		cacheEntity.value = v;
+		move2First(cacheEntity);
+		caches.put(k, cacheEntity);
+	}
+
+	public Object get(K k) {
+		if(first != null){
+			if(first.key != null && (first.key.equals(k) || first.key == k))
+				return first;
+		}
+		CacheEntity cacheEntity = caches.get(k);
+		if(cacheEntity == null){
+			return null;
+		}
+		move2First(cacheEntity);
+		return cacheEntity.value;
+	}
+	
+	public boolean containsKey(K k){
+		return caches.contains(k);
+	}
+	
+	public void removeLast(){
+		if(last != null){
+			@SuppressWarnings("unused")
+			CacheEntity oldLast = last;
+			last = last.prev;
+			if(last == null){
+				first = null;
+			}else {
+				last.next = null;
+			}
+			oldLast = null;//回收
 		}
 	}
-
-	@Override
-	public V put(K key, V value) {
-		try{
-			writeLock.lock();
-			return super.put(key, value);
-		} finally {
-			writeLock.unlock();
+	
+	public void move2First(CacheEntity cache){
+		if(cache == first){
+			return;
 		}
+		if(cache.next != null){
+			cache.next.prev = cache.prev;
+		}
+		if(cache.prev != null){
+			cache.prev.next = cache.next;
+		}
+		if(cache == last){
+			last = last.prev;
+		}
+		if(first == null || last == null){
+			first = last = cache;
+			return;
+		}
+		cache.next = first;
+		first.prev = cache;
+		first = cache;
+		cache.prev = null;
 	}
 
 	@Override
 	public String toString() {
-		return "LRUCache [MAX_CACHE_SIZE=" + MAX_CACHE_SIZE + ", globalLock=" + globalLock + ", readLock=" + readLock + ", writeLock=" + writeLock + "]";
+		StringBuilder sb = new StringBuilder();
+		CacheEntity node = first;
+		while (node != null) {
+			sb.append(String.format("%s:%s ", node.key, node.value));
+			node = node.next;
+		}
+
+		return sb.toString();
 	}
 }

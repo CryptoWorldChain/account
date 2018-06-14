@@ -553,10 +553,11 @@ public class BlockHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public BlockEntity.Builder getBlock(byte[] blockHash) throws Exception {
-		BlockEntity.Builder oBlockEntity = BlockEntity
-				.parseFrom(dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(blockHash)).get().getExtdata())
-				.toBuilder();
-		return oBlockEntity;
+		BlockEntity block = blockChainHelper.getBlockByHash(blockHash);
+		if(block != null){
+			return block.toBuilder();
+		}
+		return null;
 	}
 
 	/**
