@@ -12,7 +12,6 @@ import org.brewchain.account.core.BlockChainConfig;
 import org.brewchain.account.core.KeyConstant;
 import org.brewchain.account.core.store.BlockStoreSummary.BLOCK_BEHAVIOR;
 import org.brewchain.account.dao.DefDaos;
-import org.brewchain.account.util.FastByteComparisons;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.brewchain.evmapi.gens.Block.BlockEntity;

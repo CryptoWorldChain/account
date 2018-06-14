@@ -3,7 +3,6 @@ package org.brewchain.account.core.store;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -70,7 +69,7 @@ public class BlockStableStore implements IBlockStore, ActorService {
 
 	@Override
 	public BlockEntity get(String hash) {
-		BlockEntity block = this.blocks.get(hash);
+		BlockEntity block = (BlockEntity) this.blocks.get(hash);
 		if (block == null) {
 			block = getFromDB(hash);
 		}
