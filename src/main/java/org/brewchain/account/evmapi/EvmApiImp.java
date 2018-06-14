@@ -16,8 +16,10 @@ import org.fc.brewchain.bcapi.EncAPI;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
+import lombok.Data;
 import onight.tfw.ntrans.api.annotation.ActorRequire;
 
+@Data
 public class EvmApiImp implements EvmApi {
 
 	@ActorRequire(name = "Account_Helper", scope = "global")
@@ -28,6 +30,11 @@ public class EvmApiImp implements EvmApi {
 
 	@ActorRequire(name = "bc_encoder", scope = "global")
 	EncAPI encApi;
+
+	@Override
+	public void saveCode(byte[] code, byte[] address) {
+		accountHelper.saveCode(address, code);
+	}
 
 	@Override
 	public Account CreateAccount(byte[] arg0, byte[] arg1) {
