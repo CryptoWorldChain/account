@@ -36,7 +36,7 @@ public class LRUCache<K, V> {
 		CacheEntity next;
 	}
 
-	public void put(K k, V v) {
+	public synchronized void put(K k, V v) {
 		CacheEntity cacheEntity = caches.get(k);
 		if(cacheEntity == null){
 			if(caches.size() >= this.initialCapacity){
@@ -53,7 +53,7 @@ public class LRUCache<K, V> {
 		caches.put(k, cacheEntity);
 	}
 
-	public Object get(K k) {
+	public synchronized Object get(K k) {
 		if(first != null){
 			if(first.key != null && (first.key.equals(k) || first.key == k))
 				return first.value;
@@ -70,7 +70,7 @@ public class LRUCache<K, V> {
 		return caches.contains(k);
 	}
 	
-	public void removeLast(){
+	public synchronized void removeLast(){
 		if(last != null){
 			@SuppressWarnings("unused")
 			CacheEntity oldLast = last;
@@ -84,7 +84,7 @@ public class LRUCache<K, V> {
 		}
 	}
 	
-	public void move2First(CacheEntity cache){
+	public synchronized void move2First(CacheEntity cache){
 		if(cache == first){
 			return;
 		}
