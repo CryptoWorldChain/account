@@ -47,6 +47,7 @@ dependencies {
     compile 'com.google.guava:guava:19.0'    
     
     compile ("org.brewchain:org.brewchain.evmapi:1.0.0")
+    compile ("org.brewchain:org.brewchain.rcvm:1.0.0")
 }
 
 jar {
