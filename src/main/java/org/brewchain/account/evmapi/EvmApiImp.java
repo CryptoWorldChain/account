@@ -1,11 +1,15 @@
 package org.brewchain.account.evmapi;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.TransactionHelper;
+import org.brewchain.account.trie.StorageTrie;
+import org.brewchain.account.trie.StorageTrieCache;
 import org.brewchain.evm.api.EvmApi;
 import org.brewchain.evmapi.gens.Act.Account;
 import org.brewchain.evmapi.gens.Act.AccountCryptoToken;
@@ -30,6 +34,9 @@ public class EvmApiImp implements EvmApi {
 
 	@ActorRequire(name = "bc_encoder", scope = "global")
 	EncAPI encApi;
+	
+	@ActorRequire(name = "Storage_TrieCache", scope = "global")
+	StorageTrieCache storageTrieCache;
 
 	@Override
 	public void saveCode(byte[] code, byte[] address) {
@@ -459,4 +466,31 @@ public class EvmApiImp implements EvmApi {
 		}
 	}
 
+	@Override
+	public void saveStorage(byte[] address, byte[] key, byte[] value) {
+		StorageTrie oStorage = accountHelper.getStorageTrie(address);
+		oStorage.put(key, value);
+		byte[] rootHash = oStorage.getRootHash();
+
+		Account contract = GetAccount(address);
+		AccountValue.Builder oAccountValue = contract.getValue().toBuilder();
+		oAccountValue.setStorage(ByteString.copyFrom(rootHash));
+		putAccountValue(address, oAccountValue.build());
+	}
+
+	@Override
+	public Map<String, byte[]> getStorage(byte[] address, List<byte[]> keys) {
+		Map<String, byte[]> storage = new HashMap<>();
+		StorageTrie oStorage = accountHelper.getStorageTrie(address);
+		for (int i = 0; i < keys.size(); i++) {
+			storage.put(encApi.hexEnc(keys.get(i)), oStorage.get(keys.get(i)));
+		}
+		return storage;
+	}
+
+	@Override
+	public byte[] getStorage(byte[] address, byte[] key) {
+		StorageTrie oStorage = accountHelper.getStorageTrie(address);
+		return oStorage.get(key);
+	}
 }

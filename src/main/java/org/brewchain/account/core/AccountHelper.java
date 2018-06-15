@@ -2,6 +2,7 @@ package org.brewchain.account.core;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -12,6 +13,9 @@ import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.trie.StateTrie;
+import org.brewchain.account.trie.StorageTrie;
+import org.brewchain.account.trie.StorageTrieCache;
+import org.brewchain.account.util.ByteUtil;
 import org.brewchain.account.util.FastByteComparisons;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.bcapi.gens.Oentity.OKey;
@@ -49,6 +53,8 @@ public class AccountHelper implements ActorService {
 	EncAPI encApi;
 	@ActorRequire(name = "Block_StateTrie", scope = "global")
 	StateTrie stateTrie;
+	@ActorRequire(name = "Storage_TrieCache", scope = "global")
+	StorageTrieCache storageTrieCache;
 
 	public AccountHelper() {
 	}
@@ -442,6 +448,7 @@ public class AccountHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public long getBalance(byte[] addr) throws Exception {
+		log.debug("find balance::" + encApi.hexEnc(addr));
 		Account oAccount = GetAccount(addr);
 		if (oAccount == null) {
 			throw new Exception("account not found");
@@ -588,6 +595,7 @@ public class AccountHelper implements ActorService {
 				OEntityBuilder.byteValue2OValue(oAccountValue.toByteArray()));
 		if (this.stateTrie != null) {
 			this.stateTrie.put(addr, oAccountValue.toByteArray());
+			this.stateTrie.flush();
 		}
 	}
 
@@ -644,4 +652,44 @@ public class AccountHelper implements ActorService {
 		return cryptoTokenBuild;
 	}
 
+	public void saveStorage(byte[] address, byte[] key, byte[] value) {
+		StorageTrie oStorage = getStorageTrie(address);
+		oStorage.put(key, value);
+		byte[] rootHash = oStorage.getRootHash();
+
+		Account contract = GetAccount(address);
+		AccountValue.Builder oAccountValue = contract.getValue().toBuilder();
+		oAccountValue.setStorage(ByteString.copyFrom(rootHash));
+		putAccountValue(address, oAccountValue.build());
+	}
+
+	public StorageTrie getStorageTrie(byte[] address) {
+		StorageTrie oStorage = storageTrieCache.get(encApi.hexEnc(address));
+		if (oStorage == null) {
+			oStorage = new StorageTrie(this.dao, this.encApi);
+			Account contract = GetAccount(address);
+			log.debug("contract address::" + encApi.hexEnc(address));
+			if (contract.getValue() == null || contract.getValue().getStorage() == null) {
+				oStorage.setRoot(ByteUtil.EMPTY_BYTE_ARRAY);
+			} else {
+				oStorage.setRoot(contract.getValue().getStorage().toByteArray());
+			}
+			storageTrieCache.put(encApi.hexEnc(address), oStorage);
+		}
+		return oStorage;
+	}
+
+	public Map<String, byte[]> getStorage(byte[] address, List<byte[]> keys) {
+		Map<String, byte[]> storage = new HashMap<>();
+		StorageTrie oStorage = getStorageTrie(address);
+		for (int i = 0; i < keys.size(); i++) {
+			storage.put(encApi.hexEnc(keys.get(i)), oStorage.get(keys.get(i)));
+		}
+		return storage;
+	}
+
+	public byte[] getStorage(byte[] address, byte[] key) {
+		StorageTrie oStorage = getStorageTrie(address);
+		return oStorage.get(key);
+	}
 }
