@@ -1,6 +1,7 @@
 package org.brewchain.account.test;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 
 import org.bouncycastle.util.encoders.Hex;
 import org.brewchain.account.core.AccountHelper;
@@ -71,8 +72,11 @@ public class CallContractTest extends SessionModules<ReqCreateContract> implemen
 	public void onPBPacket(final FramePacket pack, final ReqCreateContract pb, final CompleteHandler handler) {
 		RespTxTest.Builder oRespTxTest = RespTxTest.newBuilder();
 		try {
+			byte[] accountAddress = encApi.hexDec("502f600d0e813c51aafca905f73a44de748c4d65");
+			byte[] createAddress = encApi.hexDec("47dd7cf1ef6a0f7eb7500d5c73fd0730902b3a62");
+
 			byte[] data = encApi.hexDec(
-					"608060405234801561001057600080fd5b5061013f806100206000396000f300608060405260043610610041576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806355c2780f14610046575b600080fd5b34801561005257600080fd5b5061005b6100d6565b6040518080602001828103825283818151815260200191508051906020019080838360005b8381101561009b578082015181840152602081019050610080565b50505050905090810190601f1680156100c85780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b60606040805190810160405280600f81526020017f68656c6c6f20e682a8e5a5bdefbc8100000000000000000000000000000000008152509050905600a165627a7a72305820181f8bfbfa60590a1eebe87e774e0b01ab68dc9445b05d96efa66cdb0eeb6cdb0029");
+					"608060405234801561001057600080fd5b50336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555060f88061005f6000396000f300608060405260043610603f576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063724a3e05146044575b600080fd5b6060600480360381019080803590602001909291905050506062565b005b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff166108fc829081150290604051600060405180830381858888f1935050505015801560c8573d6000803e3d6000fd5b50505600a165627a7a723058206225c16e8e41f39934a192742957cc5d3df18a8b90f3eaa3596c808fa06cd12e0029");
 
 			// 30073b02aa89956aadc1f4a5d03d42ee8c748a4ad5
 			EvmApiImp evmApiImp = new EvmApiImp();
@@ -80,23 +84,25 @@ public class CallContractTest extends SessionModules<ReqCreateContract> implemen
 			evmApiImp.setTransactionHelper(this.transactionHelper);
 			evmApiImp.setEncApi(this.encApi);
 
-			KeyPairs oKeyPairs = encApi.genKeys();
-			log.debug("contract address::" + oKeyPairs.getAddress());
-			Account contract = accountHelper.CreateAccount(encApi.hexDec(oKeyPairs.getAddress()), null);
-
-			int nonce = accountHelper.getNonce(encApi.hexDec("30ba538f6e50266c62537f3baffb8a3a28b01b499e"));
+			accountHelper.IncreaseNonce(createAddress);
+			int nonce = accountHelper.getNonce(createAddress);
 			MultiTransaction.Builder createContract = MultiTransaction.newBuilder();
 			MultiTransactionBody.Builder createContractBody = MultiTransactionBody.newBuilder();
 			MultiTransactionInput.Builder createContractInput = MultiTransactionInput.newBuilder();
 			createContractInput.setNonce(nonce);
-			createContractInput
-					.setAddress(ByteString.copyFrom(encApi.hexDec("30ba538f6e50266c62537f3baffb8a3a28b01b499e")));
+			createContractInput.setAddress(ByteString.copyFrom(createAddress));
 			createContractBody.addInputs(createContractInput);
 			createContract.setTxBody(createContractBody);
 
-			ProgramInvokeImpl createProgramInvoke = new ProgramInvokeImpl(encApi.hexDec(oKeyPairs.getAddress()),
-					encApi.hexDec("30ba538f6e50266c62537f3baffb8a3a28b01b499e"),
-					encApi.hexDec("30ba538f6e50266c62537f3baffb8a3a28b01b499e"),
+			byte[] contractAddress = transactionHelper.getContractAddressByTransaction(createContract.build());
+			log.debug("contract address::" + encApi.hexEnc(contractAddress));
+			Account contract = accountHelper.CreateAccount(contractAddress, null);
+			accountHelper.addBalance(contractAddress, 88888);
+
+			// ba538f6e50266c62537f3baffb8a3a28b01b499e
+			// 30ba538f6e50266c62537f3baffb8a3a28b01b499e
+			// 0000ba538f6e50266c62537f3baffb8a3a28b01b499e
+			ProgramInvokeImpl createProgramInvoke = new ProgramInvokeImpl(contractAddress, createAddress, createAddress,
 					ByteUtil.bigIntegerToBytes(BigInteger.valueOf(10000)), ByteUtil.bigIntegerToBytes(BigInteger.ZERO),
 					data, blockChainHelper.GetConnectBestBlock().getHeader().getParentHash().toByteArray(),
 					encApi.hexDec(blockChainHelper.GetConnectBestBlock().getMiner().getAddress()),
@@ -111,28 +117,27 @@ public class CallContractTest extends SessionModules<ReqCreateContract> implemen
 			createVM.play(createProgram);
 			ProgramResult createResult = ProgramResult.createEmpty();
 			createResult = createProgram.getResult();
-			accountHelper.saveCode(encApi.hexDec(oKeyPairs.getAddress()), createResult.getHReturn());
+			accountHelper.saveCode(contractAddress, createResult.getHReturn());
 			log.debug(String.format("result.getHReturn():%s", createResult.getHReturn()));
-			
+
+			accountHelper.IncreaseNonce(accountAddress);
+
 			/////////////////////
-			nonce = accountHelper.getNonce(encApi.hexDec("30ba538f6e50266c62537f3baffb8a3a28b01b499e"));
+			nonce = accountHelper.getNonce(accountAddress);
 			MultiTransaction.Builder callContract = MultiTransaction.newBuilder();
 			MultiTransactionBody.Builder callContractBody = MultiTransactionBody.newBuilder();
 			MultiTransactionInput.Builder callContractInput = MultiTransactionInput.newBuilder();
 			callContractInput.setNonce(nonce);
-			callContractInput
-					.setAddress(ByteString.copyFrom(encApi.hexDec("30ba538f6e50266c62537f3baffb8a3a28b01b499e")));
+			callContractInput.setAddress(ByteString.copyFrom(accountAddress));
 			callContractBody.addInputs(callContractInput);
 			callContract.setTxBody(callContractBody);
 
 			VM vm = new VM();
-			Account existsContract = accountHelper.GetAccount(encApi.hexDec(oKeyPairs.getAddress()));
-			ProgramInvokeImpl programInvoke = new ProgramInvokeImpl(
-					encApi.hexDec(oKeyPairs.getAddress()),
-					encApi.hexDec("30ba538f6e50266c62537f3baffb8a3a28b01b499e"),
-					encApi.hexDec("30ba538f6e50266c62537f3baffb8a3a28b01b499e"),
+			Account existsContract = accountHelper.GetAccount(contractAddress);
+			// 
+			ProgramInvokeImpl programInvoke = new ProgramInvokeImpl(contractAddress, accountAddress, accountAddress,
 					ByteUtil.bigIntegerToBytes(BigInteger.valueOf(10000)), ByteUtil.bigIntegerToBytes(BigInteger.ZERO),
-					encApi.hexDec("55c2780f"),
+					encApi.hexDec("724a3e05000000000000000000000000000000000000000000000000000000000000000a"),
 					blockChainHelper.GetConnectBestBlock().getHeader().getParentHash().toByteArray(),
 					encApi.hexDec(blockChainHelper.GetConnectBestBlock().getMiner().getAddress()),
 					Long.parseLong(String.valueOf(blockChainHelper.GetConnectBestBlock().getHeader().getTimestamp())),
@@ -148,8 +153,8 @@ public class CallContractTest extends SessionModules<ReqCreateContract> implemen
 			RuntimeException ex = result.getException();
 
 			CallTransaction.Contract cc = new CallTransaction.Contract(
-					"[{\"constant\":true,\"inputs\":[],\"name\":\"getCurrentTimes\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"}]");
-			Object[] ret = cc.getByName("getCurrentTimes").decodeResult(hreturn);
+					"[{\"constant\":false,\"inputs\":[{\"name\":\"pirce\",\"type\":\"uint256\"}],\"name\":\"testBid\",\"outputs\":[],\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"}]");
+			Object[] ret = cc.getByName("testBid").decodeResult(hreturn);
 			log.info("Current contract data member value: " + ret[0]);
 			// oRespTxTest.setRetCode(Integer.valueOf(ret[0].toString()));
 			if (ex == null) {

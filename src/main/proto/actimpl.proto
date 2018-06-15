@@ -59,6 +59,7 @@ message AccountValueImpl {
     repeated AccountCryptoValueImpl cryptos = 9;
     string code = 10;
     string storage = 11;
+    string codeHash = 12;
 }
 
 message AccountTokenValueImpl {

@@ -159,18 +159,17 @@ public class TransactionHelper implements ActorService {
 	}
 
 	public void syncTransaction(MultiTransaction.Builder oMultiTransaction, boolean isBroadCast) throws Exception {
-		
-		
+
 		MultiTransaction formatMultiTransaction = verifyAndSaveMultiTransaction(oMultiTransaction);
 
 		if (isBroadCast) {
 			// 保存交易到缓存中，用于打包
 			log.debug("add to wait block txhash::" + encApi.hexEnc(oMultiTransaction.getTxHash().toByteArray()));
 
-						oPendingHashMapDB.put(encApi.hexEnc(formatMultiTransaction.getTxHash().toByteArray()),
-								formatMultiTransaction.toByteArray());
+			oPendingHashMapDB.put(encApi.hexEnc(formatMultiTransaction.getTxHash().toByteArray()),
+					formatMultiTransaction.toByteArray());
 		}
-		
+
 		log.debug("receive sync txhash::" + encApi.hexEnc(oMultiTransaction.getTxHash().toByteArray()));
 	}
 
@@ -311,7 +310,8 @@ public class TransactionHelper implements ActorService {
 			oTransaction.mergeFrom(item.getValue());
 			oBroadcastTransactionMsg.addTxHexStr(encApi.hexEnc(oTransaction.build().toByteArray()));
 			it.remove();
-			log.debug("get and remove sycn txhash::" + item.getKey() + " size::" + oSendingHashMapDB.getStorage().size());
+			log.debug(
+					"get and remove sycn txhash::" + item.getKey() + " size::" + oSendingHashMapDB.getStorage().size());
 			total += 1;
 			if (count == total) {
 				break;
@@ -338,7 +338,8 @@ public class TransactionHelper implements ActorService {
 			oTransaction.mergeFrom(item.getValue());
 			list.add(oTransaction.build());
 			it.remove();
-			log.debug("get need blocked tx and remove from cache, txhash::" + item.getKey() + " size::" + oPendingHashMapDB.getStorage().size());
+			log.debug("get need blocked tx and remove from cache, txhash::" + item.getKey() + " size::"
+					+ oPendingHashMapDB.getStorage().size());
 			total += 1;
 			if (count == total) {
 				break;
@@ -736,7 +737,8 @@ public class TransactionHelper implements ActorService {
 				.setTxHash(ByteString.copyFrom(encApi.sha256Encode(oMultiTransaction.getTxBody().toByteArray())));
 
 		if (isExistsTransaction(oMultiTransaction.getTxHash().toByteArray())) {
-			throw new Exception("transaction exists, drop it txhash::" + encApi.hexEnc(oMultiTransaction.getTxHash().toByteArray()));
+			throw new Exception("transaction exists, drop it txhash::"
+					+ encApi.hexEnc(oMultiTransaction.getTxHash().toByteArray()));
 		}
 
 		MultiTransaction multiTransaction = oMultiTransaction.build();
@@ -790,11 +792,12 @@ public class TransactionHelper implements ActorService {
 			throw new Exception("transaction type is wrong.");
 		}
 		KeyPairs pair = encApi.genKeys(String.format("%s%s",
-				encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(0).getAddress().toByteArray()),
-				oMultiTransaction.getTxBody().getInputs(0).getNonce()));
-
-		byte[] addrHash = encApi.hexDec(pair.getAddress());
-		return copyOfRange(addrHash, 12, addrHash.length);
+		encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(0).getAddress().toByteArray()),
+		oMultiTransaction.getTxBody().getInputs(0).getNonce()));
+		return encApi.hexDec(pair.getAddress());
+//		KeyPairs pair = encApi.genKeys();
+//		byte[] addrHash = encApi.hexDec(pair.getAddress());
+//		return copyOfRange(addrHash, 12, addrHash.length);
 	}
 
 	public boolean isExistsTransaction(byte[] txHash) {
