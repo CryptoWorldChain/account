@@ -100,7 +100,6 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
 //		LinkedList<OKey> keys = new LinkedList<>();
 //		LinkedList<AccountValue> values = new LinkedList<>();
-		Map<String, AccountValue> accountValues = new HashMap<>();
 
 		String token = "";
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
@@ -136,7 +135,7 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			
 //			keys.add(OEntityBuilder.byteKey2OKey(sender.getAddress().toByteArray()));
 //			values.add(senderAccountValue.build());
-			accountValues.put(encApi.hexEnc(sender.getAddress().toByteArray()), senderAccountValue.build());
+			this.accountValues.put(encApi.hexEnc(sender.getAddress().toByteArray()), senderAccountValue.build());
 			//TODO 确定账户余额是否会增加
 
 		}
@@ -176,10 +175,9 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			
 //			keys.add(OEntityBuilder.byteKey2OKey(receiver.getAddress().toByteArray()));
 //			values.add(receiverAccountValue.build());
-			accountValues.put(encApi.hexEnc(receiver.getAddress().toByteArray()), receiverAccountValue.build());
+			this.accountValues.put(encApi.hexEnc(receiver.getAddress().toByteArray()), receiverAccountValue.build());
 
 		}
-		this.accountValues = accountValues;
 //		this.keys.addAll(keys);
 //		this.values.addAll(values);
 		// oAccountHelper.BatchPutAccounts(keys, values);

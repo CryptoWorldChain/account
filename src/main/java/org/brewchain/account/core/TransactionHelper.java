@@ -180,7 +180,7 @@ public class TransactionHelper implements ActorService {
 
 //				keys.addAll(oiTransactionActuator.getKeys());
 //				values.addAll(oiTransactionActuator.getValues());
-				oiTransactionActuator.getAccountValues();
+				accountValues = oiTransactionActuator.getAccountValues();
 				
 				Iterator<String> iterator = accountValues.keySet().iterator();
 				while(iterator.hasNext()){

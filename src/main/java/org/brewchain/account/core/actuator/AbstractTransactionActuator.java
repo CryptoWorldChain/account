@@ -156,7 +156,6 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 
 //		LinkedList<OKey> keys = new LinkedList<>();
 //		LinkedList<AccountValue> values = new LinkedList<>();
-		
 
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			// 取发送方账户
@@ -176,6 +175,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			senderAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
 //			keys.add(OEntityBuilder.byteKey2OKey(sender.getAddress().toByteArray()));
 //			values.add(senderAccountValue.build());
+			this.accountValues.put(encApi.hexEnc(sender.getAddress().toByteArray()), senderAccountValue.build());
 		}
 
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
@@ -193,6 +193,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			receiverAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
 //			keys.add(OEntityBuilder.byteKey2OKey(receiver.getAddress().toByteArray()));
 //			values.add(receiverAccountValue.build());
+			this.accountValues.put(encApi.hexEnc(receiver.getAddress().toByteArray()), receiverAccountValue.build());
 		}
 
 		

@@ -2,7 +2,6 @@ package org.brewchain.account.core.actuator;
 
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Map;
 
 import org.brewchain.account.core.AccountHelper;
@@ -12,7 +11,6 @@ import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.trie.DBTrie;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.util.OEntityBuilder;
-import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.evmapi.gens.Act.Account;
 import org.brewchain.evmapi.gens.Act.AccountCryptoToken;
 import org.brewchain.evmapi.gens.Act.AccountCryptoValue;
@@ -96,7 +94,6 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
 //		LinkedList<OKey> keys = new LinkedList<>();
 //		LinkedList<AccountValue> values = new LinkedList<>();
-		Map<String, AccountValue> accountValues = new HashMap<>();
 
 		Map<String, AccountCryptoToken> tokens = new HashMap<String, AccountCryptoToken>();
 		// 发送方移除balance
@@ -140,7 +137,7 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 			
 //			keys.add(OEntityBuilder.byteKey2OKey(oInput.getAddress().toByteArray()));
 //			values.add(oAccountValue.build());
-			accountValues.put(encApi.hexEnc(oInput.getAddress().toByteArray()), oAccountValue.build());
+			this.accountValues.put(encApi.hexEnc(oInput.getAddress().toByteArray()), oAccountValue.build());
 		}
 
 		// 接收方增加balance
@@ -197,10 +194,9 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 
 //			keys.add(OEntityBuilder.byteKey2OKey(oOutput.getAddress().toByteArray()));
 //			values.add(receiverAccountValue.build());
-			accountValues.put(encApi.hexEnc(oOutput.getAddress().toByteArray()), receiverAccountValue.build());
+			this.accountValues.put(encApi.hexEnc(oOutput.getAddress().toByteArray()), receiverAccountValue.build());
 		}
 
-		this.accountValues = accountValues;
 //		this.keys.addAll(keys);
 //		this.values.addAll(values);
 		// oAccountHelper.BatchPutAccounts(keys, values);
