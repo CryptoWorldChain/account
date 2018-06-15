@@ -29,16 +29,14 @@ public class ActuatorCreateToken extends AbstractTransactionActuator implements 
 	}
 
 	@Override
-	public void onExecute(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
-			Map<ByteString, Account> receivers) throws Exception {
+	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
 		MultiTransactionInput input = oMultiTransaction.getTxBody().getInputs(0);
 		oAccountHelper.addTokenBalance(input.getAddress().toByteArray(), input.getToken(), input.getAmount());
 		oAccountHelper.ICO(input.getAddress().toByteArray(), input.getToken());
 	}
 
 	@Override
-	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
-			Map<ByteString, Account> receivers) throws Exception {
+	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
 		if (oMultiTransaction.getTxBody().getInputsCount() != 1) {
 			throw new Exception(String.format("不允许存在多个发行方"));
 		}
@@ -53,7 +51,7 @@ public class ActuatorCreateToken extends AbstractTransactionActuator implements 
 		}
 
 		// 判断nonce是否一致
-		Account sender = senders.get(oMultiTransaction.getTxBody().getInputs(0).getAddress());
+		Account sender = accounts.get(encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(0).getAddress().toByteArray()));
 		AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 
 		int nonce = senderAccountValue.getNonce();

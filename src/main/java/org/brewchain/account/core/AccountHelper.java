@@ -2,8 +2,11 @@ package org.brewchain.account.core;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
@@ -601,6 +604,22 @@ public class AccountHelper implements ActorService {
 		}
 
 		dao.getAccountDao().batchPuts(keys.toArray(keysArray), list.toArray(valuesArray));
+	}
+	
+	public void BatchPutAccounts(Map<String, AccountValue> accountValues) {
+		OKey[] keysArray = new OKey[accountValues.size()];
+		OValue[] valuesArray = new OValue[accountValues.size()];
+		Set<String> keySets = accountValues.keySet();
+		Iterator<String> iterator = keySets.iterator();
+		int i = 0;
+		while(iterator.hasNext()){
+			String key = iterator.next();
+			AccountValue value = accountValues.get(key);
+			keysArray[i] = OEntityBuilder.byteKey2OKey(encApi.hexDec(key)); 
+			valuesArray[i] = OEntityBuilder.byteValue2OValue(value.toByteArray());
+			i = i + 1;
+		}
+		dao.getAccountDao().batchPuts(keysArray, valuesArray);
 	}
 
 	public void tokenMappingAccount(AccountCryptoToken.Builder acBuilder) {

@@ -14,8 +14,6 @@ import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionOutput;
 import org.fc.brewchain.bcapi.EncAPI;
 
-import com.google.protobuf.ByteString;
-
 public class ActuatorDefault extends AbstractTransactionActuator implements iTransactionActuator {
 
 	public ActuatorDefault(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper, BlockHelper oBlockHelper,
@@ -25,21 +23,20 @@ public class ActuatorDefault extends AbstractTransactionActuator implements iTra
 	}
 
 	@Override
-	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
-			Map<ByteString, Account> receivers) throws Exception {
+	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
 
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
-			if (!senders.containsKey(oInput.getAddress())) {
+			if (!accounts.containsKey(encApi.hexEnc(oInput.getAddress().toByteArray()))) {
 				throw new Exception(String.format("交易的发送方账户 %s 不存在", oInput.getAddress().toString()));
 			}
 		}
 
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
-			if (!receivers.containsKey(oOutput.getAddress())) {
+			if (!accounts.containsKey(encApi.hexEnc(oOutput.getAddress().toByteArray()))) {
 				oAccountHelper.CreateAccount(oOutput.getAddress().toByteArray(), ByteUtil.EMPTY_BYTE_ARRAY);
 			}
 		}
 
-		super.onPrepareExecute(oMultiTransaction, senders, receivers);
+		super.onPrepareExecute(oMultiTransaction, accounts);
 	}
 }

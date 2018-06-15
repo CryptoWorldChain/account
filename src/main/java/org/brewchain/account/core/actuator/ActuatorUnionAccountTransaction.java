@@ -17,8 +17,6 @@ import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionSignature;
 import org.fc.brewchain.bcapi.EncAPI;
 
-import com.google.protobuf.ByteString;
-
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -30,16 +28,15 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 	}
 
 	@Override
-	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
-			Map<ByteString, Account> receivers) throws Exception {
+	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
 		// 校验每日最大转账金额
 		// 校验每笔最大转账金额
 		// 校验超过单笔转账金额后的用户签名
-		if (senders.size() != 1) {
-			throw new Exception(String.format("发送方地址不存在或者出现多个发送方地址 %s", senders.size()));
+		if (accounts.size() != 1) {
+			throw new Exception(String.format("发送方地址不存在或者出现多个发送方地址 %s", accounts.size()));
 		}
 
-		AccountValue.Builder oSenderValue = senders.get(senders.keySet().toArray()[0]).getValue().toBuilder();
+		AccountValue.Builder oSenderValue = accounts.get(accounts.keySet().toArray()[0]).getValue().toBuilder();
 
 		long totalAmount = 0;
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
@@ -70,7 +67,7 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 			}
 		}
 
-		super.onPrepareExecute(oMultiTransaction, senders, receivers);
+		super.onPrepareExecute(oMultiTransaction, accounts);
 	}
 
 	@Override
@@ -89,14 +86,13 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 	}
 
 	@Override
-	public void onVerifySignature(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
-			Map<ByteString, Account> receivers) throws Exception {
+	public void onVerifySignature(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
 
 		// 签名的账户是否是该多重签名账户的子账户，如果不是，抛出异常
 		for (MultiTransactionSignature oSignature : oMultiTransaction.getTxBody().getSignaturesList()) {
 			// TODO 需要能解出签名地址的方法，验证每个签名地址都是多重签名账户的关联自账户
 		}
 
-		super.onVerifySignature(oMultiTransaction, senders, receivers);
+		super.onVerifySignature(oMultiTransaction, accounts);
 	}
 }

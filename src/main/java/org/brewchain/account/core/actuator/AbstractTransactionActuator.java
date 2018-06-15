@@ -1,6 +1,6 @@
 package org.brewchain.account.core.actuator;
 
-import java.util.LinkedList;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.brewchain.account.core.AccountHelper;
@@ -9,8 +9,6 @@ import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.trie.DBTrie;
 import org.brewchain.account.trie.StateTrie;
-import org.brewchain.account.util.OEntityBuilder;
-import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.evmapi.gens.Act.Account;
 import org.brewchain.evmapi.gens.Act.AccountValue;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
@@ -24,35 +22,47 @@ import com.google.protobuf.ByteString;
 
 public abstract class AbstractTransactionActuator implements iTransactionActuator {
 
-	protected LinkedList<OKey> keys = new LinkedList<>();
-	protected LinkedList<AccountValue> values = new LinkedList<>();
+	protected Map<String, AccountValue> accountValues = new HashMap<>();
+	protected Map<String, MultiTransaction> txValues = new HashMap<>();
+	
+//	protected LinkedList<OKey> keys = new LinkedList<>();
+//	protected LinkedList<AccountValue> values = new LinkedList<>();
+//	protected LinkedList<OKey> txKeys = new LinkedList<>();
+//	protected LinkedList<MultiTransaction> txValues = new LinkedList<>();
 
-	protected LinkedList<OKey> txKeys = new LinkedList<>();
-	protected LinkedList<MultiTransaction> txValues = new LinkedList<>();
-
+	
 	@Override
-	public LinkedList<OKey> getKeys() {
-		return keys;
+	public Map<String, AccountValue> getAccountValues(){
+		return accountValues;
 	}
-
+	
 	@Override
-	public LinkedList<AccountValue> getValues() {
-		return values;
-	}
-
-	@Override
-	public LinkedList<OKey> getTxKeys() {
-		return txKeys;
-	}
-
-	@Override
-	public LinkedList<MultiTransaction> getTxValues() {
+	public Map<String, MultiTransaction> getTxValues(){
 		return txValues;
 	}
 
+//	@Override
+//	public LinkedList<OKey> getKeys() {
+//		return keys;
+//	}
+//
+//	@Override
+//	public LinkedList<AccountValue> getValues() {
+//		return values;
+//	}
+
+//	@Override
+//	public LinkedList<OKey> getTxKeys() {
+//		return txKeys;
+//	}
+//
+//	@Override
+//	public LinkedList<MultiTransaction> getTxValues() {
+//		return txValues;
+//	}
+
 	@Override
-	public void onVerifySignature(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
-			Map<ByteString, Account> receivers) throws Exception {
+	public void onVerifySignature(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
 		// 获取交易原始encode
 		MultiTransaction.Builder signatureTx = oMultiTransaction.toBuilder();
 		MultiTransactionBody.Builder txBody = signatureTx.getTxBodyBuilder();
@@ -61,11 +71,8 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 		byte[] oMultiTransactionEncode = txBody.build().toByteArray();
 		// 校验交易签名
 		for (MultiTransactionSignature oMultiTransactionSignature : oMultiTransaction.getTxBody().getSignaturesList()) {
-			if (encApi.ecVerify(oMultiTransactionSignature.getPubKey(), oMultiTransactionEncode,
-					encApi.hexDec(oMultiTransactionSignature.getSignature()))) {
-			} else {
-				throw new Exception(String.format("签名 %s 使用公钥 %s 验证失败", oMultiTransactionSignature.getSignature(),
-						oMultiTransactionSignature.getPubKey()));
+			if (!encApi.ecVerify(oMultiTransactionSignature.getPubKey(), oMultiTransactionEncode,encApi.hexDec(oMultiTransactionSignature.getSignature()))) {
+				throw new Exception(String.format("签名 %s 使用公钥 %s 验证失败", oMultiTransactionSignature.getSignature(),oMultiTransactionSignature.getPubKey()));
 			}
 		}
 	}
@@ -77,8 +84,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	protected DefDaos dao;
 	protected StateTrie oStateTrie;
 
-	public AbstractTransactionActuator(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
-			BlockHelper oBlockHelper, EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
+	public AbstractTransactionActuator(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,BlockHelper oBlockHelper, EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
 		this.oAccountHelper = oAccountHelper;
 		this.oTransactionHelper = oTransactionHelper;
 		this.oBlockHelper = oBlockHelper;
@@ -93,8 +99,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	}
 
 	@Override
-	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
-			Map<ByteString, Account> receivers) throws Exception {
+	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
 		int inputsTotal = 0;
 		int outputsTotal = 0;
 
@@ -102,21 +107,22 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			inputsTotal += oInput.getAmount();
 
 			// 取发送方账户
-			Account sender = senders.get(oInput.getAddress());
+			Account sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 
 			// 判断发送方余额是否足够
 			long balance = senderAccountValue.getBalance();
 
 			if (balance < 0) {
-				throw new Exception(String.format("发送金额 %s 小于 0, 不能继续交易", balance));
+				throw new Exception(String.format("发送者账户余额 %s 小于 0, 不能继续交易", balance));
+			}
+			if(oInput.getAmount() < 0){
+				throw new IllegalArgumentException(String.format("发送金额 %s 小于 0, 不能继续交易", oInput.getAmount()));
 			}
 
-			if (balance - oInput.getAmount() - oInput.getFeeLimit() >= 0) {
-				// 余额足够
-			} else {
-				throw new Exception(
-						String.format("用户的账户余额 %s 不满足交易的最高限额 %s", balance, oInput.getAmount() + oInput.getFeeLimit()));
+			if (balance - oInput.getAmount() < 0) {// - oInput.getFeeLimit()
+				// 余额不够
+				throw new Exception(String.format("用户的账户余额 %s 不满足交易的最高限额 %s", balance, oInput.getAmount()));// + oInput.getFeeLimit()
 			}
 
 			// 判断nonce是否一致
@@ -135,7 +141,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			}
 
 			// 取接收方账户
-			if (!receivers.containsKey(oOutput.getAddress())) {
+			if (!accounts.containsKey(oOutput.getAddress())) {
 
 			}
 		}
@@ -146,15 +152,15 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	}
 
 	@Override
-	public void onExecute(MultiTransaction oMultiTransaction, Map<ByteString, Account> senders,
-			Map<ByteString, Account> receivers) throws Exception {
+	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
 
-		LinkedList<OKey> keys = new LinkedList<>();
-		LinkedList<AccountValue> values = new LinkedList<>();
+//		LinkedList<OKey> keys = new LinkedList<>();
+//		LinkedList<AccountValue> values = new LinkedList<>();
+		
 
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			// 取发送方账户
-			Account sender = senders.get(oInput.getAddress());
+			Account sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 
 			senderAccountValue.setBalance(senderAccountValue.getBalance() - oInput.getAmount() );
@@ -168,12 +174,12 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			}
 			oCacheTrie.put(sender.getAddress().toByteArray(), senderAccountValue.build().toByteArray());
 			senderAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
-			keys.add(OEntityBuilder.byteKey2OKey(sender.getAddress().toByteArray()));
-			values.add(senderAccountValue.build());
+//			keys.add(OEntityBuilder.byteKey2OKey(sender.getAddress().toByteArray()));
+//			values.add(senderAccountValue.build());
 		}
 
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
-			Account receiver = receivers.get(oOutput.getAddress());
+			Account receiver = accounts.get(encApi.hexEnc(oOutput.getAddress().toByteArray()));
 			AccountValue.Builder receiverAccountValue = receiver.getValue().toBuilder();
 			receiverAccountValue.setBalance(receiverAccountValue.getBalance() + oOutput.getAmount());
 
@@ -185,12 +191,13 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			}
 			oCacheTrie.put(receiver.getAddress().toByteArray(), receiverAccountValue.build().toByteArray());
 			receiverAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
-			keys.add(OEntityBuilder.byteKey2OKey(receiver.getAddress().toByteArray()));
-			values.add(receiverAccountValue.build());
+//			keys.add(OEntityBuilder.byteKey2OKey(receiver.getAddress().toByteArray()));
+//			values.add(receiverAccountValue.build());
 		}
 
-		this.keys.addAll(keys);
-		this.values.addAll(values);
+		
+//		this.keys.addAll(keys);
+//		this.values.addAll(values);
 		// oAccountHelper.BatchPutAccounts(keys, values);
 	}
 
