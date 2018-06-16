@@ -154,9 +154,9 @@ public class AccountHelper implements ActorService {
 			Account.Builder oAccount = Account.newBuilder();
 			oAccount.setAddress(ByteString.copyFrom(addr));
 			byte[] valueHash = null;
-//			if (this.stateTrie != null) {
-//				valueHash = this.stateTrie.get(addr);
-//			}
+			if (this.stateTrie != null) {
+				valueHash = this.stateTrie.get(addr);
+			}
 			if (valueHash == null) {
 				OValue oValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(addr)).get();
 				if (oValue != null && oValue.getExtdata() != null) {
