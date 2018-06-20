@@ -72,11 +72,11 @@ public class CallContractTest extends SessionModules<ReqCreateContract> implemen
 	public void onPBPacket(final FramePacket pack, final ReqCreateContract pb, final CompleteHandler handler) {
 		RespTxTest.Builder oRespTxTest = RespTxTest.newBuilder();
 		try {
-			byte[] accountAddress = encApi.hexDec("502f600d0e813c51aafca905f73a44de748c4d65");
-			byte[] createAddress = encApi.hexDec("47dd7cf1ef6a0f7eb7500d5c73fd0730902b3a62");
+			byte[] accountAddress = encApi.hexDec("3b77b8e669a2bcc71ac56a53233adbfa6772df56");
+			byte[] createAddress = encApi.hexDec("db0fb232e3792b094c8273d8a787748f72f15460");
 
 			byte[] data = encApi.hexDec(
-					"608060405234801561001057600080fd5b50336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555060f88061005f6000396000f300608060405260043610603f576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063724a3e05146044575b600080fd5b6060600480360381019080803590602001909291905050506062565b005b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff166108fc829081150290604051600060405180830381858888f1935050505015801560c8573d6000803e3d6000fd5b50505600a165627a7a723058206225c16e8e41f39934a192742957cc5d3df18a8b90f3eaa3596c808fa06cd12e0029");
+					"608060405234801561001057600080fd5b5060405161023b38038061023b83398101806040528101908080518201929190505050336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055508060019080519060200190610089929190610090565b5050610135565b828054600181600116156101000203166002900490600052602060002090601f016020900481019282601f106100d157805160ff19168380011785556100ff565b828001600101855582156100ff579182015b828111156100fe5782518255916020019190600101906100e3565b5b50905061010c9190610110565b5090565b61013291905b8082111561012e576000816000905550600101610116565b5090565b90565b60f8806101436000396000f300608060405260043610603f576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063724a3e05146044575b600080fd5b6060600480360381019080803590602001909291905050506062565b005b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff166108fc829081150290604051600060405180830381858888f1935050505015801560c8573d6000803e3d6000fd5b50505600a165627a7a723058207c52912001e2dab5c01d1a87f7c2cd307010fdcfa4d40277f67d09a94054c15b0029000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000053232323232000000000000000000000000000000000000000000000000000000");
 
 			// 30073b02aa89956aadc1f4a5d03d42ee8c748a4ad5
 			EvmApiImp evmApiImp = new EvmApiImp();
@@ -112,8 +112,8 @@ public class CallContractTest extends SessionModules<ReqCreateContract> implemen
 
 			// programInvokeFactory.createProgramInvoke(tx, currentBlock, cacheTrack,
 			// blockStore);
-			Program createProgram = new Program(data, createProgramInvoke, createContract.build());
-			VM createVM = new VM();
+			Program createProgram = new Program(data, createProgramInvoke,this.encApi, createContract.build());
+			VM createVM = new VM(this.encApi);
 			createVM.play(createProgram);
 			ProgramResult createResult = ProgramResult.createEmpty();
 			createResult = createProgram.getResult();
@@ -132,7 +132,7 @@ public class CallContractTest extends SessionModules<ReqCreateContract> implemen
 			callContractBody.addInputs(callContractInput);
 			callContract.setTxBody(callContractBody);
 
-			VM vm = new VM();
+			VM vm = new VM(this.encApi);
 			Account existsContract = accountHelper.GetAccount(contractAddress);
 			// 
 			ProgramInvokeImpl programInvoke = new ProgramInvokeImpl(contractAddress, accountAddress, accountAddress,
@@ -145,7 +145,7 @@ public class CallContractTest extends SessionModules<ReqCreateContract> implemen
 					ByteString.EMPTY.toByteArray(), evmApiImp);
 
 			Program program = new Program(existsContract.getValue().getCodeHash().toByteArray(),
-					existsContract.getValue().getCode().toByteArray(), programInvoke, callContract.build());
+					existsContract.getValue().getCode().toByteArray(), programInvoke,this.encApi, callContract.build());
 			vm.play(program);
 			ProgramResult result = program.getResult();
 			byte[] hreturn = result.getHReturn();
