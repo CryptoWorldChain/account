@@ -61,30 +61,28 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 			oRespBlockInfo.setBlockCount(blockChainHelper.getLastStableBlockNumber());
 
 			oRespBlockInfo.setNumber(blockChainHelper.getLastBlockNumber());
-			//oRespBlockInfo.setCache(blockChainHelper.getBlockCacheDump());
+			// oRespBlockInfo.setCache(blockChainHelper.getBlockCacheDump());
 			oRespBlockInfo.setWaitSync(oSendingHashMapDB.keys().size());
 			oRespBlockInfo.setWaitBlock(oPendingHashMapDB.keys().size());
-			LinkedList<BlockEntity> list = blockChainHelper.getParentsBlocks(dao.getBlockDao()
-					.get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get().getExtdata().toByteArray(),
+			LinkedList<BlockEntity> list = blockChainHelper.getParentsBlocks(encApi.hexEnc(dao.getBlockDao()
+					.get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get().getExtdata().toByteArray()),
 					null, 1000000);
 			int curr = 0;
 			String retCache = "";
 			String parent = "";
 			for (int i = 0; i < list.size(); i++) {
 				oRespBlockInfo.addDump(String.format("%s %s %s", list.get(i).getHeader().getNumber(),
-						encApi.hexEnc(list.get(i).getHeader().getBlockHash().toByteArray()),
-						encApi.hexEnc(list.get(i).getHeader().getParentHash().toByteArray())));
+						list.get(i).getHeader().getBlockHash(), list.get(i).getHeader().getParentHash()));
 
 				if (parent.isEmpty()) {
-					parent = encApi.hexEnc(list.get(i).getHeader().getParentHash().toByteArray());
+					parent = list.get(i).getHeader().getParentHash();
 
 				} else {
-					if (!parent.equals(encApi.hexEnc(list.get(i).getHeader().getBlockHash().toByteArray()))) {
+					if (!parent.equals(list.get(i).getHeader().getBlockHash())) {
 						retCache += String.format("%s %s %s ;", list.get(i).getHeader().getNumber(),
-								encApi.hexEnc(list.get(i).getHeader().getBlockHash().toByteArray()),
-								encApi.hexEnc(list.get(i).getHeader().getParentHash().toByteArray()));
+								list.get(i).getHeader().getBlockHash(), list.get(i).getHeader().getParentHash());
 					}
-					parent = encApi.hexEnc(list.get(i).getHeader().getParentHash().toByteArray());
+					parent = list.get(i).getHeader().getParentHash();
 
 				}
 

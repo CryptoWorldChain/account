@@ -69,8 +69,8 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 
 	@Override
 	public boolean add(BlockEntity block) {
-		String hash = encApi.hexEnc(block.getHeader().getBlockHash().toByteArray());
-		String parentHash = encApi.hexEnc(block.getHeader().getParentHash().toByteArray());
+		String hash = block.getHeader().getBlockHash();
+		String parentHash = block.getHeader().getParentHash();
 
 		try (ALock l = writeLock.lock()) {
 			try {
@@ -148,13 +148,12 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 				oNode.connect();
 				this.storage.put(hash, oNode);
 
-				dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK), OEntityBuilder
-						.byteValue2OValue(encApi.hexDec(oNode.getBlockHash())));
+				dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK),
+						OEntityBuilder.byteValue2OValue(encApi.hexDec(oNode.getBlockHash())));
 				// dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK),
 				// OEntityBuilder.byteValue2OValue(encApi.hexDec(oNode.getBlockHash())));
 				log.debug("success connect block number::" + oNode.getNumber() + " hash::" + oNode.getBlockHash()
-						+ " stateroot::"
-						+ encApi.hexEnc(oNode.getBlockEntity().getHeader().getStateRoot().toByteArray()));
+						+ " stateroot::" + oNode.getBlockEntity().getHeader().getStateRoot());
 			}
 		}
 	}
@@ -223,12 +222,13 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 			if (oBlockStoreNodeValue != null) {
 				oBlockStoreNodeValue.setBlockEntity(block);
 				log.debug("put block number::" + oBlockStoreNodeValue.getNumber() + " hash::"
-						+ oBlockStoreNodeValue.getBlockHash() + " stateroot::" + encApi.hexEnc(
-								oBlockStoreNodeValue.getBlockEntity().getHeader().getStateRoot().toByteArray()));
+						+ oBlockStoreNodeValue.getBlockHash() + " stateroot::"
+						+ oBlockStoreNodeValue.getBlockEntity().getHeader().getStateRoot());
 				this.storage.put(hash, oBlockStoreNodeValue);
 
-				dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(block.getHeader().getBlockHash()),
-						OEntityBuilder.byteValue2OValue(block.toByteArray(), String.valueOf(block.getHeader().getNumber())));
+				dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(encApi.hexDec(block.getHeader().getBlockHash())),
+						OEntityBuilder.byteValue2OValue(block.toByteArray(),
+								String.valueOf(block.getHeader().getNumber())));
 			}
 		}
 	}
@@ -238,7 +238,7 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 		BlockEntity oBlockEntity = getBlockByNumber(number);
 		if (oBlockEntity != null) {
 			try (ALock l = writeLock.lock()) {
-				String hash = encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray());
+				String hash = oBlockEntity.getHeader().getBlockHash();
 				if (this.storage.containsKey(hash)) {
 					BlockStoreNodeValue oNode = this.storage.get(hash);
 					while (StringUtils.isNotBlank(hash)) {
@@ -291,6 +291,6 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 		}
 
 		dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK),
-				OEntityBuilder.byteValue2OValue(block.getHeader().getBlockHash().toByteArray()));
+				OEntityBuilder.byteValue2OValue(encApi.hexDec(block.getHeader().getBlockHash())));
 	}
 }

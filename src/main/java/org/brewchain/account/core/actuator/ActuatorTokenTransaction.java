@@ -21,7 +21,8 @@ import com.google.protobuf.ByteString;
 
 public class ActuatorTokenTransaction extends AbstractTransactionActuator implements iTransactionActuator {
 
-	public ActuatorTokenTransaction(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,BlockHelper oBlockHelper, EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
+	public ActuatorTokenTransaction(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
+			BlockHelper oBlockHelper, EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
 		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi, dao, oStateTrie);
 	}
 
@@ -33,7 +34,7 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 	 * java.util.Map)
 	 */
 	@Override
-	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts ) throws Exception {
+	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
 		// 交易中的Token必须一致
 		String token = "";
 		long inputsTotal = 0;
@@ -52,7 +53,7 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			}
 
 			// 取发送方账户
-			Account sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
+			Account sender = accounts.get(oInput.getAddress());
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 			long tokenBalance = 0;
 			for (int i = 0; i < senderAccountValue.getTokensCount(); i++) {
@@ -63,18 +64,19 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			}
 
 			inputsTotal += tokenBalance;
-			
-			if(tokenBalance < 0){
+
+			if (tokenBalance < 0) {
 				throw new IllegalArgumentException(String.format("账户余额 %s 小于 0，不能正常进行交易", tokenBalance));
 			}
-			
-			if(oInput.getAmount() < 0){
+
+			if (oInput.getAmount() < 0) {
 				throw new IllegalArgumentException(String.format("交易金额 %s 小于 0，不能正常进行交易", oInput.getAmount()));
 			}
 
 			if (tokenBalance - oInput.getAmount() < 0) {// - oInput.getFeeLimit()
 				// 余额不够
-				throw new Exception(String.format("用户的账户余额 %s 不满足交易的最高限额 %s", tokenBalance, oInput.getAmount() + oInput.getFeeLimit()));
+				throw new Exception(String.format("用户的账户余额 %s 不满足交易的最高限额 %s", tokenBalance,
+						oInput.getAmount() + oInput.getFeeLimit()));
 			}
 
 			// 判断nonce是否一致
@@ -85,7 +87,7 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 		}
 
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
-			if(oOutput.getAmount() < 0) {
+			if (oOutput.getAmount() < 0) {
 				throw new IllegalArgumentException(String.format("交易金额 %s 小于 0， 不能正常进行交易", oOutput.getAmount()));
 			}
 			outputsTotal += oOutput.getAmount();
@@ -98,20 +100,21 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 
 	@Override
 	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
-//		LinkedList<OKey> keys = new LinkedList<>();
-//		LinkedList<AccountValue> values = new LinkedList<>();
+		// LinkedList<OKey> keys = new LinkedList<>();
+		// LinkedList<AccountValue> values = new LinkedList<>();
 
 		String token = "";
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			// 取发送方账户
-			Account sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
+			Account sender = accounts.get(oInput.getAddress());
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 
 			token = oInput.getToken();
 			boolean isExistToken = false;
 			for (int i = 0; i < senderAccountValue.getTokensCount(); i++) {
 				if (senderAccountValue.getTokens(i).getToken().equals(oInput.getToken())) {
-					senderAccountValue.setTokens(i, senderAccountValue.getTokens(i).toBuilder().setBalance(senderAccountValue.getTokens(i).getBalance() - oInput.getAmount()));
+					senderAccountValue.setTokens(i, senderAccountValue.getTokens(i).toBuilder()
+							.setBalance(senderAccountValue.getTokens(i).getBalance() - oInput.getAmount()));
 					isExistToken = true;
 					break;
 				}
@@ -121,27 +124,27 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			}
 
 			// 不论任何交易类型，都默认执行账户余额的更改
-			senderAccountValue.setBalance(senderAccountValue.getBalance() - oInput.getFee() );
+			senderAccountValue.setBalance(senderAccountValue.getBalance() - oInput.getFee());
 			senderAccountValue.setNonce(senderAccountValue.getNonce() + 1);
 
 			DBTrie oCacheTrie = new DBTrie(this.dao);
 			if (senderAccountValue.getStorage() == null) {
 				oCacheTrie.setRoot(null);
 			} else {
-				oCacheTrie.setRoot(senderAccountValue.getStorage().toByteArray());
+				oCacheTrie.setRoot(encApi.hexDec(senderAccountValue.getStorage()));
 			}
-			oCacheTrie.put(sender.getAddress().toByteArray(), senderAccountValue.build().toByteArray());
-			senderAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
-			
-//			keys.add(OEntityBuilder.byteKey2OKey(sender.getAddress().toByteArray()));
-//			values.add(senderAccountValue.build());
-			this.accountValues.put(encApi.hexEnc(sender.getAddress().toByteArray()), senderAccountValue.build());
-			//TODO 确定账户余额是否会增加
+			oCacheTrie.put(encApi.hexDec(sender.getAddress()), senderAccountValue.build().toByteArray());
+			senderAccountValue.setStorage(encApi.hexEnc(oCacheTrie.getRootHash()));
+
+			// keys.add(OEntityBuilder.byteKey2OKey(sender.getAddress().toByteArray()));
+			// values.add(senderAccountValue.build());
+			this.accountValues.put(sender.getAddress(), senderAccountValue.build());
+			// TODO 确定账户余额是否会增加
 
 		}
 
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
-			Account receiver = accounts.get(encApi.hexEnc(oOutput.getAddress().toByteArray()));
+			Account receiver = accounts.get(oOutput.getAddress());
 			AccountValue.Builder receiverAccountValue = receiver.getValue().toBuilder();
 
 			// 不论任何交易类型，都默认执行账户余额的更改
@@ -150,7 +153,8 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			boolean isExistToken = false;
 			for (int i = 0; i < receiverAccountValue.getTokensCount(); i++) {
 				if (receiverAccountValue.getTokens(i).getToken().equals(token)) {
-					receiverAccountValue.setTokens(i, receiverAccountValue.getTokens(i).toBuilder().setBalance(receiverAccountValue.getTokens(i).getBalance() + oOutput.getAmount()));
+					receiverAccountValue.setTokens(i, receiverAccountValue.getTokens(i).toBuilder()
+							.setBalance(receiverAccountValue.getTokens(i).getBalance() + oOutput.getAmount()));
 					isExistToken = true;
 					break;
 				}
@@ -168,18 +172,12 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			if (receiverAccountValue.getStorage() == null) {
 				oCacheTrie.setRoot(null);
 			} else {
-				oCacheTrie.setRoot(receiverAccountValue.getStorage().toByteArray());
+				oCacheTrie.setRoot(encApi.hexDec(receiverAccountValue.getStorage()));
 			}
-			oCacheTrie.put(receiver.getAddress().toByteArray(), receiverAccountValue.build().toByteArray());
-			receiverAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
-			
-//			keys.add(OEntityBuilder.byteKey2OKey(receiver.getAddress().toByteArray()));
-//			values.add(receiverAccountValue.build());
-			this.accountValues.put(encApi.hexEnc(receiver.getAddress().toByteArray()), receiverAccountValue.build());
+			oCacheTrie.put(encApi.hexDec(receiver.getAddress()), receiverAccountValue.build().toByteArray());
+			receiverAccountValue.setStorage(encApi.hexEnc((oCacheTrie.getRootHash())));
+			this.accountValues.put(receiver.getAddress(), receiverAccountValue.build());
 
 		}
-//		this.keys.addAll(keys);
-//		this.values.addAll(values);
-		// oAccountHelper.BatchPutAccounts(keys, values);
 	}
 }

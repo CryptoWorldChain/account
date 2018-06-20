@@ -43,7 +43,7 @@ public class CreateAccountImpl extends SessionModules<ReqCreateAccount> {
 		// BigInteger.ZERO);
 		
 //		try {
-			oAccountHelper.CreateAccount(encApi.hexDec(ByteUtil.formatHexAddress(pb.getAddress())), encApi.hexDec(pb.getPubKey()));
+			oAccountHelper.CreateAccount(ByteUtil.formatHexAddress(pb.getAddress()));
 			oRespCreateAccount.setRetCode(1);
 //		} catch (Exception e) {
 //			e.printStackTrace();

@@ -67,8 +67,8 @@ public class BlockStore implements ActorService {
 		} else {
 			if (oBlockEntity.getHeader().getNumber() == 0) {
 				log.debug("load block into stable cache number::" + oBlockEntity.getHeader().getNumber() + " hash::"
-						+ encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()) + " stateroot::"
-						+ encApi.hexEnc(oBlockEntity.getHeader().getStateRoot().toByteArray()));
+						+ oBlockEntity.getHeader().getBlockHash() + " stateroot::"
+						+ oBlockEntity.getHeader().getStateRoot());
 				stableStore.add(oBlockEntity);
 				if (maxStableNumber < oBlockEntity.getHeader().getNumber()) {
 					maxStableNumber = oBlockEntity.getHeader().getNumber();
@@ -76,10 +76,10 @@ public class BlockStore implements ActorService {
 				}
 			} else {
 				log.debug("load block into unstable cache number::" + oBlockEntity.getHeader().getNumber() + " hash::"
-						+ encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()) + " stateroot::"
-						+ encApi.hexEnc(oBlockEntity.getHeader().getStateRoot().toByteArray()));
+						+ oBlockEntity.getHeader().getBlockHash() + " stateroot::"
+						+ oBlockEntity.getHeader().getStateRoot());
 				unStableStore.add(oBlockEntity);
-				unStableStore.connect(encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()));
+				unStableStore.connect(oBlockEntity.getHeader().getBlockHash());
 				if (maxReceiveNumber < oBlockEntity.getHeader().getNumber()) {
 					maxReceiveNumber = oBlockEntity.getHeader().getNumber();
 					maxReceiveBlock = oBlockEntity;
@@ -93,7 +93,7 @@ public class BlockStore implements ActorService {
 			int blockNumber = oBlockEntity.getHeader().getNumber();
 			int maxBlockNumber = blockNumber;
 			int c = 0;
-			String parentHash = encApi.hexEnc(oBlockEntity.getHeader().getParentHash().toByteArray());
+			String parentHash = oBlockEntity.getHeader().getParentHash();
 			while (StringUtils.isNotBlank(parentHash) && c < KeyConstant.CACHE_SIZE) {
 				c += 1;
 				BlockEntity loopBlockEntity = null;
@@ -108,9 +108,8 @@ public class BlockStore implements ActorService {
 					blockNumber -= 1;
 					if (maxBlockNumber > (blockNumber + blockChainConfig.getStableBlocks())) {
 						log.debug("load block into stable cache number::" + loopBlockEntity.getHeader().getNumber()
-								+ " hash::" + encApi.hexEnc(loopBlockEntity.getHeader().getBlockHash().toByteArray())
-								+ " stateroot::"
-								+ encApi.hexEnc(loopBlockEntity.getHeader().getStateRoot().toByteArray()));
+								+ " hash::" + loopBlockEntity.getHeader().getBlockHash() + " stateroot::"
+								+ loopBlockEntity.getHeader().getStateRoot());
 						stableStore.add(loopBlockEntity);
 						if (maxStableNumber < loopBlockEntity.getHeader().getNumber()) {
 							maxStableNumber = loopBlockEntity.getHeader().getNumber();
@@ -118,9 +117,8 @@ public class BlockStore implements ActorService {
 						}
 					} else {
 						log.debug("load block into unstable cache number::" + loopBlockEntity.getHeader().getNumber()
-								+ " hash::" + encApi.hexEnc(loopBlockEntity.getHeader().getBlockHash().toByteArray())
-								+ " stateroot::"
-								+ encApi.hexEnc(loopBlockEntity.getHeader().getStateRoot().toByteArray()));
+								+ " hash::" + loopBlockEntity.getHeader().getBlockHash() + " stateroot::"
+								+ loopBlockEntity.getHeader().getStateRoot());
 						unStableStore.add(loopBlockEntity);
 						unStableStore.connect(parentHash);
 						if (maxReceiveNumber < loopBlockEntity.getHeader().getNumber()) {
@@ -133,7 +131,7 @@ public class BlockStore implements ActorService {
 						}
 					}
 					if (loopBlockEntity.getHeader().getParentHash() != null) {
-						parentHash = encApi.hexEnc(loopBlockEntity.getHeader().getParentHash().toByteArray());
+						parentHash = loopBlockEntity.getHeader().getParentHash();
 					} else {
 						break;
 					}
@@ -144,8 +142,8 @@ public class BlockStore implements ActorService {
 
 	public BlockStoreSummary addBlock(BlockEntity block) {
 		BlockStoreSummary oBlockStoreSummary = new BlockStoreSummary();
-		String hash = encApi.hexEnc(block.getHeader().getBlockHash().toByteArray());
-		String parentHash = encApi.hexEnc(block.getHeader().getParentHash().toByteArray());
+		String hash = block.getHeader().getBlockHash();
+		String parentHash = block.getHeader().getParentHash();
 
 		if (maxReceiveNumber < block.getHeader().getNumber()) {
 			maxReceiveNumber = block.getHeader().getNumber();
@@ -168,7 +166,7 @@ public class BlockStore implements ActorService {
 			BlockStoreNodeValue oParentNode = unStableStore.getNode(parentHash);
 			BlockEntity oParent = null;
 			if (oParentNode == null && block.getHeader().getNumber() == 1) {
-				oParent = stableStore.get(encApi.hexEnc(block.getHeader().getParentHash().toByteArray()));
+				oParent = stableStore.get(block.getHeader().getParentHash());
 				if (oParent.getHeader().getNumber() == 0) {
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
 				} else {
@@ -204,9 +202,9 @@ public class BlockStore implements ActorService {
 	public BlockStoreSummary connectBlock(BlockEntity block) throws BlockNotFoundInStoreException {
 		BlockStoreSummary oBlockStoreSummary = new BlockStoreSummary();
 
-		String hash = encApi.hexEnc(block.getHeader().getBlockHash().toByteArray());
+		String hash = block.getHeader().getBlockHash();
 		log.debug("connect block number::" + block.getHeader().getNumber() + " hash::" + hash + " stateroot::"
-				+ encApi.hexEnc(block.getHeader().getStateRoot().toByteArray()));
+				+ block.getHeader().getStateRoot());
 
 		if (unStableStore.containKey(hash) || block.getHeader().getNumber() == 1) {
 			unStableStore.put(hash, block);
@@ -282,8 +280,7 @@ public class BlockStore implements ActorService {
 			BlockEntity child = getBlockByNumber(number + i);
 			if (child != null) {
 				blocks.add(child);
-				if (StringUtils.isNotBlank(endBlockHash)
-						&& encApi.hexEnc(child.getHeader().getBlockHash().toByteArray()).equals(endBlockHash)) {
+				if (StringUtils.isNotBlank(endBlockHash) && child.getHeader().getBlockHash().equals(endBlockHash)) {
 					return blocks;
 				}
 			} else {
@@ -307,8 +304,7 @@ public class BlockStore implements ActorService {
 			if (child != null) {
 				blocks.add(child);
 
-				if (StringUtils.isNotBlank(endBlockHash)
-						&& encApi.hexEnc(child.getHeader().getBlockHash().toByteArray()).equals(endBlockHash)) {
+				if (StringUtils.isNotBlank(endBlockHash) && child.getHeader().getBlockHash().equals(endBlockHash)) {
 					return blocks;
 				}
 			} else {
@@ -332,7 +328,7 @@ public class BlockStore implements ActorService {
 	public BlockEntity rollBackTo(int number) {
 		log.info("blockstore try to rollback to number::" + number + " maxconnect::" + this.getMaxConnectNumber()
 				+ " maxstable::" + this.getMaxStableNumber());
-		
+
 		BlockEntity oBlockEntity = unStableStore.rollBackTo(number);
 		if (oBlockEntity == null) {
 			oBlockEntity = stableStore.rollBackTo(number);

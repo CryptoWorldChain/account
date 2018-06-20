@@ -34,11 +34,12 @@ public class ActuatorCreateContract extends AbstractTransactionActuator implemen
 	@Override
 	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
 		// 创建
-		oAccountHelper.CreateContract(oTransactionHelper.getContractAddressByTransaction(oMultiTransaction), null,oMultiTransaction.getTxBody().getData().toByteArray(), oMultiTransaction.getTxBody().getExdata().toByteArray());
-		
+		oAccountHelper.CreateContract(oTransactionHelper.getContractAddressByTransaction(oMultiTransaction),
+				oMultiTransaction.getTxBody().getData(), oMultiTransaction.getTxBody().getExdata());
+
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			// 取发送方账户
-			Account sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
+			Account sender = accounts.get(oInput.getAddress());
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 
 			senderAccountValue.setBalance(senderAccountValue.getBalance() - oInput.getAmount() - oInput.getFee());
@@ -48,13 +49,11 @@ public class ActuatorCreateContract extends AbstractTransactionActuator implemen
 			if (senderAccountValue.getStorage() == null) {
 				oCacheTrie.setRoot(null);
 			} else {
-				oCacheTrie.setRoot(senderAccountValue.getStorage().toByteArray());
+				oCacheTrie.setRoot(encApi.hexDec(senderAccountValue.getStorage()));
 			}
-			oCacheTrie.put(sender.getAddress().toByteArray(), senderAccountValue.build().toByteArray());
-			senderAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
-			this.accountValues.put(encApi.hexEnc(sender.getAddress().toByteArray()), senderAccountValue.build());
-//			keys.add(OEntityBuilder.byteKey2OKey(sender.getAddress().toByteArray()));
-//			values.add(senderAccountValue.build());
+			oCacheTrie.put(encApi.hexDec(sender.getAddress()), senderAccountValue.build().toByteArray());
+			senderAccountValue.setStorage(encApi.hexEnc(oCacheTrie.getRootHash()));
+			this.accountValues.put(sender.getAddress(), senderAccountValue.build());
 		}
 	}
 }

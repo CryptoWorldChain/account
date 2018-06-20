@@ -50,9 +50,7 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 			if (inputSymbol.equals("") && !oInput.getSymbol().isEmpty()) {
 				inputSymbol = oInput.getSymbol();
 			}
-			// if (inputSymbol.equals(oInput.getSymbol()))
-			ByteString address = oInput.getAddress();
-			Account oAccount = accounts.get(encApi.hexEnc(address.toByteArray()));
+			Account oAccount = accounts.get(oInput.getAddress());
 			AccountValue oAccountValue = oAccount.getValue();
 
 			for (int j = 0; j < oAccountValue.getCryptosCount(); j++) {
@@ -70,14 +68,16 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 				}
 			}
 			if (!isTokenExists) {
-				throw new Exception(String.format("发送方 %s 的账户中，不存在标记为 %s 的hash为 %s 的加密token，该交易无效", address.toString(),inputSymbol, oInput.getCryptoToken().toString()));
+				throw new Exception(String.format("发送方 %s 的账户中，不存在标记为 %s 的hash为 %s 的加密token，该交易无效", oInput.getAddress(),
+						inputSymbol, oInput.getCryptoToken().toString()));
 			}
 		}
 
 		for (int i = 0; i < oMultiTransaction.getTxBody().getOutputsCount(); i++) {
 			MultiTransactionOutput oOutput = oMultiTransaction.getTxBody().getOutputs(i);
 			if (!oOutput.getSymbol().isEmpty() && !oOutput.getSymbol().equals(inputSymbol)) {
-				throw new Exception(String.format("发送方的加密token标记 %s 与接收方的加密token标记 %s 不一致", inputSymbol, oOutput.getSymbol()));
+				throw new Exception(
+						String.format("发送方的加密token标记 %s 与接收方的加密token标记 %s 不一致", inputSymbol, oOutput.getSymbol()));
 			}
 		}
 	}
@@ -92,8 +92,8 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 	 */
 	@Override
 	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
-//		LinkedList<OKey> keys = new LinkedList<>();
-//		LinkedList<AccountValue> values = new LinkedList<>();
+		// LinkedList<OKey> keys = new LinkedList<>();
+		// LinkedList<AccountValue> values = new LinkedList<>();
 
 		Map<String, AccountCryptoToken> tokens = new HashMap<String, AccountCryptoToken>();
 		// 发送方移除balance
@@ -101,11 +101,11 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 			MultiTransactionInput oInput = oMultiTransaction.getTxBody().getInputs(i);
 
 			// tokens.put(oMultiTransaction.get, value);
-			Account sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
+			Account sender = accounts.get(oInput.getAddress());
 			AccountValue.Builder oAccountValue = sender.getValue().toBuilder();
 
 			// 不论任何交易类型，都默认执行账户余额的更改
-			oAccountValue.setBalance(oAccountValue.getBalance() - oInput.getFee() );
+			oAccountValue.setBalance(oAccountValue.getBalance() - oInput.getFee());
 
 			for (int k = 0; k < oAccountValue.getCryptosCount(); k++) {
 
@@ -114,8 +114,9 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 
 					for (int j = 0; j < value.getTokensCount(); j++) {
 						if (value.getTokensBuilderList().get(j).getHash().equals(oInput.getCryptoToken())) {
-							tokens.put(encApi.hexEnc(value.getTokensBuilderList().get(j).getHash().toByteArray()),value.getTokensBuilderList().get(j).build());
-							
+							tokens.put(value.getTokensBuilderList().get(j).getHash(),
+									value.getTokensBuilderList().get(j).build());
+
 							value.removeTokens(j);
 							break;
 						}
@@ -125,26 +126,26 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 				}
 			}
 			oAccountValue.setNonce(oAccountValue.getNonce() + 1);
-			
+
 			DBTrie oCacheTrie = new DBTrie(this.dao);
 			if (oAccountValue.getStorage() == null) {
 				oCacheTrie.setRoot(null);
 			} else {
-				oCacheTrie.setRoot(oAccountValue.getStorage().toByteArray());
+				oCacheTrie.setRoot(encApi.hexDec(oAccountValue.getStorage()));
 			}
-			oCacheTrie.put(oInput.getAddress().toByteArray(), oAccountValue.build().toByteArray());
-			oAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
-			
-//			keys.add(OEntityBuilder.byteKey2OKey(oInput.getAddress().toByteArray()));
-//			values.add(oAccountValue.build());
-			this.accountValues.put(encApi.hexEnc(oInput.getAddress().toByteArray()), oAccountValue.build());
+			oCacheTrie.put(encApi.hexDec(oInput.getAddress()), oAccountValue.build().toByteArray());
+			oAccountValue.setStorage(encApi.hexEnc(oCacheTrie.getRootHash()));
+
+			// keys.add(OEntityBuilder.byteKey2OKey(oInput.getAddress().toByteArray()));
+			// values.add(oAccountValue.build());
+			this.accountValues.put(oInput.getAddress(), oAccountValue.build());
 		}
 
 		// 接收方增加balance
 		for (int i = 0; i < oMultiTransaction.getTxBody().getOutputsCount(); i++) {
 			MultiTransactionOutput oOutput = oMultiTransaction.getTxBody().getOutputs(i);
 
-			Account receiver = accounts.get(encApi.hexEnc(oOutput.getAddress().toByteArray()));
+			Account receiver = accounts.get(oOutput.getAddress());
 			AccountValue.Builder receiverAccountValue = receiver.getValue().toBuilder();
 
 			receiverAccountValue.setBalance(receiverAccountValue.getBalance() + oOutput.getAmount());
@@ -152,53 +153,57 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 			boolean isExistToken = false;
 			for (int k = 0; k < receiverAccountValue.getCryptosCount(); k++) {
 				if (receiverAccountValue.getCryptosList().get(k).getSymbol().equals(oOutput.getSymbol())) {
-					AccountCryptoValue.Builder oAccountCryptoValue = receiverAccountValue.getCryptosList().get(k).toBuilder();
+					AccountCryptoValue.Builder oAccountCryptoValue = receiverAccountValue.getCryptosList().get(k)
+							.toBuilder();
 
-					AccountCryptoToken.Builder oAccountCryptoToken = tokens.get(encApi.hexEnc(oOutput.getCryptoToken().toByteArray())).toBuilder();
+					AccountCryptoToken.Builder oAccountCryptoToken = tokens.get(oOutput.getCryptoToken()).toBuilder();
 					oAccountCryptoToken.setOwner(oOutput.getAddress());
 					oAccountCryptoToken.setNonce(oAccountCryptoToken.getNonce() + 1);
 					oAccountCryptoToken.setOwnertime((new Date()).getTime());
 					oAccountCryptoValue.addTokens(oAccountCryptoToken.build());
 					receiverAccountValue.setCryptos(k, oAccountCryptoValue);
 					isExistToken = true;
-					
-					//update token mapping acocunt
-					this.dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(oAccountCryptoToken.getHash()), OEntityBuilder.byteValue2OValue(oAccountCryptoToken.build().toByteArray()));
+
+					// update token mapping acocunt
+					this.dao.getAccountDao().put(
+							OEntityBuilder.byteKey2OKey(encApi.hexDec(oAccountCryptoToken.getHash())),
+							OEntityBuilder.byteValue2OValue(oAccountCryptoToken.build().toByteArray()));
 					break;
 				}
 			}
-			
-			if(!isExistToken){
-				AccountCryptoToken.Builder oAccountCryptoToken = tokens.get(encApi.hexEnc(oOutput.getCryptoToken().toByteArray())).toBuilder();
+
+			if (!isExistToken) {
+				AccountCryptoToken.Builder oAccountCryptoToken = tokens.get(oOutput.getCryptoToken()).toBuilder();
 				oAccountCryptoToken.setOwner(oOutput.getAddress());
 				oAccountCryptoToken.setNonce(oAccountCryptoToken.getNonce() + 1);
 				oAccountCryptoToken.setOwnertime(System.currentTimeMillis());
-				
+
 				AccountCryptoValue.Builder oAccountCryptoValue = AccountCryptoValue.newBuilder();
 				oAccountCryptoValue.addTokens(oAccountCryptoToken);
 				oAccountCryptoValue.setSymbol(oOutput.getSymbol());
-				
+
 				receiverAccountValue.addCryptos(oAccountCryptoValue);
-				//update token mapping acocunt
-				this.dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(oAccountCryptoToken.getHash()), OEntityBuilder.byteValue2OValue(oAccountCryptoToken.build().toByteArray()));
+				// update token mapping acocunt
+				this.dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(encApi.hexDec(oAccountCryptoToken.getHash())),
+						OEntityBuilder.byteValue2OValue(oAccountCryptoToken.build().toByteArray()));
 			}
-			
+
 			DBTrie oCacheTrie = new DBTrie(this.dao);
 			if (receiverAccountValue.getStorage() == null) {
 				oCacheTrie.setRoot(null);
 			} else {
-				oCacheTrie.setRoot(receiverAccountValue.getStorage().toByteArray());
+				oCacheTrie.setRoot(encApi.hexDec(receiverAccountValue.getStorage()));
 			}
-			oCacheTrie.put(receiver.getAddress().toByteArray(), receiverAccountValue.build().toByteArray());
-			receiverAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
+			oCacheTrie.put(encApi.hexDec(receiver.getAddress()), receiverAccountValue.build().toByteArray());
+			receiverAccountValue.setStorage(encApi.hexEnc(oCacheTrie.getRootHash()));
 
-//			keys.add(OEntityBuilder.byteKey2OKey(oOutput.getAddress().toByteArray()));
-//			values.add(receiverAccountValue.build());
-			this.accountValues.put(encApi.hexEnc(oOutput.getAddress().toByteArray()), receiverAccountValue.build());
+			// keys.add(OEntityBuilder.byteKey2OKey(oOutput.getAddress().toByteArray()));
+			// values.add(receiverAccountValue.build());
+			this.accountValues.put(oOutput.getAddress(), receiverAccountValue.build());
 		}
 
-//		this.keys.addAll(keys);
-//		this.values.addAll(values);
+		// this.keys.addAll(keys);
+		// this.values.addAll(values);
 		// oAccountHelper.BatchPutAccounts(keys, values);
 	}
 
@@ -207,5 +212,4 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 		// TODO Auto-generated method stub
 		super.onExecuteDone(oMultiTransaction);
 	}
-
 }

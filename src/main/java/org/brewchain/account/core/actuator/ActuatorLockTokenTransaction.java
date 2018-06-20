@@ -40,7 +40,7 @@ public class ActuatorLockTokenTransaction extends AbstractTransactionActuator im
 			}
 
 			// 取发送方账户
-			Account sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
+			Account sender = accounts.get(oInput.getAddress());
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 			long tokenBalance = 0;
 			for (int i = 0; i < senderAccountValue.getTokensCount(); i++) {
@@ -69,10 +69,10 @@ public class ActuatorLockTokenTransaction extends AbstractTransactionActuator im
 
 	@Override
 	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
-//TODO lock 只处理了 input，未处理 output
+		// TODO lock 只处理了 input，未处理 output
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			// 取发送方账户
-			Account sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
+			Account sender = accounts.get(oInput.getAddress());
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 			String token = "";
 			token = oInput.getToken();
@@ -100,14 +100,14 @@ public class ActuatorLockTokenTransaction extends AbstractTransactionActuator im
 			if (senderAccountValue.getStorage() == null) {
 				oCacheTrie.setRoot(null);
 			} else {
-				oCacheTrie.setRoot(senderAccountValue.getStorage().toByteArray());
+				oCacheTrie.setRoot(encApi.hexDec(senderAccountValue.getStorage()));
 			}
-			oCacheTrie.put(sender.getAddress().toByteArray(), senderAccountValue.build().toByteArray());
-			senderAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
+			oCacheTrie.put(encApi.hexDec(sender.getAddress()), senderAccountValue.build().toByteArray());
+			senderAccountValue.setStorage(encApi.hexEnc(oCacheTrie.getRootHash()));
 
-//			keys.add(OEntityBuilder.byteKey2OKey(sender.getAddress().toByteArray()));
-//			values.add(senderAccountValue.build());
-			this.accountValues.put(encApi.hexEnc(sender.getAddress().toByteArray()), senderAccountValue.build());
+			// keys.add(OEntityBuilder.byteKey2OKey(sender.getAddress().toByteArray()));
+			// values.add(senderAccountValue.build());
+			this.accountValues.put(sender.getAddress(), senderAccountValue.build());
 		}
 	}
 

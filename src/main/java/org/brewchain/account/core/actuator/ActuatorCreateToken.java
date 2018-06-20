@@ -31,8 +31,8 @@ public class ActuatorCreateToken extends AbstractTransactionActuator implements 
 	@Override
 	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
 		MultiTransactionInput input = oMultiTransaction.getTxBody().getInputs(0);
-		oAccountHelper.addTokenBalance(input.getAddress().toByteArray(), input.getToken(), input.getAmount());
-		oAccountHelper.ICO(input.getAddress().toByteArray(), input.getToken());
+		oAccountHelper.addTokenBalance(input.getAddress(), input.getToken(), input.getAmount());
+		oAccountHelper.ICO(input.getAddress(), input.getToken());
 	}
 
 	@Override
@@ -51,7 +51,7 @@ public class ActuatorCreateToken extends AbstractTransactionActuator implements 
 		}
 
 		// 判断nonce是否一致
-		Account sender = accounts.get(encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(0).getAddress().toByteArray()));
+		Account sender = accounts.get(oMultiTransaction.getTxBody().getInputs(0).getAddress());
 		AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 
 		int nonce = senderAccountValue.getNonce();

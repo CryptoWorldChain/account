@@ -43,7 +43,7 @@ public class BlockStableStore implements IBlockStore, ActorService {
 	@ActorRequire(name = "Def_Daos", scope = "global")
 	DefDaos dao;
 
-	protected final TreeMap<Integer, byte[]> storage;
+	protected final TreeMap<Integer, String> storage;
 	protected final LRUCache<String, BlockEntity> blocks;
 	private int maxNumber = -1;
 
@@ -52,7 +52,7 @@ public class BlockStableStore implements IBlockStore, ActorService {
 	protected ALock writeLock = new ALock(rwLock.writeLock());
 
 	public BlockStableStore() {
-		this.storage = new TreeMap<Integer, byte[]>();
+		this.storage = new TreeMap<Integer, String>();
 		this.blocks = new LRUCache<String, BlockEntity>(KeyConstant.CACHE_SIZE);
 	}
 
@@ -79,13 +79,11 @@ public class BlockStableStore implements IBlockStore, ActorService {
 	@Override
 	public boolean add(BlockEntity block) {
 		int number = block.getHeader().getNumber();
-		byte[] hash = block.getHeader().getBlockHash().toByteArray();
-
 		try (ALock l = writeLock.lock()) {
 			// storage
-			this.storage.put(number, hash);
+			this.storage.put(number, block.getHeader().getBlockHash());
 			// blocks
-			this.blocks.put(encApi.hexEnc(hash), block);
+			this.blocks.put(block.getHeader().getBlockHash(), block);
 		}
 
 		if (maxNumber < number) {
@@ -97,21 +95,21 @@ public class BlockStableStore implements IBlockStore, ActorService {
 			LinkedList<OValue> txBlockValueList = new LinkedList<OValue>();
 
 			for (MultiTransaction oMultiTransaction : block.getBody().getTxsList()) {
-				txBlockKeyList.add(OEntityBuilder.byteKey2OKey(oMultiTransaction.getTxHash()));
-				txBlockValueList.add(OEntityBuilder.byteValue2OValue(block.getHeader().getBlockHash()));
+				txBlockKeyList.add(OEntityBuilder.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash())));
+				txBlockValueList.add(OEntityBuilder.byteValue2OValue(encApi.hexDec(block.getHeader().getBlockHash())));
 			}
 			dao.getTxblockDao().batchPuts(txBlockKeyList.toArray(new OKey[0]), txBlockValueList.toArray(new OValue[0]));
 		}
 
-		log.debug("stable block number::" + block.getHeader().getNumber() + " hash::" + encApi.hexEnc(hash));
+		log.debug(
+				"stable block number::" + block.getHeader().getNumber() + " hash::" + block.getHeader().getBlockHash());
 
 		dao.getBlockDao().batchPuts(
 				new OKey[] { OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK),
-						OEntityBuilder.byteKey2OKey(block.getHeader().getBlockHash().toByteArray()) },
-				new OValue[] { OEntityBuilder.byteValue2OValue(hash), OEntityBuilder
-						.byteValue2OValue(block.toByteArray(), String.valueOf(block.getHeader().getNumber())) });
-		// dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK),
-		// OEntityBuilder.byteValue2OValue(hash));
+						OEntityBuilder.byteKey2OKey(encApi.hexDec(block.getHeader().getBlockHash())) },
+				new OValue[] { OEntityBuilder.byteValue2OValue(encApi.hexDec(block.getHeader().getBlockHash())),
+						OEntityBuilder.byteValue2OValue(block.toByteArray(),
+								String.valueOf(block.getHeader().getNumber())) });
 
 		return true;
 	}
@@ -119,21 +117,21 @@ public class BlockStableStore implements IBlockStore, ActorService {
 	@Override
 	public BlockEntity getBlockByNumber(int number) {
 		BlockEntity block = null;
-		byte[] blockHash = this.storage.get(number);
+		String blockHash = this.storage.get(number);
 		if (blockHash == null) {
 			try {
 				List<OPair> oPairs = dao.getBlockDao().listBySecondKey(String.valueOf(number)).get();
 				if (oPairs.size() > 0) {
 					block = BlockEntity.parseFrom(oPairs.get(0).getValue().getExtdata());
-					this.blocks.put(encApi.hexEnc(block.getHeader().getBlockHash().toByteArray()), block);
-					this.storage.put(number, block.getHeader().getBlockHash().toByteArray());
+					this.blocks.put(block.getHeader().getBlockHash(), block);
+					this.storage.put(number, block.getHeader().getBlockHash());
 					return block;
 				}
 			} catch (ODBException | InterruptedException | ExecutionException | InvalidProtocolBufferException e) {
 				log.error("get block from db error :: " + e.getMessage());
 			}
 		} else {
-			return get(encApi.hexEnc(blockHash));
+			return get(blockHash);
 		}
 
 		return block;
@@ -142,16 +140,16 @@ public class BlockStableStore implements IBlockStore, ActorService {
 	@Override
 	public BlockEntity rollBackTo(int number) {
 		BlockEntity block = null;
-		byte[] hash = null;
+		String hash = null;
 		int lastBlockNumber = 0;
 		while ((lastBlockNumber = getLastBlockNumber()) > number) {
 			hash = this.storage.remove(lastBlockNumber);
 		}
 		if (hash != null) {
-			block = get(encApi.hexEnc(hash));
+			block = get(hash);
 		}
 		dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK),
-				OEntityBuilder.byteValue2OValue(block.getHeader().getBlockHash().toByteArray()));
+				OEntityBuilder.byteValue2OValue(encApi.hexDec(block.getHeader().getBlockHash())));
 		return block;
 	}
 
@@ -172,8 +170,8 @@ public class BlockStableStore implements IBlockStore, ActorService {
 			if (v != null) {
 				block = BlockEntity.parseFrom(v.getExtdata());
 				try (ALock l = writeLock.lock()) {
-					this.blocks.put(encApi.hexEnc(block.getHeader().getBlockHash().toByteArray()), block);
-					this.storage.put(block.getHeader().getNumber(), block.getHeader().getBlockHash().toByteArray());
+					this.blocks.put(block.getHeader().getBlockHash(), block);
+					this.storage.put(block.getHeader().getNumber(), block.getHeader().getBlockHash());
 				}
 			}
 		} catch (ODBException | InterruptedException | ExecutionException | InvalidProtocolBufferException e) {

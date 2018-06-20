@@ -7,39 +7,29 @@ enum PTSTModule {
 };
 
 enum PTSTCommand {
-    BST = 0; // Single Block Test
-    TOT = 1; // Token 交易测试
-    MOT = 2; // 多重签名 交易测试
-    ICT = 3; // 内部调用 交易测试
-    SST = 4; // 签名测试
-    CTT = 6; // 加密token测试
-    TTT = 5; // 多线程测试
-
-    STM = 7; // 单交易转多重交易
-    GBX = 8; // 根据交易获取Block测试
-    DTT = 9; // 双花测试
-    CCT = 10; // 创建合约交易
-    BRT = 11; // 块回滚测试
-    SYC = 12; // 同步交易测试
-    SYT = 13; // 同步Block
-    ECT = 14;
+	CSI = 0;
 }
 
-message ReqTxTest {
-    int32 balance = 1;
-    int32 blockNumber = 2;
+message ReqContract {
+	ReqContractCreate create = 1;
+	ReqContractCall call = 2;
 }
 
-message RespTxTest {
-    int32 retCode = 1;
+message RespContract {
+	string contract = 1;
+	int32 retcode = 2;
+	string retmsg = 3;
+	repeated string trace = 4;
 }
 
-message ReqTTT {
-    int32 block = 1;
-    int32 tx = 2;
-    int32 account = 3;
+message ReqContractCreate {
+	string address = 1;
+	string data = 2;
 }
-
-message ReqCreateContract{
-    string code = 1;
+message ReqContractCall {
+	string address = 1;
+	string contract = 2;
+	string data = 3;
+	string functionjson = 4;
+	string function = 5;
 }

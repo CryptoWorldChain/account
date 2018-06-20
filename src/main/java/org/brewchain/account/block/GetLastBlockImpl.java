@@ -49,18 +49,15 @@ public class GetLastBlockImpl extends SessionModules<ReqBlockInfo> {
 			BlockEntity oBlockEntity = blockChainHelper.GetConnectBestBlock();
 			BlockMinerImpl.Builder oBlockMinerImpl = BlockMinerImpl.newBuilder();
 			
-			oRespBlockDetail.setBlockHash(encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()));
-			//oRespBlockDetail.setCoinbase(encApi.hexEnc(oBlockEntity.getHeader().getCoinbase().toByteArray()));
-			oRespBlockDetail.setExtraData(encApi.hexEnc(oBlockEntity.getHeader().getExtraData().toByteArray()));
-			oRespBlockDetail.setNonce(encApi.hexEnc(oBlockEntity.getHeader().getNonce().toByteArray()));
+			oRespBlockDetail.setBlockHash(oBlockEntity.getHeader().getBlockHash());
+			oRespBlockDetail.setExtraData(oBlockEntity.getHeader().getExtraData());
 			oRespBlockDetail.setNumber(oBlockEntity.getHeader().getNumber());
-			oRespBlockDetail.setParentHash(encApi.hexEnc(oBlockEntity.getHeader().getParentHash().toByteArray()));
-			// oRespBlockDetail.setReward(ByteUtil.byteArrayToInt(oBlockEntity.getHeader().getReward().toByteArray()));
+			oRespBlockDetail.setParentHash(oBlockEntity.getHeader().getParentHash());
 			oRespBlockDetail.setSliceId(oBlockEntity.getHeader().getSliceId());
 			oRespBlockDetail.setTimestamp(oBlockEntity.getHeader().getTimestamp());
-			oRespBlockDetail.setStateRoot(encApi.hexEnc(oBlockEntity.getHeader().getStateRoot().toByteArray()));
-			for (ByteString oTxhash : oBlockEntity.getHeader().getTxHashsList()) {
-				oRespBlockDetail.addTxHashs(encApi.hexEnc(oTxhash.toByteArray()));
+			oRespBlockDetail.setStateRoot(oBlockEntity.getHeader().getStateRoot());
+			for (String oTxhash : oBlockEntity.getHeader().getTxHashsList()) {
+				oRespBlockDetail.addTxHashs(oTxhash);
 			}
 			oBlockMinerImpl.setBcuid(oBlockEntity.getMiner().getBcuid());
 			oBlockMinerImpl.setAddress(oBlockEntity.getMiner().getAddress());

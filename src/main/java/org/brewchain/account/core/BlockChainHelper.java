@@ -62,12 +62,12 @@ public class BlockChainHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public byte[] GetStableBestBlockHash() throws Exception {
+	public String GetStableBestBlockHash() throws Exception {
 		BlockEntity block = this.blockStore.getMaxStableBlock();
 		if (block == null) {
 			return null;
 		}
-		return block.getHeader().getBlockHash().toByteArray();
+		return block.getHeader().getBlockHash();
 		// return blockCache.last();
 	}
 
@@ -77,10 +77,10 @@ public class BlockChainHelper implements ActorService {
 		// return blockCache.last();
 	}
 
-	public byte[] GetConnectBestBlockHash() throws Exception {
+	public String GetConnectBestBlockHash() throws Exception {
 		BlockEntity oBlock = blockStore.getMaxConnectBlock();
 		if (oBlock != null) {
-			return oBlock.getHeader().getBlockHash().toByteArray();
+			return oBlock.getHeader().getBlockHash();
 		}
 		return null;
 		// return blockCache.last();
@@ -229,11 +229,11 @@ public class BlockChainHelper implements ActorService {
 	// appendBlock(oBlock);
 	// }
 	public void rollback() {
-		
+
 	}
+
 	public BlockEntity getChildBlock(BlockEntity oBlock) {
-		List<BlockEntity> list = blockStore
-				.getReadyConnectBlock(encApi.hexEnc(oBlock.getHeader().getBlockHash().toByteArray()));
+		List<BlockEntity> list = blockStore.getReadyConnectBlock(oBlock.getHeader().getBlockHash());
 		if (list.size() > 0) {
 			return list.get(0);
 		}
@@ -358,7 +358,7 @@ public class BlockChainHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public LinkedList<BlockEntity> getParentsBlocks(byte[] blockHash) throws Exception {
+	public LinkedList<BlockEntity> getParentsBlocks(String blockHash) throws Exception {
 		return getParentsBlocks(blockHash, null);
 	}
 
@@ -370,7 +370,7 @@ public class BlockChainHelper implements ActorService {
 	 * @return 200块
 	 * @throws Exception
 	 */
-	public LinkedList<BlockEntity> getParentsBlocks(byte[] blockHash, byte[] endBlockHash) throws Exception {
+	public LinkedList<BlockEntity> getParentsBlocks(String blockHash, String endBlockHash) throws Exception {
 		return getParentsBlocks(blockHash, endBlockHash, 200);
 	}
 
@@ -383,15 +383,10 @@ public class BlockChainHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public LinkedList<BlockEntity> getParentsBlocks(byte[] blockHash, byte[] endBlockHash, int maxCount)
+	public LinkedList<BlockEntity> getParentsBlocks(String blockHash, String endBlockHash, int maxCount)
 			throws Exception {
 		LinkedList<BlockEntity> list = new LinkedList<BlockEntity>();
-		String beginHashStr = encApi.hexEnc(blockHash);
-		String endHashStr = "";
-		if (endBlockHash != null) {
-			endHashStr = encApi.hexEnc(endBlockHash);
-		}
-		list.addAll(blockStore.getParentListBlocksEndWith(beginHashStr, endHashStr, maxCount));
+		list.addAll(blockStore.getParentListBlocksEndWith(blockHash, endBlockHash, maxCount));
 		// Iterator<Node> iterator = blockCache.reverseIterator();
 		// boolean st = false;
 		// while (iterator.hasNext() && maxCount > 0) {
@@ -441,7 +436,7 @@ public class BlockChainHelper implements ActorService {
 					.get();
 			if (oOValue == null || oOValue.getExtdata() == null || oOValue.getExtdata().equals(ByteString.EMPTY)) {
 				// get net config
-				
+
 				// for dev
 				if (StringUtils.isNotBlank(blockChainConfig.getPwd())) {
 					FileReader fr = null;
@@ -531,7 +526,7 @@ public class BlockChainHelper implements ActorService {
 		KeyConstant.isStart = true;
 	}
 
-	public BlockEntity getBlockByHash(byte[] blockHash) throws Exception {
-		return blockStore.getBlockByHash(encApi.hexEnc(blockHash));
+	public BlockEntity getBlockByHash(String blockHash) throws Exception {
+		return blockStore.getBlockByHash(blockHash);
 	}
 }

@@ -41,10 +41,10 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 		long totalAmount = 0;
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			totalAmount += oInput.getAmount();
-			//totalAmount += oInput.getFee();
+			// totalAmount += oInput.getFee();
 		}
 		String key = String.format("%s_%s", new SimpleDateFormat("yyyy-MM-dd").format(new Date()),
-				encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(0).getAddress().toByteArray()));
+				oMultiTransaction.getTxBody().getInputs(0).getAddress());
 		log.debug(String.format("%s 累计 %s", key, AbstractLocalCache.dayTotalAmount.get(key)));
 
 		long dayTotal = totalAmount + AbstractLocalCache.dayTotalAmount.get(key);
@@ -76,10 +76,10 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 		long totalAmount = 0;
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			totalAmount += oInput.getAmount();
-			//totalAmount += oInput.getFee();
+			// totalAmount += oInput.getFee();
 		}
 		String key = String.format("%s_%s", new SimpleDateFormat("yyyy-MM-dd").format(new Date()),
-				encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(0).getAddress().toByteArray()));
+				oMultiTransaction.getTxBody().getInputs(0).getAddress());
 		long v = AbstractLocalCache.dayTotalAmount.get(key);
 		AbstractLocalCache.dayTotalAmount.put(key, v + totalAmount);
 		super.onExecuteDone(oMultiTransaction);

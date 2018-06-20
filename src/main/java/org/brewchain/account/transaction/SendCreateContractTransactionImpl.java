@@ -55,16 +55,16 @@ public class SendCreateContractTransactionImpl extends SessionModules<ReqCreateC
 			MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 
 			MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
-			oMultiTransactionBody.setData(ByteString.copyFromUtf8(pb.getData()));
+			oMultiTransactionBody.setData(pb.getData());
 			for (String delegate : pb.getDelegateList()) {
-				oMultiTransactionBody.addDelegate(ByteString.copyFrom(encApi.hexDec(delegate)));
+				oMultiTransactionBody.addDelegate(delegate);
 			}
-			oMultiTransactionBody.setExdata(ByteString.copyFromUtf8(pb.getExdata()));
+			oMultiTransactionBody.setExdata(pb.getExdata());
 
 			MultiTransactionInput.Builder oMultiTransactionInput = MultiTransactionInput.newBuilder();
-			oMultiTransactionInput.setAddress(ByteString.copyFrom(encApi.hexDec(pb.getInput().getAddress())));
+			oMultiTransactionInput.setAddress(pb.getInput().getAddress());
 			oMultiTransactionInput.setAmount(pb.getInput().getAmount());
-			oMultiTransactionInput.setCryptoToken(ByteString.copyFrom(encApi.hexDec(pb.getInput().getCryptoToken())));
+			oMultiTransactionInput.setCryptoToken(pb.getInput().getCryptoToken());
 			oMultiTransactionInput.setFee(pb.getInput().getFee());
 			oMultiTransactionInput.setNonce(pb.getInput().getNonce());
 			oMultiTransactionInput.setPubKey(pb.getInput().getPubKey());
@@ -78,12 +78,11 @@ public class SendCreateContractTransactionImpl extends SessionModules<ReqCreateC
 			oMultiTransactionBody.setTimestamp(pb.getTimestamp());
 			oMultiTransactionBody.setType(TransTypeEnum.TYPE_CreateContract.value());
 			oMultiTransaction.setTxBody(oMultiTransactionBody);
-			oMultiTransaction.setTxHash(ByteString.EMPTY);
+			oMultiTransaction.clearTxHash();
 
-			oRespCreateContractTransaction.setContractAddress(
-					encApi.hexEnc(transactionHelper.getContractAddressByTransaction(oMultiTransaction.build())));
-			oRespCreateContractTransaction.setTxHash(
-					encApi.hexEnc(transactionHelper.CreateMultiTransaction(oMultiTransaction).toByteArray()));
+			oRespCreateContractTransaction
+					.setContractAddress(transactionHelper.getContractAddressByTransaction(oMultiTransaction.build()));
+			oRespCreateContractTransaction.setTxHash(transactionHelper.CreateMultiTransaction(oMultiTransaction));
 		} catch (Exception e) {
 			oRespCreateContractTransaction.clear();
 			oRespCreateContractTransaction.setRetCode(-1);

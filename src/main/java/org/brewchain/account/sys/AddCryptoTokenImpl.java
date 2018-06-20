@@ -51,11 +51,11 @@ public class AddCryptoTokenImpl extends SessionModules<ReqAddCryptoToken> {
 			oAccountCryptoToken.setTotal(pb.getTotal(i));
 			encApi.sha256Encode(oAccountCryptoToken.build().toByteArray());
 
-			oAccountCryptoToken.setOwner(ByteString.copyFrom(encApi.hexDec(pb.getHexAddress())));
+			oAccountCryptoToken.setOwner(pb.getHexAddress());
 			oAccountCryptoToken.setNonce(0);
 
 			try {
-				oAccountHelper.addCryptoBalance(oAccountCryptoToken.build().getOwner().toByteArray(), pb.getSymbol(i),
+				oAccountHelper.addCryptoBalance(oAccountCryptoToken.build().getOwner(), pb.getSymbol(i),
 						oAccountCryptoToken);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block

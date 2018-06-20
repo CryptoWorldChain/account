@@ -13,6 +13,7 @@ import org.brewchain.account.trie.StorageTrieCache;
 import org.brewchain.evm.api.EvmApi;
 import org.brewchain.evmapi.gens.Act.Account;
 import org.brewchain.evmapi.gens.Act.AccountCryptoToken;
+import org.brewchain.evmapi.gens.Act.AccountCryptoToken.Builder;
 import org.brewchain.evmapi.gens.Act.AccountValue;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import org.fc.brewchain.bcapi.EncAPI;
@@ -34,95 +35,35 @@ public class EvmApiImp implements EvmApi {
 
 	@ActorRequire(name = "bc_encoder", scope = "global")
 	EncAPI encApi;
-	
+
 	@ActorRequire(name = "Storage_TrieCache", scope = "global")
 	StorageTrieCache storageTrieCache;
 
 	@Override
-	public void saveCode(byte[] code, byte[] address) {
+	public void saveCode(String code, String address) {
 		accountHelper.saveCode(address, code);
 	}
 
 	@Override
-	public Account CreateAccount(byte[] arg0, byte[] arg1) {
+	public Account CreateAccount(String arg0) {
 		// TODO Auto-generated method stub
-		return accountHelper.CreateAccount(arg0, arg1);
+		return accountHelper.CreateAccount(arg0);
 	}
 
 	@Override
-	public Account CreateAccount(byte[] address, byte[] pubKey, long max, long acceptMax, int acceptLimit,
-			List<ByteString> addresses, byte[] code, byte[] exdata) {
-		// TODO Auto-generated method stub
-		return accountHelper.CreateAccount(address, pubKey, max, acceptMax, acceptLimit, addresses, code, exdata);
-	}
-
-	@Override
-	public Account CreateContract(byte[] address, byte[] pubKey, byte[] code, byte[] exdata) {
-		// TODO Auto-generated method stub
-		return accountHelper.CreateContract(address, pubKey, code, exdata);
-	}
-
-	@Override
-	public ByteString CreateGenesisMultiTransaction(MultiTransaction.Builder oMultiTransaction) {
-		// TODO Auto-generated method stub
-		try {
-			return transactionHelper.CreateGenesisMultiTransaction(oMultiTransaction);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return null;
-	}
-
-	@Override
-	public ByteString CreateMultiTransaction(MultiTransaction.Builder oMultiTransaction) {
-		// TODO Auto-generated method stub
-		try {
-			return transactionHelper.CreateMultiTransaction(oMultiTransaction);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return null;
-	}
-
-	@Override
-	public Account CreateUnionAccount(Account oAccount) {
-		// TODO Auto-generated method stub
-		return accountHelper.CreateUnionAccount(oAccount);
-	}
-
-	@Override
-	public void DeleteAccount(byte[] address) {
-		// TODO Auto-generated method stub
-		accountHelper.DeleteAccount(address);
-	}
-
-	@Override
-	public void ExecuteTransaction(LinkedList<MultiTransaction> oMultiTransactions) {
-		// TODO Auto-generated method stub
-		try {
-			transactionHelper.ExecuteTransaction(oMultiTransactions);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
-	@Override
-	public Account GetAccount(byte[] addr) {
+	public Account GetAccount(String addr) {
 		// TODO Auto-generated method stub
 		return accountHelper.GetAccount(addr);
 	}
 
 	@Override
-	public Account GetAccountOrCreate(byte[] addr) {
+	public Account GetAccountOrCreate(String addr) {
 		// TODO Auto-generated method stub
 		return accountHelper.GetAccountOrCreate(addr);
 	}
 
 	@Override
-	public MultiTransaction GetTransaction(byte[] txHash) {
+	public MultiTransaction GetTransaction(String txHash) {
 		// TODO Auto-generated method stub
 		try {
 			return transactionHelper.GetTransaction(txHash);
@@ -134,7 +75,7 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public void ICO(byte[] addr, String token) {
+	public void ICO(String addr, String token) {
 		// TODO Auto-generated method stub
 		try {
 			accountHelper.ICO(addr, token);
@@ -145,7 +86,7 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public int IncreaseNonce(byte[] addr) {
+	public int IncreaseNonce(String addr) {
 		// TODO Auto-generated method stub
 		try {
 			return accountHelper.IncreaseNonce(addr);
@@ -157,29 +98,7 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public void Signature(List<String> privKeys, MultiTransaction.Builder oTransaction) {
-		// TODO Auto-generated method stub
-		try {
-			transactionHelper.Signature(privKeys, oTransaction);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
-	@Override
-	public void SyncTransaction(MultiTransaction.Builder oMultiTransaction) {
-		// TODO Auto-generated method stub
-		try {
-			transactionHelper.syncTransaction(oMultiTransaction);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
-	@Override
-	public long addBalance(byte[] addr, long balance) {
+	public long addBalance(String addr, long balance) {
 		// TODO Auto-generated method stub
 		try {
 			return accountHelper.addBalance(addr, balance);
@@ -191,7 +110,7 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public long addCryptoBalance(byte[] addr, String symbol, AccountCryptoToken.Builder token) {
+	public long addCryptoBalance(String addr, String symbol, AccountCryptoToken.Builder token) {
 		// TODO Auto-generated method stub
 		try {
 			return accountHelper.addCryptoBalance(addr, symbol, token);
@@ -203,7 +122,7 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public long addTokenBalance(byte[] addr, String token, long balance) {
+	public long addTokenBalance(String addr, String token, long balance) {
 		// TODO Auto-generated method stub
 		try {
 			return accountHelper.addTokenBalance(addr, token, balance);
@@ -215,7 +134,7 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public long addTokenLockBalance(byte[] addr, String token, long balance) {
+	public long addTokenLockBalance(String addr, String token, long balance) {
 		// TODO Auto-generated method stub
 		try {
 			return accountHelper.addTokenLockBalance(addr, token, balance);
@@ -227,18 +146,7 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public void generateCryptoToken(byte[] addr, String symbol, String[] name, String[] code) {
-		// TODO Auto-generated method stub
-		try {
-			accountHelper.generateCryptoToken(addr, symbol, name, code);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
-	@Override
-	public long getBalance(byte[] addr) {
+	public long getBalance(String addr) {
 		// TODO Auto-generated method stub
 		try {
 			return accountHelper.getBalance(addr);
@@ -253,7 +161,8 @@ public class EvmApiImp implements EvmApi {
 	public byte[] getContractAddressByTransaction(MultiTransaction oMultiTransaction) {
 		// TODO Auto-generated method stub
 		try {
-			return transactionHelper.getContractAddressByTransaction(oMultiTransaction);
+			String address = transactionHelper.getContractAddressByTransaction(oMultiTransaction);
+			return encApi.hexDec(address);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -262,7 +171,7 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public List<AccountCryptoToken> getCryptoTokenBalance(byte[] addr, String symbol) {
+	public List<AccountCryptoToken> getCryptoTokenBalance(String addr, String symbol) {
 		// TODO Auto-generated method stub
 		try {
 			return accountHelper.getCryptoTokenBalance(addr, symbol);
@@ -274,7 +183,7 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public int getNonce(byte[] addr) {
+	public int getNonce(String addr) {
 		// TODO Auto-generated method stub
 		try {
 			return accountHelper.getNonce(addr);
@@ -286,7 +195,7 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public long getTokenBalance(byte[] addr, String token) {
+	public long getTokenBalance(String addr, String token) {
 		// TODO Auto-generated method stub
 		try {
 			return accountHelper.getTokenBalance(addr, token);
@@ -298,7 +207,7 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public long getTokenLockedBalance(byte[] addr, String token) {
+	public long getTokenLockedBalance(String addr, String token) {
 		// TODO Auto-generated method stub
 		try {
 			accountHelper.getTokenLockedBalance(addr, token);
@@ -310,48 +219,13 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public void getTransactionHash(MultiTransaction.Builder oTransaction) {
-		// TODO Auto-generated method stub
-		try {
-			transactionHelper.getTransactionHash(oTransaction);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
-	@Override
-	public LinkedList<MultiTransaction> getWaitBlockTx(int count) {
-		// TODO Auto-generated method stub
-		try {
-			return transactionHelper.getWaitBlockTx(count);
-		} catch (InvalidProtocolBufferException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return null;
-	}
-
-	@Override
-	public List<MultiTransaction> getWaitSendTx(int count) {
-		// TODO Auto-generated method stub
-		try {
-			return transactionHelper.getWaitSendTx(count);
-		} catch (InvalidProtocolBufferException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return null;
-	}
-
-	@Override
-	public boolean isContract(byte[] addr) {
+	public boolean isContract(String addr) {
 		// TODO Auto-generated method stub
 		return accountHelper.isContract(addr);
 	}
 
 	@Override
-	public boolean isExist(byte[] addr) {
+	public boolean isExist(String addr) {
 		// TODO Auto-generated method stub
 		try {
 			return accountHelper.isExist(addr);
@@ -375,42 +249,7 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public long newCryptoBalances(byte[] addr, String symbol, ArrayList<AccountCryptoToken.Builder> tokens) {
-		// TODO Auto-generated method stub
-		try {
-			return accountHelper.newCryptoBalances(addr, symbol, tokens);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return 0;
-	}
-
-	@Override
-	public void putAccountValue(byte[] addr, AccountValue oAccountValue) {
-		// TODO Auto-generated method stub
-		accountHelper.putAccountValue(addr, oAccountValue);
-	}
-
-	@Override
-	public long removeCryptoBalance(byte[] addr, String symbol, byte[] hash) {
-		// TODO Auto-generated method stub
-		return accountHelper.removeCryptoBalance(addr, symbol, hash);
-	}
-
-	@Override
-	public void removeWaitBlockTx(byte[] txHash) {
-		// TODO Auto-generated method stub
-		try {
-			transactionHelper.removeWaitBlockTx(encApi.hexEnc(txHash));
-		} catch (InvalidProtocolBufferException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
-	@Override
-	public int setNonce(byte[] addr, int nonce) {
+	public int setNonce(String addr, int nonce) {
 		// TODO Auto-generated method stub
 		try {
 			accountHelper.setNonce(addr, nonce);
@@ -422,64 +261,12 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public void setTransactionDone(byte[] txHash) {
-		// TODO Auto-generated method stub
-		try {
-			transactionHelper.setTransactionDone(txHash);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	public void saveStorage(String address, byte[] key, byte[] value) {
+		accountHelper.saveStorage(address, key, value);
 	}
 
 	@Override
-	public void setTransactionError(byte[] txHash) {
-		// TODO Auto-generated method stub
-		try {
-			transactionHelper.setTransactionError(txHash);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
-	@Override
-	public MultiTransaction verifyAndSaveMultiTransaction(MultiTransaction.Builder oMultiTransaction) {
-		// TODO Auto-generated method stub
-		try {
-			return transactionHelper.verifyAndSaveMultiTransaction(oMultiTransaction);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return null;
-	}
-
-	@Override
-	public void verifySignature(String pubKey, String signature, byte[] tx) {
-		// TODO Auto-generated method stub
-		try {
-			transactionHelper.verifySignature(pubKey, signature, tx);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
-	@Override
-	public void saveStorage(byte[] address, byte[] key, byte[] value) {
-		StorageTrie oStorage = accountHelper.getStorageTrie(address);
-		oStorage.put(key, value);
-		byte[] rootHash = oStorage.getRootHash();
-
-		Account contract = GetAccount(address);
-		AccountValue.Builder oAccountValue = contract.getValue().toBuilder();
-		oAccountValue.setStorage(ByteString.copyFrom(rootHash));
-		putAccountValue(address, oAccountValue.build());
-	}
-
-	@Override
-	public Map<String, byte[]> getStorage(byte[] address, List<byte[]> keys) {
+	public Map<String, byte[]> getStorage(String address, List<byte[]> keys) {
 		Map<String, byte[]> storage = new HashMap<>();
 		StorageTrie oStorage = accountHelper.getStorageTrie(address);
 		for (int i = 0; i < keys.size(); i++) {
@@ -489,8 +276,37 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public byte[] getStorage(byte[] address, byte[] key) {
+	public byte[] getStorage(String address, byte[] key) {
 		StorageTrie oStorage = accountHelper.getStorageTrie(address);
 		return oStorage.get(key);
+	}
+
+	@Override
+	public Account CreateContract(String arg0, byte[] arg1, byte[] arg2) {
+		return null;
+	}
+
+	@Override
+	public Account CreateUnionAccount(Account arg0) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void generateCryptoToken(String arg0, String arg1, String[] arg2, String[] arg3) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public long newCryptoBalances(String arg0, String arg1, ArrayList<Builder> arg2) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public long removeCryptoBalance(String arg0, String arg1, byte[] arg2) {
+		// TODO Auto-generated method stub
+		return 0;
 	}
 }

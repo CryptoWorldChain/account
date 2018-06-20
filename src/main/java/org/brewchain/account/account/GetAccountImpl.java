@@ -52,14 +52,14 @@ public class GetAccountImpl extends SessionModules<ReqGetAccount> {
 		RespGetAccount.Builder oRespGetAccount = RespGetAccount.newBuilder();
 
 		try {
-			Account oAccount = oAccountHelper.GetAccount(encApi.hexDec(ByteUtil.formatHexAddress(pb.getAddress())));
-			oRespGetAccount.setAddress(encApi.hexEnc(oAccount.getAddress().toByteArray()));
+			Account oAccount = oAccountHelper.GetAccount(ByteUtil.formatHexAddress(pb.getAddress()));
+			oRespGetAccount.setAddress(oAccount.getAddress());
 			AccountValue oAccountValue = oAccount.getValue();
 			AccountValueImpl.Builder oAccountValueImpl = AccountValueImpl.newBuilder();
 			oAccountValueImpl.setAcceptLimit(oAccountValue.getAcceptLimit());
 			oAccountValueImpl.setAcceptMax(oAccountValue.getAcceptMax());
-			for (ByteString relAddress : oAccountValue.getAddressList()) {
-				oAccountValueImpl.addAddress(encApi.hexEnc(relAddress.toByteArray()));
+			for (String relAddress : oAccountValue.getAddressList()) {
+				oAccountValueImpl.addAddress(relAddress);
 			}
 
 			oAccountValueImpl.setBalance(oAccountValue.getBalance());
@@ -71,11 +71,11 @@ public class GetAccountImpl extends SessionModules<ReqGetAccount> {
 				for (AccountCryptoToken oAccountCryptoToken : oAccountTokenValue.getTokensList()) {
 					AccountCryptoTokenImpl.Builder oAccountCryptoTokenImpl = AccountCryptoTokenImpl.newBuilder();
 					oAccountCryptoTokenImpl.setCode(oAccountCryptoToken.getCode());
-					oAccountCryptoTokenImpl.setHash(encApi.hexEnc(oAccountCryptoToken.getHash().toByteArray()));
+					oAccountCryptoTokenImpl.setHash(oAccountCryptoToken.getHash());
 					oAccountCryptoTokenImpl.setIndex(oAccountCryptoToken.getIndex());
 					oAccountCryptoTokenImpl.setName(oAccountCryptoToken.getName());
 					oAccountCryptoTokenImpl.setNonce(oAccountCryptoToken.getNonce());
-					oAccountCryptoTokenImpl.setOwner(encApi.hexEnc(oAccountCryptoToken.getOwner().toByteArray()));
+					oAccountCryptoTokenImpl.setOwner(oAccountCryptoToken.getOwner());
 					oAccountCryptoTokenImpl.setOwnertime(oAccountCryptoToken.getOwnertime());
 					oAccountCryptoTokenImpl.setTimestamp(oAccountCryptoToken.getTimestamp());
 					oAccountCryptoTokenImpl.setTotal(oAccountCryptoToken.getTotal());
@@ -86,7 +86,6 @@ public class GetAccountImpl extends SessionModules<ReqGetAccount> {
 			}
 			oAccountValueImpl.setMax(oAccountValue.getMax());
 			oAccountValueImpl.setNonce(oAccountValue.getNonce());
-			oAccountValueImpl.setPubKey(encApi.hexEnc(oAccountValue.getPubKey().toByteArray()));
 			for (AccountTokenValue oAccountTokenValue : oAccountValue.getTokensList()) {
 				AccountTokenValueImpl.Builder oAccountTokenValueImpl = AccountTokenValueImpl.newBuilder();
 				oAccountTokenValueImpl.setBalance(oAccountTokenValue.getBalance());
@@ -94,9 +93,9 @@ public class GetAccountImpl extends SessionModules<ReqGetAccount> {
 				oAccountTokenValueImpl.setLocked(oAccountTokenValue.getLocked());
 				oAccountValueImpl.addTokens(oAccountTokenValueImpl);
 			}
-			oAccountValueImpl.setStorage(encApi.hexEnc(oAccountValue.getStorage().toByteArray()));
-			oAccountValueImpl.setCode(encApi.hexEnc(oAccountValue.getCode().toByteArray()));
-			oAccountValueImpl.setCodeHash(encApi.hexEnc(oAccountValue.getCodeHash().toByteArray()));
+			oAccountValueImpl.setStorage(oAccountValue.getStorage());
+			oAccountValueImpl.setCode(oAccountValue.getCode());
+			oAccountValueImpl.setCodeHash(oAccountValue.getCodeHash());
 			oRespGetAccount.setAccount(oAccountValueImpl);
 			oRespGetAccount.setRetCode(1);
 		} catch (Exception e) {

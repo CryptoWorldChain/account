@@ -54,22 +54,20 @@ public class GetBlockImpl extends SessionModules<ReqGetBlock> {
 			}
 			BlockEntity.Builder oBlockEntity;
 			try {
-				oBlockEntity = blockHelper.CreateNewBlock(pb.getTxCount(), encApi.hexDec(pb.getExtraData()),
-						ByteString.copyFromUtf8(coinBase).toByteArray());
+				oBlockEntity = blockHelper.CreateNewBlock(pb.getTxCount(), null);
 
 				BlockHeaderImpl.Builder oBlockHeaderImpl = BlockHeaderImpl.newBuilder();
-				oBlockHeaderImpl.setBlockHash(encApi.hexEnc(oBlockEntity.getHeader().getBlockHash().toByteArray()));
+				oBlockHeaderImpl.setBlockHash(oBlockEntity.getHeader().getBlockHash());
 				//oBlockHeaderImpl.setCoinbase(encApi.hexEnc(oBlockEntity.getHeader().getCoinbase().toByteArray()));
-				oBlockHeaderImpl.setExtraData(encApi.hexEnc(oBlockEntity.getHeader().getExtraData().toByteArray()));
-				oBlockHeaderImpl.setNonce(encApi.hexEnc(oBlockEntity.getHeader().getNonce().toByteArray()));
+				oBlockHeaderImpl.setExtraData(oBlockEntity.getHeader().getExtraData());
 				oBlockHeaderImpl.setNumber(oBlockEntity.getHeader().getNumber());
-				oBlockHeaderImpl.setParentHash(encApi.hexEnc(oBlockEntity.getHeader().getParentHash().toByteArray()));
-				oBlockHeaderImpl.setReward(ByteUtil.byteArrayToInt(oBlockEntity.getHeader().getReward().toByteArray()));
+				oBlockHeaderImpl.setParentHash(oBlockEntity.getHeader().getParentHash());
+				oBlockHeaderImpl.setReward(oBlockEntity.getHeader().getReward());
 				oBlockHeaderImpl.setSliceId(oBlockEntity.getHeader().getSliceId());
 				oBlockHeaderImpl.setTimestamp(oBlockEntity.getHeader().getTimestamp());
 
-				for (ByteString oTxhash : oBlockEntity.getHeader().getTxHashsList()) {
-					oBlockHeaderImpl.addTxHashs(encApi.hexEnc(oTxhash.toByteArray()));
+				for (String oTxhash : oBlockEntity.getHeader().getTxHashsList()) {
+					oBlockHeaderImpl.addTxHashs(oTxhash);
 				}
 				
 				BlockMinerImpl.Builder oBlockMinerImpl = BlockMinerImpl.newBuilder();
