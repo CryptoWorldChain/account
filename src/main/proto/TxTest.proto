@@ -7,7 +7,8 @@ enum PTSTModule {
 };
 
 enum PTSTCommand {
-	CSI = 0;
+	CSI = 0; // contract
+	STT = 1; // transaction
 }
 
 message ReqContract {
@@ -32,4 +33,28 @@ message ReqContractCall {
 	string data = 3;
 	string functionjson = 4;
 	string function = 5;
+}
+
+message ReqCreateTransactionTest {
+	repeated ReqTransactionAccount input = 1;
+	repeated ReqTransactionAccount output = 2;
+	string data = 3;
+}
+
+message RespCreateTransactionTest {
+	string txhash = 1;
+	int32 retcode = 2;
+	string retmsg = 3;
+	repeated string trace = 4;
+}
+
+message ReqTransactionAccount {
+	string address = 1;
+	int32 amount = 2;
+	string prikey = 3;
+	string putkey = 4;
+	int32 erc20amount = 5;
+	string erc20symbol = 6;
+	string erc721token = 7;
+	string erc721symbol = 8;
 }

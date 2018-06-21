@@ -124,7 +124,7 @@ public class TransactionHelper implements ActorService {
 
 		oMultiTransaction.clearTxHash();
 		// 生成交易Hash
-		oMultiTransaction.setTxHash(encApi.base64Enc(encApi.sha256Encode(oMultiTransaction.getTxBody().toByteArray())));
+		oMultiTransaction.setTxHash(encApi.hexEnc(encApi.sha256Encode(oMultiTransaction.getTxBody().toByteArray())));
 
 		MultiTransaction multiTransaction = oMultiTransaction.build();
 		// 保存交易到db中

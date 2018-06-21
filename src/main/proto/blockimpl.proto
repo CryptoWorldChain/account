@@ -1,5 +1,4 @@
 syntax = "proto3";
-import "tx.proto";
 package org.brewchain.account.gens;
 
 enum PBCTModule {
