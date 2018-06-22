@@ -9,6 +9,24 @@ enum PTSTModule {
 enum PTSTCommand {
 	CSI = 0; // contract
 	STT = 1; // transaction
+	
+	ECT = 2; // contract
+	
+	LTP = 3; // load test perpare
+	LTE = 4; // load test exec
+	MTT = 5; // thread test
+}
+
+message ReqThreadTransaction {
+	int32 threads = 1;
+}
+
+message ReqCommonTest {
+	string arg1 = 1;
+}
+message RespCommonTest {
+	int32 retcode = 1;
+	string retmsg = 2;
 }
 
 message ReqContract {
@@ -57,4 +75,8 @@ message ReqTransactionAccount {
 	string erc20symbol = 6;
 	string erc721token = 7;
 	string erc721symbol = 8;
+}
+
+message ReqCreateContract {
+	
 }

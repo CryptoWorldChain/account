@@ -40,21 +40,6 @@ public class ApplicationStart extends SessionModules<Message> {
 	public void startup() {
 		try {
 			new Thread(new AccountStartThread()).start();
-			// final Timer timer = new Timer();
-			// timer.schedule(new TimerTask() {
-			// @Override
-			// public void run() {
-			// // copy db is db is not exists
-			//
-			// // load block
-			// blockChainHelper.onStart();
-			//
-			// // get node
-			// // Network oNetwork = dao.getPzp().networkByID("raft");
-			// // KeyConstant.nodeName = oNetwork.root().name();
-			// KeyConstant.nodeName = "测试节点01";
-			// }
-			// }, 1000 * 20);
 		} catch (Exception e) {
 			// e.printStackTrace();
 			log.error("dao注入异常", e);

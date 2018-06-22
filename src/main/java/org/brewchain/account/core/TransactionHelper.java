@@ -94,11 +94,11 @@ public class TransactionHelper implements ActorService {
 		MultiTransaction formatMultiTransaction = verifyAndSaveMultiTransaction(oMultiTransaction);
 
 		// 保存交易到缓存中，用于广播
-		oSendingHashMapDB.put(formatMultiTransaction.getTxHash(), formatMultiTransaction.toByteArray());
+		oSendingHashMapDB.put(formatMultiTransaction.getTxHash(), formatMultiTransaction);
 
 		// 保存交易到缓存中，用于打包
 		// 如果指定了委托，并且委托是本节点
-		oPendingHashMapDB.put(formatMultiTransaction.getTxHash(), formatMultiTransaction.toByteArray());
+		oPendingHashMapDB.put(formatMultiTransaction.getTxHash(), formatMultiTransaction);
 
 		// {node} {component} {opt} {type} {msg}
 		log.info(String.format("LOGFILTER %s %s %s %s 创建交易[%s]", KeyConstant.node.getNode(), "account", "create",
@@ -108,30 +108,31 @@ public class TransactionHelper implements ActorService {
 	}
 
 	public String CreateGenesisMultiTransaction(MultiTransaction.Builder oMultiTransaction) throws Exception {
-		Map<String, Account> accounts = getTransactionAccounts(oMultiTransaction);
 
-		iTransactionActuator oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, null, null, encApi, dao,
-				null);
+//		Map<String, Account> accounts = getTransactionAccounts(oMultiTransaction);
+//
+//		iTransactionActuator oiTransactionActuator = getActuator(oMultiTransaction.getTxBody().getType());
+//
+//		// 如果交易本身需要验证签名
+//		if (oiTransactionActuator.needSignature()) {
+//			oiTransactionActuator.onVerifySignature(oMultiTransaction.build(), accounts);
+//		}
 
-		// 如果交易本身需要验证签名
-		if (oiTransactionActuator.needSignature()) {
-			oiTransactionActuator.onVerifySignature(oMultiTransaction.build(), accounts);
-		}
-
-		// 执行交易执行前的数据校验
-		// oiTransactionActuator.onPrepareExecute(oMultiTransaction.build(),
-		// senders, receivers);
-
+		oMultiTransaction.clearStatus();
 		oMultiTransaction.clearTxHash();
 		// 生成交易Hash
 		oMultiTransaction.setTxHash(encApi.hexEnc(encApi.sha256Encode(oMultiTransaction.getTxBody().toByteArray())));
 
+		if (isExistsTransaction(oMultiTransaction.getTxHash())) {
+			throw new Exception("transaction exists, drop it txhash::" + oMultiTransaction.getTxHash());
+		}
+		oMultiTransaction.setStatus("done");
 		MultiTransaction multiTransaction = oMultiTransaction.build();
 		// 保存交易到db中
 		dao.getTxsDao().put(OEntityBuilder.byteKey2OKey(encApi.hexDec(multiTransaction.getTxHash())),
 				OEntityBuilder.byteValue2OValue(multiTransaction.toByteArray()));
-
-		return oMultiTransaction.getTxHash();
+		
+		return multiTransaction.getTxHash();
 	}
 
 	/**
@@ -152,7 +153,7 @@ public class TransactionHelper implements ActorService {
 			// 保存交易到缓存中，用于打包
 			log.debug("add to wait block txhash::" + oMultiTransaction.getTxHash());
 
-			oPendingHashMapDB.put(formatMultiTransaction.getTxHash(), formatMultiTransaction.toByteArray());
+			oPendingHashMapDB.put(formatMultiTransaction.getTxHash(), formatMultiTransaction);
 		}
 
 		log.debug("receive sync txhash::" + oMultiTransaction.getTxHash());
@@ -224,12 +225,10 @@ public class TransactionHelper implements ActorService {
 		List<MultiTransaction> list = new LinkedList<MultiTransaction>();
 		int total = 0;
 
-		for (Iterator<Map.Entry<String, byte[]>> it = oSendingHashMapDB.getStorage().entrySet().iterator(); it
+		for (Iterator<Map.Entry<String, MultiTransaction>> it = oSendingHashMapDB.getStorage().entrySet().iterator(); it
 				.hasNext();) {
-			Map.Entry<String, byte[]> item = it.next();
-			MultiTransaction.Builder oTransaction = MultiTransaction.newBuilder();
-			oTransaction.mergeFrom(item.getValue());
-			list.add(oTransaction.build());
+			Map.Entry<String, MultiTransaction> item = it.next();
+			list.add(item.getValue());
 			it.remove();
 			log.debug("get and remove sycn txhash::" + item.getKey());
 			total += 1;
@@ -244,12 +243,10 @@ public class TransactionHelper implements ActorService {
 		BroadcastTransactionMsg.Builder oBroadcastTransactionMsg = BroadcastTransactionMsg.newBuilder();
 		int total = 0;
 
-		for (Iterator<Map.Entry<String, byte[]>> it = oSendingHashMapDB.getStorage().entrySet().iterator(); it
+		for (Iterator<Map.Entry<String, MultiTransaction>> it = oSendingHashMapDB.getStorage().entrySet().iterator(); it
 				.hasNext();) {
-			Map.Entry<String, byte[]> item = it.next();
-			MultiTransaction.Builder oTransaction = MultiTransaction.newBuilder();
-			oTransaction.mergeFrom(item.getValue());
-			oBroadcastTransactionMsg.addTxHexStr(encApi.hexEnc(oTransaction.build().toByteArray()));
+			Map.Entry<String, MultiTransaction> item = it.next();
+			oBroadcastTransactionMsg.addTxHexStr(encApi.hexEnc(item.getValue().toByteArray()));
 			it.remove();
 
 			total += 1;
@@ -271,12 +268,10 @@ public class TransactionHelper implements ActorService {
 		LinkedList<MultiTransaction> list = new LinkedList<MultiTransaction>();
 		int total = 0;
 
-		for (Iterator<Map.Entry<String, byte[]>> it = oPendingHashMapDB.getStorage().entrySet().iterator(); it
+		for (Iterator<Map.Entry<String, MultiTransaction>> it = oPendingHashMapDB.getStorage().entrySet().iterator(); it
 				.hasNext();) {
-			Map.Entry<String, byte[]> item = it.next();
-			MultiTransaction.Builder oTransaction = MultiTransaction.newBuilder();
-			oTransaction.mergeFrom(item.getValue());
-			list.add(oTransaction.build());
+			Map.Entry<String, MultiTransaction> item = it.next();
+			list.add(item.getValue());
 			it.remove();
 			log.debug("get need blocked tx and remove from cache, txhash::" + item.getKey() + " size::"
 					+ oPendingHashMapDB.getStorage().size());
@@ -289,11 +284,10 @@ public class TransactionHelper implements ActorService {
 	}
 
 	public void removeWaitBlockTx(String txHash) throws InvalidProtocolBufferException {
-		for (Iterator<Map.Entry<String, byte[]>> it = oPendingHashMapDB.getStorage().entrySet().iterator(); it
+		for (Iterator<Map.Entry<String, MultiTransaction>> it = oPendingHashMapDB.getStorage().entrySet().iterator(); it
 				.hasNext();) {
-			Map.Entry<String, byte[]> item = it.next();
+			Map.Entry<String, MultiTransaction> item = it.next();
 			if (item.getKey().equals(txHash)) {
-
 				it.remove();
 				return;
 			}

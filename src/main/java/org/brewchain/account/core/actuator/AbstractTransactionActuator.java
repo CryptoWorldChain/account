@@ -1,5 +1,7 @@
 package org.brewchain.account.core.actuator;
 
+import static java.lang.String.format;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -72,8 +74,8 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 		for (MultiTransactionSignature oMultiTransactionSignature : oMultiTransaction.getTxBody().getSignaturesList()) {
 			if (!encApi.ecVerify(oMultiTransactionSignature.getPubKey(), oMultiTransactionEncode,
 					encApi.hexDec(oMultiTransactionSignature.getSignature()))) {
-				throw new Exception(String.format("签名 %s 使用公钥 %s 验证失败", oMultiTransactionSignature.getSignature(),
-						oMultiTransactionSignature.getPubKey()));
+				throw new TransactionExecuteException(String.format("签名 %s 使用公钥 %s 验证失败",
+						oMultiTransactionSignature.getSignature(), oMultiTransactionSignature.getPubKey()));
 			}
 		}
 	}
@@ -105,6 +107,13 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 		int inputsTotal = 0;
 		int outputsTotal = 0;
 
+		if (oMultiTransaction.getTxBody().getInputsList().size() > 1
+				&& oMultiTransaction.getTxBody().getOutputsList().size() > 1) {
+			throw new TransactionExecuteException(
+					String.format("交易参数错误，发送者 %s，接收者 %s", oMultiTransaction.getTxBody().getInputsList().size(),
+							oMultiTransaction.getTxBody().getOutputsList().size()));
+		}
+
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			inputsTotal += oInput.getAmount();
 
@@ -116,22 +125,24 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			long balance = senderAccountValue.getBalance();
 
 			if (balance < 0) {
-				throw new Exception(String.format("发送者账户余额 %s 小于 0, 不能继续交易", balance));
+				throw new TransactionExecuteException(String.format("发送者账户余额 %s 小于 0, 不能继续交易", balance));
 			}
 			if (oInput.getAmount() < 0) {
-				throw new IllegalArgumentException(String.format("发送金额 %s 小于 0, 不能继续交易", oInput.getAmount()));
+				throw new TransactionExecuteException(String.format("发送金额 %s 小于 0, 不能继续交易", oInput.getAmount()));
 			}
 
 			if (balance - oInput.getAmount() < 0) {// - oInput.getFeeLimit()
 				// 余额不够
-				throw new Exception(String.format("用户的账户余额 %s 不满足交易的最高限额 %s", balance, oInput.getAmount()));// +
-																											// oInput.getFeeLimit()
+				throw new TransactionExecuteException(
+						String.format("用户的账户余额 %s 不满足交易的最高限额 %s", balance, oInput.getAmount()));// +
+				// oInput.getFeeLimit()
 			}
 
 			// 判断nonce是否一致
 			int nonce = senderAccountValue.getNonce();
 			if (nonce != oInput.getNonce()) {
-				throw new Exception(String.format("用户的交易索引 %s 与交易的索引不一致 %s", nonce, oInput.getNonce()));
+				throw new TransactionExecuteException(
+						String.format("用户的交易索引 %s 与交易的索引不一致 %s", nonce, oInput.getNonce()));
 			}
 		}
 
@@ -140,7 +151,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 
 			long balance = oOutput.getAmount();
 			if (balance < 0) {
-				throw new Exception(String.format("接收金额 %s 小于0, 不能继续交易", balance));
+				throw new TransactionExecuteException(String.format("接收金额 %s 小于0, 不能继续交易", balance));
 			}
 
 			// 取接收方账户
@@ -150,7 +161,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 		}
 
 		if (inputsTotal < outputsTotal) {
-			throw new Exception(String.format("交易的输入 %S 小于输出 %s 金额", inputsTotal, outputsTotal));
+			throw new TransactionExecuteException(String.format("交易的输入 %S 小于输出 %s 金额", inputsTotal, outputsTotal));
 		}
 	}
 
@@ -198,10 +209,6 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			// values.add(receiverAccountValue.build());
 			this.accountValues.put(receiver.getAddress(), receiverAccountValue.build());
 		}
-
-		// this.keys.addAll(keys);
-		// this.values.addAll(values);
-		// oAccountHelper.BatchPutAccounts(keys, values);
 	}
 
 	@Override
@@ -212,5 +219,11 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	@Override
 	public void onExecuteError(MultiTransaction oMultiTransaction) throws Exception {
 		oTransactionHelper.setTransactionError(oMultiTransaction.getTxHash());
+	}
+
+	public static class TransactionExecuteException extends Exception {
+		public TransactionExecuteException(String message, Object... args) {
+			super(format(message, args));
+		}
 	}
 }

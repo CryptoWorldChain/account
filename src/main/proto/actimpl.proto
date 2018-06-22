@@ -36,14 +36,13 @@ message RespCreateUnionAccount {
 }
 
 message ReqGetAccount {
-    string address = 1;
+    repeated string address = 1;
 }
 
 message RespGetAccount {
     int32 retCode = 1;
-    string address = 2;
-    AccountValueImpl account = 3;
-    
+    repeated string address = 2;
+    repeated AccountValueImpl account = 3;
 }
 
 
