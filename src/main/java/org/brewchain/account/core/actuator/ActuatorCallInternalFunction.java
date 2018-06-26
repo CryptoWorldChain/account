@@ -24,7 +24,7 @@ public class ActuatorCallInternalFunction extends AbstractTransactionActuator im
 	@Override
 	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
 		InternalCallArguments.Builder oInternalCallArguments = InternalCallArguments
-				.parseFrom(encApi.hexDec(oMultiTransaction.getTxBody().getExdata())).toBuilder();
+				.parseFrom(oMultiTransaction.getTxBody().getExdata()).toBuilder();
 
 		for (int i = 0; i < InternalFunction.class.getMethods().length; i++) {
 			if (InternalFunction.class.getMethods()[i].getName().equals(oInternalCallArguments.getMethod())) {

@@ -69,6 +69,8 @@ public class CallContractTest extends SessionModules<ReqCommonTest> implements A
 			String accountAddress = "502f600d0e813c51aafca905f73a44de748c4d65";
 			String createAddress = "47dd7cf1ef6a0f7eb7500d5c73fd0730902b3a62";
 
+			ByteString accountAddressBytes = ByteString.copyFrom(encApi.hexDec(accountAddress));
+			ByteString createAddressByte = ByteString.copyFrom(encApi.hexDec(createAddress));
 			byte[] data = encApi.hexDec(
 					"608060405234801561001057600080fd5b5060405161023b38038061023b83398101806040528101908080518201929190505050336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055508060019080519060200190610089929190610090565b5050610135565b828054600181600116156101000203166002900490600052602060002090601f016020900481019282601f106100d157805160ff19168380011785556100ff565b828001600101855582156100ff579182015b828111156100fe5782518255916020019190600101906100e3565b5b50905061010c9190610110565b5090565b61013291905b8082111561012e576000816000905550600101610116565b5090565b90565b60f8806101436000396000f300608060405260043610603f576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063724a3e05146044575b600080fd5b6060600480360381019080803590602001909291905050506062565b005b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff166108fc829081150290604051600060405180830381858888f1935050505015801560c8573d6000803e3d6000fd5b50505600a165627a7a723058207c52912001e2dab5c01d1a87f7c2cd307010fdcfa4d40277f67d09a94054c15b0029000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000053232323232000000000000000000000000000000000000000000000000000000");
 
@@ -78,18 +80,18 @@ public class CallContractTest extends SessionModules<ReqCommonTest> implements A
 			evmApiImp.setTransactionHelper(this.transactionHelper);
 			evmApiImp.setEncApi(this.encApi);
 
-			accountHelper.IncreaseNonce(createAddress);
-			int nonce = accountHelper.getNonce(createAddress);
+			accountHelper.IncreaseNonce(createAddressByte);
+			int nonce = accountHelper.getNonce(createAddressByte);
 			log.debug("nonce::" + nonce);
 			MultiTransaction.Builder createContract = MultiTransaction.newBuilder();
 			MultiTransactionBody.Builder createContractBody = MultiTransactionBody.newBuilder();
 			MultiTransactionInput.Builder createContractInput = MultiTransactionInput.newBuilder();
 			createContractInput.setNonce(nonce);
-			createContractInput.setAddress(createAddress);
+			createContractInput.setAddress(createAddressByte);
 			createContractBody.addInputs(createContractInput);
 			createContract.setTxBody(createContractBody);
 
-			String contractAddress = transactionHelper.getContractAddressByTransaction(createContract.build());
+			ByteString contractAddress = transactionHelper.getContractAddressByTransaction(createContract.build());
 			log.debug("contract address::" + contractAddress);
 			Account contract = accountHelper.CreateAccount(contractAddress);
 			// accountHelper.addBalance(contractAddress, 88888);
@@ -97,7 +99,7 @@ public class CallContractTest extends SessionModules<ReqCommonTest> implements A
 			// ba538f6e50266c62537f3baffb8a3a28b01b499e
 			// 30ba538f6e50266c62537f3baffb8a3a28b01b499e
 			// 0000ba538f6e50266c62537f3baffb8a3a28b01b499e
-			ProgramInvokeImpl createProgramInvoke = new ProgramInvokeImpl(encApi.hexDec(contractAddress),
+			ProgramInvokeImpl createProgramInvoke = new ProgramInvokeImpl(contractAddress.toByteArray(),
 					encApi.hexDec(createAddress), encApi.hexDec(createAddress),
 					ByteUtil.bigIntegerToBytes(BigInteger.valueOf(10000)), ByteUtil.bigIntegerToBytes(BigInteger.ZERO),
 					data, encApi.hexDec(blockChainHelper.GetConnectBestBlock().getHeader().getParentHash()),
@@ -113,25 +115,25 @@ public class CallContractTest extends SessionModules<ReqCommonTest> implements A
 			createVM.play(createProgram);
 			ProgramResult createResult = ProgramResult.createEmpty();
 			createResult = createProgram.getResult();
-			accountHelper.saveCode(contractAddress, encApi.hexEnc(createResult.getHReturn()));
+			accountHelper.saveCode(contractAddress, ByteString.copyFrom(createResult.getHReturn()));
 			log.debug(String.format("result.getHReturn():%s", createResult.getHReturn()));
 
-			accountHelper.IncreaseNonce(accountAddress);
+			accountHelper.IncreaseNonce(accountAddressBytes);
 
 			/////////////////////
-			nonce = accountHelper.getNonce(accountAddress);
+			nonce = accountHelper.getNonce(accountAddressBytes);
 			MultiTransaction.Builder callContract = MultiTransaction.newBuilder();
 			MultiTransactionBody.Builder callContractBody = MultiTransactionBody.newBuilder();
 			MultiTransactionInput.Builder callContractInput = MultiTransactionInput.newBuilder();
 			callContractInput.setNonce(nonce);
-			callContractInput.setAddress(accountAddress);
+			callContractInput.setAddress(accountAddressBytes);
 			callContractBody.addInputs(callContractInput);
 			callContract.setTxBody(callContractBody);
 
 			VM vm = new VM();
 			Account existsContract = accountHelper.GetAccount(contractAddress);
 			//
-			ProgramInvokeImpl programInvoke = new ProgramInvokeImpl(encApi.hexDec(contractAddress),
+			ProgramInvokeImpl programInvoke = new ProgramInvokeImpl(contractAddress.toByteArray(),
 					encApi.hexDec(accountAddress), encApi.hexDec(accountAddress),
 					ByteUtil.bigIntegerToBytes(BigInteger.valueOf(10000)), ByteUtil.bigIntegerToBytes(BigInteger.ZERO),
 					encApi.hexDec("724a3e05000000000000000000000000000000000000000000000000000000000000000a"),
@@ -141,8 +143,8 @@ public class CallContractTest extends SessionModules<ReqCommonTest> implements A
 					Long.parseLong(String.valueOf(blockChainHelper.GetConnectBestBlock().getHeader().getNumber())),
 					ByteString.EMPTY.toByteArray(), evmApiImp);
 
-			Program program = new Program(encApi.hexDec(existsContract.getValue().getCodeHash()),
-					encApi.hexDec(existsContract.getValue().getCode()), programInvoke, callContract.build());
+			Program program = new Program(existsContract.getValue().getCodeHash().toByteArray(),
+					existsContract.getValue().getCode().toByteArray(), programInvoke, callContract.build());
 			vm.play(program);
 			ProgramResult result = program.getResult();
 			byte[] hreturn = result.getHReturn();

@@ -67,7 +67,7 @@ public class ContractSampleImpl extends SessionModules<ReqContract> {
 	public void onPBPacket(final FramePacket pack, final ReqContract pb, final CompleteHandler handler) {
 		RespContract.Builder oRespContract = RespContract.newBuilder();
 
-		String newContractAddress = "";
+		ByteString newContractAddress = ByteString.EMPTY;
 		try {
 			EvmApiImp evmApiImp = new EvmApiImp();
 			evmApiImp.setAccountHelper(this.accountHelper);
@@ -75,31 +75,31 @@ public class ContractSampleImpl extends SessionModules<ReqContract> {
 			evmApiImp.setEncApi(this.encApi);
 
 			if (pb.getCreate() != null) {
-				if (!accountHelper.isExist(pb.getCreate().getAddress())) {
+				if (!accountHelper.isExist(ByteString.copyFrom(encApi.hexDec(pb.getCreate().getAddress())))) {
 					oRespContract.setRetcode(-1);
 					oRespContract.setRetmsg("account " + pb.getCreate().getAddress() + " not found");
 					handler.onFinished(PacketHelper.toPBReturn(pack, oRespContract.build()));
 					return;
 				}
 				oRespContract.addTrace("create account exists.");
-				oRespContract
-						.addTrace("create account nonce::" + accountHelper.IncreaseNonce(pb.getCreate().getAddress()));
-				oRespContract
-						.addTrace("create account balance::" + accountHelper.getBalance(pb.getCreate().getAddress()));
+				oRespContract.addTrace("create account nonce::"
+						+ accountHelper.IncreaseNonce(ByteString.copyFrom(encApi.hexDec(pb.getCreate().getAddress()))));
+				oRespContract.addTrace("create account balance::"
+						+ accountHelper.getBalance(ByteString.copyFrom(encApi.hexDec(pb.getCreate().getAddress()))));
 
-				int nonce = accountHelper.getNonce(pb.getCreate().getAddress());
+				int nonce = accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(pb.getCreate().getAddress())));
 
 				MultiTransaction.Builder createContract = MultiTransaction.newBuilder();
 				MultiTransactionBody.Builder createContractBody = MultiTransactionBody.newBuilder();
 				MultiTransactionInput.Builder createContractInput = MultiTransactionInput.newBuilder();
 				createContractInput.setNonce(nonce);
-				createContractInput.setAddress(pb.getCreate().getAddress());
+				createContractInput.setAddress(ByteString.copyFrom(encApi.hexDec(pb.getCreate().getAddress())));
 				createContractBody.addInputs(createContractInput);
 				createContract.setTxBody(createContractBody);
 
 				newContractAddress = transactionHelper.getContractAddressByTransaction(createContract.build());
 				oRespContract.addTrace("new contract address::" + newContractAddress);
-				ProgramInvokeImpl createProgramInvoke = new ProgramInvokeImpl(encApi.hexDec(newContractAddress),
+				ProgramInvokeImpl createProgramInvoke = new ProgramInvokeImpl(newContractAddress.toByteArray(),
 						encApi.hexDec(pb.getCreate().getAddress()), encApi.hexDec(pb.getCreate().getAddress()),
 						ByteUtil.bigIntegerToBytes(BigInteger.valueOf(10000)),
 						ByteUtil.bigIntegerToBytes(BigInteger.ZERO), encApi.hexDec(pb.getCreate().getData()),
@@ -119,27 +119,27 @@ public class ContractSampleImpl extends SessionModules<ReqContract> {
 
 				oRespContract.addTrace("new contract code::" + encApi.hexEnc(createResult.getHReturn()));
 
-				accountHelper.IncreaseNonce(pb.getCreate().getAddress());
-				accountHelper.saveCode(newContractAddress, encApi.hexEnc(createResult.getHReturn()));
+				accountHelper.IncreaseNonce(ByteString.copyFrom(encApi.hexDec(pb.getCreate().getAddress())));
+				accountHelper.saveCode(newContractAddress, ByteString.copyFrom(createResult.getHReturn()));
 				handler.onFinished(PacketHelper.toPBReturn(pack, oRespContract.build()));
 				return;
 			}
 
 			if (pb.getCall() != null) {
-				String callContractAddress = "";
-				int nonce = accountHelper.getNonce(pb.getCall().getAddress());
+				ByteString callContractAddress;
+				int nonce = accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(pb.getCall().getAddress())));
 				MultiTransaction.Builder callContract = MultiTransaction.newBuilder();
 				MultiTransactionBody.Builder callContractBody = MultiTransactionBody.newBuilder();
 				MultiTransactionInput.Builder callContractInput = MultiTransactionInput.newBuilder();
 				callContractInput.setNonce(nonce);
 				if (pb.getCreate() != null) {
 					oRespContract.addTrace("call new contract address::" + newContractAddress);
-					callContractInput.setAddress(newContractAddress);
+					callContractInput.setAddress(ByteString.copyFrom(encApi.hexDec(encApi.hexEnc(newContractAddress.toByteArray()))));
 					callContractAddress = newContractAddress;
 				} else {
 					oRespContract.addTrace("call exists contract address::" + pb.getCall().getContract());
-					callContractInput.setAddress(pb.getCall().getContract());
-					callContractAddress = pb.getCall().getContract();
+					callContractInput.setAddress(ByteString.copyFrom(encApi.hexDec(pb.getCall().getContract())));
+					callContractAddress = ByteString.copyFrom(encApi.hexDec(pb.getCall().getContract()));
 				}
 				callContractBody.addInputs(callContractInput);
 				callContract.setTxBody(callContractBody);
@@ -154,7 +154,7 @@ public class ContractSampleImpl extends SessionModules<ReqContract> {
 					return;
 				}
 				//
-				ProgramInvokeImpl programInvoke = new ProgramInvokeImpl(encApi.hexDec(callContractAddress),
+				ProgramInvokeImpl programInvoke = new ProgramInvokeImpl(callContractAddress.toByteArray(),
 						encApi.hexDec(pb.getCall().getAddress()), encApi.hexDec(pb.getCall().getAddress()),
 						ByteUtil.bigIntegerToBytes(BigInteger.valueOf(10000)),
 						ByteUtil.bigIntegerToBytes(BigInteger.ZERO), encApi.hexDec(pb.getCall().getData()),
@@ -165,8 +165,8 @@ public class ContractSampleImpl extends SessionModules<ReqContract> {
 						Long.parseLong(String.valueOf(blockChainHelper.GetConnectBestBlock().getHeader().getNumber())),
 						ByteString.EMPTY.toByteArray(), evmApiImp);
 
-				Program program = new Program(encApi.hexDec(existsContract.getValue().getCodeHash()),
-						encApi.hexDec(existsContract.getValue().getCode()), programInvoke, callContract.build());
+				Program program = new Program(existsContract.getValue().getCodeHash().toByteArray(),
+						existsContract.getValue().getCode().toByteArray(), programInvoke, callContract.build());
 				vm.play(program);
 				ProgramResult result = program.getResult();
 				byte[] hreturn = result.getHReturn();

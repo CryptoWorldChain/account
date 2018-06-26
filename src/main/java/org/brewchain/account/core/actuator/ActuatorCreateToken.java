@@ -51,7 +51,7 @@ public class ActuatorCreateToken extends AbstractTransactionActuator implements 
 		}
 
 		// 判断nonce是否一致
-		Account sender = accounts.get(oMultiTransaction.getTxBody().getInputs(0).getAddress());
+		Account sender = accounts.get(encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(0).getAddress().toByteArray()));
 		AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 
 		int nonce = senderAccountValue.getNonce();

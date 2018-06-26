@@ -72,8 +72,8 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 		byte[] oMultiTransactionEncode = txBody.build().toByteArray();
 		// 校验交易签名
 		for (MultiTransactionSignature oMultiTransactionSignature : oMultiTransaction.getTxBody().getSignaturesList()) {
-			if (!encApi.ecVerify(oMultiTransactionSignature.getPubKey(), oMultiTransactionEncode,
-					encApi.hexDec(oMultiTransactionSignature.getSignature()))) {
+			if (!encApi.ecVerify(encApi.hexEnc(oMultiTransactionSignature.getPubKey().toByteArray()), oMultiTransactionEncode,
+					oMultiTransactionSignature.getSignature().toByteArray())) {
 				throw new TransactionExecuteException(String.format("签名 %s 使用公钥 %s 验证失败",
 						oMultiTransactionSignature.getSignature(), oMultiTransactionSignature.getPubKey()));
 			}
@@ -118,7 +118,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			inputsTotal += oInput.getAmount();
 
 			// 取发送方账户
-			Account sender = accounts.get(oInput.getAddress());
+			Account sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 
 			// 判断发送方余额是否足够
@@ -153,11 +153,6 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			if (balance < 0) {
 				throw new TransactionExecuteException(String.format("接收金额 %s 小于0, 不能继续交易", balance));
 			}
-
-			// 取接收方账户
-			if (!accounts.containsKey(oOutput.getAddress())) {
-
-			}
 		}
 
 		if (inputsTotal < outputsTotal) {
@@ -173,7 +168,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			// 取发送方账户
-			Account sender = accounts.get(oInput.getAddress());
+			Account sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 
 			senderAccountValue.setBalance(senderAccountValue.getBalance() - oInput.getAmount());
@@ -183,17 +178,17 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			if (senderAccountValue.getStorage() == null) {
 				oCacheTrie.setRoot(null);
 			} else {
-				oCacheTrie.setRoot(encApi.hexDec(senderAccountValue.getStorage()));
+				oCacheTrie.setRoot(senderAccountValue.getStorage().toByteArray());
 			}
-			oCacheTrie.put(encApi.hexDec(sender.getAddress()), senderAccountValue.build().toByteArray());
-			senderAccountValue.setStorage(encApi.hexEnc(oCacheTrie.getRootHash()));
+			oCacheTrie.put(sender.getAddress().toByteArray(), senderAccountValue.build().toByteArray());
+			senderAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
 			// keys.add(OEntityBuilder.byteKey2OKey(sender.getAddress().toByteArray()));
 			// values.add(senderAccountValue.build());
-			this.accountValues.put(sender.getAddress(), senderAccountValue.build());
+			this.accountValues.put(encApi.hexEnc(sender.getAddress().toByteArray()), senderAccountValue.build());
 		}
 
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
-			Account receiver = accounts.get(oOutput.getAddress());
+			Account receiver = accounts.get(encApi.hexEnc(oOutput.getAddress().toByteArray()));
 			AccountValue.Builder receiverAccountValue = receiver.getValue().toBuilder();
 			receiverAccountValue.setBalance(receiverAccountValue.getBalance() + oOutput.getAmount());
 
@@ -201,13 +196,13 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			if (receiverAccountValue.getStorage() == null) {
 				oCacheTrie.setRoot(null);
 			} else {
-				oCacheTrie.setRoot(encApi.hexDec(receiverAccountValue.getStorage()));
+				oCacheTrie.setRoot(receiverAccountValue.getStorage().toByteArray());
 			}
-			oCacheTrie.put(encApi.hexDec(receiver.getAddress()), receiverAccountValue.build().toByteArray());
-			receiverAccountValue.setStorage(encApi.hexEnc(oCacheTrie.getRootHash()));
+			oCacheTrie.put(receiver.getAddress().toByteArray(), receiverAccountValue.build().toByteArray());
+			receiverAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
 			// keys.add(OEntityBuilder.byteKey2OKey(receiver.getAddress().toByteArray()));
 			// values.add(receiverAccountValue.build());
-			this.accountValues.put(receiver.getAddress(), receiverAccountValue.build());
+			this.accountValues.put(encApi.hexEnc(receiver.getAddress().toByteArray()), receiverAccountValue.build());
 		}
 	}
 

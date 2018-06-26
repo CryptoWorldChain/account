@@ -508,7 +508,7 @@ public class BlockChainHelper implements ActorService {
 					throw new Exception("node account not found");
 				}
 				log.info("start account with address::" + coinAddressHex);
-				oNodeAccount.setAddress(encApi.hexEnc(coinAddress));
+				oNodeAccount.setAddress(ByteString.copyFrom(coinAddress));
 				oNodeDef.setoAccount(oNodeAccount);
 			}
 

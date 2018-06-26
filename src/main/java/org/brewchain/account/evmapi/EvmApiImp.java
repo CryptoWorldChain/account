@@ -40,24 +40,24 @@ public class EvmApiImp implements EvmApi {
 	StorageTrieCache storageTrieCache;
 
 	@Override
-	public void saveCode(String code, String address) {
+	public void saveCode(ByteString code, ByteString address) {
 		accountHelper.saveCode(address, code);
 	}
 
 	@Override
-	public Account CreateAccount(String arg0) {
+	public Account CreateAccount(ByteString arg0) {
 		// TODO Auto-generated method stub
 		return accountHelper.CreateAccount(arg0);
 	}
 
 	@Override
-	public Account GetAccount(String addr) {
+	public Account GetAccount(ByteString addr) {
 		// TODO Auto-generated method stub
 		return accountHelper.GetAccount(addr);
 	}
 
 	@Override
-	public Account GetAccountOrCreate(String addr) {
+	public Account GetAccountOrCreate(ByteString addr) {
 		// TODO Auto-generated method stub
 		return accountHelper.GetAccountOrCreate(addr);
 	}
@@ -75,7 +75,7 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public void ICO(String addr, String token) {
+	public void ICO(ByteString addr, String token) {
 		// TODO Auto-generated method stub
 		try {
 			accountHelper.ICO(addr, token);
@@ -86,7 +86,7 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public int IncreaseNonce(String addr) {
+	public int IncreaseNonce(ByteString addr) {
 		// TODO Auto-generated method stub
 		try {
 			return accountHelper.IncreaseNonce(addr);
@@ -98,7 +98,7 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public long addBalance(String addr, long balance) {
+	public long addBalance(ByteString addr, long balance) {
 		// TODO Auto-generated method stub
 		try {
 			return accountHelper.addBalance(addr, balance);
@@ -110,7 +110,7 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public long addCryptoBalance(String addr, String symbol, AccountCryptoToken.Builder token) {
+	public long addCryptoBalance(ByteString addr, String symbol, AccountCryptoToken.Builder token) {
 		// TODO Auto-generated method stub
 		try {
 			return accountHelper.addCryptoBalance(addr, symbol, token);
@@ -122,7 +122,7 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public long addTokenBalance(String addr, String token, long balance) {
+	public long addTokenBalance(ByteString addr, String token, long balance) {
 		// TODO Auto-generated method stub
 		try {
 			return accountHelper.addTokenBalance(addr, token, balance);
@@ -134,7 +134,7 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public long addTokenLockBalance(String addr, String token, long balance) {
+	public long addTokenLockBalance(ByteString addr, String token, long balance) {
 		// TODO Auto-generated method stub
 		try {
 			return accountHelper.addTokenLockBalance(addr, token, balance);
@@ -146,7 +146,7 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public long getBalance(String addr) {
+	public long getBalance(ByteString addr) {
 		// TODO Auto-generated method stub
 		try {
 			return accountHelper.getBalance(addr);
@@ -161,8 +161,8 @@ public class EvmApiImp implements EvmApi {
 	public byte[] getContractAddressByTransaction(MultiTransaction oMultiTransaction) {
 		// TODO Auto-generated method stub
 		try {
-			String address = transactionHelper.getContractAddressByTransaction(oMultiTransaction);
-			return encApi.hexDec(address);
+			ByteString address = transactionHelper.getContractAddressByTransaction(oMultiTransaction);
+			return address.toByteArray();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -171,7 +171,7 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public List<AccountCryptoToken> getCryptoTokenBalance(String addr, String symbol) {
+	public List<AccountCryptoToken> getCryptoTokenBalance(ByteString addr, ByteString symbol) {
 		// TODO Auto-generated method stub
 		try {
 			return accountHelper.getCryptoTokenBalance(addr, symbol);
@@ -183,7 +183,7 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public int getNonce(String addr) {
+	public int getNonce(ByteString addr) {
 		// TODO Auto-generated method stub
 		try {
 			return accountHelper.getNonce(addr);
@@ -195,7 +195,7 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public long getTokenBalance(String addr, String token) {
+	public long getTokenBalance(ByteString addr, ByteString token) {
 		// TODO Auto-generated method stub
 		try {
 			return accountHelper.getTokenBalance(addr, token);
@@ -207,7 +207,7 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public long getTokenLockedBalance(String addr, String token) {
+	public long getTokenLockedBalance(ByteString addr, ByteString token) {
 		// TODO Auto-generated method stub
 		try {
 			accountHelper.getTokenLockedBalance(addr, token);
@@ -219,13 +219,13 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public boolean isContract(String addr) {
+	public boolean isContract(ByteString addr) {
 		// TODO Auto-generated method stub
 		return accountHelper.isContract(addr);
 	}
 
 	@Override
-	public boolean isExist(String addr) {
+	public boolean isExist(ByteString addr) {
 		// TODO Auto-generated method stub
 		try {
 			return accountHelper.isExist(addr);
@@ -249,7 +249,7 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public int setNonce(String addr, int nonce) {
+	public int setNonce(ByteString addr, int nonce) {
 		// TODO Auto-generated method stub
 		try {
 			accountHelper.setNonce(addr, nonce);
@@ -261,12 +261,12 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public void saveStorage(String address, byte[] key, byte[] value) {
+	public void saveStorage(ByteString address, byte[] key, byte[] value) {
 		accountHelper.saveStorage(address, key, value);
 	}
 
 	@Override
-	public Map<String, byte[]> getStorage(String address, List<byte[]> keys) {
+	public Map<String, byte[]> getStorage(ByteString address, List<byte[]> keys) {
 		Map<String, byte[]> storage = new HashMap<>();
 		StorageTrie oStorage = accountHelper.getStorageTrie(address);
 		for (int i = 0; i < keys.size(); i++) {
@@ -276,37 +276,8 @@ public class EvmApiImp implements EvmApi {
 	}
 
 	@Override
-	public byte[] getStorage(String address, byte[] key) {
+	public byte[] getStorage(ByteString address, byte[] key) {
 		StorageTrie oStorage = accountHelper.getStorageTrie(address);
 		return oStorage.get(key);
-	}
-
-	@Override
-	public Account CreateContract(String arg0, byte[] arg1, byte[] arg2) {
-		return null;
-	}
-
-	@Override
-	public Account CreateUnionAccount(Account arg0) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void generateCryptoToken(String arg0, String arg1, String[] arg2, String[] arg3) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public long newCryptoBalances(String arg0, String arg1, ArrayList<Builder> arg2) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public long removeCryptoBalance(String arg0, String arg1, byte[] arg2) {
-		// TODO Auto-generated method stub
-		return 0;
 	}
 }

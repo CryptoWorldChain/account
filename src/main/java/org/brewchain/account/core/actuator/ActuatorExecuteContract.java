@@ -36,7 +36,7 @@ public class ActuatorExecuteContract extends AbstractTransactionActuator impleme
 		
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			// 取发送方账户
-			Account sender = accounts.get(oInput.getAddress());
+			Account sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 
 			senderAccountValue.setBalance(senderAccountValue.getBalance() - oInput.getAmount() - oInput.getFee());
@@ -46,18 +46,18 @@ public class ActuatorExecuteContract extends AbstractTransactionActuator impleme
 			if (senderAccountValue.getStorage() == null) {
 				oCacheTrie.setRoot(null);
 			} else {
-				oCacheTrie.setRoot(encApi.hexDec(senderAccountValue.getStorage()));
+				oCacheTrie.setRoot(senderAccountValue.getStorage().toByteArray());
 			}
-			oCacheTrie.put(encApi.hexDec(sender.getAddress()), senderAccountValue.build().toByteArray());
-			senderAccountValue.setStorage(encApi.hexEnc(oCacheTrie.getRootHash()));
-			this.accountValues.put(sender.getAddress(), senderAccountValue.build());
+			oCacheTrie.put(sender.getAddress().toByteArray(), senderAccountValue.build().toByteArray());
+			senderAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
+			this.accountValues.put(encApi.hexEnc(sender.getAddress().toByteArray()), senderAccountValue.build());
 //			keys.add(OEntityBuilder.byteKey2OKey(sender.getAddress().toByteArray()));
 //			values.add(senderAccountValue.build());
 		}
 		
 		for (MultiTransactionInput oOutput : oMultiTransaction.getTxBody().getInputsList()) {
 			// 取接收方账户
-			Account receiver = accounts.get(oOutput.getAddress());
+			Account receiver = accounts.get(encApi.hexEnc(oOutput.getAddress().toByteArray()));
 			AccountValue.Builder receiverAccountValue = receiver.getValue().toBuilder();
 
 			receiverAccountValue.setData(receiver.getValue().getCode());
@@ -69,13 +69,13 @@ public class ActuatorExecuteContract extends AbstractTransactionActuator impleme
 			if (receiverAccountValue.getStorage() == null) {
 				oCacheTrie.setRoot(null);
 			} else {
-				oCacheTrie.setRoot(encApi.hexDec(receiverAccountValue.getStorage()));
+				oCacheTrie.setRoot(receiverAccountValue.getStorage().toByteArray());
 			}
 			
 			
-			oCacheTrie.put(encApi.hexDec(receiver.getAddress()), receiverAccountValue.build().toByteArray());
-			receiverAccountValue.setStorage(encApi.hexEnc(oCacheTrie.getRootHash()));
-			this.accountValues.put(receiver.getAddress(), receiverAccountValue.build());
+			oCacheTrie.put(receiver.getAddress().toByteArray(), receiverAccountValue.build().toByteArray());
+			receiverAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
+			this.accountValues.put(encApi.hexEnc(receiver.getAddress().toByteArray()), receiverAccountValue.build());
 //			keys.add(OEntityBuilder.byteKey2OKey(receiver.getAddress().toByteArray()));
 //			values.add(receiverAccountValue.build());
 		}

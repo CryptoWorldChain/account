@@ -44,23 +44,24 @@ public class AddCryptoTokenImpl extends SessionModules<ReqAddCryptoToken> {
 
 		for (int i = 0; i < pb.getCodeCount(); i++) {
 			AccountCryptoToken.Builder oAccountCryptoToken = AccountCryptoToken.newBuilder();
-			oAccountCryptoToken.setCode(pb.getCode(i));
+			oAccountCryptoToken.setCode(ByteString.copyFrom(encApi.hexDec(pb.getCode(i))));
 			oAccountCryptoToken.setIndex(pb.getIndex(i));
-			oAccountCryptoToken.setName(pb.getName(i));
+			oAccountCryptoToken.setName(ByteString.copyFrom(encApi.hexDec(pb.getName(i))));
 			oAccountCryptoToken.setTimestamp(pb.getTimestamp(i));
 			oAccountCryptoToken.setTotal(pb.getTotal(i));
 			encApi.sha256Encode(oAccountCryptoToken.build().toByteArray());
 
-			oAccountCryptoToken.setOwner(pb.getHexAddress());
+			oAccountCryptoToken.setOwner(ByteString.copyFrom(encApi.hexDec(pb.getHexAddress())));
 			oAccountCryptoToken.setNonce(0);
 
 			try {
-				oAccountHelper.addCryptoBalance(oAccountCryptoToken.build().getOwner(), pb.getSymbol(i),
-						oAccountCryptoToken);
+				// oAccountHelper.addCryptoBalance(oAccountCryptoToken.build().getOwner(),
+				// pb.getSymbol(i),
+				// oAccountCryptoToken);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
-//				e.printStackTrace();
-				log.error("AddCryptoTokenImpl error",e);
+				// e.printStackTrace();
+				log.error("AddCryptoTokenImpl error", e);
 				oRespAddCryptoToken.setTotal(i + 1);
 				oRespAddCryptoToken.setRetCode(-1);
 				handler.onFinished(PacketHelper.toPBReturn(pack, oRespAddCryptoToken.build()));
@@ -68,7 +69,7 @@ public class AddCryptoTokenImpl extends SessionModules<ReqAddCryptoToken> {
 				return;
 			}
 		}
-		
+
 		oRespAddCryptoToken.setRetCode(1);
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespAddCryptoToken.build()));
 		// oAccountCryptoToken.setCode(pb.getc)

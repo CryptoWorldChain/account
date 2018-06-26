@@ -60,24 +60,24 @@ public class AccountHelper implements ActorService {
 	public AccountHelper() {
 	}
 
-	public synchronized Account CreateAccount(String address) {
+	public synchronized Account CreateAccount(ByteString address) {
 		return CreateAccount(address, 0, 0, 0, null, null, null);
 	}
 
-	public synchronized Account CreateContract(String address, String code, String exdata) {
+	public synchronized Account CreateContract(ByteString address, ByteString code, ByteString exdata) {
 		if (code == null) {
 			return null;
 		}
 		return CreateAccount(address, 0, 0, 0, null, code, exdata);
 	}
 
-	public synchronized Account CreateUnionAccount(String address, long max, long acceptMax, int acceptLimit,
-			List<String> addresses) {
+	public synchronized Account CreateUnionAccount(ByteString address, long max, long acceptMax, int acceptLimit,
+			List<ByteString> addresses) {
 		return CreateAccount(address, max, acceptMax, acceptLimit, addresses, null, null);
 	}
 
-	public synchronized Account CreateAccount(String address, long max, long acceptMax, int acceptLimit,
-			List<String> addresses, String code, String exdata) {
+	public synchronized Account CreateAccount(ByteString address, long max, long acceptMax, int acceptLimit,
+			List<ByteString> addresses, ByteString code, ByteString exdata) {
 		Account.Builder oUnionAccount = Account.newBuilder();
 		AccountValue.Builder oUnionAccountValue = AccountValue.newBuilder();
 
@@ -92,7 +92,7 @@ public class AccountHelper implements ActorService {
 
 		if (code != null) {
 			oUnionAccountValue.setCode(code);
-			oUnionAccountValue.setCodeHash(encApi.hexEnc(encApi.sha3Encode(encApi.hexDec(code))));
+			oUnionAccountValue.setCodeHash(ByteString.copyFrom(encApi.sha3Encode(code.toByteArray())));
 		}
 
 		if (exdata != null) {
@@ -122,11 +122,11 @@ public class AccountHelper implements ActorService {
 			this.stateTrie.delete(address);
 	}
 
-	public void saveCode(String address, String code) {
+	public void saveCode(ByteString address, ByteString code) {
 		Account oAccount = GetAccount(address);
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 		oAccountValue.setCode(code);
-		oAccountValue.setCodeHash(encApi.hexEnc(encApi.sha3Encode(encApi.hexDec(code))));
+		oAccountValue.setCodeHash(ByteString.copyFrom(encApi.sha3Encode(code.toByteArray())));
 		putAccountValue(address, oAccountValue.build());
 	}
 
@@ -138,7 +138,7 @@ public class AccountHelper implements ActorService {
 	 * @throws Exception
 	 */
 
-	public boolean isExist(String addr) throws Exception {
+	public boolean isExist(ByteString addr) throws Exception {
 		return GetAccount(addr) != null;
 	}
 
@@ -148,17 +148,16 @@ public class AccountHelper implements ActorService {
 	 * @param addr
 	 * @return
 	 */
-	public Account GetAccount(String addr) {
+	public Account GetAccount(ByteString addr) {
 		try {
-			byte[] addrHash = encApi.hexDec(addr);
 			Account.Builder oAccount = Account.newBuilder();
 			oAccount.setAddress(addr);
 			byte[] valueHash = null;
 			if (this.stateTrie != null) {
-				valueHash = this.stateTrie.get(addrHash);
+				valueHash = this.stateTrie.get(addr.toByteArray());
 			}
 			if (valueHash == null) {
-				OValue oValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(addrHash)).get();
+				OValue oValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(addr)).get();
 				if (oValue != null && oValue.getExtdata() != null) {
 					valueHash = oValue.getExtdata().toByteArray();
 				} else {
@@ -181,7 +180,7 @@ public class AccountHelper implements ActorService {
 	 * @param addr
 	 * @return
 	 */
-	public Account GetAccountOrCreate(String addr) {
+	public Account GetAccountOrCreate(ByteString addr) {
 		try {
 			Account oAccount = GetAccount(addr);
 			if (oAccount == null) {
@@ -202,7 +201,7 @@ public class AccountHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public synchronized int IncreaseNonce(String addr) throws Exception {
+	public synchronized int IncreaseNonce(ByteString addr) throws Exception {
 		return setNonce(addr, 1);
 	}
 
@@ -214,7 +213,7 @@ public class AccountHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public synchronized long addBalance(String addr, long balance) throws Exception {
+	public synchronized long addBalance(ByteString addr, long balance) throws Exception {
 		Account.Builder oAccount = GetAccountOrCreate(addr).toBuilder();
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 		oAccountValue.setBalance(oAccountValue.getBalance() + balance);
@@ -230,7 +229,7 @@ public class AccountHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public synchronized long addTokenBalance(String addr, String token, long balance) throws Exception {
+	public synchronized long addTokenBalance(ByteString addr, String token, long balance) throws Exception {
 		Account.Builder oAccount = GetAccountOrCreate(addr).toBuilder();
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 
@@ -251,7 +250,7 @@ public class AccountHelper implements ActorService {
 		return oAccountTokenValue.getBalance();
 	}
 
-	public synchronized long addTokenLockBalance(String addr, String token, long balance) throws Exception {
+	public synchronized long addTokenLockBalance(ByteString addr, String token, long balance) throws Exception {
 		Account.Builder oAccount = GetAccount(addr).toBuilder();
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 
@@ -281,7 +280,7 @@ public class AccountHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public synchronized long addCryptoBalance(String addr, String symbol, AccountCryptoToken.Builder token)
+	public synchronized long addCryptoBalance(ByteString addr, String symbol, AccountCryptoToken.Builder token)
 			throws Exception {
 		Account.Builder oAccount = GetAccount(addr).toBuilder();
 		if (oAccount == null) {
@@ -331,8 +330,8 @@ public class AccountHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public synchronized long newCryptoBalances(String addr, String symbol, ArrayList<AccountCryptoToken.Builder> tokens)
-			throws Exception {
+	public synchronized long newCryptoBalances(ByteString addr, String symbol,
+			ArrayList<AccountCryptoToken.Builder> tokens) throws Exception {
 		Account.Builder oAccount = GetAccount(addr).toBuilder();
 		if (oAccount == null) {
 			throw new Exception("account not founded::" + addr);
@@ -372,7 +371,7 @@ public class AccountHelper implements ActorService {
 	 * @param hash
 	 * @return
 	 */
-	public synchronized long removeCryptoBalance(String addr, String symbol, String hash) {
+	public synchronized long removeCryptoBalance(ByteString addr, ByteString symbol, ByteString hash) {
 		Account.Builder oAccount = GetAccount(addr).toBuilder();
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 
@@ -404,7 +403,7 @@ public class AccountHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public synchronized int setNonce(String addr, int nonce) throws Exception {
+	public synchronized int setNonce(ByteString addr, int nonce) throws Exception {
 		Account.Builder oAccount = GetAccount(addr).toBuilder();
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 		oAccountValue.setNonce(oAccountValue.getNonce() + nonce);
@@ -412,14 +411,14 @@ public class AccountHelper implements ActorService {
 		return oAccountValue.getNonce();
 	}
 
-	public synchronized boolean isContract(String addr) {
+	public synchronized boolean isContract(ByteString addr) {
 		Account.Builder oAccount = GetAccount(addr).toBuilder();
 		if (oAccount == null) {
 			log.error("account not found::" + addr);
 			return false;
 		}
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
-		if (StringUtils.isBlank(oAccountValue.getCodeHash()) || StringUtils.isBlank(oAccountValue.getCode())) {
+		if (oAccountValue.getCodeHash() == null || oAccountValue.getCode() == null) {
 			return false;
 		}
 		return true;
@@ -432,7 +431,7 @@ public class AccountHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public int getNonce(String addr) throws Exception {
+	public int getNonce(ByteString addr) throws Exception {
 		Account.Builder oAccount = GetAccountOrCreate(addr).toBuilder();
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 		return oAccountValue.getNonce();
@@ -445,7 +444,7 @@ public class AccountHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public long getBalance(String addr) throws Exception {
+	public long getBalance(ByteString addr) throws Exception {
 		log.debug("find balance::" + addr);
 		Account oAccount = GetAccount(addr);
 		if (oAccount == null) {
@@ -462,7 +461,7 @@ public class AccountHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public long getTokenBalance(String addr, String token) throws Exception {
+	public long getTokenBalance(ByteString addr, ByteString token) throws Exception {
 		Account.Builder oAccount = GetAccount(addr).toBuilder();
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 		for (int i = 0; i < oAccountValue.getTokensCount(); i++) {
@@ -473,7 +472,7 @@ public class AccountHelper implements ActorService {
 		return 0;
 	}
 
-	public long getTokenLockedBalance(String addr, String token) throws Exception {
+	public long getTokenLockedBalance(ByteString addr, ByteString token) throws Exception {
 		Account.Builder oAccount = GetAccount(addr).toBuilder();
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 		for (int i = 0; i < oAccountValue.getTokensCount(); i++) {
@@ -492,7 +491,7 @@ public class AccountHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public List<AccountCryptoToken> getCryptoTokenBalance(String addr, String symbol) throws Exception {
+	public List<AccountCryptoToken> getCryptoTokenBalance(ByteString addr, ByteString symbol) throws Exception {
 		Account.Builder oAccount = GetAccount(addr).toBuilder();
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 
@@ -514,7 +513,7 @@ public class AccountHelper implements ActorService {
 	 * @param code
 	 * @throws Exception
 	 */
-	public synchronized void generateCryptoToken(String addr, String symbol, String[] name, String[] code)
+	public synchronized void generateCryptoToken(ByteString addr, String symbol, String[] name, String[] code)
 			throws Exception {
 		if (name.length != code.length || name.length == 0) {
 			throw new Exception(String.format("待创建的加密token列表的名称 %s 和编号 %s 无效", name.length, code.length));
@@ -528,12 +527,12 @@ public class AccountHelper implements ActorService {
 
 		for (int i = 0; i < name.length; i++) {
 			AccountCryptoToken.Builder oAccountCryptoToken = AccountCryptoToken.newBuilder();
-			oAccountCryptoToken.setName(name[i]);
-			oAccountCryptoToken.setCode(code[i]);
+			oAccountCryptoToken.setName(ByteString.copyFromUtf8(name[i]));
+			oAccountCryptoToken.setCode(ByteString.copyFromUtf8(code[i]));
 			oAccountCryptoToken.setIndex(i);
 			oAccountCryptoToken.setTotal(total);
 			oAccountCryptoToken.setTimestamp(new Date().getTime());
-			oAccountCryptoToken.setHash(encApi.hexEnc(encApi.sha256Encode(oAccountCryptoToken.build().toByteArray())));
+			oAccountCryptoToken.setHash(ByteString.copyFrom(encApi.sha256Encode(oAccountCryptoToken.build().toByteArray())));
 
 			oAccountCryptoToken.setOwner(addr);
 			oAccountCryptoToken.setNonce(0);
@@ -546,7 +545,7 @@ public class AccountHelper implements ActorService {
 		putAccountValue(addr, oAccountValue.build());
 	}
 
-	public void ICO(String addr, String token) throws Exception {
+	public void ICO(ByteString addr, String token) throws Exception {
 		OValue oValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN)).get();
 		ICO.Builder oICO;
 		if (oValue == null) {
@@ -556,7 +555,7 @@ public class AccountHelper implements ActorService {
 		}
 
 		ICOValue.Builder oICOValue = ICOValue.newBuilder();
-		oICOValue.setAddress(addr);
+		oICOValue.setAddress(encApi.hexEnc(addr.toByteArray()));
 		oICOValue.setTimestamp((new Date()).getTime());
 		oICOValue.setToken(token);
 		oICO.addValue(oICOValue);
@@ -587,12 +586,11 @@ public class AccountHelper implements ActorService {
 		return false;
 	}
 
-	public void putAccountValue(String addr, AccountValue oAccountValue) {
-		byte[] addrHash = encApi.hexDec(addr);
-		dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(addrHash),
+	public void putAccountValue(ByteString addr, AccountValue oAccountValue) {
+		dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(addr),
 				OEntityBuilder.byteValue2OValue(oAccountValue.toByteArray()));
 		if (this.stateTrie != null) {
-			this.stateTrie.put(addrHash, oAccountValue.toByteArray());
+			this.stateTrie.put(addr.toByteArray(), oAccountValue.toByteArray());
 			this.stateTrie.flush();
 		}
 	}
@@ -629,7 +627,7 @@ public class AccountHelper implements ActorService {
 	}
 
 	public void tokenMappingAccount(AccountCryptoToken.Builder acBuilder) {
-		dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(encApi.hexDec(acBuilder.getHash())),
+		dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(acBuilder.getHash()),
 				OEntityBuilder.byteValue2OValue(acBuilder.build().toByteArray()));
 	}
 
@@ -650,19 +648,19 @@ public class AccountHelper implements ActorService {
 		return cryptoTokenBuild;
 	}
 
-	public void saveStorage(String address, byte[] key, byte[] value) {
+	public void saveStorage(ByteString address, byte[] key, byte[] value) {
 		StorageTrie oStorage = getStorageTrie(address);
 		oStorage.put(key, value);
 		byte[] rootHash = oStorage.getRootHash();
 
 		Account contract = GetAccount(address);
 		AccountValue.Builder oAccountValue = contract.getValue().toBuilder();
-		oAccountValue.setStorage(encApi.hexEnc(rootHash));
+		oAccountValue.setStorage(ByteString.copyFrom(rootHash));
 		putAccountValue(address, oAccountValue.build());
 	}
 
-	public StorageTrie getStorageTrie(String address) {
-		StorageTrie oStorage = storageTrieCache.get(address);
+	public StorageTrie getStorageTrie(ByteString address) {
+		StorageTrie oStorage = storageTrieCache.get(encApi.hexEnc(address.toByteArray()));
 		if (oStorage == null) {
 			oStorage = new StorageTrie(this.dao, this.encApi);
 			Account contract = GetAccount(address);
@@ -670,14 +668,14 @@ public class AccountHelper implements ActorService {
 			if (contract.getValue() == null || contract.getValue().getStorage() == null) {
 				oStorage.setRoot(ByteUtil.EMPTY_BYTE_ARRAY);
 			} else {
-				oStorage.setRoot(encApi.hexDec(contract.getValue().getStorage()));
+				oStorage.setRoot(contract.getValue().getStorage().toByteArray());
 			}
-			storageTrieCache.put(address, oStorage);
+			storageTrieCache.put(encApi.hexEnc(address.toByteArray()), oStorage);
 		}
 		return oStorage;
 	}
 
-	public Map<String, byte[]> getStorage(String address, List<byte[]> keys) {
+	public Map<String, byte[]> getStorage(ByteString address, List<byte[]> keys) {
 		Map<String, byte[]> storage = new HashMap<>();
 		StorageTrie oStorage = getStorageTrie(address);
 		for (int i = 0; i < keys.size(); i++) {
@@ -686,7 +684,7 @@ public class AccountHelper implements ActorService {
 		return storage;
 	}
 
-	public byte[] getStorage(String address, byte[] key) {
+	public byte[] getStorage(ByteString address, byte[] key) {
 		StorageTrie oStorage = getStorageTrie(address);
 		return oStorage.get(key);
 	}

@@ -7,7 +7,6 @@ import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.trie.StateTrie;
-import org.brewchain.account.util.ByteUtil;
 import org.brewchain.evmapi.gens.Act.Account;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
@@ -26,13 +25,13 @@ public class ActuatorDefault extends AbstractTransactionActuator implements iTra
 	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
 
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
-			if (!accounts.containsKey(oInput.getAddress())) {
+			if (!accounts.containsKey(encApi.hexEnc(oInput.getAddress().toByteArray()))) {
 				throw new Exception(String.format("交易的发送方账户 %s 不存在", oInput.getAddress().toString()));
 			}
 		}
 
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
-			if (!accounts.containsKey(oOutput.getAddress())) {
+			if (!accounts.containsKey(encApi.hexEnc(oOutput.getAddress().toByteArray()))) {
 				oAccountHelper.CreateAccount(oOutput.getAddress());
 			}
 		}

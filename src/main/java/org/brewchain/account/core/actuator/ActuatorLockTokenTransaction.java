@@ -8,7 +8,6 @@ import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.trie.DBTrie;
 import org.brewchain.account.trie.StateTrie;
-import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.evmapi.gens.Act.Account;
 import org.brewchain.evmapi.gens.Act.AccountTokenValue;
 import org.brewchain.evmapi.gens.Act.AccountValue;
@@ -40,7 +39,7 @@ public class ActuatorLockTokenTransaction extends AbstractTransactionActuator im
 			}
 
 			// 取发送方账户
-			Account sender = accounts.get(oInput.getAddress());
+			Account sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 			long tokenBalance = 0;
 			for (int i = 0; i < senderAccountValue.getTokensCount(); i++) {
@@ -72,10 +71,8 @@ public class ActuatorLockTokenTransaction extends AbstractTransactionActuator im
 		// TODO lock 只处理了 input，未处理 output
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			// 取发送方账户
-			Account sender = accounts.get(oInput.getAddress());
+			Account sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
-			String token = "";
-			token = oInput.getToken();
 			boolean isExistToken = false;
 			for (int i = 0; i < senderAccountValue.getTokensCount(); i++) {
 				if (senderAccountValue.getTokens(i).getToken().equals(oInput.getToken())) {
@@ -100,14 +97,14 @@ public class ActuatorLockTokenTransaction extends AbstractTransactionActuator im
 			if (senderAccountValue.getStorage() == null) {
 				oCacheTrie.setRoot(null);
 			} else {
-				oCacheTrie.setRoot(encApi.hexDec(senderAccountValue.getStorage()));
+				oCacheTrie.setRoot(senderAccountValue.getStorage().toByteArray());
 			}
-			oCacheTrie.put(encApi.hexDec(sender.getAddress()), senderAccountValue.build().toByteArray());
-			senderAccountValue.setStorage(encApi.hexEnc(oCacheTrie.getRootHash()));
+			oCacheTrie.put(sender.getAddress().toByteArray(), senderAccountValue.build().toByteArray());
+			senderAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
 
 			// keys.add(OEntityBuilder.byteKey2OKey(sender.getAddress().toByteArray()));
 			// values.add(senderAccountValue.build());
-			this.accountValues.put(sender.getAddress(), senderAccountValue.build());
+			this.accountValues.put(encApi.hexEnc(sender.getAddress().toByteArray()), senderAccountValue.build());
 		}
 	}
 

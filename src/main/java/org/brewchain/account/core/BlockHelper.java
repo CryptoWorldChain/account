@@ -128,7 +128,7 @@ public class BlockHelper implements ActorService {
 			oBlockBody.addTxs(txs.get(i));
 			oTrieImpl.put(encApi.hexDec(txs.get(i).getTxHash()), transactionHelper.getTransactionContent(txs.get(i)));
 		}
-		oBlockMiner.setAddress(KeyConstant.node.getoAccount().getAddress());
+		oBlockMiner.setAddress(encApi.hexEnc(KeyConstant.node.getoAccount().getAddress().toByteArray()));
 		oBlockMiner.setNode(KeyConstant.node.getNode());
 		oBlockMiner.setBcuid(KeyConstant.node.getBcuid());
 		oBlockMiner.setReward(KeyConstant.BLOCK_REWARD);
@@ -198,7 +198,7 @@ public class BlockHelper implements ActorService {
 		}
 
 		for (Account oAccount : accounts) {
-			this.stateTrie.put(encApi.hexDec(oAccount.getAddress()), oAccount.getValue().toByteArray());
+			this.stateTrie.put(oAccount.getAddress().toByteArray(), oAccount.getValue().toByteArray());
 		}
 		oBlockHeader.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
 		oBlockHeader.setTxTrieRoot(encApi.hexEnc(oTrieImpl.getRootHash()));
@@ -533,7 +533,7 @@ public class BlockHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public void applyReward(BlockEntity oCurrentBlock) throws Exception {
-		accountHelper.addTokenBalance(oCurrentBlock.getMiner().getAddress(), "CWS",
+		accountHelper.addTokenBalance(ByteString.copyFrom(encApi.hexDec(oCurrentBlock.getMiner().getAddress())), "CWS",
 				oCurrentBlock.getMiner().getReward());
 	}
 

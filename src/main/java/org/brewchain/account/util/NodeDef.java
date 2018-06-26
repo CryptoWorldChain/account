@@ -1,5 +1,7 @@
 package org.brewchain.account.util;
 
+import com.google.protobuf.ByteString;
+
 public class NodeDef {
 	private String node;
 	private String bcuid;
@@ -39,14 +41,14 @@ public class NodeDef {
 	}
 
 	public class NodeAccount {
-		private String address;
+		private ByteString address;
 		private String bcuid;
 
-		public String getAddress() {
+		public ByteString getAddress() {
 			return address;
 		}
 
-		public void setAddress(String address) {
+		public void setAddress(ByteString address) {
 			this.address = address;
 		}
 

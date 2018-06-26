@@ -8,6 +8,8 @@ import org.brewchain.account.gens.Actimpl.RespCreateAccount;
 import org.brewchain.account.util.ByteUtil;
 import org.fc.brewchain.bcapi.EncAPI;
 
+import com.google.protobuf.ByteString;
+
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import onight.oapi.scala.commons.SessionModules;
@@ -43,7 +45,7 @@ public class CreateAccountImpl extends SessionModules<ReqCreateAccount> {
 		// BigInteger.ZERO);
 		
 //		try {
-			oAccountHelper.CreateAccount(ByteUtil.formatHexAddress(pb.getAddress()));
+			oAccountHelper.CreateAccount(ByteString.copyFrom(encApi.hexDec(ByteUtil.formatHexAddress(pb.getAddress()))));
 			oRespCreateAccount.setRetCode(1);
 //		} catch (Exception e) {
 //			e.printStackTrace();

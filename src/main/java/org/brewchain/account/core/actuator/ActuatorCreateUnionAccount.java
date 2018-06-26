@@ -29,11 +29,11 @@ public class ActuatorCreateUnionAccount extends AbstractTransactionActuator impl
 			throw new Exception("交易内容错误，data为null");
 		}
 
-		Account oUnionAccount = Account.parseFrom(encApi.hexDec(oMultiTransaction.getTxBody().getExdata()));
+		Account oUnionAccount = Account.parseFrom(oMultiTransaction.getTxBody().getExdata());
 		if (!oAccountHelper.isExist(oUnionAccount.getAddress())) {
 			// 如果账户不存在
 			oAccountHelper.CreateUnionAccount(oUnionAccount);
-			accounts.put(oUnionAccount.getAddress(), oUnionAccount);
+			accounts.put(encApi.hexEnc(oUnionAccount.getAddress().toByteArray()), oUnionAccount);
 		} else {
 			// 如果账户存在
 			// throw new Exception(String.format("账户 %s 已存在",

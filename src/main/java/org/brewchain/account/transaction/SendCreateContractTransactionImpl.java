@@ -55,25 +55,25 @@ public class SendCreateContractTransactionImpl extends SessionModules<ReqCreateC
 			MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 
 			MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
-			oMultiTransactionBody.setData(pb.getData());
+			oMultiTransactionBody.setData(ByteString.copyFrom(encApi.hexDec(pb.getData())));
 			for (String delegate : pb.getDelegateList()) {
-				oMultiTransactionBody.addDelegate(delegate);
+				oMultiTransactionBody.addDelegate(ByteString.copyFrom(encApi.hexDec(delegate)));
 			}
-			oMultiTransactionBody.setExdata(pb.getExdata());
+			oMultiTransactionBody.setExdata(ByteString.copyFrom(encApi.hexDec(pb.getExdata())));
 
 			MultiTransactionInput.Builder oMultiTransactionInput = MultiTransactionInput.newBuilder();
-			oMultiTransactionInput.setAddress(pb.getInput().getAddress());
+			oMultiTransactionInput.setAddress(ByteString.copyFrom(encApi.hexDec(pb.getInput().getAddress())));
 			oMultiTransactionInput.setAmount(pb.getInput().getAmount());
-			oMultiTransactionInput.setCryptoToken(pb.getInput().getCryptoToken());
+			oMultiTransactionInput.setCryptoToken(ByteString.copyFrom(encApi.hexDec(pb.getInput().getCryptoToken())));
 			oMultiTransactionInput.setFee(pb.getInput().getFee());
 			oMultiTransactionInput.setNonce(pb.getInput().getNonce());
-			oMultiTransactionInput.setPubKey(pb.getInput().getPubKey());
+			oMultiTransactionInput.setPubKey(ByteString.copyFrom(encApi.hexDec(pb.getInput().getPubKey())));
 			oMultiTransactionInput.setSymbol(pb.getInput().getSymbol());
 			oMultiTransactionInput.setToken(pb.getInput().getToken());
 			oMultiTransactionBody.addInputs(oMultiTransactionInput);
 			MultiTransactionSignature.Builder oMultiTransactionSignature = MultiTransactionSignature.newBuilder();
-			oMultiTransactionSignature.setPubKey(pb.getSignature().getPubKey());
-			oMultiTransactionSignature.setSignature(pb.getSignature().getSignature());
+			oMultiTransactionSignature.setPubKey(ByteString.copyFrom(encApi.hexDec(pb.getSignature().getPubKey())));
+			oMultiTransactionSignature.setSignature(ByteString.copyFrom(encApi.hexDec(pb.getSignature().getSignature())));
 			oMultiTransactionBody.addSignatures(oMultiTransactionSignature);
 			oMultiTransactionBody.setTimestamp(pb.getTimestamp());
 			oMultiTransactionBody.setType(TransTypeEnum.TYPE_CreateContract.value());
@@ -81,7 +81,7 @@ public class SendCreateContractTransactionImpl extends SessionModules<ReqCreateC
 			oMultiTransaction.clearTxHash();
 
 			oRespCreateContractTransaction
-					.setContractAddress(transactionHelper.getContractAddressByTransaction(oMultiTransaction.build()));
+					.setContractAddress(encApi.hexEnc(transactionHelper.getContractAddressByTransaction(oMultiTransaction.build()).toByteArray()));
 			oRespCreateContractTransaction.setTxHash(transactionHelper.CreateMultiTransaction(oMultiTransaction));
 		} catch (Exception e) {
 			oRespCreateContractTransaction.clear();

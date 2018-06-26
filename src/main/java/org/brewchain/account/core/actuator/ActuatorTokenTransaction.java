@@ -53,7 +53,7 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			}
 
 			// 取发送方账户
-			Account sender = accounts.get(oInput.getAddress());
+			Account sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 			long tokenBalance = 0;
 			for (int i = 0; i < senderAccountValue.getTokensCount(); i++) {
@@ -106,7 +106,7 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 		String token = "";
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			// 取发送方账户
-			Account sender = accounts.get(oInput.getAddress());
+			Account sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 
 			token = oInput.getToken();
@@ -131,20 +131,20 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			if (senderAccountValue.getStorage() == null) {
 				oCacheTrie.setRoot(null);
 			} else {
-				oCacheTrie.setRoot(encApi.hexDec(senderAccountValue.getStorage()));
+				oCacheTrie.setRoot(senderAccountValue.getStorage().toByteArray());
 			}
-			oCacheTrie.put(encApi.hexDec(sender.getAddress()), senderAccountValue.build().toByteArray());
-			senderAccountValue.setStorage(encApi.hexEnc(oCacheTrie.getRootHash()));
+			oCacheTrie.put(sender.getAddress().toByteArray(), senderAccountValue.build().toByteArray());
+			senderAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
 
 			// keys.add(OEntityBuilder.byteKey2OKey(sender.getAddress().toByteArray()));
 			// values.add(senderAccountValue.build());
-			this.accountValues.put(sender.getAddress(), senderAccountValue.build());
+			this.accountValues.put(encApi.hexEnc(sender.getAddress().toByteArray()), senderAccountValue.build());
 			// TODO 确定账户余额是否会增加
 
 		}
 
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
-			Account receiver = accounts.get(oOutput.getAddress());
+			Account receiver = accounts.get(encApi.hexEnc(oOutput.getAddress().toByteArray()));
 			AccountValue.Builder receiverAccountValue = receiver.getValue().toBuilder();
 
 			// 不论任何交易类型，都默认执行账户余额的更改
@@ -172,11 +172,11 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			if (receiverAccountValue.getStorage() == null) {
 				oCacheTrie.setRoot(null);
 			} else {
-				oCacheTrie.setRoot(encApi.hexDec(receiverAccountValue.getStorage()));
+				oCacheTrie.setRoot(receiverAccountValue.getStorage().toByteArray());
 			}
-			oCacheTrie.put(encApi.hexDec(receiver.getAddress()), receiverAccountValue.build().toByteArray());
-			receiverAccountValue.setStorage(encApi.hexEnc((oCacheTrie.getRootHash())));
-			this.accountValues.put(receiver.getAddress(), receiverAccountValue.build());
+			oCacheTrie.put(receiver.getAddress().toByteArray(), receiverAccountValue.build().toByteArray());
+			receiverAccountValue.setStorage(ByteString.copyFrom((oCacheTrie.getRootHash())));
+			this.accountValues.put(encApi.hexEnc(receiver.getAddress().toByteArray()), receiverAccountValue.build());
 
 		}
 	}

@@ -15,6 +15,28 @@ enum PTSTCommand {
 	LTP = 3; // load test perpare
 	LTE = 4; // load test exec
 	MTT = 5; // thread test
+	BFC = 6; // start new forks
+	BFS = 7; // remove forks
+}
+
+message MsgBlockView {
+	
+}
+
+message ReqStartNewFork {
+	
+}
+
+message RespStartNewFork {
+	
+}
+
+message ReqStopFork {
+	
+}
+
+message RespStopFork {
+	
 }
 
 message ReqThreadTransaction {
