@@ -61,7 +61,7 @@ public class TransactionLoadTestPerImpl extends SessionModules<ReqCreateTransact
 	public void onPBPacket(final FramePacket pack, final ReqCreateTransactionTest pb, final CompleteHandler handler) {
 		RespCreateTransactionTest.Builder oRespCreateTransactionTest = RespCreateTransactionTest.newBuilder();
 
-		for (int i = 0; i < 200000; i++) {
+		for (int i = 0; i < 1000000; i++) {
 			MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 			MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
 			try {

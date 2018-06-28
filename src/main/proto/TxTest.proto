@@ -18,6 +18,16 @@ enum PTSTCommand {
 	BFC = 6; // start new forks
 	BFS = 7; // remove forks
 	BCV = 8; // block chain view
+	LTR = 9; // load test perpare result
+}
+
+message ReqCreateToken {
+	string token = 1;
+	int32 total = 2;
+}
+
+message RespCreateToken {
+
 }
 
 message MsgBlockView {

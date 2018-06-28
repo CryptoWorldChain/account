@@ -545,7 +545,7 @@ public class AccountHelper implements ActorService {
 		putAccountValue(addr, oAccountValue.build());
 	}
 
-	public void ICO(ByteString addr, String token) throws Exception {
+	public void ICO(ByteString addr, String token, long total) throws Exception {
 		OValue oValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN)).get();
 		ICO.Builder oICO;
 		if (oValue == null) {
@@ -558,6 +558,7 @@ public class AccountHelper implements ActorService {
 		oICOValue.setAddress(encApi.hexEnc(addr.toByteArray()));
 		oICOValue.setTimestamp((new Date()).getTime());
 		oICOValue.setToken(token);
+		oICOValue.setTotal(total);
 		oICO.addValue(oICOValue);
 
 		dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN),

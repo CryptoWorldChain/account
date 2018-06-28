@@ -289,14 +289,7 @@ public class TransactionHelper implements ActorService {
 	}
 
 	public void removeWaitBlockTx(String txHash) throws InvalidProtocolBufferException {
-		for (Iterator<Map.Entry<String, MultiTransaction>> it = oPendingHashMapDB.getStorage().entrySet().iterator(); it
-				.hasNext();) {
-			Map.Entry<String, MultiTransaction> item = it.next();
-			if (item.getKey().equals(txHash)) {
-				it.remove();
-				return;
-			}
-		}
+		oPendingHashMapDB.getStorage().remove(txHash);
 	}
 
 	/**
@@ -623,8 +616,9 @@ public class TransactionHelper implements ActorService {
 
 		MultiTransaction multiTransaction = oMultiTransaction.build();
 		// 保存交易到db中
-		
-		// log.debug("====put verify and save transaction::"+ multiTransaction.getTxHash());
+
+		// log.debug("====put verify and save transaction::"+
+		// multiTransaction.getTxHash());
 
 		dao.getTxsDao().put(OEntityBuilder.byteKey2OKey(encApi.hexDec(multiTransaction.getTxHash())),
 				OEntityBuilder.byteValue2OValue(multiTransaction.toByteArray()));
@@ -721,7 +715,7 @@ public class TransactionHelper implements ActorService {
 	public void setTransactionDone(String txHash) throws Exception {
 		MultiTransaction.Builder tx = GetTransaction(txHash).toBuilder();
 		tx.setStatus("done");
-		
+
 		// log.debug("====put transaction done::"+ txHash);
 
 		dao.getTxsDao().put(OEntityBuilder.byteKey2OKey(encApi.hexDec(tx.getTxHash())),
@@ -731,9 +725,9 @@ public class TransactionHelper implements ActorService {
 	public void setTransactionError(String txHash) throws Exception {
 		MultiTransaction.Builder tx = GetTransaction(txHash).toBuilder();
 		tx.setStatus("error");
-		
+
 		// log.debug("====put transaction error::"+ txHash);
-		
+
 		dao.getTxsDao().put(OEntityBuilder.byteKey2OKey(encApi.hexDec(tx.getTxHash())),
 				OEntityBuilder.byteValue2OValue(tx.build().toByteArray()));
 	}

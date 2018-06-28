@@ -78,7 +78,7 @@ public class EvmApiImp implements EvmApi {
 	public void ICO(ByteString addr, String token) {
 		// TODO Auto-generated method stub
 		try {
-			accountHelper.ICO(addr, token);
+			accountHelper.ICO(addr, token, 0);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

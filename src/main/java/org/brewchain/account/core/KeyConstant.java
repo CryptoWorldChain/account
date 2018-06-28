@@ -16,7 +16,7 @@ public class KeyConstant {
 	public static final BigInteger EMPTY_BALANCE = BigInteger.ZERO;
 	public static final int GENESIS_NUMBER = 0;
 	public static final byte[] GENESIS_HASH = String.valueOf(GENESIS_NUMBER).getBytes();
-	public static final int DEFAULT_BLOCK_TX_COUNT = 1000;
+	public static final int DEFAULT_BLOCK_TX_COUNT = 10000;
 	public static final byte[] DB_CURRENT_BLOCK = "DB_CURRENT_BLOCK_y0yXF4880c".getBytes();
 	public static final byte[] DB_CURRENT_MAX_BLOCK = "DB_CURRENT_MAX_BLOCK_y0yXF4880c".getBytes();
 

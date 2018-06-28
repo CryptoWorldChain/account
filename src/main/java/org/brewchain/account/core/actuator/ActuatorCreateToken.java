@@ -8,6 +8,7 @@ import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.evmapi.gens.Act.Account;
+import org.brewchain.evmapi.gens.Act.AccountTokenValue;
 import org.brewchain.evmapi.gens.Act.AccountValue;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
@@ -31,12 +32,34 @@ public class ActuatorCreateToken extends AbstractTransactionActuator implements 
 	@Override
 	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
 		MultiTransactionInput input = oMultiTransaction.getTxBody().getInputs(0);
-		oAccountHelper.addTokenBalance(input.getAddress(), input.getToken(), input.getAmount());
-		oAccountHelper.ICO(input.getAddress(), input.getToken());
+		Account.Builder sender = accounts.get(encApi.hexEnc(input.getAddress().toByteArray()));
+		AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
+
+		AccountTokenValue.Builder oAccountTokenValue = AccountTokenValue.newBuilder();
+		oAccountTokenValue.setBalance(input.getAmount()).setToken(input.getToken());
+
+		senderAccountValue.addTokens(oAccountTokenValue).setBalance(
+				senderAccountValue.getBalance() - this.oBlockHelper.getBlockChainConfig().getContract_lock_balance());
+		sender.setValue(senderAccountValue);
+
+		Account.Builder locker = accounts.get(encApi.hexEnc(input.getAddress().toByteArray()));
+		AccountValue.Builder lockerAccountValue = locker.getValue().toBuilder();
+		lockerAccountValue.setBalance(
+				lockerAccountValue.getBalance() + this.oBlockHelper.getBlockChainConfig().getContract_lock_balance());
+		locker.setValue(lockerAccountValue);
+
+		accounts.put(encApi.hexEnc(sender.getAddress().toByteArray()), sender);
+		accounts.put(encApi.hexEnc(locker.getAddress().toByteArray()), locker);
+		// accounts.put(key, value); 发布账户
+		// accounts.put(key, value); 锁定
+		// accounts.put(key, value); 转入锁定
+		oAccountHelper.ICO(input.getAddress(), input.getToken(), input.getAmount());
 	}
 
 	@Override
-	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
+	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts)
+			throws Exception {
+
 		if (oMultiTransaction.getTxBody().getInputsCount() != 1) {
 			throw new Exception(String.format("不允许存在多个发行方"));
 		}
@@ -51,7 +74,8 @@ public class ActuatorCreateToken extends AbstractTransactionActuator implements 
 		}
 
 		// 判断nonce是否一致
-		Account.Builder sender = accounts.get(encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(0).getAddress().toByteArray()));
+		Account.Builder sender = accounts
+				.get(encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(0).getAddress().toByteArray()));
 		AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 
 		int nonce = senderAccountValue.getNonce();
@@ -59,10 +83,15 @@ public class ActuatorCreateToken extends AbstractTransactionActuator implements 
 			throw new Exception(String.format("用户的交易索引 %s 与交易的索引不一致 %s", nonce,
 					oMultiTransaction.getTxBody().getInputs(0).getNonce()));
 		}
+		if (senderAccountValue.getBalance() < this.oBlockHelper.getBlockChainConfig().getContract_lock_balance()) {
+			throw new Exception(
+					String.format("没有足够的押金 %s", this.oBlockHelper.getBlockChainConfig().getContract_lock_balance()));
+		}
 		// Token不允许重复
 		if (oAccountHelper.isExistsToken(token)) {
 			throw new Exception(String.format("不允许重复发行token %s", token));
 		}
+
 	}
 
 }

@@ -53,7 +53,7 @@ public class MakeBlockChainSample extends SessionModules<ReqStartNewFork> {
 
 	@Override
 	public String[] getCmds() {
-		return new String[] { PTSTCommand.BCV.name() };
+		return new String[] { PTSTCommand.BFC.name() };
 	}
 
 	@Override

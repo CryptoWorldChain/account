@@ -28,6 +28,10 @@ public class BlockChainConfig extends SessionModules<Message> {
 	private String net = readNet();
 	private int stableBlocks = props().get("org.brewchain.stable.blocks", KeyConstant.STABLE_BLOCK);
 
+	private long contract_lock_balance = props().get("org.brewchain.contract.lock.balance", 1000000);
+	private String lock_account_address = props().get("org.brewchain.account.lock.address", "");
+
+	
 	@Override
 	public String[] getCmds() {
 		return new String[] { "BlockChainConfig" };

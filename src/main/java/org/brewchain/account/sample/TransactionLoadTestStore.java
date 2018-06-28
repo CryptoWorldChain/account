@@ -44,7 +44,8 @@ public class TransactionLoadTestStore implements ActorService {
 			if (loads.size() == 0) {
 				return null;
 			} else {
-				MultiTransaction.Builder tx = loads.get(0);
+				MultiTransaction.Builder tx = loads.get(loads.size() - 1);
+				loads.remove(loads.size() - 1);
 				return tx;
 			}
 
