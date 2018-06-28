@@ -22,7 +22,7 @@ public class ActuatorCallInternalFunction extends AbstractTransactionActuator im
 	}
 
 	@Override
-	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
+	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
 		InternalCallArguments.Builder oInternalCallArguments = InternalCallArguments
 				.parseFrom(oMultiTransaction.getTxBody().getExdata()).toBuilder();
 

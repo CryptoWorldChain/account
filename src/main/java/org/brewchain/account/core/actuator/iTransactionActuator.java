@@ -12,7 +12,7 @@ public interface iTransactionActuator {
 //	LinkedList<AccountValue> getValues();
 //	LinkedList<OKey> getTxKeys();
 //	LinkedList<MultiTransaction> getTxValues();
-	Map<String, AccountValue> getAccountValues();
+	// Map<String, AccountValue> getAccountValues();
 	Map<String, MultiTransaction> getTxValues();
 	/**
 	 * 交易签名校验
@@ -22,7 +22,7 @@ public interface iTransactionActuator {
 	 * @param receivers
 	 * @throws Exception
 	 */
-	void onVerifySignature(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception;
+	void onVerifySignature(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception;
 
 	/**
 	 * 交易执行前的数据校验。
@@ -32,7 +32,7 @@ public interface iTransactionActuator {
 	 * @param receivers
 	 * @throws Exception
 	 */
-	void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception;
+	void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception;
 
 	/**
 	 * 交易执行。
@@ -42,7 +42,7 @@ public interface iTransactionActuator {
 	 * @param receivers
 	 * @throws Exception
 	 */
-	void onExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception;
+	void onExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception;
 
 	/**
 	 * 交易执行成功后。

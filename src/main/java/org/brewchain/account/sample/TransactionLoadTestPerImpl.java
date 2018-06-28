@@ -61,18 +61,18 @@ public class TransactionLoadTestPerImpl extends SessionModules<ReqCreateTransact
 	public void onPBPacket(final FramePacket pack, final ReqCreateTransactionTest pb, final CompleteHandler handler) {
 		RespCreateTransactionTest.Builder oRespCreateTransactionTest = RespCreateTransactionTest.newBuilder();
 
-		for (int i = 0; i < 50000; i++) {
+		for (int i = 0; i < 200000; i++) {
 			MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 			MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
 			try {
 				KeyPairs oFrom = encApi.genKeys();
 				KeyPairs oTo = encApi.genKeys();
 
-				accountHelper.addBalance(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())), 10);
+				// accountHelper.addBalance(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())), 10);
 
 				MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
 				oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
-				oMultiTransactionInput4.setAmount(2);
+				oMultiTransactionInput4.setAmount(0);
 				oMultiTransactionInput4.setFee(0);
 				oMultiTransactionInput4.setFeeLimit(0);
 				int nonce = accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
@@ -82,7 +82,7 @@ public class TransactionLoadTestPerImpl extends SessionModules<ReqCreateTransact
 
 				MultiTransactionOutput.Builder oMultiTransactionOutput1 = MultiTransactionOutput.newBuilder();
 				oMultiTransactionOutput1.setAddress(ByteString.copyFrom(encApi.hexDec(oTo.getAddress())));
-				oMultiTransactionOutput1.setAmount(2);
+				oMultiTransactionOutput1.setAmount(0);
 				oMultiTransactionBody.addOutputs(oMultiTransactionOutput1);
 
 				oMultiTransactionBody.setData(ByteString.copyFrom(encApi.hexDec(pb.getData())));

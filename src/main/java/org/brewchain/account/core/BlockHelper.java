@@ -244,6 +244,8 @@ public class BlockHelper implements ActorService {
 						log.debug("need prev block number::" + (oBlockEntity.getHeader().getNumber() - 2));
 						oAddBlockResponse.setRetCode(-9);
 						oAddBlockResponse.setCurrentNumber(oBlockEntity.getHeader().getNumber() - 2);
+						
+						blockChainHelper.rollbackTo(oBlockEntity.getHeader().getNumber() - 2);
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 					}
 				} catch (Exception e1) {

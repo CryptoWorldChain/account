@@ -24,7 +24,7 @@ public class ActuatorExecuteContract extends AbstractTransactionActuator impleme
 	}
 
 	@Override
-	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
+	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
 		if (accounts.size() != 1) {
 			throw new Exception("不允许存在多个发送方地址");
 		}
@@ -32,11 +32,11 @@ public class ActuatorExecuteContract extends AbstractTransactionActuator impleme
 	}
 
 	@Override
-	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
+	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
 		
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			// 取发送方账户
-			Account sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
+			Account.Builder sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 
 			senderAccountValue.setBalance(senderAccountValue.getBalance() - oInput.getAmount() - oInput.getFee());
@@ -50,14 +50,17 @@ public class ActuatorExecuteContract extends AbstractTransactionActuator impleme
 			}
 			oCacheTrie.put(sender.getAddress().toByteArray(), senderAccountValue.build().toByteArray());
 			senderAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
-			this.accountValues.put(encApi.hexEnc(sender.getAddress().toByteArray()), senderAccountValue.build());
+			
+			sender.setValue(senderAccountValue);
+			accounts.put(encApi.hexEnc(sender.getAddress().toByteArray()), sender);
+			//this.accountValues.put(encApi.hexEnc(sender.getAddress().toByteArray()), senderAccountValue.build());
 //			keys.add(OEntityBuilder.byteKey2OKey(sender.getAddress().toByteArray()));
 //			values.add(senderAccountValue.build());
 		}
 		
 		for (MultiTransactionInput oOutput : oMultiTransaction.getTxBody().getInputsList()) {
 			// 取接收方账户
-			Account receiver = accounts.get(encApi.hexEnc(oOutput.getAddress().toByteArray()));
+			Account.Builder receiver = accounts.get(encApi.hexEnc(oOutput.getAddress().toByteArray()));
 			AccountValue.Builder receiverAccountValue = receiver.getValue().toBuilder();
 
 			receiverAccountValue.setData(receiver.getValue().getCode());
@@ -75,9 +78,8 @@ public class ActuatorExecuteContract extends AbstractTransactionActuator impleme
 			
 			oCacheTrie.put(receiver.getAddress().toByteArray(), receiverAccountValue.build().toByteArray());
 			receiverAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
-			this.accountValues.put(encApi.hexEnc(receiver.getAddress().toByteArray()), receiverAccountValue.build());
-//			keys.add(OEntityBuilder.byteKey2OKey(receiver.getAddress().toByteArray()));
-//			values.add(receiverAccountValue.build());
+			receiver.setValue(receiverAccountValue);
+			accounts.put(encApi.hexEnc(receiver.getAddress().toByteArray()), receiver);
 		}
 		
 	}

@@ -39,7 +39,7 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 	 * @throws Exception
 	 */
 	@Override
-	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
+	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
 
 		String inputSymbol = "";
 
@@ -50,7 +50,7 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 			if (inputSymbol.equals("") && !oInput.getSymbol().isEmpty()) {
 				inputSymbol = oInput.getSymbol();
 			}
-			Account oAccount = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
+			Account.Builder oAccount = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue oAccountValue = oAccount.getValue();
 
 			for (int j = 0; j < oAccountValue.getCryptosCount(); j++) {
@@ -91,7 +91,7 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 	 * java.util.Map)
 	 */
 	@Override
-	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
+	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
 		// LinkedList<OKey> keys = new LinkedList<>();
 		// LinkedList<AccountValue> values = new LinkedList<>();
 
@@ -101,7 +101,7 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 			MultiTransactionInput oInput = oMultiTransaction.getTxBody().getInputs(i);
 
 			// tokens.put(oMultiTransaction.get, value);
-			Account sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
+			Account.Builder sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue.Builder oAccountValue = sender.getValue().toBuilder();
 
 			// 不论任何交易类型，都默认执行账户余额的更改
@@ -138,14 +138,16 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 
 			// keys.add(OEntityBuilder.byteKey2OKey(oInput.getAddress().toByteArray()));
 			// values.add(oAccountValue.build());
-			this.accountValues.put(encApi.hexEnc(oInput.getAddress().toByteArray()), oAccountValue.build());
+			sender.setValue(oAccountValue);
+			accounts.put(encApi.hexEnc(sender.getAddress().toByteArray()), sender);
+			//this.accountValues.put(encApi.hexEnc(oInput.getAddress().toByteArray()), oAccountValue.build());
 		}
 
 		// 接收方增加balance
 		for (int i = 0; i < oMultiTransaction.getTxBody().getOutputsCount(); i++) {
 			MultiTransactionOutput oOutput = oMultiTransaction.getTxBody().getOutputs(i);
 
-			Account receiver = accounts.get(encApi.hexEnc(oOutput.getAddress().toByteArray()));
+			Account.Builder receiver = accounts.get(encApi.hexEnc(oOutput.getAddress().toByteArray()));
 			AccountValue.Builder receiverAccountValue = receiver.getValue().toBuilder();
 
 			receiverAccountValue.setBalance(receiverAccountValue.getBalance() + oOutput.getAmount());
@@ -199,7 +201,9 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 
 			// keys.add(OEntityBuilder.byteKey2OKey(oOutput.getAddress().toByteArray()));
 			// values.add(receiverAccountValue.build());
-			this.accountValues.put(encApi.hexEnc(oOutput.getAddress().toByteArray()), receiverAccountValue.build());
+			receiver.setValue(receiverAccountValue);
+			accounts.put(encApi.hexEnc(receiver.getAddress().toByteArray()), receiver);
+			//this.accountValues.put(encApi.hexEnc(oOutput.getAddress().toByteArray()), receiverAccountValue.build());
 		}
 
 		// this.keys.addAll(keys);

@@ -9,7 +9,6 @@ enum PACTCommand {
     CAC = 0; // 保存账户
     GAC = 1; // 获取账户
     UAC = 2; // 创建多重签名账户
-
 }
 
 message ReqCreateAccount {

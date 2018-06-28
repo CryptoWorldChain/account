@@ -28,7 +28,7 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 	}
 
 	@Override
-	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
+	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
 		// 校验每日最大转账金额
 		// 校验每笔最大转账金额
 		// 校验超过单笔转账金额后的用户签名
@@ -86,7 +86,7 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 	}
 
 	@Override
-	public void onVerifySignature(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
+	public void onVerifySignature(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
 
 		// 签名的账户是否是该多重签名账户的子账户，如果不是，抛出异常
 		for (MultiTransactionSignature oSignature : oMultiTransaction.getTxBody().getSignaturesList()) {

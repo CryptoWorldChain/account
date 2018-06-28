@@ -34,7 +34,7 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 	 * java.util.Map)
 	 */
 	@Override
-	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
+	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
 		// 交易中的Token必须一致
 		String token = "";
 		long inputsTotal = 0;
@@ -53,7 +53,7 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			}
 
 			// 取发送方账户
-			Account sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
+			Account.Builder sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 			long tokenBalance = 0;
 			for (int i = 0; i < senderAccountValue.getTokensCount(); i++) {
@@ -99,14 +99,14 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 	}
 
 	@Override
-	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
+	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
 		// LinkedList<OKey> keys = new LinkedList<>();
 		// LinkedList<AccountValue> values = new LinkedList<>();
 
 		String token = "";
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			// 取发送方账户
-			Account sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
+			Account.Builder sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 
 			token = oInput.getToken();
@@ -136,15 +136,13 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			oCacheTrie.put(sender.getAddress().toByteArray(), senderAccountValue.build().toByteArray());
 			senderAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
 
-			// keys.add(OEntityBuilder.byteKey2OKey(sender.getAddress().toByteArray()));
-			// values.add(senderAccountValue.build());
-			this.accountValues.put(encApi.hexEnc(sender.getAddress().toByteArray()), senderAccountValue.build());
-			// TODO 确定账户余额是否会增加
+			sender.setValue(senderAccountValue);
+			accounts.put(encApi.hexEnc(sender.getAddress().toByteArray()), sender);
 
 		}
 
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
-			Account receiver = accounts.get(encApi.hexEnc(oOutput.getAddress().toByteArray()));
+			Account.Builder receiver = accounts.get(encApi.hexEnc(oOutput.getAddress().toByteArray()));
 			AccountValue.Builder receiverAccountValue = receiver.getValue().toBuilder();
 
 			// 不论任何交易类型，都默认执行账户余额的更改
@@ -176,8 +174,8 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			}
 			oCacheTrie.put(receiver.getAddress().toByteArray(), receiverAccountValue.build().toByteArray());
 			receiverAccountValue.setStorage(ByteString.copyFrom((oCacheTrie.getRootHash())));
-			this.accountValues.put(encApi.hexEnc(receiver.getAddress().toByteArray()), receiverAccountValue.build());
-
+			receiver.setValue(receiverAccountValue);
+			accounts.put(encApi.hexEnc(receiver.getAddress().toByteArray()), receiver);
 		}
 	}
 }

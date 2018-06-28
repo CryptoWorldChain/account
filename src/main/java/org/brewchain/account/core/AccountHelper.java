@@ -587,6 +587,7 @@ public class AccountHelper implements ActorService {
 	}
 
 	public void putAccountValue(ByteString addr, AccountValue oAccountValue) {
+		// log.debug("====put account::" + encApi.hexEnc(addr.toByteArray()));
 		dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(addr),
 				OEntityBuilder.byteValue2OValue(oAccountValue.toByteArray()));
 		if (this.stateTrie != null) {
@@ -601,6 +602,8 @@ public class AccountHelper implements ActorService {
 
 		LinkedList<OValue> list = new LinkedList<>();
 		for (int i = 0; i < values.size(); i++) {
+			// log.debug("====put batch account A::" + encApi.hexEnc(keys.get(i).getData().toByteArray()));
+
 			list.add(OEntityBuilder.byteValue2OValue(values.get(i).toByteArray()));
 			if (this.stateTrie != null) {
 				this.stateTrie.put(keys.get(i).getData().toByteArray(), values.get(i).toByteArray());
@@ -610,7 +613,7 @@ public class AccountHelper implements ActorService {
 		dao.getAccountDao().batchPuts(keys.toArray(keysArray), list.toArray(valuesArray));
 	}
 
-	public void BatchPutAccounts(Map<String, AccountValue> accountValues) {
+	public void BatchPutAccounts(Map<String, Account.Builder> accountValues) {
 		OKey[] keysArray = new OKey[accountValues.size()];
 		OValue[] valuesArray = new OValue[accountValues.size()];
 		Set<String> keySets = accountValues.keySet();
@@ -618,15 +621,20 @@ public class AccountHelper implements ActorService {
 		int i = 0;
 		while (iterator.hasNext()) {
 			String key = iterator.next();
-			AccountValue value = accountValues.get(key);
+			AccountValue value = accountValues.get(key).getValue();
 			keysArray[i] = OEntityBuilder.byteKey2OKey(encApi.hexDec(key));
 			valuesArray[i] = OEntityBuilder.byteValue2OValue(value.toByteArray());
+			
+			// log.debug("====put batch account B::" + key);
+
 			i = i + 1;
 		}
 		dao.getAccountDao().batchPuts(keysArray, valuesArray);
 	}
 
 	public void tokenMappingAccount(AccountCryptoToken.Builder acBuilder) {
+		// log.debug("====put tokenMappingAccount::");
+
 		dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(acBuilder.getHash()),
 				OEntityBuilder.byteValue2OValue(acBuilder.build().toByteArray()));
 	}

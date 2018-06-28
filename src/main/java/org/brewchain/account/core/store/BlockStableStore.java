@@ -98,11 +98,15 @@ public class BlockStableStore implements IBlockStore, ActorService {
 				txBlockKeyList.add(OEntityBuilder.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash())));
 				txBlockValueList.add(OEntityBuilder.byteValue2OValue(encApi.hexDec(block.getHeader().getBlockHash())));
 			}
+			
+			//log.debug("====put transaction rel block::"+ block.getHeader().getBlockHash());
 			dao.getTxblockDao().batchPuts(txBlockKeyList.toArray(new OKey[0]), txBlockValueList.toArray(new OValue[0]));
 		}
 
 		log.debug(
 				"stable block number::" + block.getHeader().getNumber() + " hash::" + block.getHeader().getBlockHash());
+
+		//log.debug("====put stable block::"+ block.getHeader().getBlockHash());
 
 		dao.getBlockDao().batchPuts(
 				new OKey[] { OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK),
@@ -148,6 +152,9 @@ public class BlockStableStore implements IBlockStore, ActorService {
 		if (hash != null) {
 			block = get(hash);
 		}
+		
+		// log.debug("====put stable rollback block::"+ block.getHeader().getBlockHash());
+
 		dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK),
 				OEntityBuilder.byteValue2OValue(encApi.hexDec(block.getHeader().getBlockHash())));
 		return block;

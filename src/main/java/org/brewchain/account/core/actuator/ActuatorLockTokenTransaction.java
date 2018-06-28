@@ -20,7 +20,7 @@ import com.google.protobuf.ByteString;
 public class ActuatorLockTokenTransaction extends AbstractTransactionActuator implements iTransactionActuator {
 
 	@Override
-	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
+	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
 
 		String token = "";
 		long inputsTotal = 0;
@@ -39,7 +39,7 @@ public class ActuatorLockTokenTransaction extends AbstractTransactionActuator im
 			}
 
 			// 取发送方账户
-			Account sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
+			Account.Builder sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 			long tokenBalance = 0;
 			for (int i = 0; i < senderAccountValue.getTokensCount(); i++) {
@@ -67,11 +67,11 @@ public class ActuatorLockTokenTransaction extends AbstractTransactionActuator im
 	}
 
 	@Override
-	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
+	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
 		// TODO lock 只处理了 input，未处理 output
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			// 取发送方账户
-			Account sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
+			Account.Builder sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 			boolean isExistToken = false;
 			for (int i = 0; i < senderAccountValue.getTokensCount(); i++) {
@@ -102,9 +102,8 @@ public class ActuatorLockTokenTransaction extends AbstractTransactionActuator im
 			oCacheTrie.put(sender.getAddress().toByteArray(), senderAccountValue.build().toByteArray());
 			senderAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
 
-			// keys.add(OEntityBuilder.byteKey2OKey(sender.getAddress().toByteArray()));
-			// values.add(senderAccountValue.build());
-			this.accountValues.put(encApi.hexEnc(sender.getAddress().toByteArray()), senderAccountValue.build());
+			sender.setValue(senderAccountValue);
+			accounts.put(encApi.hexEnc(sender.getAddress().toByteArray()), sender);
 		}
 	}
 

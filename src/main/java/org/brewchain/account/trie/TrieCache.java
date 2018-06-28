@@ -23,7 +23,7 @@ import onight.tfw.ntrans.api.ActorService;
 @Slf4j
 @Data
 public class TrieCache implements ActorService {
-	protected final Map<byte[], byte[]> storage;
+	protected final ByteArrayMap<byte[]> storage;
 
 	protected ReadWriteLock rwLock = new ReentrantReadWriteLock();
 	protected ALock readLock = new ALock(rwLock.readLock());

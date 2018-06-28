@@ -22,7 +22,7 @@ public class ActuatorDefault extends AbstractTransactionActuator implements iTra
 	}
 
 	@Override
-	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
+	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
 
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			if (!accounts.containsKey(encApi.hexEnc(oInput.getAddress().toByteArray()))) {

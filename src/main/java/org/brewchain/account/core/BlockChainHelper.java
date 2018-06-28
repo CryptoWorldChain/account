@@ -243,6 +243,10 @@ public class BlockChainHelper implements ActorService {
 	public BlockEntity rollbackTo(BlockEntity block) {
 		return blockStore.rollBackTo(block.getHeader().getNumber());
 	}
+	
+	public BlockEntity rollbackTo(int number) {
+		return blockStore.rollBackTo(number);
+	}
 
 	public BlockStoreSummary addBlock(BlockEntity oBlock) {
 		return blockStore.addBlock(oBlock);

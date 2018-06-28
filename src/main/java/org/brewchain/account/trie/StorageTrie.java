@@ -493,6 +493,8 @@ public class StorageTrie implements ActorService {
 	}
 
 	private void addHash(byte[] hash, byte[] ret) {
+		log.debug("====put storage trie::"+ encApi.hexEnc(hash));
+
 		dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(hash), OEntityBuilder.byteValue2OValue(ret));
 	}
 

@@ -8,6 +8,7 @@ import org.brewchain.account.gens.TxTest.PTSTCommand;
 import org.brewchain.account.gens.TxTest.PTSTModule;
 import org.brewchain.account.gens.TxTest.ReqCommonTest;
 import org.brewchain.account.gens.TxTest.RespCommonTest;
+import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import lombok.Data;
@@ -49,13 +50,18 @@ public class TransactionLoadTestExecImpl extends SessionModules<ReqCommonTest> {
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqCommonTest pb, final CompleteHandler handler) {
 		RespCommonTest.Builder oRespCreateTransactionTest = RespCommonTest.newBuilder();
-		try {
-			String txHash = transactionHelper.CreateMultiTransaction(transactionLoadTestStore.getOne());
-			oRespCreateTransactionTest.setRetmsg(txHash);
-		} catch (Exception e) {
-			oRespCreateTransactionTest.setRetmsg(e.getMessage());
-		}
 
+		String txHash = "";
+		try {
+			MultiTransaction.Builder tx = transactionLoadTestStore.getOne();
+			if (tx != null) {
+				txHash = transactionHelper.CreateMultiTransaction(tx);
+				oRespCreateTransactionTest.setRetmsg(txHash);
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			log.error("test fail::" + e == null || e.getMessage() == null ? "" : e.getMessage());
+		}
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespCreateTransactionTest.build()));
 		return;
 	}

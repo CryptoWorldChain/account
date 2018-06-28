@@ -28,7 +28,7 @@ public class ActuatorCreateContract extends AbstractTransactionActuator implemen
 	}
 
 	@Override
-	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
+	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
 		if (accounts.size() != 1) {
 			throw new Exception("不允许存在多个发送方地址");
 		}
@@ -36,7 +36,7 @@ public class ActuatorCreateContract extends AbstractTransactionActuator implemen
 	}
 
 	@Override
-	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
+	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
 		// 创建
 		ByteString newContractAddress = oTransactionHelper.getContractAddressByTransaction(oMultiTransaction);
 		if (oAccountHelper.isExist(newContractAddress)) {

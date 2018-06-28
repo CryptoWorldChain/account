@@ -17,18 +17,21 @@ enum PTSTCommand {
 	MTT = 5; // thread test
 	BFC = 6; // start new forks
 	BFS = 7; // remove forks
+	BCV = 8; // block chain view
 }
 
 message MsgBlockView {
-	
+	string jsonStr = 1;
 }
 
 message ReqStartNewFork {
-	
+	int32 beginNumber = 1;
+	string beginHash = 3;
+	int32 count = 2;
 }
 
 message RespStartNewFork {
-	
+	string forkId = 1;
 }
 
 message ReqStopFork {

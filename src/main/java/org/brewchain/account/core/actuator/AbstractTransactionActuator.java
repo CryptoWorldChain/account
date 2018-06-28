@@ -24,7 +24,7 @@ import com.google.protobuf.ByteString;
 
 public abstract class AbstractTransactionActuator implements iTransactionActuator {
 
-	protected Map<String, AccountValue> accountValues = new HashMap<>();
+	//protected Map<String, AccountValue> accountValues = new HashMap<>();
 	protected Map<String, MultiTransaction> txValues = new HashMap<>();
 
 	// protected LinkedList<OKey> keys = new LinkedList<>();
@@ -32,10 +32,10 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	// protected LinkedList<OKey> txKeys = new LinkedList<>();
 	// protected LinkedList<MultiTransaction> txValues = new LinkedList<>();
 
-	@Override
-	public Map<String, AccountValue> getAccountValues() {
-		return accountValues;
-	}
+//	@Override
+//	public Map<String, AccountValue> getAccountValues() {
+//		return accountValues;
+//	}
 
 	@Override
 	public Map<String, MultiTransaction> getTxValues() {
@@ -63,7 +63,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	// }
 
 	@Override
-	public void onVerifySignature(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
+	public void onVerifySignature(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
 		// 获取交易原始encode
 		MultiTransaction.Builder signatureTx = oMultiTransaction.toBuilder();
 		MultiTransactionBody.Builder txBody = signatureTx.getTxBodyBuilder();
@@ -103,7 +103,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	}
 
 	@Override
-	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
+	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
 		int inputsTotal = 0;
 		int outputsTotal = 0;
 
@@ -118,7 +118,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			inputsTotal += oInput.getAmount();
 
 			// 取发送方账户
-			Account sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
+			Account.Builder sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 
 			// 判断发送方余额是否足够
@@ -161,14 +161,14 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	}
 
 	@Override
-	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account> accounts) throws Exception {
+	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
 
 		// LinkedList<OKey> keys = new LinkedList<>();
 		// LinkedList<AccountValue> values = new LinkedList<>();
 
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			// 取发送方账户
-			Account sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
+			Account.Builder sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 
 			senderAccountValue.setBalance(senderAccountValue.getBalance() - oInput.getAmount());
@@ -182,13 +182,12 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			}
 			oCacheTrie.put(sender.getAddress().toByteArray(), senderAccountValue.build().toByteArray());
 			senderAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
-			// keys.add(OEntityBuilder.byteKey2OKey(sender.getAddress().toByteArray()));
-			// values.add(senderAccountValue.build());
-			this.accountValues.put(encApi.hexEnc(sender.getAddress().toByteArray()), senderAccountValue.build());
+			sender.setValue(senderAccountValue);
+			accounts.put(encApi.hexEnc(sender.getAddress().toByteArray()), sender);
 		}
 
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
-			Account receiver = accounts.get(encApi.hexEnc(oOutput.getAddress().toByteArray()));
+			Account.Builder receiver = accounts.get(encApi.hexEnc(oOutput.getAddress().toByteArray()));
 			AccountValue.Builder receiverAccountValue = receiver.getValue().toBuilder();
 			receiverAccountValue.setBalance(receiverAccountValue.getBalance() + oOutput.getAmount());
 
@@ -200,9 +199,8 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			}
 			oCacheTrie.put(receiver.getAddress().toByteArray(), receiverAccountValue.build().toByteArray());
 			receiverAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
-			// keys.add(OEntityBuilder.byteKey2OKey(receiver.getAddress().toByteArray()));
-			// values.add(receiverAccountValue.build());
-			this.accountValues.put(encApi.hexEnc(receiver.getAddress().toByteArray()), receiverAccountValue.build());
+			receiver.setValue(receiverAccountValue);
+			accounts.put(encApi.hexEnc(receiver.getAddress().toByteArray()), receiver);
 		}
 	}
 
