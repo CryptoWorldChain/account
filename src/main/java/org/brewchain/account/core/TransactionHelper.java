@@ -11,6 +11,7 @@ import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.brewchain.account.core.actuator.ActuatorCallInternalFunction;
 import org.brewchain.account.core.actuator.ActuatorCreateContract;
+import org.brewchain.account.core.actuator.ActuatorCreateToken;
 import org.brewchain.account.core.actuator.ActuatorCreateUnionAccount;
 import org.brewchain.account.core.actuator.ActuatorCryptoTokenTransaction;
 import org.brewchain.account.core.actuator.ActuatorDefault;
@@ -149,7 +150,7 @@ public class TransactionHelper implements ActorService {
 	}
 
 	public void syncTransaction(MultiTransaction.Builder oMultiTransaction, boolean isBroadCast) {
-
+		log.debug("receive sync txhash::" + oMultiTransaction.getTxHash());
 		try {
 			MultiTransaction formatMultiTransaction = verifyAndSaveMultiTransaction(oMultiTransaction);
 
@@ -159,10 +160,8 @@ public class TransactionHelper implements ActorService {
 
 				oPendingHashMapDB.put(formatMultiTransaction.getTxHash(), formatMultiTransaction);
 			}
-
-			log.debug("receive sync txhash::" + oMultiTransaction.getTxHash());
 		} catch (Exception e) {
-			log.error("fail to sync transaction::" + e);
+			log.error("fail to sync transaction::" + oMultiTransaction.getTxHash() + " error::" + e);
 		}
 	}
 
@@ -176,7 +175,7 @@ public class TransactionHelper implements ActorService {
 		for (MultiTransaction oTransaction : oMultiTransactions) {
 			// LinkedList<OKey> keys = new LinkedList<OKey>();
 			// LinkedList<AccountValue> values = new LinkedList<AccountValue>();
-
+			log.debug("exec transaction hash::" + oTransaction.getTxHash());
 			iTransactionActuator oiTransactionActuator = getActuator(oTransaction.getTxBody().getType());
 
 			try {
@@ -213,7 +212,6 @@ public class TransactionHelper implements ActorService {
 				// throw e;
 				log.error("error on exec tx::" + e.getMessage(), e);
 			}
-
 		}
 		// oStateTrie.flush();
 		// return oStateTrie.getRootHash();
@@ -665,6 +663,10 @@ public class TransactionHelper implements ActorService {
 			break;
 		case TYPE_ExcuteContract:
 			oiTransactionActuator = new ActuatorExecuteContract(oAccountHelper, this, null, encApi, dao,
+					this.stateTrie);
+			break;
+		case TYPE_CreateToken:
+			oiTransactionActuator = new ActuatorCreateToken(oAccountHelper, this, null, encApi, dao,
 					this.stateTrie);
 			break;
 		default:

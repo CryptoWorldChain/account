@@ -26,7 +26,7 @@ public class ActuatorExecuteContract extends AbstractTransactionActuator impleme
 	@Override
 	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
 		if (accounts.size() != 1) {
-			throw new Exception("不允许存在多个发送方地址");
+			throw new Exception("not allow multi sender address");
 		}
 		super.onPrepareExecute(oMultiTransaction, accounts);
 	}

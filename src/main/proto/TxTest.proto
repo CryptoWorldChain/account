@@ -19,15 +19,21 @@ enum PTSTCommand {
 	BFS = 7; // remove forks
 	BCV = 8; // block chain view
 	LTR = 9; // load test perpare result
+
+	TCT = 10; // create token
+	CAT = 11; // create account
 }
 
 message ReqCreateToken {
 	string token = 1;
 	int32 total = 2;
+	ReqTransactionAccount fromAccount = 3;
 }
 
 message RespCreateToken {
-
+	int32 retCode = 1;
+	string regMsg = 2;
+	string txHash = 3;
 }
 
 message MsgBlockView {

@@ -26,7 +26,7 @@ public class ActuatorDefault extends AbstractTransactionActuator implements iTra
 
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			if (!accounts.containsKey(encApi.hexEnc(oInput.getAddress().toByteArray()))) {
-				throw new Exception(String.format("交易的发送方账户 %s 不存在", oInput.getAddress().toString()));
+				throw new Exception(String.format("can not find sender account %s", oInput.getAddress().toString()));
 			}
 		}
 

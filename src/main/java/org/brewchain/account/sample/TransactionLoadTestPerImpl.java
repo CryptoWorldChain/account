@@ -61,15 +61,21 @@ public class TransactionLoadTestPerImpl extends SessionModules<ReqCreateTransact
 	public void onPBPacket(final FramePacket pack, final ReqCreateTransactionTest pb, final CompleteHandler handler) {
 		RespCreateTransactionTest.Builder oRespCreateTransactionTest = RespCreateTransactionTest.newBuilder();
 
-		for (int i = 0; i < 1000000; i++) {
+		for (int i = 0; i < 50000; i++) {
 			MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 			MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
 			try {
+				// KeyPairs oFrom = encApi.genKeys( "a" + i);
+				// KeyPairs oTo = encApi.genKeys("b" + i);
 				KeyPairs oFrom = encApi.genKeys();
 				KeyPairs oTo = encApi.genKeys();
+				// accountHelper.addBalance(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())),
+				// 10);
 
-				// accountHelper.addBalance(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())), 10);
-
+				//accountHelper.CreateAccount(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
+				// if (i % 2 == 1) {
+				//accountHelper.CreateAccount(ByteString.copyFrom(encApi.hexDec(oTo.getAddress())));
+				// }
 				MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
 				oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
 				oMultiTransactionInput4.setAmount(0);
@@ -92,12 +98,14 @@ public class TransactionLoadTestPerImpl extends SessionModules<ReqCreateTransact
 				// 签名
 				MultiTransactionSignature.Builder oMultiTransactionSignature21 = MultiTransactionSignature.newBuilder();
 				oMultiTransactionSignature21.setPubKey(ByteString.copyFrom(encApi.hexDec(oFrom.getPubkey())));
-				oMultiTransactionSignature21.setSignature(
-						ByteString.copyFrom(encApi.ecSign(oFrom.getPrikey(), oMultiTransactionBody.build().toByteArray())));
+				oMultiTransactionSignature21.setSignature(ByteString
+						.copyFrom(encApi.ecSign(oFrom.getPrikey(), oMultiTransactionBody.build().toByteArray())));
 				oMultiTransactionBody.addSignatures(oMultiTransactionSignature21);
 
 				oMultiTransaction.setTxBody(oMultiTransactionBody);
 				transactionLoadTestStore.getLoads().add(oMultiTransaction);
+				log.debug("gen per tx::" + oMultiTransaction.getTxHash() + " sender::" + oFrom.getAddress()
+						+ " receiver::" + oTo.getAddress());
 				// String txHash = transactionHelper.CreateMultiTransaction(oMultiTransaction);
 			} catch (Exception e) {
 

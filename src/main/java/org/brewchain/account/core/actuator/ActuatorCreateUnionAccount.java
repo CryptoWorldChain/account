@@ -26,7 +26,7 @@ public class ActuatorCreateUnionAccount extends AbstractTransactionActuator impl
 		// if (oMultiTransaction.getd)
 		// 如果data为空，直接抛出交易内容错误
 		if (oMultiTransaction.getTxBody().getData().equals(ByteString.EMPTY)) {
-			throw new Exception("交易内容错误，data为null");
+			throw new Exception("data must not by empty");
 		}
 
 		Account oUnionAccount = Account.parseFrom(oMultiTransaction.getTxBody().getExdata());

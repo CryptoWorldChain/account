@@ -61,16 +61,16 @@ public class ActuatorCreateToken extends AbstractTransactionActuator implements 
 			throws Exception {
 
 		if (oMultiTransaction.getTxBody().getInputsCount() != 1) {
-			throw new Exception(String.format("不允许存在多个发行方"));
+			throw new Exception(String.format("exists multi sender address"));
 		}
 
 		String token = oMultiTransaction.getTxBody().getInputs(0).getToken();
 		if (token == null || token.isEmpty()) {
-			throw new Exception(String.format("Token交易中Token不允许为空"));
+			throw new Exception(String.format("token must not be empty"));
 		}
 
 		if (token.toLowerCase().startsWith("CW")) {
-			throw new Exception(String.format("Token名称无效"));
+			throw new Exception(String.format("token name invalid"));
 		}
 
 		// 判断nonce是否一致
@@ -80,18 +80,16 @@ public class ActuatorCreateToken extends AbstractTransactionActuator implements 
 
 		int nonce = senderAccountValue.getNonce();
 		if (nonce != oMultiTransaction.getTxBody().getInputs(0).getNonce()) {
-			throw new Exception(String.format("用户的交易索引 %s 与交易的索引不一致 %s", nonce,
+			throw new Exception(String.format("sender nonce %s is not equal with transaction nonce %s", nonce,
 					oMultiTransaction.getTxBody().getInputs(0).getNonce()));
 		}
 		if (senderAccountValue.getBalance() < this.oBlockHelper.getBlockChainConfig().getContract_lock_balance()) {
 			throw new Exception(
-					String.format("没有足够的押金 %s", this.oBlockHelper.getBlockChainConfig().getContract_lock_balance()));
+					String.format("not enough deposit %s", this.oBlockHelper.getBlockChainConfig().getContract_lock_balance()));
 		}
 		// Token不允许重复
 		if (oAccountHelper.isExistsToken(token)) {
-			throw new Exception(String.format("不允许重复发行token %s", token));
+			throw new Exception(String.format("duplicate token name %s", token));
 		}
-
 	}
-
 }

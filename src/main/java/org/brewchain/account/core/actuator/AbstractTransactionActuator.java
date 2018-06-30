@@ -74,7 +74,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 		for (MultiTransactionSignature oMultiTransactionSignature : oMultiTransaction.getTxBody().getSignaturesList()) {
 			if (!encApi.ecVerify(encApi.hexEnc(oMultiTransactionSignature.getPubKey().toByteArray()), oMultiTransactionEncode,
 					oMultiTransactionSignature.getSignature().toByteArray())) {
-				throw new TransactionExecuteException(String.format("签名 %s 使用公钥 %s 验证失败",
+				throw new TransactionExecuteException(String.format("signature %s verify fail with pubkey %s",
 						oMultiTransactionSignature.getSignature(), oMultiTransactionSignature.getPubKey()));
 			}
 		}
@@ -110,7 +110,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 		if (oMultiTransaction.getTxBody().getInputsList().size() > 1
 				&& oMultiTransaction.getTxBody().getOutputsList().size() > 1) {
 			throw new TransactionExecuteException(
-					String.format("交易参数错误，发送者 %s，接收者 %s", oMultiTransaction.getTxBody().getInputsList().size(),
+					String.format("some error in transaction parameters, sender %s，receiver %s", oMultiTransaction.getTxBody().getInputsList().size(),
 							oMultiTransaction.getTxBody().getOutputsList().size()));
 		}
 
@@ -125,16 +125,16 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			long balance = senderAccountValue.getBalance();
 
 			if (balance < 0) {
-				throw new TransactionExecuteException(String.format("发送者账户余额 %s 小于 0, 不能继续交易", balance));
+				throw new TransactionExecuteException(String.format("sender balance %s less than 0", balance));
 			}
 			if (oInput.getAmount() < 0) {
-				throw new TransactionExecuteException(String.format("发送金额 %s 小于 0, 不能继续交易", oInput.getAmount()));
+				throw new TransactionExecuteException(String.format("transaction value %s less than 0", oInput.getAmount()));
 			}
 
 			if (balance - oInput.getAmount() < 0) {// - oInput.getFeeLimit()
 				// 余额不够
 				throw new TransactionExecuteException(
-						String.format("用户的账户余额 %s 不满足交易的最高限额 %s", balance, oInput.getAmount()));// +
+						String.format("sender balance %s less than %s", balance, oInput.getAmount()));// +
 				// oInput.getFeeLimit()
 			}
 
@@ -142,7 +142,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			int nonce = senderAccountValue.getNonce();
 			if (nonce != oInput.getNonce()) {
 				throw new TransactionExecuteException(
-						String.format("用户的交易索引 %s 与交易的索引不一致 %s", nonce, oInput.getNonce()));
+						String.format("sender nonce %s is not equal with transaction nonce %s", nonce, oInput.getNonce()));
 			}
 		}
 
@@ -151,12 +151,12 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 
 			long balance = oOutput.getAmount();
 			if (balance < 0) {
-				throw new TransactionExecuteException(String.format("接收金额 %s 小于0, 不能继续交易", balance));
+				throw new TransactionExecuteException(String.format("receive balance %s less than 0", balance));
 			}
 		}
 
 		if (inputsTotal < outputsTotal) {
-			throw new TransactionExecuteException(String.format("交易的输入 %S 小于输出 %s 金额", inputsTotal, outputsTotal));
+			throw new TransactionExecuteException(String.format("transaction value %s less than %s", inputsTotal, outputsTotal));
 		}
 	}
 

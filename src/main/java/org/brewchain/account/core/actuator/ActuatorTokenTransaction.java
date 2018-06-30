@@ -42,13 +42,13 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			if (oInput.getToken().isEmpty() || oInput.getToken() == "") {
-				throw new Exception(String.format("Token交易中Token不允许为空"));
+				throw new Exception(String.format("token must not be empty"));
 			}
 			if (token == "") {
 				token = oInput.getToken();
 			} else {
 				if (!token.equals(oInput.getToken())) {
-					throw new Exception(String.format("交易中不允许存在多个Token %s %s ", token, oInput.getToken()));
+					throw new Exception(String.format("not allow multi token %s %s", token, oInput.getToken()));
 				}
 			}
 
@@ -66,35 +66,35 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			inputsTotal += tokenBalance;
 
 			if (tokenBalance < 0) {
-				throw new IllegalArgumentException(String.format("账户余额 %s 小于 0，不能正常进行交易", tokenBalance));
+				throw new IllegalArgumentException(String.format("sender balance %s less than 0", tokenBalance));
 			}
 
 			if (oInput.getAmount() < 0) {
-				throw new IllegalArgumentException(String.format("交易金额 %s 小于 0，不能正常进行交易", oInput.getAmount()));
+				throw new IllegalArgumentException(String.format("transaction value %s less than 0", oInput.getAmount()));
 			}
 
 			if (tokenBalance - oInput.getAmount() < 0) {// - oInput.getFeeLimit()
 				// 余额不够
-				throw new Exception(String.format("用户的账户余额 %s 不满足交易的最高限额 %s", tokenBalance,
+				throw new Exception(String.format("sender balance %s less than %s", tokenBalance,
 						oInput.getAmount() + oInput.getFeeLimit()));
 			}
 
 			// 判断nonce是否一致
 			int nonce = senderAccountValue.getNonce();
 			if (nonce != oInput.getNonce()) {
-				throw new Exception(String.format("用户的交易索引 %s 与交易的索引不一致 %s", nonce, oInput.getNonce()));
+				throw new Exception(String.format("sender nonce %s is not equal with transaction nonce %s", nonce, oInput.getNonce()));
 			}
 		}
 
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
 			if (oOutput.getAmount() < 0) {
-				throw new IllegalArgumentException(String.format("交易金额 %s 小于 0， 不能正常进行交易", oOutput.getAmount()));
+				throw new IllegalArgumentException(String.format("receive balance %s less than 0", oOutput.getAmount()));
 			}
 			outputsTotal += oOutput.getAmount();
 		}
 
 		if (inputsTotal < outputsTotal) {
-			throw new Exception(String.format("交易的输入 %S 小于输出 %s 金额", inputsTotal, outputsTotal));
+			throw new Exception(String.format("transaction value %s less than %s", inputsTotal, outputsTotal));
 		}
 	}
 
@@ -120,7 +120,7 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 				}
 			}
 			if (!isExistToken) {
-				throw new Exception(String.format("发送方账户异常，缺少token %s", oInput.getToken()));
+				throw new Exception(String.format("cannot found token %s in sender account", oInput.getToken()));
 			}
 
 			// 不论任何交易类型，都默认执行账户余额的更改

@@ -33,7 +33,7 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 		// 校验每笔最大转账金额
 		// 校验超过单笔转账金额后的用户签名
 		if (accounts.size() != 1) {
-			throw new Exception(String.format("发送方地址不存在或者出现多个发送方地址 %s", accounts.size()));
+			throw new Exception(String.format("not allow multi sender address %s", accounts.size()));
 		}
 
 		AccountValue.Builder oSenderValue = accounts.get(accounts.keySet().toArray()[0]).getValue().toBuilder();
@@ -50,12 +50,12 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 		long dayTotal = totalAmount + AbstractLocalCache.dayTotalAmount.get(key);
 		long dayMax = oSenderValue.getMax();
 		if (dayTotal > dayMax) {
-			throw new Exception(String.format("账户当天的累计交易金额 %s 超过单日最大交易限额 %s", dayTotal, dayMax));
+			throw new Exception(String.format("day accumulated amount %s more than %s", dayTotal, dayMax));
 		}
 		// 当单笔金额超过一个预设值后，则需要多方签名
 		if (totalAmount > oSenderValue.getAcceptMax()) {
 			if (oMultiTransaction.getTxBody().getSignaturesCount() != oSenderValue.getAcceptMax()) {
-				throw new Exception(String.format("当前的交易金额 %s 大于 %s 时需要 %s 方签名才可以发起交易", totalAmount,
+				throw new Exception(String.format("must have %s signature when transaction value %s more than %s", totalAmount,
 						oSenderValue.getAcceptMax(), oSenderValue.getAcceptLimit()));
 			} else {
 				// TODO 如何判断交易的签名，是由多重签名账户的关联账户进行签名的
@@ -63,7 +63,7 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 		} else {
 			// 需要至少有一个子账户签名
 			if (oMultiTransaction.getTxBody().getSignaturesCount() == 0) {
-				throw new Exception(String.format("交易需要至少一个签名才能被验证"));
+				throw new Exception(String.format("the transaction requires at least one signature to be verified"));
 			}
 		}
 

@@ -28,13 +28,13 @@ public class ActuatorLockTokenTransaction extends AbstractTransactionActuator im
 
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			if (oInput.getToken().isEmpty() || oInput.getToken() == "") {
-				throw new Exception(String.format("Token交易中Token不允许为空"));
+				throw new Exception(String.format("token must not be empty"));
 			}
 			if (token == "") {
 				token = oInput.getToken();
 			} else {
 				if (!token.equals(oInput.getToken())) {
-					throw new Exception(String.format("交易中不允许存在多个Token %s %s ", token, oInput.getToken()));
+					throw new Exception(String.format("not allow multi token %s %s", token, oInput.getToken()));
 				}
 			}
 
@@ -54,14 +54,14 @@ public class ActuatorLockTokenTransaction extends AbstractTransactionActuator im
 			if (tokenBalance - oInput.getAmount() - oInput.getFeeLimit() >= 0) {
 				// 余额足够
 			} else {
-				throw new Exception(String.format("用户的账户余额 %s 不满足交易的最高限额 %s", tokenBalance,
+				throw new Exception(String.format("sender balance %s less than %s", tokenBalance,
 						oInput.getAmount() + oInput.getFeeLimit()));
 			}
 
 			// 判断nonce是否一致
 			int nonce = senderAccountValue.getNonce();
 			if (nonce != oInput.getNonce()) {
-				throw new Exception(String.format("用户的交易索引 %s 与交易的索引不一致 %s", nonce, oInput.getNonce()));
+				throw new Exception(String.format("sender nonce %s is not equal with transaction nonce %s", nonce, oInput.getNonce()));
 			}
 		}
 	}
@@ -86,7 +86,7 @@ public class ActuatorLockTokenTransaction extends AbstractTransactionActuator im
 				}
 			}
 			if (!isExistToken) {
-				throw new Exception(String.format("发送方账户异常，缺少token %s", oInput.getToken()));
+				throw new Exception(String.format("cannot found token %s in sender account", oInput.getToken()));
 			}
 
 			// 不论任何交易类型，都默认执行账户余额的更改

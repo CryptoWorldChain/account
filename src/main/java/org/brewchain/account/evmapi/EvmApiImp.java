@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.brewchain.account.core.AccountHelper;
+import org.brewchain.account.core.BlockChainHelper;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.trie.StorageTrie;
 import org.brewchain.account.trie.StorageTrieCache;
@@ -15,6 +16,7 @@ import org.brewchain.evmapi.gens.Act.Account;
 import org.brewchain.evmapi.gens.Act.AccountCryptoToken;
 import org.brewchain.evmapi.gens.Act.AccountCryptoToken.Builder;
 import org.brewchain.evmapi.gens.Act.AccountValue;
+import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import org.fc.brewchain.bcapi.EncAPI;
 
@@ -26,17 +28,10 @@ import onight.tfw.ntrans.api.annotation.ActorRequire;
 
 @Data
 public class EvmApiImp implements EvmApi {
-
-	@ActorRequire(name = "Account_Helper", scope = "global")
 	AccountHelper accountHelper;
-
-	@ActorRequire(name = "Transaction_Helper", scope = "global")
+	BlockChainHelper blockChainHelper;
 	TransactionHelper transactionHelper;
-
-	@ActorRequire(name = "bc_encoder", scope = "global")
 	EncAPI encApi;
-
-	@ActorRequire(name = "Storage_TrieCache", scope = "global")
 	StorageTrieCache storageTrieCache;
 
 	@Override
@@ -279,5 +274,21 @@ public class EvmApiImp implements EvmApi {
 	public byte[] getStorage(ByteString address, byte[] key) {
 		StorageTrie oStorage = accountHelper.getStorageTrie(address);
 		return oStorage.get(key);
+	}
+
+	@Override
+	public byte[] getBlockHashByNumber(int number) {
+		try {
+			BlockEntity block = blockChainHelper.getBlockByNumber(number);
+			if (block == null) {
+				return null;
+			} else {
+				return encApi.hexDec(block.getHeader().getBlockHash());
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
 	}
 }

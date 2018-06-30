@@ -60,23 +60,23 @@ public class AccountHelper implements ActorService {
 	public AccountHelper() {
 	}
 
-	public synchronized Account CreateAccount(ByteString address) {
+	public Account CreateAccount(ByteString address) {
 		return CreateAccount(address, 0, 0, 0, null, null, null);
 	}
 
-	public synchronized Account CreateContract(ByteString address, ByteString code, ByteString exdata) {
+	public Account CreateContract(ByteString address, ByteString code, ByteString exdata) {
 		if (code == null) {
 			return null;
 		}
 		return CreateAccount(address, 0, 0, 0, null, code, exdata);
 	}
 
-	public synchronized Account CreateUnionAccount(ByteString address, long max, long acceptMax, int acceptLimit,
+	public Account CreateUnionAccount(ByteString address, long max, long acceptMax, int acceptLimit,
 			List<ByteString> addresses) {
 		return CreateAccount(address, max, acceptMax, acceptLimit, addresses, null, null);
 	}
 
-	public synchronized Account CreateAccount(ByteString address, long max, long acceptMax, int acceptLimit,
+	public Account CreateAccount(ByteString address, long max, long acceptMax, int acceptLimit,
 			List<ByteString> addresses, ByteString code, ByteString exdata) {
 		Account.Builder oUnionAccount = Account.newBuilder();
 		AccountValue.Builder oUnionAccountValue = AccountValue.newBuilder();
@@ -105,7 +105,7 @@ public class AccountHelper implements ActorService {
 		return CreateUnionAccount(oUnionAccount.build());
 	}
 
-	public synchronized Account CreateUnionAccount(Account oAccount) {
+	public Account CreateUnionAccount(Account oAccount) {
 		putAccountValue(oAccount.getAddress(), oAccount.getValue());
 		return oAccount;
 	}
@@ -116,7 +116,7 @@ public class AccountHelper implements ActorService {
 	 * @param address
 	 */
 
-	public synchronized void DeleteAccount(byte[] address) {
+	public void DeleteAccount(byte[] address) {
 		dao.getAccountDao().delete(OEntityBuilder.byteKey2OKey(address));
 		if (this.stateTrie != null)
 			this.stateTrie.delete(address);
@@ -411,7 +411,7 @@ public class AccountHelper implements ActorService {
 		return oAccountValue.getNonce();
 	}
 
-	public synchronized boolean isContract(ByteString addr) {
+	public boolean isContract(ByteString addr) {
 		Account.Builder oAccount = GetAccount(addr).toBuilder();
 		if (oAccount == null) {
 			log.error("account not found::" + addr);
@@ -593,7 +593,7 @@ public class AccountHelper implements ActorService {
 				OEntityBuilder.byteValue2OValue(oAccountValue.toByteArray()));
 		if (this.stateTrie != null) {
 			this.stateTrie.put(addr.toByteArray(), oAccountValue.toByteArray());
-			this.stateTrie.flush();
+			// this.stateTrie.flush();
 		}
 	}
 

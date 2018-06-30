@@ -1,7 +1,9 @@
 package org.brewchain.account.core.actuator;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.brewchain.account.core.AccountHelper;
@@ -18,6 +20,7 @@ import org.brewchain.evmapi.gens.Act.AccountValue;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionOutput;
+import org.codehaus.plexus.util.StringUtils;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;
@@ -41,14 +44,16 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 	@Override
 	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
 
-		String inputSymbol = "";
+		List<String> inputSymbol = new ArrayList<>();
 
 		// 发送方账户中必须存在该token
 		for (int i = 0; i < oMultiTransaction.getTxBody().getInputsCount(); i++) {
 			boolean isTokenExists = false;
 			MultiTransactionInput oInput = oMultiTransaction.getTxBody().getInputs(i);
-			if (inputSymbol.equals("") && !oInput.getSymbol().isEmpty()) {
-				inputSymbol = oInput.getSymbol();
+			if (!inputSymbol.contains(oInput.getSymbol()) && !oInput.getSymbol().isEmpty()) {
+				inputSymbol.add(oInput.getSymbol());
+			} else {
+				throw new TransactionExecuteException("duplicate ");
 			}
 			Account.Builder oAccount = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue oAccountValue = oAccount.getValue();
@@ -68,7 +73,7 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 				}
 			}
 			if (!isTokenExists) {
-				throw new Exception(String.format("发送方 %s 的账户中，不存在标记为 %s 的hash为 %s 的加密token，该交易无效", oInput.getAddress(),
+				throw new Exception(String.format("sender %s not found token %s with hash %s", oInput.getAddress(),
 						inputSymbol, oInput.getCryptoToken().toString()));
 			}
 		}
@@ -77,9 +82,11 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 			MultiTransactionOutput oOutput = oMultiTransaction.getTxBody().getOutputs(i);
 			if (!oOutput.getSymbol().isEmpty() && !oOutput.getSymbol().equals(inputSymbol)) {
 				throw new Exception(
-						String.format("发送方的加密token标记 %s 与接收方的加密token标记 %s 不一致", inputSymbol, oOutput.getSymbol()));
+						String.format("crypto token from sender %s to %s not equal", inputSymbol, oOutput.getSymbol()));
 			}
 		}
+		
+		
 	}
 
 	/*
