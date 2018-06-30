@@ -128,7 +128,7 @@ public class BlockChainHelper implements ActorService {
 		if (oBlockEntity.getHeader().getNumber() == KeyConstant.GENESIS_NUMBER) {
 			return oBlockEntity;
 		}
-		throw new Exception(String.format("缺失创世块，当前第一个块索引 %s", oBlockEntity.getHeader().getNumber()));
+		throw new Exception(String.format("genesis block not exists, current block number is %s", oBlockEntity.getHeader().getNumber()));
 	}
 
 	public boolean isExistsGenesisBlock() throws Exception {
@@ -151,87 +151,12 @@ public class BlockChainHelper implements ActorService {
 	 */
 	public BlockStoreSummary connectBlock(BlockEntity oBlock) throws BlockNotFoundInStoreException {
 		return blockStore.connectBlock(oBlock);
-		// int lastNumber = 0;
-		// try {
-		// lastNumber = getLastStableBlockNumber();
-		// } catch (Exception e) {
-		// lastNumber = -1;
-		// }
-		//
-		// log.debug("last_number::" + lastNumber + " block::" +
-		// oBlock.getHeader().getNumber());
-		//
-		// BlockChainTempNode oStableNode = blockChainTempStore.tryAddAndPop(
-		// encApi.hexEnc(oBlock.getHeader().getBlockHash().toByteArray()),
-		// encApi.hexEnc(oBlock.getHeader().getParentHash().toByteArray()),
-		// oBlock.getHeader().getNumber());
-		//
-		// OKey[] keys = null;
-		// OValue[] values = null;
-		//
-		// if (oStableNode == null) {
-		// log.debug("not found stable node");
-		// keys = new OKey[] {
-		// OEntityBuilder.byteKey2OKey(oBlock.getHeader().getBlockHash()),
-		// OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK) };
-		// values = new OValue[] {
-		// OEntityBuilder.byteValue2OValue(oBlock.toByteArray()),
-		// OEntityBuilder.byteValue2OValue(encApi.hexDec(blockChainTempStore.getMaxStableBlock().getHash()))
-		// };
-		//
-		// dao.getBlockDao().batchPuts(keys, values);
-		// } else {
-		// log.info("stable block number:: " + oStableNode.getNumber() + " hash::" +
-		// oStableNode.getHash());
-		// keys = new OKey[] {
-		// OEntityBuilder.byteKey2OKey(oBlock.getHeader().getBlockHash()),
-		// OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK),
-		// OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK) };
-		// values = new OValue[] {
-		// OEntityBuilder.byteValue2OValue(oBlock.toByteArray()),
-		// OEntityBuilder.byteValue2OValue(encApi.hexDec(oStableNode.getHash())),
-		// OEntityBuilder.byteValue2OValue(encApi.hexDec(blockChainTempStore.getMaxStableBlock().getHash()))
-		// };
-		// dao.getBlockDao().batchPuts(keys, values);
-		//
-		// BlockEntity stableBlock;
-		// try {
-		// stableBlock = getBlock(encApi.hexDec(oStableNode.getHash())).build();
-		// blockChainStore.add(stableBlock,
-		// encApi.hexEnc(stableBlock.getHeader().getBlockHash().toByteArray()));
-		// } catch (Exception e) {
-		// // TODO Auto-generated catch block
-		// e.printStackTrace();
-		// }
-		// }
-		//
-		// if (oBlock.getBody() != null) {
-		// LinkedList<OKey> txBlockKeyList = new LinkedList<OKey>();
-		// LinkedList<OValue> txBlockValueList = new LinkedList<OValue>();
-		//
-		// for (MultiTransaction oMultiTransaction : oBlock.getBody().getTxsList()) {
-		// txBlockKeyList.add(OEntityBuilder.byteKey2OKey(oMultiTransaction.getTxHash()));
-		// txBlockValueList.add(OEntityBuilder.byteValue2OValue(oBlock.getHeader().getBlockHash()));
-		// }
-		// dao.getTxblockDao().batchPuts(txBlockKeyList.toArray(new OKey[0]),
-		// txBlockValueList.toArray(new OValue[0]));
-		// }
-		//
-		// return true;
 	}
 
 	public BlockStoreSummary stableBlock(BlockEntity oBlock) {
 		return blockStore.stableBlock(oBlock);
 	}
-
-	// public void rollBackTo(BlockEntity oBlock) {
-	// blockChainStore.rollBackTo(oBlock.getHeader().getNumber());
-	// appendBlock(oBlock);
-	// }
-	public void rollback() {
-
-	}
-
+	
 	public BlockEntity getChildBlock(BlockEntity oBlock) {
 		List<BlockEntity> list = blockStore.getReadyConnectBlock(oBlock.getHeader().getBlockHash());
 		if (list.size() > 0) {
@@ -250,53 +175,8 @@ public class BlockChainHelper implements ActorService {
 
 	public BlockStoreSummary addBlock(BlockEntity oBlock) {
 		return blockStore.addBlock(oBlock);
-		// OKey[] keys = new OKey[] {
-		// OEntityBuilder.byteKey2OKey(oBlock.getHeader().getBlockHash()) };
-		// OValue[] values = new OValue[] {
-		// OEntityBuilder.byteValue2OValue(oBlock.toByteArray()) };
-		//
-		// dao.getBlockDao().batchPuts(keys, values);
-		// log.debug("cache block, parent::" +
-		// encApi.hexEnc(oBlock.getHeader().getParentHash().toByteArray()));
-		// return
-		// blockChainTempStore.tryAdd(encApi.hexEnc(oBlock.getHeader().getBlockHash().toByteArray()),
-		// encApi.hexEnc(oBlock.getHeader().getParentHash().toByteArray()),
-		// oBlock.getHeader().getNumber());
 	}
-	//
-	// public BlockEntity tryGetAndDeleteBlockFromTempStore(byte[] parentHash)
-	// throws Exception {
-	// BlockChainTempNode oBlockChainTempNode =
-	// blockChainTempStore.getAndDeleteByParent(encApi.hexEnc(parentHash));
-	// if (oBlockChainTempNode != null) {
-	// try {
-	// log.debug("get cache block, parent::" + encApi.hexEnc(parentHash) + "
-	// number::"
-	// + oBlockChainTempNode.getNumber());
-	// return getBlock(encApi.hexDec(oBlockChainTempNode.getHash())).build();
-	// } catch (InvalidProtocolBufferException e) {
-	// log.error("error on init block from cache::" + e.getMessage());
-	// }
-	// } else {
-	// log.debug("cache block not found, parent::" + encApi.hexEnc(parentHash));
-	// }
-	// return null;
-	// }
-	//
-	// public BlockChainTempNode tryGetBlockTempNodeFromTempStore(byte[] hash) {
-	// BlockChainTempNode oBlockChainTempNode =
-	// blockChainTempStore.get(encApi.hexEnc(hash));
-	// return oBlockChainTempNode;
-	// }
-	//
-	// public BlockEntity tryGetBlockFromStore(byte[] parentHash) {
-	// return blockChainStore.get(encApi.hexEnc(parentHash));
-	// }
-	//
-	// public boolean isExistsBlockFromStore(byte[] parentHash) {
-	// return blockChainStore.isExists(encApi.hexEnc(parentHash));
-	// }
-
+	
 	/**
 	 * 从一个块开始遍历整个区块链，返回该块的所有子孙
 	 * 
@@ -333,25 +213,6 @@ public class BlockChainHelper implements ActorService {
 		LinkedList<BlockEntity> list = new LinkedList<BlockEntity>();
 		list.addAll(
 				blockStore.getChildListBlocksEndWith(encApi.hexEnc(blockHash), encApi.hexEnc(endBlockHash), maxCount));
-
-		// Iterator<Node> iterator = blockCache.iterator();
-		// boolean st = false;
-		// while (iterator.hasNext() && maxCount > 0) {
-		// Node cur = iterator.next();
-		// log.debug(String.format("%s %s ", encApi.hexEnc(cur.data),
-		// encApi.hexEnc(endBlockHash)));
-		// if (endBlockHash != null && FastByteComparisons.equal(endBlockHash,
-		// cur.data)) {
-		// st = false;
-		// list.add(getBlock(cur.data).build());
-		// break;
-		// } else if (FastByteComparisons.equal(blockHash, cur.data) || st) {
-		// st = true;
-		//
-		// list.add(getBlock(cur.data).build());
-		// maxCount--;
-		// }
-		// }
 		return list;
 	}
 
@@ -391,21 +252,6 @@ public class BlockChainHelper implements ActorService {
 			throws Exception {
 		LinkedList<BlockEntity> list = new LinkedList<BlockEntity>();
 		list.addAll(blockStore.getParentListBlocksEndWith(blockHash, endBlockHash, maxCount));
-		// Iterator<Node> iterator = blockCache.reverseIterator();
-		// boolean st = false;
-		// while (iterator.hasNext() && maxCount > 0) {
-		// Node cur = iterator.next();
-		// if (endBlockHash != null && FastByteComparisons.equal(endBlockHash,
-		// cur.data)) {
-		// st = false;
-		// list.add(getBlock(cur.data).build());
-		// break;
-		// } else if (FastByteComparisons.equal(blockHash, cur.data) || st) {
-		// st = true;
-		// list.add(getBlock(cur.data).build());
-		// maxCount--;
-		// }
-		// }
 		return list;
 	}
 
@@ -420,7 +266,7 @@ public class BlockChainHelper implements ActorService {
 		// 判断从前遍历还是从后遍历
 		BlockEntity oBlockEntity = blockStore.getBlockByNumber(number);
 		if (oBlockEntity == null) {
-			throw new Exception(String.format("缓存中没有找到高度为 %s 的区块", number));
+			throw new Exception(String.format("cannot find the block with number %s", number));
 		} else {
 			return oBlockEntity;
 		}

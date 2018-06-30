@@ -516,7 +516,7 @@ public class AccountHelper implements ActorService {
 	public synchronized void generateCryptoToken(ByteString addr, String symbol, String[] name, String[] code)
 			throws Exception {
 		if (name.length != code.length || name.length == 0) {
-			throw new Exception(String.format("待创建的加密token列表的名称 %s 和编号 %s 无效", name.length, code.length));
+			throw new Exception(String.format("crypto token name %s or code %s invalid", name.length, code.length));
 		}
 
 		int total = name.length;

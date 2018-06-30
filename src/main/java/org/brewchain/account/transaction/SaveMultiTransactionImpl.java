@@ -44,7 +44,7 @@ public class SaveMultiTransactionImpl extends SessionModules<ReqCreateMultiTrans
 			MultiTransaction.Builder oTransaction = transactionHelper.parse(pb.getTransaction());
 			oRespCreateTx.setTxHash(transactionHelper.CreateMultiTransaction(oTransaction));
 			oRespCreateTx.setRetCode(1);
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			oRespCreateTx.setRetCode(-1);
 			oRespCreateTx.setRetMsg(e.getMessage());
 		}

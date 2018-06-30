@@ -207,6 +207,7 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 	@Override
 	public BlockEntity getBlockByNumber(int number) {
 		try (ALock l = readLock.lock()) {
+			List<BlockEntity> list = new ArrayList<>();
 			for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.entrySet().iterator(); it.hasNext();) {
 				Map.Entry<String, BlockStoreNodeValue> item = it.next();
 				if (item.getValue().getNumber() == number && item.getValue().isConnect()) {
@@ -309,5 +310,17 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 		// log.debug("====put disconnect block::" + block.getHeader().getBlockHash());
 		dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK),
 				OEntityBuilder.byteValue2OValue(encApi.hexDec(block.getHeader().getBlockHash())));
+	}
+
+	public void removeForkBlock(int number) {
+		try (ALock l = readLock.lock()) {
+			for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.entrySet().iterator(); it.hasNext();) {
+				Map.Entry<String, BlockStoreNodeValue> item = it.next();
+				if (item.getValue().getNumber() == number) {
+					dao.getBlockDao().delete(OEntityBuilder.byteKey2OKey(encApi.hexDec(item.getKey())));
+					it.remove();
+				}
+			}
+		}
 	}
 }

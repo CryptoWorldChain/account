@@ -219,6 +219,7 @@ public class BlockStore implements ActorService {
 			oBlockStoreNodeValue = unStableStore.tryPop(hash);
 			if (oBlockStoreNodeValue != null) {
 				stableBlock(oBlockStoreNodeValue.getBlockEntity());
+				unStableStore.removeForkBlock(oBlockStoreNodeValue.getNumber());
 			}
 			if (unStableStore.containsUnConnectChild(hash)) {
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY_CHILD);
@@ -296,14 +297,14 @@ public class BlockStore implements ActorService {
 			return new ArrayList<>();
 		}
 		List<BlockEntity> blocks = new ArrayList<>();
-		int number = firstBlock.getHeader().getNumber();
 		blocks.add(firstBlock);
 
+		String currentBlock = firstBlock.getHeader().getParentHash();
 		for (int i = 1; i <= maxCount; ++i) {
-			BlockEntity child = getBlockByNumber(number - i);
+			BlockEntity child = getBlockByHash(currentBlock);
 			if (child != null) {
+				currentBlock = child.getHeader().getBlockHash();
 				blocks.add(child);
-
 				if (StringUtils.isNotBlank(endBlockHash) && child.getHeader().getBlockHash().equals(endBlockHash)) {
 					return blocks;
 				}

@@ -60,7 +60,7 @@ public class TransactionLoadTestExecImpl extends SessionModules<ReqCommonTest> {
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
-			log.error("test fail::" + e == null || e.getMessage() == null ? "" : e.getMessage());
+			log.error("test fail::", e);
 		}
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespCreateTransactionTest.build()));
 		return;
