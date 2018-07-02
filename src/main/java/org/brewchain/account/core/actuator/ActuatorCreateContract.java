@@ -84,7 +84,10 @@ public class ActuatorCreateContract extends AbstractTransactionActuator implemen
 				Account.Builder contract = accounts.get(encApi.hexEnc(newContractAddress.toByteArray()));
 				AccountValue.Builder oContractValue = contract.getValueBuilder();
 				oContractValue.setCode(ByteString.copyFrom(createResult.getHReturn()));
+				oContractValue.setCodeHash(ByteString.copyFrom(encApi.sha256Encode(oContractValue.getCode().toByteArray())));
+				oContractValue.setData(oMultiTransaction.getTxBody().getExdata());
 				contract.setValue(oContractValue);
+				
 				accounts.put(encApi.hexEnc(contract.getAddress().toByteArray()), contract);
 
 			}
