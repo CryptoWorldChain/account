@@ -288,7 +288,7 @@ public class BlockChainHelper implements ActorService {
 				// get net config
 
 				// for dev
-				if (StringUtils.isNotBlank(blockChainConfig.getPwd())) {
+				if (blockChainConfig.isDev()) {
 					FileReader fr = null;
 					BufferedReader br = null;
 					try {
@@ -328,8 +328,9 @@ public class BlockChainHelper implements ActorService {
 						}
 						throw e;
 					}
+				} else {
+					return null;
 				}
-				return null;
 			} else {
 				return encApi.hexEnc(oOValue.getExtdata().toByteArray());
 			}

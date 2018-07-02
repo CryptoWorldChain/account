@@ -76,7 +76,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			if (!encApi.ecVerify(encApi.hexEnc(oMultiTransactionSignature.getPubKey().toByteArray()), oMultiTransactionEncode,
 					oMultiTransactionSignature.getSignature().toByteArray())) {
 				throw new TransactionExecuteException(String.format("signature %s verify fail with pubkey %s",
-						oMultiTransactionSignature.getSignature(), oMultiTransactionSignature.getPubKey()));
+						encApi.hexEnc(oMultiTransactionSignature.getSignature().toByteArray()), encApi.hexEnc(oMultiTransactionSignature.getPubKey().toByteArray()) ));
 			}
 		}
 	}

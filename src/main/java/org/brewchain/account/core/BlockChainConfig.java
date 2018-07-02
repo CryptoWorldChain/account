@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileReader;
 
 import org.apache.felix.ipojo.annotations.Instantiate;
-import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.gens.Actimpl.PACTModule;
 
 import com.google.protobuf.Message;
@@ -27,11 +26,10 @@ public class BlockChainConfig extends SessionModules<Message> {
 			String.valueOf(Math.abs(NodeHelper.getCurrNodeListenOutPort() - 5100 + 1)));
 	private String net = readNet();
 	private int stableBlocks = props().get("org.brewchain.stable.blocks", KeyConstant.STABLE_BLOCK);
-
 	private long contract_lock_balance = props().get("org.brewchain.contract.lock.balance", 1000000);
 	private String lock_account_address = props().get("org.brewchain.account.lock.address", "");
+	private boolean isDev = props().get("org.brewchain.man.dev", "false").equals("true");
 
-	
 	@Override
 	public String[] getCmds() {
 		return new String[] { "BlockChainConfig" };
