@@ -22,7 +22,7 @@ import onight.tfw.mservice.NodeHelper;
 @Instantiate(name = "BlockChain_Config")
 public class BlockChainConfig extends SessionModules<Message> {
 	private int minerReward = props().get("block.miner.reward", 0);
-	private String pwd = props().get("org.bc.manage.node.dev.pwd", null);
+	private String pwd = props().get("org.bc.manage.node.dev.pwd", KeyConstant.PWD);
 	private String keystoreNumber = props().get("org.bc.manage.node.keystore.num",
 			String.valueOf(Math.abs(NodeHelper.getCurrNodeListenOutPort() - 5100 + 1)));
 	private String net = readNet();

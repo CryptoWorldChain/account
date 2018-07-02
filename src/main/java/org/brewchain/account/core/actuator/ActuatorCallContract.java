@@ -1,7 +1,9 @@
 package org.brewchain.account.core.actuator;
 
 import java.math.BigInteger;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockHelper;
@@ -25,8 +27,8 @@ import com.google.protobuf.ByteString;
 
 public class ActuatorCallContract extends AbstractTransactionActuator implements iTransactionActuator {
 
-	public ActuatorCallContract(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
-			BlockEntity oBlock, EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
+	public ActuatorCallContract(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper, BlockEntity oBlock,
+			EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
 		super(oAccountHelper, oTransactionHelper, oBlock, encApi, dao, oStateTrie);
 	}
 
@@ -56,8 +58,8 @@ public class ActuatorCallContract extends AbstractTransactionActuator implements
 				callAccount.getAddress().toByteArray(), callAccount.getAddress().toByteArray(),
 				ByteUtil.bigIntegerToBytes(BigInteger.valueOf(oInput.getAmount())),
 				ByteUtil.bigIntegerToBytes(BigInteger.ZERO), oMultiTransaction.getTxBody().getData().toByteArray(),
-				null, //encApi.hexDec(oBlock.getHeader().getParentHash()), 
-				null, //encApi.hexDec(oBlock.getMiner().getAddress()),
+				null, // encApi.hexDec(oBlock.getHeader().getParentHash()),
+				null, // encApi.hexDec(oBlock.getMiner().getAddress()),
 				Long.parseLong(String.valueOf(oBlock.getHeader().getTimestamp())),
 				Long.parseLong(String.valueOf(oBlock.getHeader().getNumber())), ByteString.EMPTY.toByteArray(),
 				evmApiImp);
@@ -70,9 +72,19 @@ public class ActuatorCallContract extends AbstractTransactionActuator implements
 		if (result.getException() != null || result.isRevert()) {
 			throw result.getException();
 		} else {
-			Account.Builder touchAccount = evmApiImp.GetAccount(callAccount.getAddress()).toBuilder();
-			touchAccount.setValue(touchAccount.getValueBuilder().setNonce(touchAccount.getValue().getNonce() + 1));
-			accounts.put(encApi.hexEnc(callAccount.getAddress().toByteArray()), touchAccount);
+
+			Iterator iter = evmApiImp.getTouchAccount().entrySet().iterator();
+			while (iter.hasNext()) {
+				Map.Entry<String, Account> entry = (Entry<String, Account>) iter.next();
+				if (entry.getKey().equals(encApi.hexEnc(callAccount.getAddress().toByteArray()))) {
+					Account.Builder touchAccount = ((Account) entry.getValue()).toBuilder();
+					touchAccount
+							.setValue(touchAccount.getValueBuilder().setNonce(touchAccount.getValue().getNonce() + 1));
+					accounts.put(encApi.hexEnc(callAccount.getAddress().toByteArray()), touchAccount);
+				} else {
+					accounts.put(entry.getKey().toString(), ((Account) entry.getValue()).toBuilder());
+				}
+			}
 		}
 	}
 }
