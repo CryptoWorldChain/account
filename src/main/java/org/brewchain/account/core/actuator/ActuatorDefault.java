@@ -8,6 +8,7 @@ import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.evmapi.gens.Act.Account;
+import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionOutput;
@@ -15,9 +16,9 @@ import org.fc.brewchain.bcapi.EncAPI;
 
 public class ActuatorDefault extends AbstractTransactionActuator implements iTransactionActuator {
 
-	public ActuatorDefault(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper, BlockHelper oBlockHelper,
+	public ActuatorDefault(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper, BlockEntity oBlock,
 			EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
-		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi, dao, oStateTrie);
+		super(oAccountHelper, oTransactionHelper, oBlock, encApi, dao, oStateTrie);
 		// TODO Auto-generated constructor stub
 	}
 

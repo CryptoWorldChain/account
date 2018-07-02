@@ -5,9 +5,21 @@ import java.util.LinkedList;
 
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
+import org.brewchain.account.core.actuator.ActuatorCallContract;
+import org.brewchain.account.core.actuator.ActuatorCallInternalFunction;
+import org.brewchain.account.core.actuator.ActuatorCreateContract;
+import org.brewchain.account.core.actuator.ActuatorCreateToken;
+import org.brewchain.account.core.actuator.ActuatorCreateUnionAccount;
+import org.brewchain.account.core.actuator.ActuatorCryptoTokenTransaction;
+import org.brewchain.account.core.actuator.ActuatorDefault;
+import org.brewchain.account.core.actuator.ActuatorLockTokenTransaction;
+import org.brewchain.account.core.actuator.ActuatorTokenTransaction;
+import org.brewchain.account.core.actuator.ActuatorUnionAccountTransaction;
+import org.brewchain.account.core.actuator.iTransactionActuator;
 import org.brewchain.account.core.store.BlockStoreSummary;
 import org.brewchain.account.core.store.BlockStoreSummary.BLOCK_BEHAVIOR;
 import org.brewchain.account.dao.DefDaos;
+import org.brewchain.account.enums.TransTypeEnum;
 import org.brewchain.account.gens.Blockimpl.AddBlockResponse;
 import org.brewchain.account.trie.CacheTrie;
 import org.brewchain.account.trie.StateTrie;
@@ -238,7 +250,7 @@ public class BlockHelper implements ActorService {
 						log.debug("need prev block number::" + (oBlockEntity.getHeader().getNumber() - 2));
 						oAddBlockResponse.setRetCode(-9);
 						oAddBlockResponse.setCurrentNumber(oBlockEntity.getHeader().getNumber() - 2);
-						
+
 						blockChainHelper.rollbackTo(oBlockEntity.getHeader().getNumber() - 2);
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 					}
@@ -298,7 +310,7 @@ public class BlockHelper implements ActorService {
 				break;
 			case ERROR:
 				log.error("fail to apply block number::" + oBlockEntity.getHeader().getNumber());
-				//blockChainHelper.rollback();
+				// blockChainHelper.rollback();
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 				break;
 			}
@@ -347,24 +359,20 @@ public class BlockHelper implements ActorService {
 			}
 		}
 		if (!oBlockEntity.getHeader().getTxTrieRoot().equals(encApi.hexEnc(oTrieImpl.getRootHash()))) {
-			throw new Exception(String.format("transaction trie root hash %s not equal %s", oBlockEntity.getHeader().getTxTrieRoot(),
-					encApi.hexEnc(oTrieImpl.getRootHash())));
+			throw new Exception(String.format("transaction trie root hash %s not equal %s",
+					oBlockEntity.getHeader().getTxTrieRoot(), encApi.hexEnc(oTrieImpl.getRootHash())));
 		}
 
 		oBlockEntity.setBody(bb);
-
-		// TODO 事务
-
 		// 执行交易
-		transactionHelper.ExecuteTransaction(txs);
-
+		transactionHelper.ExecuteTransaction(txs, oBlockEntity.build());
 		// reward
 		applyReward(oBlockEntity.build());
 
 		byte[] stateRoot = this.stateTrie.getRootHash();
 		return stateRoot;
 	}
-	
+
 	/**
 	 * 区块奖励
 	 * 

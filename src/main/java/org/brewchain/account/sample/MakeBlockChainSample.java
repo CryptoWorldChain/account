@@ -1,9 +1,6 @@
 package org.brewchain.account.sample;
 
 import java.util.Date;
-import java.util.Timer;
-import java.util.TimerTask;
-
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockChainHelper;
 import org.brewchain.account.core.BlockHelper;
@@ -11,10 +8,8 @@ import org.brewchain.account.core.KeyConstant;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.core.store.BlockStore;
 import org.brewchain.account.core.store.BlockStoreSummary;
-import org.brewchain.account.gens.TxTest.MsgBlockView;
 import org.brewchain.account.gens.TxTest.PTSTCommand;
 import org.brewchain.account.gens.TxTest.PTSTModule;
-import org.brewchain.account.gens.TxTest.ReqCommonTest;
 import org.brewchain.account.gens.TxTest.ReqStartNewFork;
 import org.brewchain.account.gens.TxTest.RespStartNewFork;
 import org.brewchain.account.trie.CacheTrie;

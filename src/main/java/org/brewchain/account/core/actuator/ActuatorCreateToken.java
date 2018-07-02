@@ -10,6 +10,7 @@ import org.brewchain.account.trie.StateTrie;
 import org.brewchain.evmapi.gens.Act.Account;
 import org.brewchain.evmapi.gens.Act.AccountTokenValue;
 import org.brewchain.evmapi.gens.Act.AccountValue;
+import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
 import org.fc.brewchain.bcapi.EncAPI;
@@ -25,8 +26,8 @@ import com.google.protobuf.ByteString;
 public class ActuatorCreateToken extends AbstractTransactionActuator implements iTransactionActuator {
 
 	public ActuatorCreateToken(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
-			BlockHelper oBlockHelper, EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
-		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi, dao, oStateTrie);
+			BlockEntity oBlock, EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
+		super(oAccountHelper, oTransactionHelper, oBlock, encApi, dao, oStateTrie);
 	}
 
 	@Override
@@ -39,20 +40,17 @@ public class ActuatorCreateToken extends AbstractTransactionActuator implements 
 		oAccountTokenValue.setBalance(input.getAmount()).setToken(input.getToken());
 
 		senderAccountValue.addTokens(oAccountTokenValue).setBalance(
-				senderAccountValue.getBalance() - this.oBlockHelper.getBlockChainConfig().getContract_lock_balance());
+				senderAccountValue.getBalance() - this.oTransactionHelper.getBlockChainConfig().getContract_lock_balance());
 		sender.setValue(senderAccountValue);
 
 		Account.Builder locker = accounts.get(encApi.hexEnc(input.getAddress().toByteArray()));
 		AccountValue.Builder lockerAccountValue = locker.getValue().toBuilder();
 		lockerAccountValue.setBalance(
-				lockerAccountValue.getBalance() + this.oBlockHelper.getBlockChainConfig().getContract_lock_balance());
+				lockerAccountValue.getBalance() + this.oTransactionHelper.getBlockChainConfig().getContract_lock_balance());
 		locker.setValue(lockerAccountValue);
 
 		accounts.put(encApi.hexEnc(sender.getAddress().toByteArray()), sender);
 		accounts.put(encApi.hexEnc(locker.getAddress().toByteArray()), locker);
-		// accounts.put(key, value); 发布账户
-		// accounts.put(key, value); 锁定
-		// accounts.put(key, value); 转入锁定
 		oAccountHelper.ICO(input.getAddress(), input.getToken(), input.getAmount());
 	}
 
@@ -83,9 +81,9 @@ public class ActuatorCreateToken extends AbstractTransactionActuator implements 
 			throw new Exception(String.format("sender nonce %s is not equal with transaction nonce %s", nonce,
 					oMultiTransaction.getTxBody().getInputs(0).getNonce()));
 		}
-		if (senderAccountValue.getBalance() < this.oBlockHelper.getBlockChainConfig().getContract_lock_balance()) {
+		if (senderAccountValue.getBalance() < this.oTransactionHelper.getBlockChainConfig().getContract_lock_balance()) {
 			throw new Exception(
-					String.format("not enough deposit %s", this.oBlockHelper.getBlockChainConfig().getContract_lock_balance()));
+					String.format("not enough deposit %s", this.oTransactionHelper.getBlockChainConfig().getContract_lock_balance()));
 		}
 		// Token不允许重复
 		if (oAccountHelper.isExistsToken(token)) {

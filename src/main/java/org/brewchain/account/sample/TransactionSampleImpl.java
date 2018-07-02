@@ -8,7 +8,6 @@ import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.gens.TxTest.PTSTCommand;
 import org.brewchain.account.gens.TxTest.PTSTModule;
-import org.brewchain.account.gens.TxTest.ReqContract;
 import org.brewchain.account.gens.TxTest.ReqCreateTransactionTest;
 import org.brewchain.account.gens.TxTest.ReqTransactionAccount;
 import org.brewchain.account.gens.TxTest.RespCreateTransactionTest;

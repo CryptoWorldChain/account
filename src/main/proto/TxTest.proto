@@ -22,6 +22,32 @@ enum PTSTCommand {
 
 	TCT = 10; // create token
 	CAT = 11; // create account
+	TCC = 12; // create contract transaction
+	TEC = 13; // call contract transaction
+}
+
+message ReqCreateContract {
+	string address = 1;
+	string pubKey = 2;
+	string privKey = 3;
+	string data = 4;
+}
+message ReqCallContract {
+	string address = 1;
+	string pubKey = 2;
+	string privKey = 3;
+	string contract = 4;
+	string data = 5;
+	string functionjson = 6;
+	string function = 7;
+}
+
+message RespContract {
+	string txHash = 1;
+	string contractHash = 2;
+	repeated string trace = 3;
+	int32 retcode = 4;
+	string retmsg = 5;
 }
 
 message ReqCreateToken {
@@ -70,30 +96,6 @@ message RespCommonTest {
 	string retmsg = 2;
 }
 
-message ReqContract {
-	ReqContractCreate create = 1;
-	ReqContractCall call = 2;
-}
-
-message RespContract {
-	string contract = 1;
-	int32 retcode = 2;
-	string retmsg = 3;
-	repeated string trace = 4;
-}
-
-message ReqContractCreate {
-	string address = 1;
-	string data = 2;
-}
-message ReqContractCall {
-	string address = 1;
-	string contract = 2;
-	string data = 3;
-	string functionjson = 4;
-	string function = 5;
-}
-
 message ReqCreateTransactionTest {
 	repeated ReqTransactionAccount input = 1;
 	repeated ReqTransactionAccount output = 2;
@@ -116,8 +118,4 @@ message ReqTransactionAccount {
 	string erc20symbol = 6;
 	string erc721token = 7;
 	string erc721symbol = 8;
-}
-
-message ReqCreateContract {
-	
 }

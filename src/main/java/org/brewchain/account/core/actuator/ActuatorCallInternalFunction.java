@@ -9,6 +9,7 @@ import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.function.InternalFunction;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.evmapi.gens.Act.Account;
+import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.brewchain.evmapi.gens.Call.InternalCallArguments;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import org.fc.brewchain.bcapi.EncAPI;
@@ -47,8 +48,8 @@ public class ActuatorCallInternalFunction extends AbstractTransactionActuator im
 	}
 
 	public ActuatorCallInternalFunction(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
-			BlockHelper oBlockHelper, EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
-		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi, dao, oStateTrie);
+			BlockEntity oBlock, EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
+		super(oAccountHelper, oTransactionHelper, oBlock, encApi, dao, oStateTrie);
 		// TODO Auto-generated constructor stub
 	}
 

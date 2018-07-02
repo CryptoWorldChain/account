@@ -58,6 +58,7 @@ message AccountValueImpl {
     string code = 10;
     string storage = 11;
     string codeHash = 12;
+    string accountAddress = 13;
 }
 
 message AccountTokenValueImpl {

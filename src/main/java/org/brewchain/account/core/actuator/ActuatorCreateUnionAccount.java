@@ -8,6 +8,7 @@ import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.evmapi.gens.Act.Account;
+import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import org.fc.brewchain.bcapi.EncAPI;
 
@@ -16,9 +17,9 @@ import com.google.protobuf.ByteString;
 public class ActuatorCreateUnionAccount extends AbstractTransactionActuator implements iTransactionActuator {
 
 	public ActuatorCreateUnionAccount(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
-			BlockHelper oBlockHelper, EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
+			BlockEntity oBlock, EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
 		// this.accountHelper = oAccountHelper;
-		super(oAccountHelper, oTransactionHelper, oBlockHelper, encApi, dao, oStateTrie);
+		super(oAccountHelper, oTransactionHelper, oBlock, encApi, dao, oStateTrie);
 	}
 
 	@Override

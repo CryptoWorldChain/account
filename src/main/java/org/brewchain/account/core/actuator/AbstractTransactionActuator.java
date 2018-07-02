@@ -13,6 +13,7 @@ import org.brewchain.account.trie.DBTrie;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.evmapi.gens.Act.Account;
 import org.brewchain.evmapi.gens.Act.AccountValue;
+import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionBody;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
@@ -82,16 +83,16 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 
 	protected AccountHelper oAccountHelper;
 	protected TransactionHelper oTransactionHelper;
-	protected BlockHelper oBlockHelper;
+	protected BlockEntity oBlock;
 	protected EncAPI encApi;
 	protected DefDaos dao;
 	protected StateTrie oStateTrie;
 
 	public AbstractTransactionActuator(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
-			BlockHelper oBlockHelper, EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
+			BlockEntity currentBlock, EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
 		this.oAccountHelper = oAccountHelper;
 		this.oTransactionHelper = oTransactionHelper;
-		this.oBlockHelper = oBlockHelper;
+		this.oBlock = currentBlock;
 		this.encApi = encApi;
 		this.dao = dao;
 		this.oStateTrie = oStateTrie;
