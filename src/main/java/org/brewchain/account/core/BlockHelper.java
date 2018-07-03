@@ -250,7 +250,7 @@ public class BlockHelper implements ActorService {
 						log.debug("need prev block number::" + (oBlockEntity.getHeader().getNumber() - 2));
 						oAddBlockResponse.setRetCode(-9);
 						oAddBlockResponse.setCurrentNumber(oBlockEntity.getHeader().getNumber() - 2);
-
+						oAddBlockResponse.setWantNumber(oBlockEntity.getHeader().getNumber() - 1);
 						blockChainHelper.rollbackTo(oBlockEntity.getHeader().getNumber() - 2);
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 					}
@@ -319,8 +319,11 @@ public class BlockHelper implements ActorService {
 		if (oAddBlockResponse.getCurrentNumber() == 0) {
 			oAddBlockResponse.setCurrentNumber(blockChainHelper.getLastBlockNumber());
 		}
+		if (oAddBlockResponse.getWantNumber() == 0) {
+			oAddBlockResponse.setWantNumber(oAddBlockResponse.getCurrentNumber());
+		}
 		log.debug("return apply current::" + oAddBlockResponse.getCurrentNumber() + " retcode::"
-				+ oAddBlockResponse.getRetCode());
+				+ oAddBlockResponse.getRetCode() + " want::" + oAddBlockResponse.getWantNumber());
 		return oAddBlockResponse.build();
 	}
 

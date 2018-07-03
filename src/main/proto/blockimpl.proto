@@ -100,4 +100,5 @@ message AddBlockResponse {
 	int32 currentNumber = 2;
 	string retMsg = 3;
 	repeated string txHashs = 4;
+	int32 wantNumber = 5;
 }
