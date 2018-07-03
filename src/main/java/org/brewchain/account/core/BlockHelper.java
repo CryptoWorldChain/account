@@ -261,6 +261,7 @@ public class BlockHelper implements ActorService {
 				break;
 			case CACHE:
 				log.info("cache block number::" + oBlockEntity.getHeader().getNumber());
+				oAddBlockResponse.setWantNumber(oBlockEntity.getHeader().getNumber());
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 				break;
 			case APPLY:
@@ -319,9 +320,11 @@ public class BlockHelper implements ActorService {
 		if (oAddBlockResponse.getCurrentNumber() == 0) {
 			oAddBlockResponse.setCurrentNumber(blockChainHelper.getLastBlockNumber());
 		}
+		
 		if (oAddBlockResponse.getWantNumber() == 0) {
-			oAddBlockResponse.setWantNumber(oAddBlockResponse.getCurrentNumber());
+			oAddBlockResponse.setWantNumber(oAddBlockResponse.getWantNumber());
 		}
+		
 		log.debug("return apply current::" + oAddBlockResponse.getCurrentNumber() + " retcode::"
 				+ oAddBlockResponse.getRetCode() + " want::" + oAddBlockResponse.getWantNumber());
 		return oAddBlockResponse.build();
