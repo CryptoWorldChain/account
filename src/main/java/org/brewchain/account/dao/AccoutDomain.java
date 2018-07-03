@@ -12,8 +12,7 @@ public class AccoutDomain extends ODBDao{
 
 	@Override
 	public String getDomainName() {
-		return "account";
+		return "account.sec";
 	}
 
-	
 }

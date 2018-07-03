@@ -207,7 +207,6 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 	@Override
 	public BlockEntity getBlockByNumber(int number) {
 		try (ALock l = readLock.lock()) {
-			List<BlockEntity> list = new ArrayList<>();
 			for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.entrySet().iterator(); it.hasNext();) {
 				Map.Entry<String, BlockStoreNodeValue> item = it.next();
 				if (item.getValue().getNumber() == number && item.getValue().isConnect()) {

@@ -85,6 +85,7 @@ public class ActuatorCreateContract extends AbstractTransactionActuator implemen
 				AccountValue.Builder oContractValue = contract.getValueBuilder();
 				oContractValue.setCode(ByteString.copyFrom(createResult.getHReturn()));
 				oContractValue.setCodeHash(ByteString.copyFrom(encApi.sha256Encode(oContractValue.getCode().toByteArray())));
+				oContractValue.setCreator(oCreateAccount.getAddress());
 				oContractValue.setData(oMultiTransaction.getTxBody().getExdata());
 				contract.setValue(oContractValue);
 				

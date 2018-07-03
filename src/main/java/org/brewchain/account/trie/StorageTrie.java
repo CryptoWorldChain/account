@@ -494,13 +494,12 @@ public class StorageTrie implements ActorService {
 
 	private void addHash(byte[] hash, byte[] ret) {
 		log.debug("====put storage trie::"+ encApi.hexEnc(hash));
-
 		dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(hash), OEntityBuilder.byteValue2OValue(ret));
 	}
 
 	private void deleteHash(byte[] hash) {
 		log.debug("trie delete key::" + Hex.toHexString(hash) + " root::" + Hex.toHexString(this.root.hash));
-		// dao.getAccountDao().delete(OEntityBuilder.byteKey2OKey(hash));
+		dao.getAccountDao().delete(OEntityBuilder.byteKey2OKey(hash));
 	}
 
 	public byte[] get(byte[] key) {
