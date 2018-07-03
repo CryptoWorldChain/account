@@ -94,7 +94,7 @@ public class AccountHelper implements ActorService {
 		if (exdata != null) {
 			oUnionAccountValue.setData(exdata);
 		}
-		oUnionAccountValue.setTimestamp(Integer.valueOf(String.valueOf((new Date()).getTime())));
+		oUnionAccountValue.setTimestamp((new Date()).getTime());
 		
 		oUnionAccount.setAddress(address);
 		oUnionAccount.setValue(oUnionAccountValue);

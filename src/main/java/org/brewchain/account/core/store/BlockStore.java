@@ -303,7 +303,7 @@ public class BlockStore implements ActorService {
 		for (int i = 1; i <= maxCount; ++i) {
 			BlockEntity child = getBlockByHash(currentBlock);
 			if (child != null) {
-				currentBlock = child.getHeader().getBlockHash();
+				currentBlock = child.getHeader().getParentHash();
 				blocks.add(child);
 				if (StringUtils.isNotBlank(endBlockHash) && child.getHeader().getBlockHash().equals(endBlockHash)) {
 					return blocks;
