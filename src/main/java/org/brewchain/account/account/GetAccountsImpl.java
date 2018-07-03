@@ -8,7 +8,9 @@ import org.brewchain.account.gens.Actimpl.AccountValueImpl;
 import org.brewchain.account.gens.Actimpl.PACTCommand;
 import org.brewchain.account.gens.Actimpl.PACTModule;
 import org.brewchain.account.gens.Actimpl.ReqGetAccount;
+import org.brewchain.account.gens.Actimpl.ReqGetAccounts;
 import org.brewchain.account.gens.Actimpl.RespGetAccount;
+import org.brewchain.account.gens.Actimpl.RespGetAccounts;
 import org.brewchain.account.util.ByteUtil;
 import org.brewchain.evmapi.gens.Act.Account;
 import org.brewchain.evmapi.gens.Act.AccountCryptoToken;
@@ -32,7 +34,7 @@ import onight.tfw.otransio.api.beans.FramePacket;
 @NActorProvider
 @Slf4j
 @Data
-public class GetAccountImpl extends SessionModules<ReqGetAccount> {
+public class GetAccountsImpl extends SessionModules<ReqGetAccounts> {
 	@ActorRequire(name = "Account_Helper", scope = "global")
 	AccountHelper oAccountHelper;
 	@ActorRequire(name = "bc_encoder", scope = "global")
@@ -40,7 +42,7 @@ public class GetAccountImpl extends SessionModules<ReqGetAccount> {
 
 	@Override
 	public String[] getCmds() {
-		return new String[] { PACTCommand.GAC.name() };
+		return new String[] { PACTCommand.GAS.name() };
 	}
 
 	@Override
@@ -49,13 +51,9 @@ public class GetAccountImpl extends SessionModules<ReqGetAccount> {
 	}
 
 	@Override
-	public void onPBPacket(final FramePacket pack, final ReqGetAccount pb, final CompleteHandler handler) {
-		RespGetAccount.Builder oRespGetAccount = RespGetAccount.newBuilder();
-		KeyPairs oKeyPairs1 = encApi.genKeys("aaaa");
-		KeyPairs oKeyPairs2 = encApi.genKeys("aaaa");
-
-		log.debug("oKeyPairs1::" + oKeyPairs1.getAddress() + " oKeyPairs2::" + oKeyPairs2.getAddress());
-
+	public void onPBPacket(final FramePacket pack, final ReqGetAccounts pb, final CompleteHandler handler) {
+		RespGetAccounts.Builder oRespGetAccount = RespGetAccounts.newBuilder();
+		
 		try {
 			for (String address : pb.getAddressList()) {
 				Account oAccount = oAccountHelper
@@ -113,8 +111,6 @@ public class GetAccountImpl extends SessionModules<ReqGetAccount> {
 			}
 			oRespGetAccount.setRetCode(1);
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			// e.printStackTrace();
 			log.error("GetAccountImpl error", e);
 			oRespGetAccount.clear();
 			oRespGetAccount.setRetCode(-1);

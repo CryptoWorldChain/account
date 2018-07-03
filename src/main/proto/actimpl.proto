@@ -6,9 +6,8 @@ enum PACTModule {
 	ACT = 0; // 账户，合约，合约代码
 };
 enum PACTCommand {
-    CAC = 0; // 保存账户
-    GAC = 1; // 获取账户
-    UAC = 2; // 创建多重签名账户
+    GAC = 0; // 获取单个账户
+    GAS = 1; // 批量获取账户
 }
 
 message ReqCreateAccount {
@@ -35,10 +34,20 @@ message RespCreateUnionAccount {
 }
 
 message ReqGetAccount {
-    repeated string address = 1;
+    string address = 1;
 }
 
 message RespGetAccount {
+    int32 retCode = 1;
+    string address = 2;
+    AccountValueImpl account = 3;
+}
+
+message ReqGetAccounts {
+    repeated string address = 1;
+}
+
+message RespGetAccounts {
     int32 retCode = 1;
     repeated string address = 2;
     repeated AccountValueImpl account = 3;
