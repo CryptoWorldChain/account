@@ -1,6 +1,7 @@
 package org.brewchain.account.transaction;
 
 import org.brewchain.account.core.TransactionHelper;
+import org.brewchain.account.enums.TransTypeEnum;
 import org.brewchain.account.gens.Tximpl.PTXTCommand;
 import org.brewchain.account.gens.Tximpl.PTXTModule;
 import org.brewchain.account.gens.Tximpl.ReqCreateMultiTransaction;
@@ -42,9 +43,14 @@ public class SaveMultiTransactionImpl extends SessionModules<ReqCreateMultiTrans
 
 		try {
 			MultiTransaction.Builder oTransaction = transactionHelper.parse(pb.getTransaction());
+			if (oTransaction.getTxBody().getType() == TransTypeEnum.TYPE_CreateContract.value()) {
+				oRespCreateTx.setContractHash(encApi
+						.hexEnc(transactionHelper.getContractAddressByTransaction(oTransaction.build()).toByteArray()));
+			}
 			oRespCreateTx.setTxHash(transactionHelper.CreateMultiTransaction(oTransaction));
 			oRespCreateTx.setRetCode(1);
 		} catch (Throwable e) {
+			oRespCreateTx.clear();
 			oRespCreateTx.setRetCode(-1);
 			oRespCreateTx.setRetMsg(e.getMessage());
 		}

@@ -43,6 +43,7 @@ message ReqCreateMultiTransaction {
 
 message RespCreateTransaction {
     string txHash = 1;
+	string contractHash = 4;
 	int32 retCode = 2;
 	string retMsg = 3;
 }
