@@ -151,6 +151,8 @@ public class BlockStableStore implements IBlockStore, ActorService {
 		}
 		if (hash != null) {
 			block = get(hash);
+		} else {
+			block = getBlockByNumber(number);
 		}
 		
 		// log.debug("====put stable rollback block::"+ block.getHeader().getBlockHash());
