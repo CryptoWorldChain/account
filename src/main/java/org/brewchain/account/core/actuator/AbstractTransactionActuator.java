@@ -126,7 +126,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			long balance = senderAccountValue.getBalance();
 
 			if (balance < 0) {
-				throw new TransactionExecuteException(String.format("sender balance %s less than 0", balance));
+				throw new TransactionExecuteException(String.format("sender %s balance %s less than 0", encApi.hexEnc(sender.getAddress().toByteArray()) ,balance));
 			}
 			if (oInput.getAmount() < 0) {
 				throw new TransactionExecuteException(String.format("transaction value %s less than 0", oInput.getAmount()));
