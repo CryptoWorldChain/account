@@ -76,8 +76,8 @@ public class BlockChainViewSample extends SessionModules<ReqCommonTest> {
 			// oChild.setNumber(be.getHeader().getNumber());
 			// }
 
-			int maxNumber = blockStore.getMaxReceiveNumber();
-			int fixNumber = 0;
+			long maxNumber = blockStore.getMaxReceiveNumber();
+			long fixNumber = 0;
 			if (maxNumber - Integer.valueOf(pb.getArg1()) < 1) {
 				fixNumber = Integer.valueOf(pb.getArg1()) - maxNumber;
 			}
@@ -87,7 +87,7 @@ public class BlockChainViewSample extends SessionModules<ReqCommonTest> {
 			root.setNumber(0);
 			BlockView currentNode = null;
 			for (int i = 0; i < Integer.valueOf(pb.getArg1()); i++) {
-				int number = maxNumber + fixNumber - Integer.valueOf(pb.getArg1()) + i;
+				long number = maxNumber + fixNumber - Integer.valueOf(pb.getArg1()) + i;
 
 				if (number < 0 || number > maxNumber) {
 					break;
@@ -156,7 +156,7 @@ public class BlockChainViewSample extends SessionModules<ReqCommonTest> {
 	private class BlockView {
 		private String name;
 		private String hash;
-		private int number;
+		private long number;
 		private List<BlockView> children = new ArrayList<>();
 
 		public String getHash() {
@@ -167,11 +167,11 @@ public class BlockChainViewSample extends SessionModules<ReqCommonTest> {
 			this.hash = hash;
 		}
 
-		public int getNumber() {
+		public long getNumber() {
 			return number;
 		}
 
-		public void setNumber(int number) {
+		public void setNumber(long number) {
 			this.number = number;
 		}
 

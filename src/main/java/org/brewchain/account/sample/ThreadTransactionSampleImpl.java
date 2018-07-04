@@ -112,7 +112,7 @@ public class ThreadTransactionSampleImpl extends SessionModules<ReqThreadTransac
 						// oMultiTransactionBody.setData(pb.getData());
 						oMultiTransaction.clearTxHash();
 						oMultiTransactionBody.clearSignatures();
-						oMultiTransactionBody.setTimestamp((new Date()).getTime());
+						oMultiTransactionBody.setTimestamp(System.currentTimeMillis());
 						// 签名
 						MultiTransactionSignature.Builder oMultiTransactionSignature21 = MultiTransactionSignature
 								.newBuilder();

@@ -96,7 +96,7 @@ public class BlockChainHelper implements ActorService {
 	 * 
 	 * @return
 	 */
-	public int getBlockCount() {
+	public long getBlockCount() {
 		return blockStore.getMaxConnectNumber();
 		// return blockCache.size();
 	}
@@ -107,12 +107,12 @@ public class BlockChainHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public int getLastStableBlockNumber() throws Exception {
+	public long getLastStableBlockNumber() throws Exception {
 		return blockStore.getMaxStableNumber();
 		// return blockCache.getLast() == null ? 0 : blockCache.getLast().num;
 	}
 
-	public int getLastBlockNumber() {
+	public long getLastBlockNumber() {
 		return blockStore.getMaxConnectNumber() == -1 ? blockStore.getMaxStableNumber()
 				: blockStore.getMaxConnectNumber();
 	}
@@ -169,7 +169,7 @@ public class BlockChainHelper implements ActorService {
 		return blockStore.rollBackTo(block.getHeader().getNumber());
 	}
 	
-	public BlockEntity rollbackTo(int number) {
+	public BlockEntity rollbackTo(long number) {
 		return blockStore.rollBackTo(number);
 	}
 
@@ -248,7 +248,7 @@ public class BlockChainHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public LinkedList<BlockEntity> getParentsBlocks(String blockHash, String endBlockHash, int maxCount)
+	public LinkedList<BlockEntity> getParentsBlocks(String blockHash, String endBlockHash, long maxCount)
 			throws Exception {
 		LinkedList<BlockEntity> list = new LinkedList<BlockEntity>();
 		list.addAll(blockStore.getParentListBlocksEndWith(blockHash, endBlockHash, maxCount));
@@ -262,7 +262,7 @@ public class BlockChainHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public BlockEntity getBlockByNumber(int number) throws Exception {
+	public BlockEntity getBlockByNumber(long number) throws Exception {
 		// 判断从前遍历还是从后遍历
 		BlockEntity oBlockEntity = blockStore.getBlockByNumber(number);
 		if (oBlockEntity == null) {

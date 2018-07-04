@@ -43,16 +43,16 @@ public class BlockStableStore implements IBlockStore, ActorService {
 	@ActorRequire(name = "Def_Daos", scope = "global")
 	DefDaos dao;
 
-	protected final TreeMap<Integer, String> storage;
+	protected final TreeMap<Long, String> storage;
 	protected final LRUCache<String, BlockEntity> blocks;
-	private int maxNumber = -1;
+	private long maxNumber = -1;
 
 	protected ReadWriteLock rwLock = new ReentrantReadWriteLock();
 	protected ALock readLock = new ALock(rwLock.readLock());
 	protected ALock writeLock = new ALock(rwLock.writeLock());
 
 	public BlockStableStore() {
-		this.storage = new TreeMap<Integer, String>();
+		this.storage = new TreeMap<Long, String>();
 		this.blocks = new LRUCache<String, BlockEntity>(KeyConstant.CACHE_SIZE);
 	}
 
@@ -78,7 +78,7 @@ public class BlockStableStore implements IBlockStore, ActorService {
 
 	@Override
 	public boolean add(BlockEntity block) {
-		int number = block.getHeader().getNumber();
+		long number = block.getHeader().getNumber();
 		try (ALock l = writeLock.lock()) {
 			// storage
 			this.storage.put(number, block.getHeader().getBlockHash());
@@ -119,7 +119,7 @@ public class BlockStableStore implements IBlockStore, ActorService {
 	}
 
 	@Override
-	public BlockEntity getBlockByNumber(int number) {
+	public BlockEntity getBlockByNumber(long number) {
 		BlockEntity block = null;
 		String blockHash = this.storage.get(number);
 		if (blockHash == null) {
@@ -142,7 +142,7 @@ public class BlockStableStore implements IBlockStore, ActorService {
 	}
 
 	@Override
-	public BlockEntity rollBackTo(int number) {
+	public BlockEntity rollBackTo(long number) {
 		BlockEntity block = null;
 		String hash = null;
 		int lastBlockNumber = 0;

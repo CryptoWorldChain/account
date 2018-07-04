@@ -51,7 +51,7 @@ public class ActuatorCreateToken extends AbstractTransactionActuator implements 
 
 		accounts.put(encApi.hexEnc(sender.getAddress().toByteArray()), sender);
 		accounts.put(encApi.hexEnc(locker.getAddress().toByteArray()), locker);
-		oAccountHelper.ICO(input.getAddress(), input.getToken(), input.getAmount());
+		oAccountHelper.createToken(input.getAddress(), input.getToken(), input.getAmount());
 	}
 
 	@Override

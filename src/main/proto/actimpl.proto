@@ -8,6 +8,26 @@ enum PACTModule {
 enum PACTCommand {
     GAC = 0; // 获取单个账户
     GAS = 1; // 批量获取账户
+
+    QIC = 2; // 查询已创建的token
+}
+
+message ReqQueryIC {
+    string token = 1;
+    string address = 2;
+}
+
+message RespQueryIC {
+    int32 retCode = 1;
+    string retMsg = 2;
+    repeated MsgToken tokens = 3;
+}
+
+message MsgToken {
+    string token = 1;
+    string timestamp = 2;
+    string amount = 3;
+    string creator = 4;
 }
 
 message ReqCreateAccount {

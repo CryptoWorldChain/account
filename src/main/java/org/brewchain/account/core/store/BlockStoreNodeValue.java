@@ -8,13 +8,13 @@ import lombok.Data;
 public class BlockStoreNodeValue {
 	private String blockHash;
 	private String parentHash;
-	private int number;
+	private long number;
 	private boolean isStable = false;
 	private boolean isConnect = false;
 	private int retryTimes = 0;
 	private BlockEntity blockEntity;
 
-	public BlockStoreNodeValue(String blockHash, String parentHash, int number, BlockEntity blockEntity) {
+	public BlockStoreNodeValue(String blockHash, String parentHash, long number, BlockEntity blockEntity) {
 		this.blockHash = blockHash;
 		this.parentHash = parentHash;
 		this.number = number;

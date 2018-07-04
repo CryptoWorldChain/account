@@ -80,9 +80,9 @@ public class MakeBlockChainSample extends SessionModules<ReqStartNewFork> {
 		oBlockHeader.setParentHash(oBestBlockHeader.getBlockHash());
 
 		// 确保时间戳不重复
-		long currentTimestamp = new Date().getTime();
+		long currentTimestamp = System.currentTimeMillis();
 		oBlockHeader.setTimestamp(
-				new Date().getTime() == oBestBlockHeader.getTimestamp() ? oBestBlockHeader.getTimestamp() + 1
+				currentTimestamp == oBestBlockHeader.getTimestamp() ? oBestBlockHeader.getTimestamp() + 1
 						: currentTimestamp);
 		oBlockHeader.setNumber(oBestBlockHeader.getNumber() + 1);
 		oBlockHeader.setReward(KeyConstant.BLOCK_REWARD);

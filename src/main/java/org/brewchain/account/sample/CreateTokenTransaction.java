@@ -66,7 +66,6 @@ public class CreateTokenTransaction extends SessionModules<ReqCreateToken> {
 		MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
 
 		try {
-
 			MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
 			oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(pb.getFromAccount().getAddress())));
 			oMultiTransactionInput4.setAmount(pb.getTotal());
@@ -80,7 +79,7 @@ public class CreateTokenTransaction extends SessionModules<ReqCreateToken> {
 			oMultiTransactionBody.setType(TransTypeEnum.TYPE_CreateToken.value());
 			oMultiTransaction.clearTxHash();
 			oMultiTransactionBody.clearSignatures();
-			oMultiTransactionBody.setTimestamp((new Date()).getTime());
+			oMultiTransactionBody.setTimestamp(System.currentTimeMillis());
 			// 签名
 			MultiTransactionSignature.Builder oMultiTransactionSignature21 = MultiTransactionSignature.newBuilder();
 			oMultiTransactionSignature21.setPubKey(ByteString.copyFrom(encApi.hexDec(pb.getFromAccount().getPutkey())));

@@ -19,7 +19,7 @@ message ReqGetBlockByHash {
 }
 
 message ReqGetBlockByNumber {
-	int32 number = 1;
+	int64 number = 1;
 }
 
 message ReqGetBlock {
@@ -48,8 +48,8 @@ message ReqBlockInfo {
 }
 
 message RespBlockInfo {
-	int32 number = 1;
-	int32 blockCount = 2;
+	int64 number = 1;
+	int64 blockCount = 2;
 	int32 waitSync = 3;
 	int32 waitBlock = 4;
 	string cache = 5;
@@ -64,7 +64,7 @@ message RespBlockDetail {
 	// string coinbase = 4;
 	string txTrieRoot = 5;
 	int64 timestamp = 6;
-	int32 number = 7;
+	int64 number = 7;
 	BlockMinerImpl miner = 8;
 	string extraData = 9;
 	string nonce = 10;
@@ -79,7 +79,7 @@ message BlockHeaderImpl {
 	// string coinbase = 2;
 	string txTrieRoot = 3;
 	int64 timestamp = 4;
-	int32 number = 5;
+	int64 number = 5;
 	int32 reward = 6;
 	string extraData = 7;
 	string nonce = 8;
@@ -97,8 +97,8 @@ message BlockMinerImpl {
 
 message AddBlockResponse {
 	int32 retCode = 1;
-	int32 currentNumber = 2;
+	int64 currentNumber = 2;
 	string retMsg = 3;
 	repeated string txHashs = 4;
-	int32 wantNumber = 5;
+	int64 wantNumber = 5;
 }

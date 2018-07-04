@@ -29,8 +29,8 @@ import org.brewchain.evmapi.gens.Act.AccountCryptoToken;
 import org.brewchain.evmapi.gens.Act.AccountCryptoValue;
 import org.brewchain.evmapi.gens.Act.AccountTokenValue;
 import org.brewchain.evmapi.gens.Act.AccountValue;
-import org.brewchain.evmapi.gens.Act.ICO;
-import org.brewchain.evmapi.gens.Act.ICOValue;
+import org.brewchain.evmapi.gens.Act.ERC20Token;
+import org.brewchain.evmapi.gens.Act.ERC20TokenValue;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;
@@ -94,8 +94,8 @@ public class AccountHelper implements ActorService {
 		if (exdata != null) {
 			oUnionAccountValue.setData(exdata);
 		}
-		oUnionAccountValue.setTimestamp((new Date()).getTime());
-		
+		oUnionAccountValue.setTimestamp(System.currentTimeMillis());
+
 		oUnionAccount.setAddress(address);
 		oUnionAccount.setValue(oUnionAccountValue);
 		return CreateUnionAccount(oUnionAccount.build());
@@ -299,7 +299,7 @@ public class AccountHelper implements ActorService {
 		}
 		token.setOwner(addr);
 		token.setNonce(token.getNonce() + 1);
-		token.setOwnertime(new Date().getTime());
+		token.setOwnertime(System.currentTimeMillis());
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 
 		for (int i = 0; i < oAccountValue.getCryptosList().size(); i++) {
@@ -542,13 +542,13 @@ public class AccountHelper implements ActorService {
 			oAccountCryptoToken.setCode(ByteString.copyFromUtf8(code[i]));
 			oAccountCryptoToken.setIndex(i);
 			oAccountCryptoToken.setTotal(total);
-			oAccountCryptoToken.setTimestamp(new Date().getTime());
+			oAccountCryptoToken.setTimestamp(System.currentTimeMillis());
 			oAccountCryptoToken
 					.setHash(ByteString.copyFrom(encApi.sha256Encode(oAccountCryptoToken.build().toByteArray())));
 
 			oAccountCryptoToken.setOwner(addr);
 			oAccountCryptoToken.setNonce(0);
-			oAccountCryptoToken.setOwnertime(new Date().getTime());
+			oAccountCryptoToken.setOwnertime(System.currentTimeMillis());
 			oAccountCryptoValue.addTokens(oAccountCryptoToken);
 			tokenMappingAccount(oAccountCryptoToken);
 		}
@@ -557,24 +557,49 @@ public class AccountHelper implements ActorService {
 		putAccountValue(addr, oAccountValue.build());
 	}
 
-	public void ICO(ByteString addr, String token, long total) throws Exception {
+	public void createToken(ByteString addr, String token, long total) throws Exception {
 		OValue oValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN)).get();
-		ICO.Builder oICO;
+		ERC20Token.Builder oERC20Token;
 		if (oValue == null) {
-			oICO = ICO.newBuilder();
+			oERC20Token = ERC20Token.newBuilder();
 		} else {
-			oICO = ICO.parseFrom(oValue.getExtdata().toByteArray()).toBuilder();
+			oERC20Token = ERC20Token.parseFrom(oValue.getExtdata().toByteArray()).toBuilder();
 		}
 
-		ICOValue.Builder oICOValue = ICOValue.newBuilder();
+		ERC20TokenValue.Builder oICOValue = ERC20TokenValue.newBuilder();
 		oICOValue.setAddress(encApi.hexEnc(addr.toByteArray()));
-		oICOValue.setTimestamp((new Date()).getTime());
+		oICOValue.setTimestamp(System.currentTimeMillis());
 		oICOValue.setToken(token);
 		oICOValue.setTotal(total);
-		oICO.addValue(oICOValue);
+		oERC20Token.addValue(oICOValue);
 
 		dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN),
-				OEntityBuilder.byteValue2OValue(oICO.build().toByteArray()));
+				OEntityBuilder.byteValue2OValue(oERC20Token.build().toByteArray()));
+	}
+
+	public List<ERC20TokenValue> getTokens(String address, String token) {
+		List<ERC20TokenValue> list = new ArrayList<>();
+		OValue oValue;
+		try {
+			oValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN)).get();
+			if (oValue == null) {
+				return list;
+			}
+			ERC20Token oERC20Token = ERC20Token.parseFrom(oValue.getExtdata().toByteArray());
+			for (ERC20TokenValue erc20TokenValue : oERC20Token.getValueList()) {
+				if (StringUtils.isNotBlank(address) && address.equals(erc20TokenValue.getAddress())) {
+					list.add(erc20TokenValue);
+				} else if (StringUtils.isNotBlank(token) && token.equals(erc20TokenValue.getToken())) {
+					list.add(erc20TokenValue);
+				} else if (StringUtils.isBlank(address) && StringUtils.isBlank(token)) {
+					list.add(erc20TokenValue);
+				}
+			}
+			return list;
+		} catch (Exception e) {
+			log.error("error on query tokens::" + e);
+		}
+		return list;
 	}
 
 	/**
@@ -589,9 +614,9 @@ public class AccountHelper implements ActorService {
 		if (oValue == null) {
 			return false;
 		}
-		ICO oICO = ICO.parseFrom(oValue.getExtdata().toByteArray());
+		ERC20Token oERC20Token = ERC20Token.parseFrom(oValue.getExtdata().toByteArray());
 
-		for (ICOValue oICOValue : oICO.getValueList()) {
+		for (ERC20TokenValue oICOValue : oERC20Token.getValueList()) {
 			if (oICOValue.getToken().equals(token)) {
 				return true;
 			}

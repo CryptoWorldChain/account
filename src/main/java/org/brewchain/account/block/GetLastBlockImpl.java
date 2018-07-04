@@ -47,6 +47,9 @@ public class GetLastBlockImpl extends SessionModules<ReqBlockInfo> {
 		RespBlockDetail.Builder oRespBlockDetail = RespBlockDetail.newBuilder();
 		try {
 			BlockEntity oBlockEntity = blockChainHelper.GetConnectBestBlock();
+			if (oBlockEntity == null) {
+				oBlockEntity = blockChainHelper.GetStableBestBlock();
+			}
 			BlockMinerImpl.Builder oBlockMinerImpl = BlockMinerImpl.newBuilder();
 			
 			oRespBlockDetail.setBlockHash(oBlockEntity.getHeader().getBlockHash());

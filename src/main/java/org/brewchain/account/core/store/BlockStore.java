@@ -42,9 +42,9 @@ public class BlockStore implements ActorService {
 	@ActorRequire(name = "BlockChain_Config", scope = "global")
 	BlockChainConfig blockChainConfig;
 
-	private int maxReceiveNumber = -1;
-	private int maxConnectNumber = -1;
-	private int maxStableNumber = -1;
+	private long maxReceiveNumber = -1;
+	private long maxConnectNumber = -1;
+	private long maxStableNumber = -1;
 	private BlockEntity maxReceiveBlock = null;
 	private BlockEntity maxConnectBlock = null;
 	private BlockEntity maxStableBlock = null;
@@ -90,8 +90,8 @@ public class BlockStore implements ActorService {
 				}
 			}
 
-			int blockNumber = oBlockEntity.getHeader().getNumber();
-			int maxBlockNumber = blockNumber;
+			long blockNumber = oBlockEntity.getHeader().getNumber();
+			long maxBlockNumber = blockNumber;
 			int c = 0;
 			String parentHash = oBlockEntity.getHeader().getParentHash();
 			while (StringUtils.isNotBlank(parentHash) && c < KeyConstant.CACHE_SIZE) {
@@ -248,7 +248,7 @@ public class BlockStore implements ActorService {
 		return oBlockStoreSummary;
 	}
 
-	public BlockEntity getBlockByNumber(int number) {
+	public BlockEntity getBlockByNumber(long number) {
 		BlockEntity oBlockEntity = unStableStore.getBlockByNumber(number);
 		if (oBlockEntity == null) {
 			oBlockEntity = stableStore.getBlockByNumber(number);
@@ -274,7 +274,7 @@ public class BlockStore implements ActorService {
 			return new ArrayList<>();
 		}
 		List<BlockEntity> blocks = new ArrayList<>();
-		int number = firstBlock.getHeader().getNumber();
+		long number = firstBlock.getHeader().getNumber();
 		blocks.add(firstBlock);
 
 		for (int i = 1; i <= maxCount; ++i) {
@@ -291,7 +291,7 @@ public class BlockStore implements ActorService {
 		return blocks;
 	}
 
-	public List<BlockEntity> getParentListBlocksEndWith(String blockHash, String endBlockHash, int maxCount) {
+	public List<BlockEntity> getParentListBlocksEndWith(String blockHash, String endBlockHash, long maxCount) {
 		BlockEntity firstBlock = getBlockByHash(blockHash);
 		if (firstBlock == null) {
 			return new ArrayList<>();
@@ -326,7 +326,7 @@ public class BlockStore implements ActorService {
 		return stableStore.containKey(hash);
 	}
 
-	public BlockEntity rollBackTo(int number) {
+	public BlockEntity rollBackTo(long number) {
 		log.info("blockstore try to rollback to number::" + number + " maxconnect::" + this.getMaxConnectNumber()
 				+ " maxstable::" + this.getMaxStableNumber());
 

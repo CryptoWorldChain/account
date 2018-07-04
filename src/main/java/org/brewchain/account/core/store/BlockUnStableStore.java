@@ -205,7 +205,7 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 	}
 
 	@Override
-	public BlockEntity getBlockByNumber(int number) {
+	public BlockEntity getBlockByNumber(long number) {
 		try (ALock l = readLock.lock()) {
 			for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.entrySet().iterator(); it.hasNext();) {
 				Map.Entry<String, BlockStoreNodeValue> item = it.next();
@@ -217,7 +217,7 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 		return null;
 	}
 
-	public List<BlockEntity> getBlocksByNumber(int number) {
+	public List<BlockEntity> getBlocksByNumber(long number) {
 		try (ALock l = readLock.lock()) {
 			List<BlockEntity> list = new ArrayList<>();
 			for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.entrySet().iterator(); it.hasNext();) {
@@ -249,7 +249,7 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 	}
 
 	@Override
-	public BlockEntity rollBackTo(int number) {
+	public BlockEntity rollBackTo(long number) {
 		BlockEntity oBlockEntity = getBlockByNumber(number);
 		if (oBlockEntity != null) {
 			try (ALock l = writeLock.lock()) {
@@ -311,7 +311,7 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 				OEntityBuilder.byteValue2OValue(encApi.hexDec(block.getHeader().getBlockHash())));
 	}
 
-	public void removeForkBlock(int number) {
+	public void removeForkBlock(long number) {
 		try (ALock l = readLock.lock()) {
 			for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.entrySet().iterator(); it.hasNext();) {
 				Map.Entry<String, BlockStoreNodeValue> item = it.next();

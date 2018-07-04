@@ -52,7 +52,7 @@ message RespContract {
 
 message ReqCreateToken {
 	string token = 1;
-	int32 total = 2;
+	int64 total = 2;
 	ReqTransactionAccount fromAccount = 3;
 }
 
@@ -111,10 +111,10 @@ message RespCreateTransactionTest {
 
 message ReqTransactionAccount {
 	string address = 1;
-	int32 amount = 2;
+	uint64 amount = 2;
 	string prikey = 3;
 	string putkey = 4;
-	int32 erc20amount = 5;
+	uint64 erc20amount = 5;
 	string erc20symbol = 6;
 	string erc721token = 7;
 	string erc721symbol = 8;

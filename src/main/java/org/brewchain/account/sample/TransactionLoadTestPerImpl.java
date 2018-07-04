@@ -94,7 +94,7 @@ public class TransactionLoadTestPerImpl extends SessionModules<ReqCreateTransact
 				oMultiTransactionBody.setData(ByteString.copyFrom(encApi.hexDec(pb.getData())));
 				oMultiTransaction.clearTxHash();
 				oMultiTransactionBody.clearSignatures();
-				oMultiTransactionBody.setTimestamp((new Date()).getTime());
+				oMultiTransactionBody.setTimestamp(System.currentTimeMillis());
 				// 签名
 				MultiTransactionSignature.Builder oMultiTransactionSignature21 = MultiTransactionSignature.newBuilder();
 				oMultiTransactionSignature21.setPubKey(ByteString.copyFrom(encApi.hexDec(oFrom.getPubkey())));

@@ -9,9 +9,9 @@ public interface IBlockStore {
 
 	boolean add(BlockEntity block);
 	
-	BlockEntity getBlockByNumber(int number);
+	BlockEntity getBlockByNumber(long number);
 	
-	BlockEntity rollBackTo(int number);
+	BlockEntity rollBackTo(long number);
 	
 	void clear();
 }

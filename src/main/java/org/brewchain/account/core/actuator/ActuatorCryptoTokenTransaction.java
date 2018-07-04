@@ -169,7 +169,7 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 					AccountCryptoToken.Builder oAccountCryptoToken = tokens.get(encApi.hexEnc(oOutput.getCryptoToken().toByteArray())).toBuilder();
 					oAccountCryptoToken.setOwner(oOutput.getAddress());
 					oAccountCryptoToken.setNonce(oAccountCryptoToken.getNonce() + 1);
-					oAccountCryptoToken.setOwnertime((new Date()).getTime());
+					oAccountCryptoToken.setOwnertime(System.currentTimeMillis());
 					oAccountCryptoValue.addTokens(oAccountCryptoToken.build());
 					receiverAccountValue.setCryptos(k, oAccountCryptoValue);
 					isExistToken = true;
