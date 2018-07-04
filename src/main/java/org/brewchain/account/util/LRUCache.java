@@ -67,7 +67,7 @@ public class LRUCache<K, V> {
 	}
 	
 	public boolean containsKey(K k){
-		return caches.contains(k);
+		return caches.containsKey(k);
 	}
 	
 	public synchronized void removeLast(){

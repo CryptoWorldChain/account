@@ -173,10 +173,16 @@ public class AccountHelper implements ActorService {
 	public List<Account> getContractByCreator(ByteString addr) {
 		List<Account> contracts = new ArrayList<>();
 		try {
-			List<OPair> oPairs = dao.getBlockDao().listBySecondKey(encApi.hexEnc(addr.toByteArray())).get();
+			List<OPair> oPairs = dao.getAccountDao().listBySecondKey(encApi.hexEnc(addr.toByteArray())).get();
 			if (oPairs.size() > 0) {
 				for (OPair oPair : oPairs) {
-					contracts.add(Account.parseFrom(oPair.getValue().getExtdata()));
+					
+					Account.Builder oAccount = Account.newBuilder();
+					oAccount.setAddress(oPair.getKey().getData());
+					AccountValue.Builder oAccountValue = AccountValue.newBuilder();
+					oAccountValue.mergeFrom(oPair.getValue().getExtdata());
+					oAccount.setValue(oAccountValue);
+					contracts.add(oAccount.build());
 				}
 			}
 		} catch (Throwable e) {
@@ -625,7 +631,7 @@ public class AccountHelper implements ActorService {
 	}
 
 	public void putAccountValue(ByteString addr, AccountValue oAccountValue) {
-		if (oAccountValue.getCreator() != null && oAccountValue.getCreator().equals(ByteString.EMPTY)) {
+		if (oAccountValue.getCreator() != null && !oAccountValue.getCreator().equals(ByteString.EMPTY)) {
 			dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(addr), OEntityBuilder.byteValue2OValue(
 					oAccountValue.toByteArray(), encApi.hexEnc(oAccountValue.getCreator().toByteArray())));
 		} else {
@@ -645,10 +651,13 @@ public class AccountHelper implements ActorService {
 
 		LinkedList<OValue> list = new LinkedList<>();
 		for (int i = 0; i < values.size(); i++) {
-			// log.debug("====put batch account A::" +
-			// encApi.hexEnc(keys.get(i).getData().toByteArray()));
+			if (values.get(i).getCreator() != null && !values.get(i).getCreator().equals(ByteString.EMPTY)) {
+				list.add(OEntityBuilder.byteValue2OValue(values.get(i).toByteArray(),
+						encApi.hexEnc(values.get(i).getCreator().toByteArray())));
+			} else {
+				list.add(OEntityBuilder.byteValue2OValue(values.get(i).toByteArray()));
+			}
 
-			list.add(OEntityBuilder.byteValue2OValue(values.get(i).toByteArray()));
 			if (this.stateTrie != null) {
 				this.stateTrie.put(keys.get(i).getData().toByteArray(), values.get(i).toByteArray());
 			}
@@ -667,9 +676,13 @@ public class AccountHelper implements ActorService {
 			String key = iterator.next();
 			AccountValue value = accountValues.get(key).getValue();
 			keysArray[i] = OEntityBuilder.byteKey2OKey(encApi.hexDec(key));
-			valuesArray[i] = OEntityBuilder.byteValue2OValue(value.toByteArray());
 
-			// log.debug("====put batch account B::" + key);
+			if (value.getCreator() != null && !value.getCreator().equals(ByteString.EMPTY)) {
+				valuesArray[i] = OEntityBuilder.byteValue2OValue(value.toByteArray(),
+						encApi.hexEnc(value.getCreator().toByteArray()));
+			} else {
+				valuesArray[i] = OEntityBuilder.byteValue2OValue(value.toByteArray());
+			}
 
 			i = i + 1;
 		}

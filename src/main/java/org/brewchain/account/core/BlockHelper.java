@@ -321,11 +321,11 @@ public class BlockHelper implements ActorService {
 		}
 		
 		if (oAddBlockResponse.getWantNumber() == 0) {
-			oAddBlockResponse.setWantNumber(oAddBlockResponse.getWantNumber());
+			oAddBlockResponse.setWantNumber(oAddBlockResponse.getCurrentNumber());
 		}
 		
 		log.debug("return apply current::" + oAddBlockResponse.getCurrentNumber() + " retcode::"
-				+ oAddBlockResponse.getRetCode() + " want::" + oAddBlockResponse.getWantNumber());
+				+ oAddBlockResponse.getRetCode() + " want::" + oAddBlockResponse.getWantNumber() + " summary::" + oBlockStoreSummary.getBehavior().name());
 		return oAddBlockResponse.build();
 	}
 

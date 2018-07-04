@@ -25,8 +25,8 @@ import com.google.protobuf.ByteString;
  */
 public class ActuatorCreateToken extends AbstractTransactionActuator implements iTransactionActuator {
 
-	public ActuatorCreateToken(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
-			BlockEntity oBlock, EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
+	public ActuatorCreateToken(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper, BlockEntity oBlock,
+			EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
 		super(oAccountHelper, oTransactionHelper, oBlock, encApi, dao, oStateTrie);
 	}
 
@@ -39,14 +39,14 @@ public class ActuatorCreateToken extends AbstractTransactionActuator implements 
 		AccountTokenValue.Builder oAccountTokenValue = AccountTokenValue.newBuilder();
 		oAccountTokenValue.setBalance(input.getAmount()).setToken(input.getToken());
 
-		senderAccountValue.addTokens(oAccountTokenValue).setBalance(
-				senderAccountValue.getBalance() - this.oTransactionHelper.getBlockChainConfig().getContract_lock_balance());
+		senderAccountValue.addTokens(oAccountTokenValue).setBalance(senderAccountValue.getBalance()
+				- this.oTransactionHelper.getBlockChainConfig().getContract_lock_balance());
 		sender.setValue(senderAccountValue);
 
 		Account.Builder locker = accounts.get(encApi.hexEnc(input.getAddress().toByteArray()));
 		AccountValue.Builder lockerAccountValue = locker.getValue().toBuilder();
-		lockerAccountValue.setBalance(
-				lockerAccountValue.getBalance() + this.oTransactionHelper.getBlockChainConfig().getContract_lock_balance());
+		lockerAccountValue.setBalance(lockerAccountValue.getBalance()
+				+ this.oTransactionHelper.getBlockChainConfig().getContract_lock_balance());
 		locker.setValue(lockerAccountValue);
 
 		accounts.put(encApi.hexEnc(sender.getAddress().toByteArray()), sender);
@@ -62,28 +62,38 @@ public class ActuatorCreateToken extends AbstractTransactionActuator implements 
 			throw new Exception(String.format("exists multi sender address"));
 		}
 
-		String token = oMultiTransaction.getTxBody().getInputs(0).getToken();
+		MultiTransactionInput oInput = oMultiTransaction.getTxBody().getInputs(0);
+
+		String token = oInput.getToken();
 		if (token == null || token.isEmpty()) {
 			throw new Exception(String.format("token must not be empty"));
 		}
 
-		if (token.toLowerCase().startsWith("CW")) {
+		if (token.toUpperCase().startsWith("CW")) {
 			throw new Exception(String.format("token name invalid"));
 		}
 
+		if (!token.toUpperCase().equals(token)) {
+			throw new Exception(String.format("token name invalid"));
+		}
+
+		if (oInput.getAmount() <= 0 || oInput.getAmount() > Long.parseLong("100000000000")) {
+			throw new Exception(String.format("token amount invalid"));
+		}
+
 		// 判断nonce是否一致
-		Account.Builder sender = accounts
-				.get(encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(0).getAddress().toByteArray()));
+		Account.Builder sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 		AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 
 		int nonce = senderAccountValue.getNonce();
-		if (nonce != oMultiTransaction.getTxBody().getInputs(0).getNonce()) {
-			throw new Exception(String.format("sender nonce %s is not equal with transaction nonce %s", nonce,
-					oMultiTransaction.getTxBody().getInputs(0).getNonce()));
-		}
-		if (senderAccountValue.getBalance() < this.oTransactionHelper.getBlockChainConfig().getContract_lock_balance()) {
+		if (nonce != oInput.getNonce()) {
 			throw new Exception(
-					String.format("not enough deposit %s", this.oTransactionHelper.getBlockChainConfig().getContract_lock_balance()));
+					String.format("sender nonce %s is not equal with transaction nonce %s", nonce, oInput.getNonce()));
+		}
+		if (senderAccountValue.getBalance() < this.oTransactionHelper.getBlockChainConfig()
+				.getToken_lock_balance()) {
+			throw new Exception(String.format("not enough deposit %s",
+					this.oTransactionHelper.getBlockChainConfig().getToken_lock_balance()));
 		}
 		// Token不允许重复
 		if (oAccountHelper.isExistsToken(token)) {
