@@ -66,7 +66,7 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 			oRespBlockInfo.setWaitBlock(oPendingHashMapDB.keys().size());
 			LinkedList<BlockEntity> list = blockChainHelper.getParentsBlocks(encApi.hexEnc(dao.getBlockDao()
 					.get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get().getExtdata().toByteArray()),
-					null, 1000000);
+					null, 10000);
 			int curr = 0;
 			String retCache = "";
 			String parent = "";

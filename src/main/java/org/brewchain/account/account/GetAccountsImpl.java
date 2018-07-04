@@ -105,6 +105,7 @@ public class GetAccountsImpl extends SessionModules<ReqGetAccounts> {
 					oAccountValueImpl.setStorage(encApi.hexEnc(oAccountValue.getStorage().toByteArray()));
 					oAccountValueImpl.setCode(encApi.hexEnc(oAccountValue.getCode().toByteArray()));
 					oAccountValueImpl.setCodeHash(encApi.hexEnc(oAccountValue.getCodeHash().toByteArray()));
+					oAccountValueImpl.setData(oAccountValue.getData().toStringUtf8());
 				}
 				oRespGetAccount.addAddress(address);
 				oRespGetAccount.addAccount(oAccountValueImpl);

@@ -75,6 +75,7 @@ public class TransactionCreateContract extends SessionModules<ReqCreateContract>
 			oMultiTransactionBody.addInputs(oMultiTransactionInput4);
 			oMultiTransactionBody.setType(TransTypeEnum.TYPE_CreateContract.value());
 			oMultiTransactionBody.setData(ByteString.copyFrom(encApi.hexDec(pb.getData())));
+			oMultiTransactionBody.setExdata(ByteString.copyFromUtf8("aabbccdd:12331 \n xxxx"));
 			oMultiTransaction.clearTxHash();
 			oMultiTransactionBody.clearSignatures();
 			oMultiTransactionBody.setTimestamp(System.currentTimeMillis());
