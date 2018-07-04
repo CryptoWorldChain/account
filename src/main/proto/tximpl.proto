@@ -20,6 +20,7 @@ enum PTXTCommand {
 	
 
 	SCT = 5; // send transaction of the contract creation
+	CTS = 6;//触网冷钱包-保存交易
 }
 message ReqCreateContractTransaction {
 	MultiTransactionInputImpl input = 1;
@@ -124,3 +125,15 @@ message MultiTransactionNodeImpl {
 	string ip = 2;
 	string bcuid = 3;
 }
+
+message ReqCreateTxColdPurse {//创建交易请求
+	string signature = 1;//交易内容
+	int64 amount = 2;
+	string inputaddress = 3;//输入地址
+	string outputaddress = 4;//输出地址
+	int32 nonce = 5;//次数
+	string publickey = 6;//公钥
+	int64 timestamp = 7;//交易时间
+	string token = 8;//erc2.0 token
+	
+};
