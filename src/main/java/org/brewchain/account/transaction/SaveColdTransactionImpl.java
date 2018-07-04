@@ -22,7 +22,7 @@ import org.brewchain.evmapi.gens.Tx.MultiTransactionBody;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionOutput;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionSignature;
-import org.codehaus.plexus.util.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;

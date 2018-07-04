@@ -21,7 +21,6 @@ import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionOutput;
-import org.codehaus.plexus.util.StringUtils;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;

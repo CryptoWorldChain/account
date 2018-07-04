@@ -260,7 +260,7 @@ public class BlockHelper implements ActorService {
 				break;
 			case CACHE:
 				log.info("cache block number::" + oBlockEntity.getHeader().getNumber());
-				oAddBlockResponse.setWantNumber(oBlockEntity.getHeader().getNumber());
+				// oAddBlockResponse.setWantNumber(oBlockEntity.getHeader().getNumber());
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 				break;
 			case APPLY:
