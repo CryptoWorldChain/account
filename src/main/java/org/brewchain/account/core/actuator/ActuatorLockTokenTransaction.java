@@ -68,7 +68,7 @@ public class ActuatorLockTokenTransaction extends AbstractTransactionActuator im
 	}
 
 	@Override
-	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
+	public ByteString onExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
 		// TODO lock 只处理了 input，未处理 output
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			// 取发送方账户
@@ -106,6 +106,8 @@ public class ActuatorLockTokenTransaction extends AbstractTransactionActuator im
 			sender.setValue(senderAccountValue);
 			accounts.put(encApi.hexEnc(sender.getAddress().toByteArray()), sender);
 		}
+		
+		return ByteString.EMPTY;
 	}
 
 	public ActuatorLockTokenTransaction(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,

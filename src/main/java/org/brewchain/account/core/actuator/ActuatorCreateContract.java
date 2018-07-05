@@ -40,13 +40,15 @@ public class ActuatorCreateContract extends AbstractTransactionActuator implemen
 	}
 
 	@Override
-	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
+	public ByteString onExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts)
+			throws Exception {
 		ByteString newContractAddress = oTransactionHelper.getContractAddressByTransaction(oMultiTransaction);
 		if (oAccountHelper.isExist(newContractAddress)) {
 			throw new Exception("contract address already exists");
 		} else {
-			accounts.put(encApi.hexEnc(newContractAddress.toByteArray()), oAccountHelper.CreateAccount(newContractAddress).toBuilder());
-			
+			accounts.put(encApi.hexEnc(newContractAddress.toByteArray()),
+					oAccountHelper.CreateAccount(newContractAddress).toBuilder());
+
 			EvmApiImp evmApiImp = new EvmApiImp();
 			evmApiImp.setAccountHelper(oAccountHelper);
 			evmApiImp.setTransactionHelper(oTransactionHelper);
@@ -58,11 +60,10 @@ public class ActuatorCreateContract extends AbstractTransactionActuator implemen
 					oInput.getAddress().toByteArray(), oInput.getAddress().toByteArray(),
 					ByteUtil.bigIntegerToBytes(BigInteger.valueOf(oInput.getAmount())),
 					ByteUtil.bigIntegerToBytes(BigInteger.ZERO), oMultiTransaction.getTxBody().getData().toByteArray(),
-					encApi.hexDec(oBlock.getHeader().getParentHash()),
-					encApi.hexDec(oBlock.getMiner().getAddress()),
+					encApi.hexDec(oBlock.getHeader().getParentHash()), encApi.hexDec(oBlock.getMiner().getAddress()),
 					Long.parseLong(String.valueOf(oBlock.getHeader().getTimestamp())),
-					Long.parseLong(String.valueOf(oBlock.getHeader().getNumber())),
-					ByteString.EMPTY.toByteArray(), evmApiImp);
+					Long.parseLong(String.valueOf(oBlock.getHeader().getNumber())), ByteString.EMPTY.toByteArray(),
+					evmApiImp);
 
 			Program createProgram = new Program(oMultiTransaction.getTxBody().getData().toByteArray(),
 					createProgramInvoke, oMultiTransaction);
@@ -80,18 +81,20 @@ public class ActuatorCreateContract extends AbstractTransactionActuator implemen
 				oCreateAccount.setValue(oValue.build());
 				accounts.put(encApi.hexEnc(oCreateAccount.getAddress().toByteArray()), oCreateAccount);
 
-				
 				Account.Builder contract = accounts.get(encApi.hexEnc(newContractAddress.toByteArray()));
 				AccountValue.Builder oContractValue = contract.getValueBuilder();
 				oContractValue.setCode(ByteString.copyFrom(createResult.getHReturn()));
-				oContractValue.setCodeHash(ByteString.copyFrom(encApi.sha256Encode(oContractValue.getCode().toByteArray())));
+				oContractValue
+						.setCodeHash(ByteString.copyFrom(encApi.sha256Encode(oContractValue.getCode().toByteArray())));
 				oContractValue.setCreator(oCreateAccount.getAddress());
 				oContractValue.setData(oMultiTransaction.getTxBody().getExdata());
 				contract.setValue(oContractValue);
-				
+
 				accounts.put(encApi.hexEnc(contract.getAddress().toByteArray()), contract);
 
 			}
+
+			return ByteString.EMPTY;
 		}
 	}
 }

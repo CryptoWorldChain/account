@@ -7,6 +7,18 @@ enum PSYSModule {
 };
 enum PSYSCommand {
     ACB = 0; // 增加账户加密token
+    SUM = 1; // 获取节点状态总结
+}
+
+message ReqGetSummary {}
+
+message RespGetSummary {
+	string waitBlock = 1;
+	string waitSync = 2;
+	string maxConnection = 3;
+	string maxStable = 4;
+	string unStable = 5;
+	string stable = 6;
 }
 
 message ReqAddCryptoToken {

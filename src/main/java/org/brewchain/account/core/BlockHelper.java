@@ -1,7 +1,9 @@
 package org.brewchain.account.core;
 
 import java.util.Date;
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map;
 
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
@@ -150,8 +152,8 @@ public class BlockHelper implements ActorService {
 		switch (oSummary.getBehavior()) {
 		case APPLY:
 			this.stateTrie.setRoot(encApi.hexDec(oBestBlockHeader.getStateRoot()));
-			byte[] stateRoot = processBlock(oBlockEntity);
-			oBlockEntity.setHeader(oBlockEntity.getHeaderBuilder().setStateRoot(encApi.hexEnc(stateRoot)));
+			processBlock(oBlockEntity);
+			oBlockEntity.setHeader(oBlockEntity.getHeaderBuilder().setStateRoot(oBlockEntity.getHeader().getStateRoot()));
 			blockChainHelper.connectBlock(oBlockEntity.build());
 
 			log.info(String.format("LOGFILTER %s %s %s %s 执行区块[%s]", KeyConstant.node.getoAccount().getAddress(),
@@ -246,11 +248,15 @@ public class BlockHelper implements ActorService {
 						oBlockEntity = pBlockEntity;
 						oBlockStoreSummary = blockChainHelper.addBlock(oBlockEntity);
 					} else {
-						log.debug("need prev block number::" + (oBlockEntity.getHeader().getNumber() - 2));
+						log.debug("need prev block number::" + (oBlockEntity.getHeader().getNumber()
+								- (blockChainConfig.getDefaultRollBackCount() + 1)));
 						oAddBlockResponse.setRetCode(-9);
-						oAddBlockResponse.setCurrentNumber(oBlockEntity.getHeader().getNumber() - 2);
-						oAddBlockResponse.setWantNumber(oBlockEntity.getHeader().getNumber() - 1);
-						blockChainHelper.rollbackTo(oBlockEntity.getHeader().getNumber() - 2);
+						oAddBlockResponse.setCurrentNumber(oBlockEntity.getHeader().getNumber()
+								- (blockChainConfig.getDefaultRollBackCount() + 1));
+						oAddBlockResponse.setWantNumber(
+								oBlockEntity.getHeader().getNumber() - blockChainConfig.getDefaultRollBackCount());
+						blockChainHelper.rollbackTo(oBlockEntity.getHeader().getNumber()
+								- (blockChainConfig.getDefaultRollBackCount() + 1));
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 					}
 				} catch (Exception e1) {
@@ -280,14 +286,14 @@ public class BlockHelper implements ActorService {
 				try {
 					parentBlock = blockChainHelper.getBlockByHash(oBlockEntity.getHeader().getParentHash());
 					this.stateTrie.setRoot(encApi.hexDec(parentBlock.getHeader().getStateRoot()));
-					byte[] stateRoot = processBlock(oBlockEntity.toBuilder());
+					String stateRoot = processBlock(oBlockEntity.toBuilder());
 
 					log.debug("=====sync-> " + oBlockEntity.getHeader().getNumber() + " parent::"
 							+ parentBlock.getHeader().getStateRoot() + " current::"
-							+ oBlockEntity.getHeader().getStateRoot() + " exec::" + encApi.hexEnc(stateRoot));
+							+ oBlockEntity.getHeader().getStateRoot() + " exec::" + stateRoot);
 
-					if (!oBlockEntity.getHeader().getStateRoot().equals(encApi.hexEnc(stateRoot))) {
-						log.error("begin to roll back, stateRoot::" + encApi.hexEnc(stateRoot) + " blockStateRoot::"
+					if (!oBlockEntity.getHeader().getStateRoot().equals(stateRoot)) {
+						log.error("begin to roll back, stateRoot::" + stateRoot + " blockStateRoot::"
 								+ oBlockEntity.getHeader().getStateRoot());
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.ERROR);
 					} else {
@@ -319,17 +325,18 @@ public class BlockHelper implements ActorService {
 		if (oAddBlockResponse.getCurrentNumber() == 0) {
 			oAddBlockResponse.setCurrentNumber(blockChainHelper.getLastBlockNumber());
 		}
-		
+
 		if (oAddBlockResponse.getWantNumber() == 0) {
 			oAddBlockResponse.setWantNumber(oAddBlockResponse.getCurrentNumber());
 		}
-		
+
 		log.debug("return apply current::" + oAddBlockResponse.getCurrentNumber() + " retcode::"
-				+ oAddBlockResponse.getRetCode() + " want::" + oAddBlockResponse.getWantNumber() + " summary::" + oBlockStoreSummary.getBehavior().name());
+				+ oAddBlockResponse.getRetCode() + " want::" + oAddBlockResponse.getWantNumber() + " summary::"
+				+ oBlockStoreSummary.getBehavior().name());
 		return oAddBlockResponse.build();
 	}
 
-	private synchronized byte[] processBlock(BlockEntity.Builder oBlockEntity) throws Exception {
+	private synchronized String processBlock(BlockEntity.Builder oBlockEntity) throws Exception {
 		BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
 		LinkedList<MultiTransaction> txs = new LinkedList<MultiTransaction>();
 		CacheTrie oTrieImpl = new CacheTrie();
@@ -370,12 +377,22 @@ public class BlockHelper implements ActorService {
 
 		oBlockEntity.setBody(bb);
 		// 执行交易
-		transactionHelper.ExecuteTransaction(txs, oBlockEntity.build());
+		Map<String, ByteString> results = transactionHelper.ExecuteTransaction(txs, oBlockEntity.build());
+
+		CacheTrie receiptTrie = new CacheTrie();
+		Iterator<String> iter = results.keySet().iterator();
+		while (iter.hasNext()) {
+			String key = iter.next();
+			receiptTrie.put(encApi.hexDec(key), results.get(key).toByteArray());
+		}
+		BlockHeader.Builder header = oBlockEntity.getHeaderBuilder();
+		header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
+		header.setReceiptTrieRoot(encApi.hexEnc(receiptTrie.getRootHash()));
+		
 		// reward
 		applyReward(oBlockEntity.build());
-
-		byte[] stateRoot = this.stateTrie.getRootHash();
-		return stateRoot;
+		
+		return header.getStateRoot();
 	}
 
 	/**

@@ -22,6 +22,9 @@ import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import org.fc.brewchain.bcapi.EncAPI;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import lombok.Data;
@@ -43,8 +46,15 @@ public class BlockStableStore implements IBlockStore, ActorService {
 	@ActorRequire(name = "Def_Daos", scope = "global")
 	DefDaos dao;
 
-	protected final TreeMap<Long, String> storage;
-	protected final LRUCache<String, BlockEntity> blocks;
+	// protected final TreeMap<Long, String> storage;
+	// protected final LRUCache<String, BlockEntity> blocks;
+	protected final LoadingCache<String, BlockEntity> blocks = CacheBuilder.newBuilder().maximumSize(100)
+			.build(new CacheLoader<String, BlockEntity>() {
+				public BlockEntity load(String key) {
+					return null;
+				}
+			});
+
 	private long maxNumber = -1;
 
 	protected ReadWriteLock rwLock = new ReentrantReadWriteLock();
@@ -52,13 +62,18 @@ public class BlockStableStore implements IBlockStore, ActorService {
 	protected ALock writeLock = new ALock(rwLock.writeLock());
 
 	public BlockStableStore() {
-		this.storage = new TreeMap<Long, String>();
-		this.blocks = new LRUCache<String, BlockEntity>(KeyConstant.CACHE_SIZE);
+		// this.storage = new TreeMap<Long, String>();
+		// this.blocks = new LRUCache<String, BlockEntity>(KeyConstant.CACHE_SIZE);
 	}
 
 	@Override
 	public boolean containKey(String hash) {
-		boolean flag = this.blocks.containsKey(hash);
+		boolean flag;
+		try {
+			flag = this.blocks.get(hash) == null;
+		} catch (ExecutionException e) {
+			flag = false;
+		}
 		if (!flag) {
 			if (getFromDB(hash) != null) {
 				flag = true;
@@ -69,7 +84,12 @@ public class BlockStableStore implements IBlockStore, ActorService {
 
 	@Override
 	public BlockEntity get(String hash) {
-		BlockEntity block = (BlockEntity) this.blocks.get(hash);
+		BlockEntity block;
+		try {
+			block = (BlockEntity) this.blocks.get(hash);
+		} catch (ExecutionException e) {
+			block = null;
+		}
 		if (block == null) {
 			block = getFromDB(hash);
 		}
@@ -80,9 +100,6 @@ public class BlockStableStore implements IBlockStore, ActorService {
 	public boolean add(BlockEntity block) {
 		long number = block.getHeader().getNumber();
 		try (ALock l = writeLock.lock()) {
-			// storage
-			this.storage.put(number, block.getHeader().getBlockHash());
-			// blocks
 			this.blocks.put(block.getHeader().getBlockHash(), block);
 		}
 
@@ -98,15 +115,16 @@ public class BlockStableStore implements IBlockStore, ActorService {
 				txBlockKeyList.add(OEntityBuilder.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash())));
 				txBlockValueList.add(OEntityBuilder.byteValue2OValue(encApi.hexDec(block.getHeader().getBlockHash())));
 			}
-			
-			//log.debug("====put transaction rel block::"+ block.getHeader().getBlockHash());
+
+			// log.debug("====put transaction rel block::"+
+			// block.getHeader().getBlockHash());
 			dao.getTxblockDao().batchPuts(txBlockKeyList.toArray(new OKey[0]), txBlockValueList.toArray(new OValue[0]));
 		}
 
 		log.debug(
 				"stable block number::" + block.getHeader().getNumber() + " hash::" + block.getHeader().getBlockHash());
 
-		//log.debug("====put stable block::"+ block.getHeader().getBlockHash());
+		// log.debug("====put stable block::"+ block.getHeader().getBlockHash());
 
 		dao.getBlockDao().batchPuts(
 				new OKey[] { OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK),
@@ -121,21 +139,15 @@ public class BlockStableStore implements IBlockStore, ActorService {
 	@Override
 	public BlockEntity getBlockByNumber(long number) {
 		BlockEntity block = null;
-		String blockHash = this.storage.get(number);
-		if (blockHash == null) {
-			try {
-				List<OPair> oPairs = dao.getBlockDao().listBySecondKey(String.valueOf(number)).get();
-				if (oPairs.size() > 0) {
-					block = BlockEntity.parseFrom(oPairs.get(0).getValue().getExtdata());
-					this.blocks.put(block.getHeader().getBlockHash(), block);
-					this.storage.put(number, block.getHeader().getBlockHash());
-					return block;
-				}
-			} catch (ODBException | InterruptedException | ExecutionException | InvalidProtocolBufferException e) {
-				log.error("get block from db error :: " + e.getMessage());
+		try {
+			List<OPair> oPairs = dao.getBlockDao().listBySecondKey(String.valueOf(number)).get();
+			if (oPairs.size() > 0) {
+				block = BlockEntity.parseFrom(oPairs.get(0).getValue().getExtdata());
+				this.blocks.put(block.getHeader().getBlockHash(), block);
+				return block;
 			}
-		} else {
-			return get(blockHash);
+		} catch (ODBException | InterruptedException | ExecutionException | InvalidProtocolBufferException e) {
+			log.error("get block from db error :: " + e.getMessage());
 		}
 
 		return block;
@@ -144,32 +156,20 @@ public class BlockStableStore implements IBlockStore, ActorService {
 	@Override
 	public BlockEntity rollBackTo(long number) {
 		BlockEntity block = null;
-		String hash = null;
-		int lastBlockNumber = 0;
-		while ((lastBlockNumber = getLastBlockNumber()) > number) {
-			hash = this.storage.remove(lastBlockNumber);
-		}
-		if (hash != null) {
-			block = get(hash);
-		} else {
-			block = getBlockByNumber(number);
-		}
-		
-		// log.debug("====put stable rollback block::"+ block.getHeader().getBlockHash());
-
+		block = getBlockByNumber(number);
 		dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK),
 				OEntityBuilder.byteValue2OValue(encApi.hexDec(block.getHeader().getBlockHash())));
 		return block;
 	}
 
-	public int getLastBlockNumber() {
-		try (ALock l = readLock.lock()) {
-			if (storage.size() > 0) {
-				return storage.size() - 1;
-			}
-			return -1;
-		}
-	}
+//	public int getLastBlockNumber() {
+//		try (ALock l = readLock.lock()) {
+//			if (storage.size() > 0) {
+//				return storage.size() - 1;
+//			}
+//			return -1;
+//		}
+//	}
 
 	public BlockEntity getFromDB(String hash) {
 		BlockEntity block = null;
@@ -180,7 +180,6 @@ public class BlockStableStore implements IBlockStore, ActorService {
 				block = BlockEntity.parseFrom(v.getExtdata());
 				try (ALock l = writeLock.lock()) {
 					this.blocks.put(block.getHeader().getBlockHash(), block);
-					this.storage.put(block.getHeader().getNumber(), block.getHeader().getBlockHash());
 				}
 			}
 		} catch (ODBException | InterruptedException | ExecutionException | InvalidProtocolBufferException e) {

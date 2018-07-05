@@ -2,6 +2,8 @@ package org.brewchain.account.util;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.brewchain.account.core.KeyConstant;
+
 public class LRUCache<K, V> {
 
 	private ConcurrentHashMap<K, CacheEntity> caches;
@@ -15,7 +17,7 @@ public class LRUCache<K, V> {
 	private CacheEntity first;
 	private CacheEntity last;
 	
-	public LRUCache(int initialCapacity){
+	public LRUCache(int initialCapacity) {
 		if(initialCapacity <= 0){
 			throw new IllegalArgumentException("Illegal initial capacity : " + initialCapacity);
 		}
@@ -26,7 +28,7 @@ public class LRUCache<K, V> {
 	}
 
 	public LRUCache(){
-		this(DEFAULT_INITIAL_CAPACITY);
+		this(KeyConstant.CACHE_SIZE);
 	}
 
 	private static class CacheEntity {
@@ -117,5 +119,9 @@ public class LRUCache<K, V> {
 		}
 
 		return sb.toString();
+	}
+	
+	public int size() {
+		return caches.size();
 	}
 }

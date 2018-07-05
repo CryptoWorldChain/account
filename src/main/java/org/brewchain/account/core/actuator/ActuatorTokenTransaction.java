@@ -100,7 +100,7 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 	}
 
 	@Override
-	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
+	public ByteString onExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
 		// LinkedList<OKey> keys = new LinkedList<>();
 		// LinkedList<AccountValue> values = new LinkedList<>();
 
@@ -178,5 +178,7 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			receiver.setValue(receiverAccountValue);
 			accounts.put(encApi.hexEnc(receiver.getAddress().toByteArray()), receiver);
 		}
+		
+		return ByteString.EMPTY;
 	}
 }

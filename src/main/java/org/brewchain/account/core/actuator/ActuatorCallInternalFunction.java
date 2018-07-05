@@ -14,6 +14,8 @@ import org.brewchain.evmapi.gens.Call.InternalCallArguments;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import org.fc.brewchain.bcapi.EncAPI;
 
+import com.google.protobuf.ByteString;
+
 public class ActuatorCallInternalFunction extends AbstractTransactionActuator implements iTransactionActuator {
 
 	@Override
@@ -23,7 +25,8 @@ public class ActuatorCallInternalFunction extends AbstractTransactionActuator im
 	}
 
 	@Override
-	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
+	public ByteString onExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts)
+			throws Exception {
 		InternalCallArguments.Builder oInternalCallArguments = InternalCallArguments
 				.parseFrom(oMultiTransaction.getTxBody().getExdata()).toBuilder();
 
@@ -38,13 +41,14 @@ public class ActuatorCallInternalFunction extends AbstractTransactionActuator im
 				break;
 			}
 		}
+		return ByteString.EMPTY;
 		// super.onExecute(oMultiTransaction, senders, receivers);
 	}
 
 	@Override
-	public void onExecuteDone(MultiTransaction oMultiTransaction) throws Exception {
+	public void onExecuteDone(MultiTransaction oMultiTransaction, ByteString result) throws Exception {
 		// TODO Auto-generated method stub
-		super.onExecuteDone(oMultiTransaction);
+		super.onExecuteDone(oMultiTransaction, result);
 	}
 
 	public ActuatorCallInternalFunction(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,

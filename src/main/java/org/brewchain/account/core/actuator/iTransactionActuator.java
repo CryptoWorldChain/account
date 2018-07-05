@@ -6,6 +6,8 @@ import org.brewchain.evmapi.gens.Act.Account;
 import org.brewchain.evmapi.gens.Act.AccountValue;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 
+import com.google.protobuf.ByteString;
+
 public interface iTransactionActuator {
 	boolean needSignature();
 //	LinkedList<OKey> getKeys();
@@ -42,7 +44,7 @@ public interface iTransactionActuator {
 	 * @param receivers
 	 * @throws Exception
 	 */
-	void onExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception;
+	ByteString onExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception;
 
 	/**
 	 * 交易执行成功后。
@@ -50,7 +52,7 @@ public interface iTransactionActuator {
 	 * @param oMultiTransaction
 	 * @throws Exception
 	 */
-	void onExecuteDone(MultiTransaction oMultiTransaction) throws Exception;
+	void onExecuteDone(MultiTransaction oMultiTransaction, ByteString result) throws Exception;
 	
 	/**
 	 * 交易执行失败后。
@@ -58,5 +60,5 @@ public interface iTransactionActuator {
 	 * @param oMultiTransaction
 	 * @throws Exception
 	 */
-	void onExecuteError(MultiTransaction oMultiTransaction) throws Exception;
+	void onExecuteError(MultiTransaction oMultiTransaction, ByteString result) throws Exception;
 }

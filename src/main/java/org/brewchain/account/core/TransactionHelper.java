@@ -1,7 +1,9 @@
 package org.brewchain.account.core;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -171,23 +173,18 @@ public class TransactionHelper implements ActorService {
 	 * 
 	 * @param oTransaction
 	 */
-	public void ExecuteTransaction(LinkedList<MultiTransaction> oMultiTransactions, BlockEntity currentBlock)
-			throws Exception {
+	public Map<String, ByteString> ExecuteTransaction(LinkedList<MultiTransaction> oMultiTransactions,
+			BlockEntity currentBlock) throws Exception {
 
+		Map<String, ByteString> results = new LinkedHashMap<>();
 		for (MultiTransaction oTransaction : oMultiTransactions) {
-			// LinkedList<OKey> keys = new LinkedList<OKey>();
-			// LinkedList<AccountValue> values = new LinkedList<AccountValue>();
 			log.debug("exec transaction hash::" + oTransaction.getTxHash());
 			iTransactionActuator oiTransactionActuator = getActuator(oTransaction.getTxBody().getType(), currentBlock);
 
 			try {
 				Map<String, Account.Builder> accounts = getTransactionAccounts(oTransaction.toBuilder());
-
 				oiTransactionActuator.onPrepareExecute(oTransaction, accounts);
-				oiTransactionActuator.onExecute(oTransaction, accounts);
-
-				// keys.addAll(oiTransactionActuator.getKeys());
-				// values.addAll(oiTransactionActuator.getValues());
+				ByteString result = oiTransactionActuator.onExecute(oTransaction, accounts);
 
 				Iterator<String> iterator = accounts.keySet().iterator();
 				while (iterator.hasNext()) {
@@ -195,26 +192,18 @@ public class TransactionHelper implements ActorService {
 					AccountValue value = accounts.get(key).getValue();
 					this.stateTrie.put(encApi.hexDec(key), value.toByteArray());
 				}
-
-				// for (int i = 0; i < keys.size(); i++) {
-				// this.stateTrie.put(keys.get(i).getData().toByteArray(),
-				// values.get(i).toByteArray());
-				// log.debug("put trie key::" +
-				// encApi.hexEnc(keys.get(i).getData().toByteArray()) + " values::" +
-				// encApi.hexEnc(values.get(i).toByteArray()));
-				// }
-
-				// oAccountHelper.BatchPutAccounts(keys, values);
 				oAccountHelper.BatchPutAccounts(accounts);
-
-				oiTransactionActuator.onExecuteDone(oTransaction);
+				oiTransactionActuator.onExecuteDone(oTransaction, result);
+				results.put(oTransaction.getTxHash(), result);
 			} catch (Exception e) {
 				e.printStackTrace();
-				oiTransactionActuator.onExecuteError(oTransaction);
+				oiTransactionActuator.onExecuteError(oTransaction, ByteString.copyFromUtf8(e.getMessage()));
+				results.put(oTransaction.getTxHash(), ByteString.copyFromUtf8(e.getMessage()));
 				// throw e;
 				log.error("error on exec tx::" + e.getMessage(), e);
 			}
 		}
+		return results;
 		// oStateTrie.flush();
 		// return oStateTrie.getRootHash();
 	}
@@ -715,20 +704,20 @@ public class TransactionHelper implements ActorService {
 		}
 	}
 
-	public void setTransactionDone(String txHash) throws Exception {
+	public void setTransactionDone(String txHash, ByteString result) throws Exception {
 		MultiTransaction.Builder tx = GetTransaction(txHash).toBuilder();
 		tx.setStatus("done");
-
+		tx.setResult(result);
 		// log.debug("====put transaction done::"+ txHash);
 
 		dao.getTxsDao().put(OEntityBuilder.byteKey2OKey(encApi.hexDec(tx.getTxHash())),
 				OEntityBuilder.byteValue2OValue(tx.build().toByteArray()));
 	}
 
-	public void setTransactionError(String txHash) throws Exception {
+	public void setTransactionError(String txHash, ByteString result) throws Exception {
 		MultiTransaction.Builder tx = GetTransaction(txHash).toBuilder();
 		tx.setStatus("error");
-
+		tx.setResult(result);
 		// log.debug("====put transaction error::"+ txHash);
 
 		dao.getTxsDao().put(OEntityBuilder.byteKey2OKey(encApi.hexDec(tx.getTxHash())),

@@ -18,6 +18,8 @@ import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionSignature;
 import org.fc.brewchain.bcapi.EncAPI;
 
+import com.google.protobuf.ByteString;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -29,7 +31,8 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 	}
 
 	@Override
-	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
+	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts)
+			throws Exception {
 		// 校验每日最大转账金额
 		// 校验每笔最大转账金额
 		// 校验超过单笔转账金额后的用户签名
@@ -56,8 +59,8 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 		// 当单笔金额超过一个预设值后，则需要多方签名
 		if (totalAmount > oSenderValue.getAcceptMax()) {
 			if (oMultiTransaction.getTxBody().getSignaturesCount() != oSenderValue.getAcceptMax()) {
-				throw new Exception(String.format("must have %s signature when transaction value %s more than %s", totalAmount,
-						oSenderValue.getAcceptMax(), oSenderValue.getAcceptLimit()));
+				throw new Exception(String.format("must have %s signature when transaction value %s more than %s",
+						totalAmount, oSenderValue.getAcceptMax(), oSenderValue.getAcceptLimit()));
 			} else {
 				// TODO 如何判断交易的签名，是由多重签名账户的关联账户进行签名的
 			}
@@ -72,7 +75,7 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 	}
 
 	@Override
-	public void onExecuteDone(MultiTransaction oMultiTransaction) throws Exception {
+	public void onExecuteDone(MultiTransaction oMultiTransaction, ByteString result) throws Exception {
 		// 缓存，累加当天转账金额
 		long totalAmount = 0;
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
@@ -83,11 +86,12 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 				oMultiTransaction.getTxBody().getInputs(0).getAddress());
 		long v = AbstractLocalCache.dayTotalAmount.get(key);
 		AbstractLocalCache.dayTotalAmount.put(key, v + totalAmount);
-		super.onExecuteDone(oMultiTransaction);
+		super.onExecuteDone(oMultiTransaction, result);
 	}
 
 	@Override
-	public void onVerifySignature(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
+	public void onVerifySignature(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts)
+			throws Exception {
 
 		// 签名的账户是否是该多重签名账户的子账户，如果不是，抛出异常
 		for (MultiTransactionSignature oSignature : oMultiTransaction.getTxBody().getSignaturesList()) {

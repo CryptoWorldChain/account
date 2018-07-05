@@ -98,7 +98,7 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 	 * java.util.Map)
 	 */
 	@Override
-	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
+	public ByteString onExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
 		// LinkedList<OKey> keys = new LinkedList<>();
 		// LinkedList<AccountValue> values = new LinkedList<>();
 
@@ -213,14 +213,15 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 			//this.accountValues.put(encApi.hexEnc(oOutput.getAddress().toByteArray()), receiverAccountValue.build());
 		}
 
+		return ByteString.EMPTY;
 		// this.keys.addAll(keys);
 		// this.values.addAll(values);
 		// oAccountHelper.BatchPutAccounts(keys, values);
 	}
 
 	@Override
-	public void onExecuteDone(MultiTransaction oMultiTransaction) throws Exception {
+	public void onExecuteDone(MultiTransaction oMultiTransaction, ByteString result) throws Exception {
 		// TODO Auto-generated method stub
-		super.onExecuteDone(oMultiTransaction);
+		super.onExecuteDone(oMultiTransaction, result);
 	}
 }

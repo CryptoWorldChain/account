@@ -25,7 +25,7 @@ import com.google.protobuf.ByteString;
 
 public abstract class AbstractTransactionActuator implements iTransactionActuator {
 
-	//protected Map<String, AccountValue> accountValues = new HashMap<>();
+	// protected Map<String, AccountValue> accountValues = new HashMap<>();
 	protected Map<String, MultiTransaction> txValues = new HashMap<>();
 
 	// protected LinkedList<OKey> keys = new LinkedList<>();
@@ -33,10 +33,10 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	// protected LinkedList<OKey> txKeys = new LinkedList<>();
 	// protected LinkedList<MultiTransaction> txValues = new LinkedList<>();
 
-//	@Override
-//	public Map<String, AccountValue> getAccountValues() {
-//		return accountValues;
-//	}
+	// @Override
+	// public Map<String, AccountValue> getAccountValues() {
+	// return accountValues;
+	// }
 
 	@Override
 	public Map<String, MultiTransaction> getTxValues() {
@@ -64,7 +64,8 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	// }
 
 	@Override
-	public void onVerifySignature(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
+	public void onVerifySignature(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts)
+			throws Exception {
 		// 获取交易原始encode
 		MultiTransaction.Builder signatureTx = oMultiTransaction.toBuilder();
 		MultiTransactionBody.Builder txBody = signatureTx.getTxBodyBuilder();
@@ -72,12 +73,29 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 		txBody = txBody.clearSignatures();
 		byte[] oMultiTransactionEncode = txBody.build().toByteArray();
 		// 校验交易签名
+		int i = 0;
 		for (MultiTransactionSignature oMultiTransactionSignature : oMultiTransaction.getTxBody().getSignaturesList()) {
-			if (!encApi.ecVerify(encApi.hexEnc(oMultiTransactionSignature.getPubKey().toByteArray()), oMultiTransactionEncode,
-					oMultiTransactionSignature.getSignature().toByteArray())) {
+			// byte[] address = encApi.ecToAddress(oMultiTransactionEncode,
+			// encApi.hexEnc(oMultiTransactionSignature.getSignature().toByteArray()));
+			// if (!encApi.hexEnc(address)
+			// .equals(encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(i).getAddress().toByteArray())))
+			// {
+			// throw new TransactionExecuteException(
+			// String.format("signature address %s not equal with sender address %s ",
+			// encApi.hexEnc(address),
+			// encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(i).getAddress().toByteArray())));
+			// }
+			//
+			// byte[] pubKey = encApi.ecToKeyBytes(oMultiTransactionEncode,
+			// encApi.hexEnc(oMultiTransactionSignature.getSignature().toByteArray()));
+			if (!encApi.ecVerify(encApi.hexEnc(oMultiTransactionSignature.getPubKey().toByteArray()),
+					oMultiTransactionEncode, oMultiTransactionSignature.getSignature().toByteArray())) {
 				throw new TransactionExecuteException(String.format("signature %s verify fail with pubkey %s",
-						encApi.hexEnc(oMultiTransactionSignature.getSignature().toByteArray()), encApi.hexEnc(oMultiTransactionSignature.getPubKey().toByteArray()) ));
+						encApi.hexEnc(oMultiTransactionSignature.getSignature().toByteArray()),
+						encApi.hexEnc(oMultiTransactionSignature.getPubKey().toByteArray())));
 			}
+
+			i += 1;
 		}
 	}
 
@@ -104,14 +122,16 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	}
 
 	@Override
-	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
+	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts)
+			throws Exception {
 		int inputsTotal = 0;
 		int outputsTotal = 0;
 
 		if (oMultiTransaction.getTxBody().getInputsList().size() > 1
 				&& oMultiTransaction.getTxBody().getOutputsList().size() > 1) {
 			throw new TransactionExecuteException(
-					String.format("some error in transaction parameters, sender %s，receiver %s", oMultiTransaction.getTxBody().getInputsList().size(),
+					String.format("some error in transaction parameters, sender %s，receiver %s",
+							oMultiTransaction.getTxBody().getInputsList().size(),
 							oMultiTransaction.getTxBody().getOutputsList().size()));
 		}
 
@@ -126,10 +146,12 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			long balance = senderAccountValue.getBalance();
 
 			if (balance < 0) {
-				throw new TransactionExecuteException(String.format("sender %s balance %s less than 0", encApi.hexEnc(sender.getAddress().toByteArray()) ,balance));
+				throw new TransactionExecuteException(String.format("sender %s balance %s less than 0",
+						encApi.hexEnc(sender.getAddress().toByteArray()), balance));
 			}
 			if (oInput.getAmount() < 0) {
-				throw new TransactionExecuteException(String.format("transaction value %s less than 0", oInput.getAmount()));
+				throw new TransactionExecuteException(
+						String.format("transaction value %s less than 0", oInput.getAmount()));
 			}
 
 			if (balance - oInput.getAmount() < 0) {// - oInput.getFeeLimit()
@@ -142,8 +164,8 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			// 判断nonce是否一致
 			int nonce = senderAccountValue.getNonce();
 			if (nonce != oInput.getNonce()) {
-				throw new TransactionExecuteException(
-						String.format("sender nonce %s is not equal with transaction nonce %s", nonce, oInput.getNonce()));
+				throw new TransactionExecuteException(String
+						.format("sender nonce %s is not equal with transaction nonce %s", nonce, oInput.getNonce()));
 			}
 		}
 
@@ -157,12 +179,14 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 		}
 
 		if (inputsTotal < outputsTotal) {
-			throw new TransactionExecuteException(String.format("transaction value %s less than %s", inputsTotal, outputsTotal));
+			throw new TransactionExecuteException(
+					String.format("transaction value %s less than %s", inputsTotal, outputsTotal));
 		}
 	}
 
 	@Override
-	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
+	public ByteString onExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts)
+			throws Exception {
 
 		// LinkedList<OKey> keys = new LinkedList<>();
 		// LinkedList<AccountValue> values = new LinkedList<>();
@@ -203,16 +227,18 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			receiver.setValue(receiverAccountValue);
 			accounts.put(encApi.hexEnc(receiver.getAddress().toByteArray()), receiver);
 		}
+
+		return ByteString.EMPTY;
 	}
 
 	@Override
-	public void onExecuteDone(MultiTransaction oMultiTransaction) throws Exception {
-		oTransactionHelper.setTransactionDone(oMultiTransaction.getTxHash());
+	public void onExecuteDone(MultiTransaction oMultiTransaction, ByteString result) throws Exception {
+		oTransactionHelper.setTransactionDone(oMultiTransaction.getTxHash(), result);
 	}
 
 	@Override
-	public void onExecuteError(MultiTransaction oMultiTransaction) throws Exception {
-		oTransactionHelper.setTransactionError(oMultiTransaction.getTxHash());
+	public void onExecuteError(MultiTransaction oMultiTransaction, ByteString result) throws Exception {
+		oTransactionHelper.setTransactionError(oMultiTransaction.getTxHash(), result);
 	}
 
 	public static class TransactionExecuteException extends Exception {

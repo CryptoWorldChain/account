@@ -31,7 +31,7 @@ public class ActuatorCreateToken extends AbstractTransactionActuator implements 
 	}
 
 	@Override
-	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
+	public ByteString onExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
 		MultiTransactionInput input = oMultiTransaction.getTxBody().getInputs(0);
 		Account.Builder sender = accounts.get(encApi.hexEnc(input.getAddress().toByteArray()));
 		AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
@@ -52,6 +52,8 @@ public class ActuatorCreateToken extends AbstractTransactionActuator implements 
 		accounts.put(encApi.hexEnc(sender.getAddress().toByteArray()), sender);
 		accounts.put(encApi.hexEnc(locker.getAddress().toByteArray()), locker);
 		oAccountHelper.createToken(input.getAddress(), input.getToken(), input.getAmount());
+		
+		return ByteString.EMPTY;
 	}
 
 	@Override

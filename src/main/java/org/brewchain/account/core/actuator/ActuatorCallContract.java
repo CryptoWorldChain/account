@@ -39,7 +39,7 @@ public class ActuatorCallContract extends AbstractTransactionActuator implements
 	}
 
 	@Override
-	public void onExecute(MultiTransaction oMultiTransaction, Map<String, Builder> accounts) throws Exception {
+	public ByteString onExecute(MultiTransaction oMultiTransaction, Map<String, Builder> accounts) throws Exception {
 		VM vm = new VM();
 		Account.Builder existsContract = accounts
 				.get(encApi.hexEnc(oMultiTransaction.getTxBody().getOutputs(0).getAddress().toByteArray()));
@@ -72,7 +72,6 @@ public class ActuatorCallContract extends AbstractTransactionActuator implements
 		if (result.getException() != null || result.isRevert()) {
 			throw result.getException();
 		} else {
-
 			Iterator iter = evmApiImp.getTouchAccount().entrySet().iterator();
 			while (iter.hasNext()) {
 				Map.Entry<String, Account> entry = (Entry<String, Account>) iter.next();
@@ -85,6 +84,7 @@ public class ActuatorCallContract extends AbstractTransactionActuator implements
 					accounts.put(entry.getKey().toString(), ((Account) entry.getValue()).toBuilder());
 				}
 			}
+			return ByteString.copyFrom(result.getHReturn());
 		}
 	}
 }

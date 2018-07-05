@@ -30,6 +30,7 @@ public class BlockChainConfig extends SessionModules<Message> {
 	private String lock_account_address = props().get("org.brewchain.account.lock.address", "");
 	private boolean isDev = props().get("org.brewchain.man.dev", "true").equals("true");
 	private long token_lock_balance = props().get("org.brewchain.token.lock.balance", 0);
+	private int defaultRollBackCount = props().get("org.brewchain.manage.rollback.count", 10);
 
 	@Override
 	public String[] getCmds() {
