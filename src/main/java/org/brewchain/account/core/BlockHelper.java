@@ -153,7 +153,8 @@ public class BlockHelper implements ActorService {
 		case APPLY:
 			this.stateTrie.setRoot(encApi.hexDec(oBestBlockHeader.getStateRoot()));
 			processBlock(oBlockEntity);
-			oBlockEntity.setHeader(oBlockEntity.getHeaderBuilder().setStateRoot(oBlockEntity.getHeader().getStateRoot()));
+			oBlockEntity
+					.setHeader(oBlockEntity.getHeaderBuilder().setStateRoot(oBlockEntity.getHeader().getStateRoot()));
 			blockChainHelper.connectBlock(oBlockEntity.build());
 
 			log.info(String.format("LOGFILTER %s %s %s %s 执行区块[%s]", KeyConstant.node.getoAccount().getAddress(),
@@ -379,19 +380,22 @@ public class BlockHelper implements ActorService {
 		// 执行交易
 		Map<String, ByteString> results = transactionHelper.ExecuteTransaction(txs, oBlockEntity.build());
 
+		BlockHeader.Builder header = oBlockEntity.getHeaderBuilder();
+
 		CacheTrie receiptTrie = new CacheTrie();
 		Iterator<String> iter = results.keySet().iterator();
 		while (iter.hasNext()) {
 			String key = iter.next();
 			receiptTrie.put(encApi.hexDec(key), results.get(key).toByteArray());
 		}
-		BlockHeader.Builder header = oBlockEntity.getHeaderBuilder();
+		if (results.size() > 0) {
+			header.setReceiptTrieRoot(encApi.hexEnc(receiptTrie.getRootHash()));
+		}
+
 		header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
-		header.setReceiptTrieRoot(encApi.hexEnc(receiptTrie.getRootHash()));
-		
 		// reward
 		applyReward(oBlockEntity.build());
-		
+
 		return header.getStateRoot();
 	}
 
