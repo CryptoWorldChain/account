@@ -158,6 +158,22 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 			}
 		}
 	}
+	
+	public void append(String hash) throws BlockNotFoundInStoreException {
+		try (ALock l = writeLock.lock()) {
+			if (!this.storage.containsKey(hash)) {
+				throw new BlockNotFoundInStoreException("block unable to connect to block chain.");
+			}
+			BlockStoreNodeValue oNode = this.storage.get(hash);
+			if (!oNode.isConnect()) {
+				oNode.connect();
+				this.storage.put(hash, oNode);
+
+				log.debug("success append block number::" + oNode.getNumber() + " hash::" + oNode.getBlockHash()
+						+ " stateroot::" + oNode.getBlockEntity().getHeader().getStateRoot());
+			}
+		}
+	}
 
 	public boolean containsUnConnectChild(String hash) {
 		try (ALock l = readLock.lock()) {

@@ -71,7 +71,7 @@ public class BlockStableStore implements IBlockStore, ActorService {
 		boolean flag;
 		try {
 			flag = this.blocks.get(hash) == null;
-		} catch (ExecutionException e) {
+		} catch (Exception e) {
 			flag = false;
 		}
 		if (!flag) {
@@ -87,7 +87,7 @@ public class BlockStableStore implements IBlockStore, ActorService {
 		BlockEntity block;
 		try {
 			block = (BlockEntity) this.blocks.get(hash);
-		} catch (ExecutionException e) {
+		} catch (Exception e) {
 			block = null;
 		}
 		if (block == null) {
@@ -101,10 +101,6 @@ public class BlockStableStore implements IBlockStore, ActorService {
 		long number = block.getHeader().getNumber();
 		try (ALock l = writeLock.lock()) {
 			this.blocks.put(block.getHeader().getBlockHash(), block);
-		}
-
-		if (maxNumber < number) {
-			maxNumber = number;
 		}
 
 		if (block.getBody() != null) {
@@ -126,13 +122,15 @@ public class BlockStableStore implements IBlockStore, ActorService {
 
 		// log.debug("====put stable block::"+ block.getHeader().getBlockHash());
 
-		dao.getBlockDao().batchPuts(
-				new OKey[] { OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK),
-						OEntityBuilder.byteKey2OKey(encApi.hexDec(block.getHeader().getBlockHash())) },
-				new OValue[] { OEntityBuilder.byteValue2OValue(encApi.hexDec(block.getHeader().getBlockHash())),
-						OEntityBuilder.byteValue2OValue(block.toByteArray(),
-								String.valueOf(block.getHeader().getNumber())) });
-
+		if (maxNumber < number) {
+			maxNumber = number;
+			dao.getBlockDao().batchPuts(
+					new OKey[] { OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK),
+							OEntityBuilder.byteKey2OKey(encApi.hexDec(block.getHeader().getBlockHash())) },
+					new OValue[] { OEntityBuilder.byteValue2OValue(encApi.hexDec(block.getHeader().getBlockHash())),
+							OEntityBuilder.byteValue2OValue(block.toByteArray(),
+									String.valueOf(block.getHeader().getNumber())) });
+		}
 		return true;
 	}
 
@@ -162,14 +160,14 @@ public class BlockStableStore implements IBlockStore, ActorService {
 		return block;
 	}
 
-//	public int getLastBlockNumber() {
-//		try (ALock l = readLock.lock()) {
-//			if (storage.size() > 0) {
-//				return storage.size() - 1;
-//			}
-//			return -1;
-//		}
-//	}
+	// public int getLastBlockNumber() {
+	// try (ALock l = readLock.lock()) {
+	// if (storage.size() > 0) {
+	// return storage.size() - 1;
+	// }
+	// return -1;
+	// }
+	// }
 
 	public BlockEntity getFromDB(String hash) {
 		BlockEntity block = null;

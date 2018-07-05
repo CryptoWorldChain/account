@@ -120,7 +120,7 @@ public class BlockStore implements ActorService {
 								+ " hash::" + loopBlockEntity.getHeader().getBlockHash() + " stateroot::"
 								+ loopBlockEntity.getHeader().getStateRoot());
 						unStableStore.add(loopBlockEntity);
-						unStableStore.connect(parentHash);
+						unStableStore.append(parentHash);
 						if (maxReceiveNumber < loopBlockEntity.getHeader().getNumber()) {
 							maxReceiveNumber = loopBlockEntity.getHeader().getNumber();
 							maxReceiveBlock = loopBlockEntity;
