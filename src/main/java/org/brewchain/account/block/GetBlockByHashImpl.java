@@ -56,6 +56,8 @@ public class GetBlockByHashImpl extends SessionModules<ReqGetBlockByHash> {
 			oBlockHeaderImpl.setReward(oBlockEntity.getHeader().getReward());
 			oBlockHeaderImpl.setSliceId(oBlockEntity.getHeader().getSliceId());
 			oBlockHeaderImpl.setTimestamp(oBlockEntity.getHeader().getTimestamp());
+			oBlockHeaderImpl.setState(oBlockEntity.getHeader().getStateRoot());
+			oBlockHeaderImpl.setReceipt(oBlockEntity.getHeader().getReceiptTrieRoot());
 
 			for (String oTxhash : oBlockEntity.getHeader().getTxHashsList()) {
 				oBlockHeaderImpl.addTxHashs(oTxhash);

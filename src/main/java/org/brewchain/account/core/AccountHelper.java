@@ -94,8 +94,6 @@ public class AccountHelper implements ActorService {
 		if (exdata != null) {
 			oUnionAccountValue.setData(exdata);
 		}
-		oUnionAccountValue.setTimestamp(System.currentTimeMillis());
-
 		oUnionAccount.setAddress(address);
 		oUnionAccount.setValue(oUnionAccountValue);
 		return CreateUnionAccount(oUnionAccount.build());
@@ -176,7 +174,7 @@ public class AccountHelper implements ActorService {
 			List<OPair> oPairs = dao.getAccountDao().listBySecondKey(encApi.hexEnc(addr.toByteArray())).get();
 			if (oPairs.size() > 0) {
 				for (OPair oPair : oPairs) {
-					
+
 					Account.Builder oAccount = Account.newBuilder();
 					oAccount.setAddress(oPair.getKey().getData());
 					AccountValue.Builder oAccountValue = AccountValue.newBuilder();
@@ -631,15 +629,18 @@ public class AccountHelper implements ActorService {
 	}
 
 	public void putAccountValue(ByteString addr, AccountValue oAccountValue) {
-		if (oAccountValue.getCreator() != null && !oAccountValue.getCreator().equals(ByteString.EMPTY)) {
+		if (oAccountValue.getCode() != null && oAccountValue.getAddressCount() > 0) {
 			dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(addr), OEntityBuilder.byteValue2OValue(
-					oAccountValue.toByteArray(), encApi.hexEnc(oAccountValue.getCreator().toByteArray())));
+					oAccountValue.toByteArray(), encApi.hexEnc(oAccountValue.getAddress(0).toByteArray())));
 		} else {
 			dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(addr),
 					OEntityBuilder.byteValue2OValue(oAccountValue.toByteArray()));
 		}
 
 		if (this.stateTrie != null) {
+			log.warn("put state trie::" + encApi.hexEnc(addr.toByteArray()) + " "
+					+ encApi.hexEnc(oAccountValue.toByteArray()));
+
 			this.stateTrie.put(addr.toByteArray(), oAccountValue.toByteArray());
 			// this.stateTrie.flush();
 		}
@@ -651,14 +652,17 @@ public class AccountHelper implements ActorService {
 
 		LinkedList<OValue> list = new LinkedList<>();
 		for (int i = 0; i < values.size(); i++) {
-			if (values.get(i).getCreator() != null && !values.get(i).getCreator().equals(ByteString.EMPTY)) {
+
+			if (values.get(i).getCode() != null && values.get(i).getAddressCount() > 0) {
 				list.add(OEntityBuilder.byteValue2OValue(values.get(i).toByteArray(),
-						encApi.hexEnc(values.get(i).getCreator().toByteArray())));
+						encApi.hexEnc(values.get(i).getAddress(0).toByteArray())));
 			} else {
 				list.add(OEntityBuilder.byteValue2OValue(values.get(i).toByteArray()));
 			}
 
 			if (this.stateTrie != null) {
+				log.debug("put state trie::" + encApi.hexEnc(keys.get(i).getData().toByteArray()) + " "
+						+ encApi.hexEnc(values.get(i).toByteArray()));
 				this.stateTrie.put(keys.get(i).getData().toByteArray(), values.get(i).toByteArray());
 			}
 		}
@@ -677,13 +681,17 @@ public class AccountHelper implements ActorService {
 			AccountValue value = accountValues.get(key).getValue();
 			keysArray[i] = OEntityBuilder.byteKey2OKey(encApi.hexDec(key));
 
-			if (value.getCreator() != null && !value.getCreator().equals(ByteString.EMPTY)) {
+			if (value.getCode() != null && value.getAddressCount() > 0) {
 				valuesArray[i] = OEntityBuilder.byteValue2OValue(value.toByteArray(),
-						encApi.hexEnc(value.getCreator().toByteArray()));
+						encApi.hexEnc(value.getAddress(0).toByteArray()));
 			} else {
 				valuesArray[i] = OEntityBuilder.byteValue2OValue(value.toByteArray());
 			}
 
+			if (this.stateTrie != null) {
+				log.debug("put state trie::" + key + " " + encApi.hexEnc(value.toByteArray()));
+				this.stateTrie.put(encApi.hexDec(key), value.toByteArray());
+			}
 			i = i + 1;
 		}
 		dao.getAccountDao().batchPuts(keysArray, valuesArray);

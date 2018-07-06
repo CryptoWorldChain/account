@@ -50,9 +50,12 @@ public class SaveMultiTransactionImpl extends SessionModules<ReqCreateMultiTrans
 			oRespCreateTx.setTxHash(transactionHelper.CreateMultiTransaction(oTransaction));
 			oRespCreateTx.setRetCode(1);
 		} catch (Throwable e) {
+			log.error("error on create tx::" + e);
+			e.printStackTrace();
+
 			oRespCreateTx.clear();
 			oRespCreateTx.setRetCode(-1);
-			oRespCreateTx.setRetMsg(e.getMessage());
+			oRespCreateTx.setRetMsg(e == null || e.getMessage() == null ? "" : e.getMessage());
 		}
 
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespCreateTx.build()));

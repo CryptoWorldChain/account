@@ -82,6 +82,7 @@ message MultiTransactionImpl {
 	MultiTransactionBodyImpl txBody = 2;
 	MultiTransactionNodeImpl node = 3;
 	string status = 4;
+	string result = 5;
 } 
 
 message MultiTransactionBodyImpl {

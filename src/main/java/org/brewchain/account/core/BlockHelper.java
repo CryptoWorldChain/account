@@ -18,6 +18,7 @@ import org.brewchain.account.core.actuator.ActuatorLockTokenTransaction;
 import org.brewchain.account.core.actuator.ActuatorTokenTransaction;
 import org.brewchain.account.core.actuator.ActuatorUnionAccountTransaction;
 import org.brewchain.account.core.actuator.iTransactionActuator;
+import org.brewchain.account.core.processor.ProcessorManager;
 import org.brewchain.account.core.store.BlockStoreSummary;
 import org.brewchain.account.core.store.BlockStoreSummary.BLOCK_BEHAVIOR;
 import org.brewchain.account.dao.DefDaos;
@@ -69,6 +70,8 @@ public class BlockHelper implements ActorService {
 	CacheBlockHashMapDB oCacheHashMapDB;
 	@ActorRequire(name = "Block_StateTrie", scope = "global")
 	StateTrie stateTrie;
+	@ActorRequire(name = "Processor_Manager", scope = "global")
+	ProcessorManager oProcessorManager;
 
 	/**
 	 * 创建新区块
@@ -105,70 +108,7 @@ public class BlockHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public BlockEntity.Builder CreateNewBlock(LinkedList<MultiTransaction> txs, String extraData) throws Exception {
-		BlockEntity.Builder oBlockEntity = BlockEntity.newBuilder();
-		BlockHeader.Builder oBlockHeader = BlockHeader.newBuilder();
-		BlockBody.Builder oBlockBody = BlockBody.newBuilder();
-		BlockMiner.Builder oBlockMiner = BlockMiner.newBuilder();
-
-		// 获取本节点的最后一块Block
-		BlockEntity oBestBlockEntity = blockChainHelper.GetConnectBestBlock();
-		if (oBestBlockEntity == null) {
-			oBestBlockEntity = blockChainHelper.GetStableBestBlock();
-		}
-		BlockHeader oBestBlockHeader = oBestBlockEntity.getHeader();
-
-		// 构造Block Header
-		// oBlockHeader.setCoinbase(ByteString.copyFrom(coinBase));
-		oBlockHeader.setParentHash(oBestBlockHeader.getBlockHash());
-
-		// 确保时间戳不重复
-		long currentTimestamp = System.currentTimeMillis();
-		oBlockHeader.setTimestamp(
-				System.currentTimeMillis() == oBestBlockHeader.getTimestamp() ? oBestBlockHeader.getTimestamp() + 1
-						: currentTimestamp);
-		oBlockHeader.setNumber(oBestBlockHeader.getNumber() + 1);
-		oBlockHeader.setReward(KeyConstant.BLOCK_REWARD);
-		oBlockHeader.setExtraData(extraData);
-		// 构造MPT Trie
-		CacheTrie oTrieImpl = new CacheTrie();
-		for (int i = 0; i < txs.size(); i++) {
-			oBlockHeader.addTxHashs(txs.get(i).getTxHash());
-			oBlockBody.addTxs(txs.get(i));
-			oTrieImpl.put(encApi.hexDec(txs.get(i).getTxHash()), transactionHelper.getTransactionContent(txs.get(i)));
-		}
-		oBlockMiner.setAddress(encApi.hexEnc(KeyConstant.node.getoAccount().getAddress().toByteArray()));
-		oBlockMiner.setNode(KeyConstant.node.getNode());
-		oBlockMiner.setBcuid(KeyConstant.node.getBcuid());
-		oBlockMiner.setReward(KeyConstant.BLOCK_REWARD);
-		// oBlockMiner.setAddress(value);
-
-		oBlockHeader.setTxTrieRoot(encApi.hexEnc(oTrieImpl.getRootHash()));
-		oBlockHeader.setBlockHash(encApi.hexEnc(encApi.sha256Encode(oBlockHeader.build().toByteArray())));
-		oBlockEntity.setHeader(oBlockHeader);
-		oBlockEntity.setBody(oBlockBody);
-		oBlockEntity.setMiner(oBlockMiner);
-
-		BlockStoreSummary oSummary = blockChainHelper.addBlock(oBlockEntity.build());
-		switch (oSummary.getBehavior()) {
-		case APPLY:
-			this.stateTrie.setRoot(encApi.hexDec(oBestBlockHeader.getStateRoot()));
-			processBlock(oBlockEntity);
-			oBlockEntity
-					.setHeader(oBlockEntity.getHeaderBuilder().setStateRoot(oBlockEntity.getHeader().getStateRoot()));
-			blockChainHelper.connectBlock(oBlockEntity.build());
-
-			log.info(String.format("LOGFILTER %s %s %s %s 执行区块[%s]", KeyConstant.node.getoAccount().getAddress(),
-					"account", "apply", "block", oBlockEntity.getHeader().getBlockHash()));
-
-			log.debug("new block, number::" + oBlockEntity.getHeader().getNumber() + " hash::"
-					+ oBlockEntity.getHeader().getBlockHash() + " parent::" + oBlockEntity.getHeader().getParentHash()
-					+ " state::" + oBlockEntity.getHeader().getStateRoot() + " bcuid::" + oBlockMiner.getBcuid()
-					+ " address::" + oBlockMiner.getAddress());
-
-			return oBlockEntity;
-		default:
-			return null;
-		}
+		return oProcessorManager.getProcessor(blockChainConfig.getAccountVersion()).CreateNewBlock(txs, extraData);
 	}
 
 	/**
@@ -220,184 +160,58 @@ public class BlockHelper implements ActorService {
 	}
 
 	public synchronized AddBlockResponse ApplyBlock(ByteString bs) throws Exception {
-		return ApplyBlock(BlockEntity.newBuilder().mergeFrom(bs).build());
+		BlockEntity block = BlockEntity.newBuilder().mergeFrom(bs).build();
+		return oProcessorManager.getProcessor(block.getVersion()).ApplyBlock(block);
 	}
 
-	public synchronized AddBlockResponse ApplyBlock(BlockEntity oBlockEntity) {
-		AddBlockResponse.Builder oAddBlockResponse = AddBlockResponse.newBuilder();
-		log.debug("receive block number::" + oBlockEntity.getHeader().getNumber() + " hash::"
-				+ oBlockEntity.getHeader().getBlockHash() + " parent::" + oBlockEntity.getHeader().getParentHash()
-				+ " stateroot::" + oBlockEntity.getHeader().getStateRoot());
-		BlockStoreSummary oBlockStoreSummary = blockChainHelper.addBlock(oBlockEntity);
-		while (oBlockStoreSummary.getBehavior() != BLOCK_BEHAVIOR.DONE) {
-			switch (oBlockStoreSummary.getBehavior()) {
-			case DROP:
-				log.info("drop block number::" + oBlockEntity.getHeader().getNumber());
-				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
-				break;
-			case EXISTS_DROP:
-				log.info("already exists, drop block number::" + oBlockEntity.getHeader().getNumber());
-				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
-				break;
-			case EXISTS_PREV:
-				log.info("block exists, but cannot find parent block number::" + oBlockEntity.getHeader().getNumber());
-				try {
-					BlockEntity pBlockEntity = blockChainHelper
-							.getBlockByHash(oBlockEntity.getHeader().getParentHash());
-					if (pBlockEntity != null) {
-						log.debug("find in local cache number::" + pBlockEntity.getHeader().getBlockHash());
-						oBlockEntity = pBlockEntity;
-						oBlockStoreSummary = blockChainHelper.addBlock(oBlockEntity);
-					} else {
-						log.debug("need prev block number::" + (oBlockEntity.getHeader().getNumber()
-								- (blockChainConfig.getDefaultRollBackCount() + 1)));
-						oAddBlockResponse.setRetCode(-9);
-						oAddBlockResponse.setCurrentNumber(oBlockEntity.getHeader().getNumber()
-								- (blockChainConfig.getDefaultRollBackCount() + 1));
-						oAddBlockResponse.setWantNumber(
-								oBlockEntity.getHeader().getNumber() - blockChainConfig.getDefaultRollBackCount());
-						blockChainHelper.rollbackTo(oBlockEntity.getHeader().getNumber()
-								- (blockChainConfig.getDefaultRollBackCount() + 1));
-						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
-					}
-				} catch (Exception e1) {
-					log.error("exception ", e1);
-					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.ERROR);
-				}
-				break;
-			case CACHE:
-				log.info("cache block number::" + oBlockEntity.getHeader().getNumber());
-				// oAddBlockResponse.setWantNumber(oBlockEntity.getHeader().getNumber());
-				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
-				break;
-			case APPLY:
-				log.info("begin to apply block number::" + oBlockEntity.getHeader().getNumber());
-
-				for (String txHash : oBlockEntity.getHeader().getTxHashsList()) {
-					if (!transactionHelper.isExistsTransaction(txHash)) {
-						oAddBlockResponse.addTxHashs(txHash);
-					}
-				}
-				if (oAddBlockResponse.getTxHashsCount() > 0) {
-					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.ERROR);
-					break;
-				}
-
-				BlockEntity parentBlock;
-				try {
-					parentBlock = blockChainHelper.getBlockByHash(oBlockEntity.getHeader().getParentHash());
-					this.stateTrie.setRoot(encApi.hexDec(parentBlock.getHeader().getStateRoot()));
-					String stateRoot = processBlock(oBlockEntity.toBuilder());
-
-					log.debug("=====sync-> " + oBlockEntity.getHeader().getNumber() + " parent::"
-							+ parentBlock.getHeader().getStateRoot() + " current::"
-							+ oBlockEntity.getHeader().getStateRoot() + " exec::" + stateRoot);
-
-					if (!oBlockEntity.getHeader().getStateRoot().equals(stateRoot)) {
-						log.error("begin to roll back, stateRoot::" + stateRoot + " blockStateRoot::"
-								+ oBlockEntity.getHeader().getStateRoot());
-						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.ERROR);
-					} else {
-						oBlockStoreSummary = blockChainHelper.connectBlock(oBlockEntity);
-					}
-				} catch (Exception e) {
-					log.error(e.getMessage());
-					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.ERROR);
-				}
-				break;
-			case APPLY_CHILD:
-				log.info("ready to apply child block");
-				oBlockEntity = blockChainHelper.getChildBlock(oBlockEntity);
-				oBlockStoreSummary = blockChainHelper.addBlock(oBlockEntity);
-				break;
-			case STORE:
-			case DONE:
-				log.info("apply done number::" + blockChainHelper.getLastBlockNumber());
-				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
-				break;
-			case ERROR:
-				log.error("fail to apply block number::" + oBlockEntity.getHeader().getNumber());
-				// blockChainHelper.rollback();
-				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
-				break;
-			}
-		}
-
-		if (oAddBlockResponse.getCurrentNumber() == 0) {
-			oAddBlockResponse.setCurrentNumber(blockChainHelper.getLastBlockNumber());
-		}
-
-		if (oAddBlockResponse.getWantNumber() == 0) {
-			oAddBlockResponse.setWantNumber(oAddBlockResponse.getCurrentNumber());
-		}
-
-		log.debug("return apply current::" + oAddBlockResponse.getCurrentNumber() + " retcode::"
-				+ oAddBlockResponse.getRetCode() + " want::" + oAddBlockResponse.getWantNumber() + " summary::"
-				+ oBlockStoreSummary.getBehavior().name());
-		return oAddBlockResponse.build();
-	}
-
-	private synchronized String processBlock(BlockEntity.Builder oBlockEntity) throws Exception {
-		BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
-		LinkedList<MultiTransaction> txs = new LinkedList<MultiTransaction>();
-		CacheTrie oTrieImpl = new CacheTrie();
-
-		BlockBody.Builder bb = oBlockEntity.getBody().toBuilder();
-		// 校验交易完整性
-		for (String txHash : oBlockHeader.getTxHashsList()) {
-			// 从本地缓存中移除交易
-			transactionHelper.removeWaitBlockTx(txHash);
-
-			// 交易必须都存在
-			MultiTransaction oMultiTransaction = transactionHelper.GetTransaction(txHash);
-
-			// 验证交易是否被篡改
-			// 1. 重新Hash，比对交易Hash
-			// MultiTransaction.Builder oReHashMultiTransaction =
-			// oMultiTransaction.toBuilder();
-			// byte[] newHash =
-			// encApi.sha256Encode(oReHashMultiTransaction.getTxBody().toByteArray());
-			// if (!encApi.hexEnc(newHash).equals(oMultiTransaction.getTxHash())) {
-			// throw new Exception(String.format("交易Hash %s 与 %s 不一致", txHash,
-			// encApi.hexEnc(newHash)));
-			// }
-			// 2. 重构MPT Trie，比对RootHash
-			oTrieImpl.put(encApi.hexDec(oMultiTransaction.getTxHash()),
-					transactionHelper.getTransactionContent(oMultiTransaction));
-
-			bb.addTxs(oMultiTransaction);
-
-			if (oMultiTransaction.getStatus() == null || oMultiTransaction.getStatus().isEmpty()) {
-				txs.add(oMultiTransaction);
-			}
-		}
-		if (!oBlockEntity.getHeader().getTxTrieRoot().equals(encApi.hexEnc(oTrieImpl.getRootHash()))) {
-			throw new Exception(String.format("transaction trie root hash %s not equal %s",
-					oBlockEntity.getHeader().getTxTrieRoot(), encApi.hexEnc(oTrieImpl.getRootHash())));
-		}
-
-		oBlockEntity.setBody(bb);
-		// 执行交易
-		Map<String, ByteString> results = transactionHelper.ExecuteTransaction(txs, oBlockEntity.build());
-
-		BlockHeader.Builder header = oBlockEntity.getHeaderBuilder();
-
-		CacheTrie receiptTrie = new CacheTrie();
-		Iterator<String> iter = results.keySet().iterator();
-		while (iter.hasNext()) {
-			String key = iter.next();
-			receiptTrie.put(encApi.hexDec(key), results.get(key).toByteArray());
-		}
-		if (results.size() > 0) {
-			header.setReceiptTrieRoot(encApi.hexEnc(receiptTrie.getRootHash()));
-		}
-
-		header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
-		// reward
-		applyReward(oBlockEntity.build());
-
-		return header.getStateRoot();
-	}
+	//
+	// private synchronized void processBlock(BlockEntity.Builder oBlockEntity)
+	// throws Exception {
+	// BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
+	// LinkedList<MultiTransaction> txs = new LinkedList<MultiTransaction>();
+	// CacheTrie oTrieImpl = new CacheTrie();
+	//
+	// BlockBody.Builder bb = oBlockEntity.getBody().toBuilder();
+	// for (String txHash : oBlockHeader.getTxHashsList()) {
+	// transactionHelper.removeWaitBlockTx(txHash);
+	// MultiTransaction oMultiTransaction =
+	// transactionHelper.GetTransaction(txHash);
+	// oTrieImpl.put(encApi.hexDec(oMultiTransaction.getTxHash()),
+	// transactionHelper.getTransactionContent(oMultiTransaction));
+	// bb.addTxs(oMultiTransaction);
+	// if (oMultiTransaction.getStatus() == null ||
+	// oMultiTransaction.getStatus().isEmpty()) {
+	// txs.add(oMultiTransaction);
+	// }
+	// }
+	// if
+	// (!oBlockEntity.getHeader().getTxTrieRoot().equals(encApi.hexEnc(oTrieImpl.getRootHash())))
+	// {
+	// throw new Exception(String.format("transaction trie root hash %s not equal
+	// %s",
+	// oBlockEntity.getHeader().getTxTrieRoot(),
+	// encApi.hexEnc(oTrieImpl.getRootHash())));
+	// }
+	// oBlockEntity.setBody(bb);
+	// Map<String, ByteString> results = transactionHelper.ExecuteTransaction(txs,
+	// oBlockEntity.build());
+	// BlockHeader.Builder header = oBlockEntity.getHeaderBuilder();
+	//
+	// CacheTrie receiptTrie = new CacheTrie();
+	// Iterator<String> iter = results.keySet().iterator();
+	// while (iter.hasNext()) {
+	// String key = iter.next();
+	// receiptTrie.put(encApi.hexDec(key), results.get(key).toByteArray());
+	// }
+	// if (results.size() > 0) {
+	// header.setReceiptTrieRoot(encApi.hexEnc(receiptTrie.getRootHash()));
+	// }
+	//
+	// header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
+	// oBlockEntity.setHeader(header);
+	// // reward
+	// applyReward(oBlockEntity.build());
+	// }
 
 	/**
 	 * 区块奖励

@@ -86,6 +86,8 @@ message BlockHeaderImpl {
 	string blockHash = 9;
 	repeated string txHashs = 10;
 	int64 sliceId = 11;
+	string state = 12;
+	string receipt = 13;
 }
 
 message BlockMinerImpl {

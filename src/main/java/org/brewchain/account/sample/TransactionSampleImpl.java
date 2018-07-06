@@ -112,6 +112,7 @@ public class TransactionSampleImpl extends SessionModules<ReqCreateTransactionTe
 			String txHash = transactionHelper.CreateMultiTransaction(oMultiTransaction);
 			oRespCreateTransactionTest.setTxhash(txHash);
 		} catch (Exception e) {
+			e.printStackTrace();
 			oRespCreateTransactionTest.setRetcode(-1);
 			oRespCreateTransactionTest.setRetmsg(e.getMessage());
 		}

@@ -169,46 +169,6 @@ public class TransactionHelper implements ActorService {
 	}
 
 	/**
-	 * 交易执行。交易只在接收到Block后才会被执行
-	 * 
-	 * @param oTransaction
-	 */
-	public Map<String, ByteString> ExecuteTransaction(LinkedList<MultiTransaction> oMultiTransactions,
-			BlockEntity currentBlock) throws Exception {
-
-		Map<String, ByteString> results = new LinkedHashMap<>();
-		for (MultiTransaction oTransaction : oMultiTransactions) {
-			log.debug("exec transaction hash::" + oTransaction.getTxHash());
-			iTransactionActuator oiTransactionActuator = getActuator(oTransaction.getTxBody().getType(), currentBlock);
-
-			try {
-				Map<String, Account.Builder> accounts = getTransactionAccounts(oTransaction.toBuilder());
-				oiTransactionActuator.onPrepareExecute(oTransaction, accounts);
-				ByteString result = oiTransactionActuator.onExecute(oTransaction, accounts);
-
-				Iterator<String> iterator = accounts.keySet().iterator();
-				while (iterator.hasNext()) {
-					String key = iterator.next();
-					AccountValue value = accounts.get(key).getValue();
-					this.stateTrie.put(encApi.hexDec(key), value.toByteArray());
-				}
-				oAccountHelper.BatchPutAccounts(accounts);
-				oiTransactionActuator.onExecuteDone(oTransaction, result);
-				results.put(oTransaction.getTxHash(), result);
-			} catch (Exception e) {
-				e.printStackTrace();
-				oiTransactionActuator.onExecuteError(oTransaction, ByteString.copyFromUtf8(e.getMessage()));
-				results.put(oTransaction.getTxHash(), ByteString.copyFromUtf8(e.getMessage()));
-				// throw e;
-				log.error("error on exec tx::" + e.getMessage(), e);
-			}
-		}
-		return results;
-		// oStateTrie.flush();
-		// return oStateTrie.getRootHash();
-	}
-
-	/**
 	 * 从待广播交易列表中，查询出交易进行广播。广播后，不论是否各节点接收成功，均放入待打包列表
 	 * 
 	 * @param count
@@ -455,6 +415,8 @@ public class TransactionHelper implements ActorService {
 
 		oMultiTransactionImpl
 				.setStatus(StringUtils.isNotBlank(oTransaction.getStatus()) ? oTransaction.getStatus() : "");
+		
+		oMultiTransactionImpl.setResult(encApi.hexEnc(oTransaction.getResult().toByteArray()));
 
 		MultiTransactionBodyImpl.Builder oMultiTransactionBodyImpl = MultiTransactionBodyImpl.newBuilder();
 
