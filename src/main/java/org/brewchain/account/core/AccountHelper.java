@@ -732,7 +732,7 @@ public class AccountHelper implements ActorService {
 		oStorage.put(key, value);
 		byte[] rootHash = oStorage.getRootHash();
 
-		Account contract = GetAccount(address);
+		Account.Builder contract = GetAccount(address).toBuilder();
 		AccountValue.Builder oAccountValue = contract.getValue().toBuilder();
 		oAccountValue.setStorage(ByteString.copyFrom(rootHash));
 		putAccountValue(address, oAccountValue.build());

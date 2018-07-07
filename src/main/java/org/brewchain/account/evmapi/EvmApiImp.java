@@ -85,7 +85,28 @@ public class EvmApiImp implements EvmApi {
 
 	@Override
 	public void saveStorage(ByteString address, byte[] key, byte[] value) {
-		accountHelper.saveStorage(address, key, value);
+		// accountHelper.saveStorage(address, key, value);
+		
+		try {
+			Account.Builder oAccount = getAccount(address);
+			if (oAccount == null) {
+
+			} else {
+				AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
+				
+				StorageTrie oStorage = accountHelper.getStorageTrie(address);
+				oStorage.put(key, value);
+				byte[] rootHash = oStorage.getRootHash();
+
+				Account.Builder contract = GetAccount(address).toBuilder();
+				oAccountValue.setStorage(ByteString.copyFrom(rootHash));
+
+				oAccount.setValue(oAccountValue);
+			}
+			touchAccount.put(encApi.hexEnc(address.toByteArray()), oAccount.build());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
