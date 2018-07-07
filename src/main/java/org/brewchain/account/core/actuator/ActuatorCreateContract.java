@@ -36,6 +36,14 @@ public class ActuatorCreateContract extends AbstractTransactionActuator implemen
 		if (accounts.size() != 1) {
 			throw new Exception("exists multi sender address");
 		}
+		Account.Builder sender = accounts.get(encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(0).getAddress().toByteArray()));
+		AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
+
+		if (ByteUtil.bytesToBigInteger(senderAccountValue.getBalance().toByteArray())
+				.compareTo(this.oTransactionHelper.getBlockChainConfig().getContract_lock_balance()) == -1) {
+			throw new Exception(String.format("not enough deposit %s",
+					this.oTransactionHelper.getBlockChainConfig().getContract_lock_balance()));
+		}
 		super.onPrepareExecute(oMultiTransaction, accounts);
 	}
 
@@ -49,16 +57,25 @@ public class ActuatorCreateContract extends AbstractTransactionActuator implemen
 			accounts.put(encApi.hexEnc(newContractAddress.toByteArray()),
 					oAccountHelper.CreateAccount(newContractAddress).toBuilder());
 
+			MultiTransactionInput oInput = oMultiTransaction.getTxBody().getInputs(0);
+			Account.Builder sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
+			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
+
+			senderAccountValue.setBalance(ByteString.copyFrom(ByteUtil
+					.bigIntegerToBytes(ByteUtil.bytesToBigInteger(senderAccountValue.getBalance().toByteArray())
+							.subtract(this.oTransactionHelper.getBlockChainConfig().getContract_lock_balance()))));
+			sender.setValue(senderAccountValue);
+			
+			accounts.put(encApi.hexEnc(sender.getAddress().toByteArray()), sender);
+			
 			EvmApiImp evmApiImp = new EvmApiImp();
 			evmApiImp.setAccountHelper(oAccountHelper);
 			evmApiImp.setTransactionHelper(oTransactionHelper);
 			evmApiImp.setEncApi(this.encApi);
 
-			MultiTransactionInput oInput = oMultiTransaction.getTxBody().getInputs(0);
-
 			ProgramInvokeImpl createProgramInvoke = new ProgramInvokeImpl(newContractAddress.toByteArray(),
 					oInput.getAddress().toByteArray(), oInput.getAddress().toByteArray(),
-					ByteUtil.bigIntegerToBytes(BigInteger.valueOf(oInput.getAmount())),
+					oInput.getAmount().toByteArray(),
 					ByteUtil.bigIntegerToBytes(BigInteger.ZERO), oMultiTransaction.getTxBody().getData().toByteArray(),
 					encApi.hexDec(oBlock.getHeader().getParentHash()), encApi.hexDec(oBlock.getMiner().getAddress()),
 					Long.parseLong(String.valueOf(oBlock.getHeader().getTimestamp())),

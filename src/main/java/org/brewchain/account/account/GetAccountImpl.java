@@ -61,12 +61,12 @@ public class GetAccountImpl extends SessionModules<ReqGetAccount> {
 				AccountValue oAccountValue = oAccount.getValue();
 
 				oAccountValueImpl.setAcceptLimit(oAccountValue.getAcceptLimit());
-				oAccountValueImpl.setAcceptMax(oAccountValue.getAcceptMax());
+				oAccountValueImpl.setAcceptMax(String.valueOf(ByteUtil.bytesToBigInteger(oAccountValue.getAcceptMax().toByteArray())));
 				for (ByteString relAddress : oAccountValue.getAddressList()) {
 					oAccountValueImpl.addAddress(encApi.hexEnc(relAddress.toByteArray()));
 				}
 
-				oAccountValueImpl.setBalance(oAccountValue.getBalance());
+				oAccountValueImpl.setBalance(String.valueOf(ByteUtil.bytesToBigInteger(oAccountValue.getBalance().toByteArray())));
 				// oAccountValueImpl.setCryptos(index, value)
 				for (AccountCryptoValue oAccountTokenValue : oAccountValue.getCryptosList()) {
 					AccountCryptoValueImpl.Builder oAccountCryptoValueImpl = AccountCryptoValueImpl.newBuilder();
@@ -88,13 +88,13 @@ public class GetAccountImpl extends SessionModules<ReqGetAccount> {
 					}
 					oAccountValueImpl.addCryptos(oAccountCryptoValueImpl);
 				}
-				oAccountValueImpl.setMax(oAccountValue.getMax());
+				oAccountValueImpl.setMax(String.valueOf(ByteUtil.bytesToBigInteger(oAccountValue.getMax().toByteArray())));
 				oAccountValueImpl.setNonce(oAccountValue.getNonce());
 				for (AccountTokenValue oAccountTokenValue : oAccountValue.getTokensList()) {
 					AccountTokenValueImpl.Builder oAccountTokenValueImpl = AccountTokenValueImpl.newBuilder();
-					oAccountTokenValueImpl.setBalance(oAccountTokenValue.getBalance());
+					oAccountTokenValueImpl.setBalance(String.valueOf(ByteUtil.bytesToBigInteger(oAccountTokenValue.getBalance().toByteArray())));
 					oAccountTokenValueImpl.setToken(oAccountTokenValue.getToken());
-					oAccountTokenValueImpl.setLocked(oAccountTokenValue.getLocked());
+					oAccountTokenValueImpl.setLocked(String.valueOf(ByteUtil.bytesToBigInteger(oAccountTokenValue.getLocked().toByteArray())));
 					oAccountValueImpl.addTokens(oAccountTokenValueImpl);
 				}
 				oAccountValueImpl.setStorage(encApi.hexEnc(oAccountValue.getStorage().toByteArray()));

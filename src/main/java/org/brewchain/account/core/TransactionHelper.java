@@ -1,5 +1,6 @@
 package org.brewchain.account.core;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -30,6 +31,7 @@ import org.brewchain.account.gens.Tximpl.MultiTransactionInputImpl;
 import org.brewchain.account.gens.Tximpl.MultiTransactionOutputImpl;
 import org.brewchain.account.gens.Tximpl.MultiTransactionSignatureImpl;
 import org.brewchain.account.trie.StateTrie;
+import org.brewchain.account.util.ByteUtil;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.brewchain.evmapi.gens.Act.Account;
@@ -375,8 +377,6 @@ public class TransactionHelper implements ActorService {
 
 		oMultiTransactionInput.setAddress(ByteString.copyFrom(encApi.hexDec(oSingleTransaction.getSenderAddress())));
 		oMultiTransactionInput.setAmount(oSingleTransaction.getAmount());
-		oMultiTransactionInput.setFee(oSingleTransaction.getFee());
-		oMultiTransactionInput.setFeeLimit(oSingleTransaction.getFeeLimit());
 		oMultiTransactionInput.setNonce(oSingleTransaction.getNonce());
 		oMultiTransactionInput.setPubKey(ByteString.copyFrom(encApi.hexDec(oSingleTransaction.getPubKey())));
 		oMultiTransactionInput.setToken(oSingleTransaction.getToken());
@@ -432,9 +432,8 @@ public class TransactionHelper implements ActorService {
 		for (MultiTransactionInput input : oMultiTransactionBody.getInputsList()) {
 			MultiTransactionInputImpl.Builder oMultiTransactionInputImpl = MultiTransactionInputImpl.newBuilder();
 			oMultiTransactionInputImpl.setAddress(encApi.hexEnc(input.getAddress().toByteArray()));
-			oMultiTransactionInputImpl.setAmount(input.getAmount());
+			oMultiTransactionInputImpl.setAmount(ByteUtil.bytesToBigInteger(input.getAmount().toByteArray()).toString());
 			oMultiTransactionInputImpl.setCryptoToken(encApi.hexEnc(input.getCryptoToken().toByteArray()));
-			oMultiTransactionInputImpl.setFee(input.getFee());
 			oMultiTransactionInputImpl.setNonce(input.getNonce());
 			oMultiTransactionInputImpl.setPubKey(encApi.hexEnc(input.getPubKey().toByteArray()));
 			oMultiTransactionInputImpl.setSymbol(input.getSymbol());
@@ -444,7 +443,7 @@ public class TransactionHelper implements ActorService {
 		for (MultiTransactionOutput output : oMultiTransactionBody.getOutputsList()) {
 			MultiTransactionOutputImpl.Builder oMultiTransactionOutputImpl = MultiTransactionOutputImpl.newBuilder();
 			oMultiTransactionOutputImpl.setAddress(encApi.hexEnc(output.getAddress().toByteArray()));
-			oMultiTransactionOutputImpl.setAmount(output.getAmount());
+			oMultiTransactionOutputImpl.setAmount(ByteUtil.bytesToBigInteger(output.getAmount().toByteArray()).toString());
 			oMultiTransactionOutputImpl.setCryptoToken(encApi.hexEnc(output.getCryptoToken().toByteArray()));
 			oMultiTransactionOutputImpl.setSymbol(output.getSymbol());
 			oMultiTransactionBodyImpl.addOutputs(oMultiTransactionOutputImpl);
@@ -478,9 +477,8 @@ public class TransactionHelper implements ActorService {
 		for (MultiTransactionInputImpl input : oMultiTransactionBodyImpl.getInputsList()) {
 			MultiTransactionInput.Builder oMultiTransactionInput = MultiTransactionInput.newBuilder();
 			oMultiTransactionInput.setAddress(ByteString.copyFrom(encApi.hexDec(input.getAddress())));
-			oMultiTransactionInput.setAmount(input.getAmount());
+			oMultiTransactionInput.setAmount(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(new BigInteger(input.getAmount()))));
 			oMultiTransactionInput.setCryptoToken(ByteString.copyFrom(encApi.hexDec(input.getCryptoToken())));
-			oMultiTransactionInput.setFee(input.getFee());
 			oMultiTransactionInput.setNonce(input.getNonce());
 			oMultiTransactionInput.setPubKey(ByteString.copyFrom(encApi.hexDec(input.getPubKey())));
 			oMultiTransactionInput.setSymbol(input.getSymbol());
@@ -490,7 +488,7 @@ public class TransactionHelper implements ActorService {
 		for (MultiTransactionOutputImpl output : oMultiTransactionBodyImpl.getOutputsList()) {
 			MultiTransactionOutput.Builder oMultiTransactionOutput = MultiTransactionOutput.newBuilder();
 			oMultiTransactionOutput.setAddress(ByteString.copyFrom(encApi.hexDec(output.getAddress())));
-			oMultiTransactionOutput.setAmount(output.getAmount());
+			oMultiTransactionOutput.setAmount(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(new BigInteger(output.getAmount()))));
 			oMultiTransactionOutput.setCryptoToken(ByteString.copyFrom(encApi.hexDec(output.getCryptoToken())));
 			oMultiTransactionOutput.setSymbol(output.getSymbol());
 			oMultiTransactionBody.addOutputs(oMultiTransactionOutput);

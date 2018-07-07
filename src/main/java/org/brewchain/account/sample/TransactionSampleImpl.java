@@ -1,5 +1,6 @@
 package org.brewchain.account.sample;
 
+import java.math.BigInteger;
 import java.util.Date;
 
 import org.brewchain.account.core.AccountHelper;
@@ -16,6 +17,7 @@ import org.brewchain.evmapi.gens.Tx.MultiTransactionBody;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionOutput;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionSignature;
+import org.brewchain.rcvm.utils.ByteUtil;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;
@@ -66,9 +68,8 @@ public class TransactionSampleImpl extends SessionModules<ReqCreateTransactionTe
 			for (ReqTransactionAccount input : pb.getInputList()) {
 				MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
 				oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(input.getAddress())));
-				oMultiTransactionInput4.setAmount(input.getAmount());
-				oMultiTransactionInput4.setFee(0);
-				oMultiTransactionInput4.setFeeLimit(0);
+				oMultiTransactionInput4.setAmount(ByteString
+						.copyFrom(ByteUtil.bigIntegerToBytes(new BigInteger(String.valueOf(input.getAmount())))));
 				int nonce = accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(input.getAddress())));
 				oMultiTransactionInput4.setNonce(nonce);
 				oMultiTransactionInput4.setCryptoToken(ByteString.copyFrom(encApi.hexDec(input.getErc721Token())));
@@ -78,14 +79,16 @@ public class TransactionSampleImpl extends SessionModules<ReqCreateTransactionTe
 
 				oMultiTransactionBody.addInputs(oMultiTransactionInput4);
 
-				oRespCreateTransactionTest.addTrace("add input address::" + input.getAddress() + " nonce::" + nonce
-						+ " balance::" + accountHelper.getBalance(ByteString.copyFrom(encApi.hexDec(input.getAddress()))));
+				oRespCreateTransactionTest
+						.addTrace("add input address::" + input.getAddress() + " nonce::" + nonce + " balance::"
+								+ accountHelper.getBalance(ByteString.copyFrom(encApi.hexDec(input.getAddress()))));
 			}
 
 			for (ReqTransactionAccount output : pb.getOutputList()) {
 				MultiTransactionOutput.Builder oMultiTransactionOutput1 = MultiTransactionOutput.newBuilder();
 				oMultiTransactionOutput1.setAddress(ByteString.copyFrom(encApi.hexDec(output.getAddress())));
-				oMultiTransactionOutput1.setAmount(output.getAmount());
+				oMultiTransactionOutput1.setAmount(ByteString
+						.copyFrom(ByteUtil.bigIntegerToBytes(new BigInteger(String.valueOf(output.getAmount())))));
 				oMultiTransactionOutput1.setCryptoToken(ByteString.copyFrom(encApi.hexDec(output.getErc721Token())));
 				oMultiTransactionOutput1.setSymbol(output.getErc721Symbol());
 				oMultiTransactionBody.addOutputs(oMultiTransactionOutput1);
@@ -103,8 +106,8 @@ public class TransactionSampleImpl extends SessionModules<ReqCreateTransactionTe
 			for (ReqTransactionAccount input : pb.getInputList()) {
 				MultiTransactionSignature.Builder oMultiTransactionSignature21 = MultiTransactionSignature.newBuilder();
 				oMultiTransactionSignature21.setPubKey(ByteString.copyFrom(encApi.hexDec(input.getPutkey())));
-				oMultiTransactionSignature21.setSignature(
-						ByteString.copyFrom(encApi.ecSign(input.getPrikey(), oMultiTransactionBody.build().toByteArray())));
+				oMultiTransactionSignature21.setSignature(ByteString
+						.copyFrom(encApi.ecSign(input.getPrikey(), oMultiTransactionBody.build().toByteArray())));
 				oMultiTransactionBody.addSignatures(oMultiTransactionSignature21);
 			}
 			oMultiTransaction.setTxBody(oMultiTransactionBody);

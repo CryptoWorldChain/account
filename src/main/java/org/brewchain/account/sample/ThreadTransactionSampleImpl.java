@@ -1,5 +1,6 @@
 package org.brewchain.account.sample;
 
+import java.math.BigInteger;
 import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -17,6 +18,7 @@ import org.brewchain.evmapi.gens.Tx.MultiTransactionBody;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionOutput;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionSignature;
+import org.brewchain.rcvm.utils.ByteUtil;
 import org.fc.brewchain.bcapi.EncAPI;
 import org.fc.brewchain.bcapi.KeyPairs;
 
@@ -87,17 +89,15 @@ public class ThreadTransactionSampleImpl extends SessionModules<ReqThreadTransac
 					try {
 						KeyPairs oFrom = encApi.genKeys();
 						KeyPairs oTo = encApi.genKeys();
-						
-						accountHelper.addBalance(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())), 100);
+
+						accountHelper.addBalance(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())),new BigInteger("100"));
 
 						MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 						MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
 
 						MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
 						oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
-						oMultiTransactionInput4.setAmount(2);
-						oMultiTransactionInput4.setFee(0);
-						oMultiTransactionInput4.setFeeLimit(0);
+						oMultiTransactionInput4.setAmount(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(new BigInteger("2"))));
 						int nonce = 0;
 						nonce = accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
 						// nonce = nonce + i - 1;
@@ -106,7 +106,7 @@ public class ThreadTransactionSampleImpl extends SessionModules<ReqThreadTransac
 
 						MultiTransactionOutput.Builder oMultiTransactionOutput1 = MultiTransactionOutput.newBuilder();
 						oMultiTransactionOutput1.setAddress(ByteString.copyFrom(encApi.hexDec(oTo.getAddress())));
-						oMultiTransactionOutput1.setAmount(2);
+						oMultiTransactionOutput1.setAmount(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(new BigInteger("2"))));
 						oMultiTransactionBody.addOutputs(oMultiTransactionOutput1);
 
 						// oMultiTransactionBody.setData(pb.getData());
@@ -117,7 +117,8 @@ public class ThreadTransactionSampleImpl extends SessionModules<ReqThreadTransac
 						MultiTransactionSignature.Builder oMultiTransactionSignature21 = MultiTransactionSignature
 								.newBuilder();
 						oMultiTransactionSignature21.setPubKey(ByteString.copyFrom(encApi.hexDec(oFrom.getPubkey())));
-						oMultiTransactionSignature21.setSignature(ByteString.copyFrom(encApi.ecSign(oFrom.getPrikey(), oMultiTransactionBody.build().toByteArray())));
+						oMultiTransactionSignature21.setSignature(ByteString.copyFrom(
+								encApi.ecSign(oFrom.getPrikey(), oMultiTransactionBody.build().toByteArray())));
 						oMultiTransactionBody.addSignatures(oMultiTransactionSignature21);
 
 						oMultiTransaction.setTxBody(oMultiTransactionBody);

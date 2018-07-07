@@ -98,10 +98,8 @@ message MultiTransactionBodyImpl {
 
 message MultiTransactionInputImpl {
 	int32 nonce = 1;
-	int32 fee = 2;
-	int32 feeLimit = 3;
 	string address = 4;
-	int64 amount= 5;
+	string amount= 5;
 	string pubKey = 6;
 	string token = 7;
 	string symbol = 8;
@@ -110,7 +108,7 @@ message MultiTransactionInputImpl {
 
 message MultiTransactionOutputImpl {
 	string address= 1;
-	int64 amount= 2;
+	string amount= 2;
 	string symbol = 3;
 	string cryptoToken = 4;
 }
@@ -129,7 +127,7 @@ message MultiTransactionNodeImpl {
 
 message ReqCreateTxColdPurse {//创建交易请求
 	string signature = 1;//交易内容
-	int64 amount = 2;
+	string amount = 2;
 	string inputaddress = 3;//输入地址
 	string outputaddress = 4;//输出地址
 	int32 nonce = 5;//次数

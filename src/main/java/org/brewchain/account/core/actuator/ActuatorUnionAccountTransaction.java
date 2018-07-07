@@ -1,5 +1,6 @@
 package org.brewchain.account.core.actuator;
 
+import java.math.BigInteger;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
@@ -10,6 +11,7 @@ import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.trie.StateTrie;
+import org.brewchain.core.util.ByteUtil;
 import org.brewchain.evmapi.gens.Act.Account;
 import org.brewchain.evmapi.gens.Act.AccountValue;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
@@ -42,23 +44,22 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 
 		AccountValue.Builder oSenderValue = accounts.get(accounts.keySet().toArray()[0]).getValue().toBuilder();
 
-		long totalAmount = 0;
+		BigInteger totalAmount = BigInteger.ZERO;
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
-			totalAmount += oInput.getAmount();
-			// totalAmount += oInput.getFee();
+			totalAmount = totalAmount.add(ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray()));
 		}
 		String key = String.format("%s_%s", new SimpleDateFormat("yyyy-MM-dd").format(new Date()),
 				oMultiTransaction.getTxBody().getInputs(0).getAddress());
 		log.debug(String.format("%s 累计 %s", key, AbstractLocalCache.dayTotalAmount.get(key)));
 
-		long dayTotal = totalAmount + AbstractLocalCache.dayTotalAmount.get(key);
-		long dayMax = oSenderValue.getMax();
-		if (dayTotal > dayMax) {
+		BigInteger dayTotal = totalAmount.add(AbstractLocalCache.dayTotalAmount.get(key));
+		BigInteger dayMax = ByteUtil.bytesToBigInteger(oSenderValue.getMax().toByteArray());
+		if (dayTotal.compareTo(dayMax) == 1) {
 			throw new Exception(String.format("day accumulated amount %s more than %s", dayTotal, dayMax));
 		}
 		// 当单笔金额超过一个预设值后，则需要多方签名
-		if (totalAmount > oSenderValue.getAcceptMax()) {
-			if (oMultiTransaction.getTxBody().getSignaturesCount() != oSenderValue.getAcceptMax()) {
+		if (totalAmount.compareTo(ByteUtil.bytesToBigInteger(oSenderValue.getAcceptMax().toByteArray())) == 1) {
+			if (oMultiTransaction.getTxBody().getSignaturesCount() != oSenderValue.getAcceptLimit()) {
 				throw new Exception(String.format("must have %s signature when transaction value %s more than %s",
 						totalAmount, oSenderValue.getAcceptMax(), oSenderValue.getAcceptLimit()));
 			} else {
@@ -77,15 +78,17 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 	@Override
 	public void onExecuteDone(MultiTransaction oMultiTransaction, ByteString result) throws Exception {
 		// 缓存，累加当天转账金额
-		long totalAmount = 0;
+		BigInteger totalAmount = BigInteger.ZERO;
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
-			totalAmount += oInput.getAmount();
+			// totalAmount += oInput.getAmount();
+			totalAmount = totalAmount.add(ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray()));
+
 			// totalAmount += oInput.getFee();
 		}
 		String key = String.format("%s_%s", new SimpleDateFormat("yyyy-MM-dd").format(new Date()),
 				oMultiTransaction.getTxBody().getInputs(0).getAddress());
-		long v = AbstractLocalCache.dayTotalAmount.get(key);
-		AbstractLocalCache.dayTotalAmount.put(key, v + totalAmount);
+		BigInteger v = AbstractLocalCache.dayTotalAmount.get(key);
+		AbstractLocalCache.dayTotalAmount.put(key, v.add(totalAmount));
 		super.onExecuteDone(oMultiTransaction, result);
 	}
 

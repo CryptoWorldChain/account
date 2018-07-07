@@ -1,5 +1,6 @@
 package org.brewchain.account.transaction;
 
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,7 @@ import org.brewchain.account.gens.Tximpl.PTXTModule;
 import org.brewchain.account.gens.Tximpl.ReqCreateMultiTransaction;
 import org.brewchain.account.gens.Tximpl.ReqCreateTxColdPurse;
 import org.brewchain.account.gens.Tximpl.RespCreateTransaction;
+import org.brewchain.account.util.ByteUtil;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionBody;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
@@ -95,9 +97,8 @@ public class SaveColdTransactionImpl extends SessionModules<ReqCreateTxColdPurse
 		
 		
 		oMultiTransactionInput.setAddress(ByteString.copyFrom(encApi.hexDec(pb.getInputaddress())));
-		oMultiTransactionInput.setAmount(pb.getAmount());
+		oMultiTransactionInput.setAmount(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(new BigInteger(pb.getAmount()))));
 		oMultiTransactionInput.setCryptoToken(ByteString.EMPTY);
-		oMultiTransactionInput.setFee(0);
 		int nonce = accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(pb.getInputaddress())));
 		oMultiTransactionInput.setNonce(nonce);
 		oMultiTransactionInput.setPubKey(ByteString.copyFrom(encApi.hexDec(pb.getPublickey())));
@@ -107,7 +108,7 @@ public class SaveColdTransactionImpl extends SessionModules<ReqCreateTxColdPurse
 		
 		MultiTransactionOutput.Builder oMultiTransactionOutput = MultiTransactionOutput.newBuilder();
 		oMultiTransactionOutput.setAddress(ByteString.copyFrom(encApi.hexDec(pb.getOutputaddress())));
-		oMultiTransactionOutput.setAmount(pb.getAmount());
+		oMultiTransactionOutput.setAmount(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(new BigInteger(pb.getAmount()))));
 //		oMultiTransactionOutputImpl.setCryptoToken(encApi.hexEnc(output.getCryptoToken().toByteArray()));
 //		oMultiTransactionOutputImpl.setSymbol(output.getSymbol());
 		oMultiTransactionBody.addOutputs(oMultiTransactionOutput);

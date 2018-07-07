@@ -2,6 +2,7 @@ package org.brewchain.account.core.actuator;
 
 import static java.lang.String.format;
 
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -11,6 +12,7 @@ import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.trie.DBTrie;
 import org.brewchain.account.trie.StateTrie;
+import org.brewchain.account.util.ByteUtil;
 import org.brewchain.evmapi.gens.Act.Account;
 import org.brewchain.evmapi.gens.Act.AccountValue;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
@@ -124,8 +126,8 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	@Override
 	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts)
 			throws Exception {
-		int inputsTotal = 0;
-		int outputsTotal = 0;
+		BigInteger inputsTotal = BigInteger.ZERO;
+		BigInteger outputsTotal = BigInteger.ZERO;
 
 		if (oMultiTransaction.getTxBody().getInputsList().size() > 1
 				&& oMultiTransaction.getTxBody().getOutputsList().size() > 1) {
@@ -136,25 +138,26 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 		}
 
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
-			inputsTotal += oInput.getAmount();
+			inputsTotal = ByteUtil.bytesAdd(inputsTotal, oInput.getAmount().toByteArray());
 
 			// 取发送方账户
 			Account.Builder sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 
 			// 判断发送方余额是否足够
-			long balance = senderAccountValue.getBalance();
+			BigInteger balance = ByteUtil.bytesToBigInteger(senderAccountValue.getBalance().toByteArray());
 
-			if (balance < 0) {
+			if (balance.compareTo(BigInteger.ZERO) == -1) {
 				throw new TransactionExecuteException(String.format("sender %s balance %s less than 0",
 						encApi.hexEnc(sender.getAddress().toByteArray()), balance));
 			}
-			if (oInput.getAmount() < 0) {
+			if (ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray()).compareTo(BigInteger.ZERO) == -1) {
 				throw new TransactionExecuteException(
 						String.format("transaction value %s less than 0", oInput.getAmount()));
 			}
 
-			if (balance - oInput.getAmount() < 0) {// - oInput.getFeeLimit()
+			if (ByteUtil.bytesSub(balance, oInput.getAmount().toByteArray()).compareTo(BigInteger.ZERO) == -1) {// -
+																												// oInput.getFeeLimit()
 				// 余额不够
 				throw new TransactionExecuteException(
 						String.format("sender balance %s less than %s", balance, oInput.getAmount()));// +
@@ -170,15 +173,15 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 		}
 
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
-			outputsTotal += oOutput.getAmount();
+			outputsTotal = ByteUtil.bytesAdd(outputsTotal, oOutput.getAmount().toByteArray());
 
-			long balance = oOutput.getAmount();
-			if (balance < 0) {
+			BigInteger balance = ByteUtil.bytesToBigInteger(oOutput.getAmount().toByteArray());
+			if (balance.compareTo(BigInteger.ZERO) == -1) {
 				throw new TransactionExecuteException(String.format("receive balance %s less than 0", balance));
 			}
 		}
 
-		if (inputsTotal < outputsTotal) {
+		if (inputsTotal.compareTo(outputsTotal) == -1) {
 			throw new TransactionExecuteException(
 					String.format("transaction value %s less than %s", inputsTotal, outputsTotal));
 		}
@@ -196,7 +199,8 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			Account.Builder sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 
-			senderAccountValue.setBalance(senderAccountValue.getBalance() - oInput.getAmount());
+			senderAccountValue.setBalance(ByteString.copyFrom(ByteUtil
+					.bytesSubToBytes(senderAccountValue.getBalance().toByteArray(), oInput.getAmount().toByteArray())));
 
 			senderAccountValue.setNonce(senderAccountValue.getNonce() + 1);
 			DBTrie oCacheTrie = new DBTrie(this.dao);
@@ -214,7 +218,8 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
 			Account.Builder receiver = accounts.get(encApi.hexEnc(oOutput.getAddress().toByteArray()));
 			AccountValue.Builder receiverAccountValue = receiver.getValue().toBuilder();
-			receiverAccountValue.setBalance(receiverAccountValue.getBalance() + oOutput.getAmount());
+			receiverAccountValue.setBalance(ByteString.copyFrom(ByteUtil.bytesAddToBytes(
+					receiverAccountValue.getBalance().toByteArray(), oOutput.getAmount().toByteArray())));
 
 			DBTrie oCacheTrie = new DBTrie(this.dao);
 			if (receiverAccountValue.getStorage() == null) {

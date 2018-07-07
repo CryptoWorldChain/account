@@ -56,7 +56,7 @@ public class ActuatorCallContract extends AbstractTransactionActuator implements
 		MultiTransactionInput oInput = oMultiTransaction.getTxBody().getInputs(0);
 		ProgramInvokeImpl programInvoke = new ProgramInvokeImpl(existsContract.getAddress().toByteArray(),
 				callAccount.getAddress().toByteArray(), callAccount.getAddress().toByteArray(),
-				ByteUtil.bigIntegerToBytes(BigInteger.valueOf(oInput.getAmount())),
+				oInput.getAmount().toByteArray(),
 				ByteUtil.bigIntegerToBytes(BigInteger.ZERO), oMultiTransaction.getTxBody().getData().toByteArray(),
 				null, // encApi.hexDec(oBlock.getHeader().getParentHash()),
 				null, // encApi.hexDec(oBlock.getMiner().getAddress()),

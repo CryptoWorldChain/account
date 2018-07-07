@@ -32,6 +32,29 @@ public class ByteUtil {
 		result[result.length - 1] = b;
 		return result;
 	}
+	
+	public static BigInteger bytesAdd(byte[] bytes1, byte[] bytes2) {
+		return bytesToBigInteger(bytes1).add(bytesToBigInteger(bytes2));
+	}
+	public static BigInteger bytesAdd(BigInteger b, byte[] bytes2) {
+		return b.add(bytesToBigInteger(bytes2));
+	}
+	
+	public static byte[] bytesAddToBytes(byte[] bytes1, byte[] bytes2) {
+		return bigIntegerToBytes(bytesToBigInteger(bytes1).add(bytesToBigInteger(bytes2)));
+	}
+	public static byte[] bytesAddToBytes(BigInteger b, byte[] bytes2) {
+		return bigIntegerToBytes(b.add(bytesToBigInteger(bytes2)));
+	}
+	public static BigInteger bytesSub(byte[] bytes1, byte[] bytes2) {
+		return bytesToBigInteger(bytes1).subtract(bytesToBigInteger(bytes2));
+	}
+	public static BigInteger bytesSub(BigInteger b, byte[] bytes2) {
+		return b.subtract(bytesToBigInteger(bytes2));
+	}
+	public static byte[] bytesSubToBytes(byte[] bytes1, byte[] bytes2) {
+		return bigIntegerToBytes(bytesToBigInteger(bytes1).subtract(bytesToBigInteger(bytes2)));
+	}
 
 	public static byte[] bigIntegerToBytes(BigInteger b, int numBytes) {
 		if (b == null)

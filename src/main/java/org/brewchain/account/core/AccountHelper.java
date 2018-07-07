@@ -1,5 +1,6 @@
 package org.brewchain.account.core;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -64,26 +65,26 @@ public class AccountHelper implements ActorService {
 	}
 
 	public Account CreateAccount(ByteString address) {
-		return CreateAccount(address, 0, 0, 0, null, null, null);
+		return CreateAccount(address, BigInteger.ZERO, BigInteger.ZERO, 0, null, null, null);
 	}
 
-	public Account CreateUnionAccount(ByteString address, long max, long acceptMax, int acceptLimit,
+	public Account CreateUnionAccount(ByteString address, BigInteger max, BigInteger acceptMax, int acceptLimit,
 			List<ByteString> addresses) {
 		return CreateAccount(address, max, acceptMax, acceptLimit, addresses, null, null);
 	}
 
-	public Account CreateAccount(ByteString address, long max, long acceptMax, int acceptLimit,
+	public Account CreateAccount(ByteString address, BigInteger max, BigInteger acceptMax, int acceptLimit,
 			List<ByteString> addresses, ByteString code, ByteString exdata) {
 		Account.Builder oUnionAccount = Account.newBuilder();
 		AccountValue.Builder oUnionAccountValue = AccountValue.newBuilder();
 
 		oUnionAccountValue.setAcceptLimit(acceptLimit);
-		oUnionAccountValue.setAcceptMax(acceptMax);
+		oUnionAccountValue.setAcceptMax(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(acceptMax)));
 		if (addresses != null)
 			oUnionAccountValue.addAllAddress(addresses);
 
-		oUnionAccountValue.setBalance(KeyConstant.EMPTY_BALANCE.intValue());
-		oUnionAccountValue.setMax(max);
+		oUnionAccountValue.setBalance(ByteString.copyFrom(ByteUtil.ZERO_BYTE_ARRAY));
+		oUnionAccountValue.setMax(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(max)));
 		oUnionAccountValue.setNonce(KeyConstant.EMPTY_NONCE.intValue());
 
 		if (code != null) {
@@ -228,12 +229,13 @@ public class AccountHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public synchronized long addBalance(ByteString addr, long balance) throws Exception {
+	public synchronized BigInteger addBalance(ByteString addr, BigInteger balance) throws Exception {
 		Account.Builder oAccount = GetAccountOrCreate(addr).toBuilder();
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
-		oAccountValue.setBalance(oAccountValue.getBalance() + balance);
+		oAccountValue.setBalance(ByteString.copyFrom(ByteUtil
+				.bigIntegerToBytes(balance.add(ByteUtil.bytesToBigInteger(oAccountValue.getBalance().toByteArray())))));
 		putAccountValue(addr, oAccountValue.build());
-		return oAccountValue.getBalance();
+		return ByteUtil.bytesToBigInteger(oAccountValue.getBalance().toByteArray());
 	}
 
 	/**
@@ -244,46 +246,50 @@ public class AccountHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public synchronized long addTokenBalance(ByteString addr, String token, long balance) throws Exception {
+	public synchronized BigInteger addTokenBalance(ByteString addr, String token, BigInteger balance) throws Exception {
 		Account.Builder oAccount = GetAccountOrCreate(addr).toBuilder();
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 
 		for (int i = 0; i < oAccountValue.getTokensCount(); i++) {
 			if (oAccountValue.getTokens(i).getToken().equals(token)) {
 				oAccountValue.setTokens(i, oAccountValue.getTokens(i).toBuilder()
-						.setBalance(oAccountValue.getTokens(i).getBalance() + balance));
+						.setBalance(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(balance.add(
+								ByteUtil.bytesToBigInteger(oAccountValue.getTokens(i).getBalance().toByteArray()))))));
+
 				putAccountValue(addr, oAccountValue.build());
-				return oAccountValue.getTokens(i).getBalance();
+				return ByteUtil.bytesToBigInteger(oAccountValue.getTokens(i).getBalance().toByteArray());
 			}
 		}
 		// 如果token账户余额不存在，直接增加一条记录
 		AccountTokenValue.Builder oAccountTokenValue = AccountTokenValue.newBuilder();
-		oAccountTokenValue.setBalance(balance);
+		oAccountTokenValue.setBalance(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(balance)));
 		oAccountTokenValue.setToken(token);
 		oAccountValue.addTokens(oAccountTokenValue);
 		putAccountValue(addr, oAccountValue.build());
-		return oAccountTokenValue.getBalance();
+		return ByteUtil.bytesToBigInteger(oAccountTokenValue.getBalance().toByteArray());
 	}
 
-	public synchronized long addTokenLockBalance(ByteString addr, String token, long balance) throws Exception {
+	public synchronized BigInteger addTokenLockBalance(ByteString addr, String token, BigInteger balance)
+			throws Exception {
 		Account.Builder oAccount = GetAccount(addr).toBuilder();
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 
 		for (int i = 0; i < oAccountValue.getTokensCount(); i++) {
 			if (oAccountValue.getTokens(i).getToken().equals(token)) {
 				oAccountValue.setTokens(i, oAccountValue.getTokens(i).toBuilder()
-						.setLocked(oAccountValue.getTokens(i).getLocked() + balance));
+						.setLocked(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(balance.add(
+								ByteUtil.bytesToBigInteger(oAccountValue.getTokens(i).getLocked().toByteArray()))))));
 				putAccountValue(addr, oAccountValue.build());
-				return oAccountValue.getTokens(i).getBalance();
+				return ByteUtil.bytesToBigInteger(oAccountValue.getTokens(i).getBalance().toByteArray());
 			}
 		}
 		// 如果token账户余额不存在，直接增加一条记录
 		AccountTokenValue.Builder oAccountTokenValue = AccountTokenValue.newBuilder();
-		oAccountTokenValue.setLocked(balance);
+		oAccountTokenValue.setLocked(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(balance)));
 		oAccountTokenValue.setToken(token);
 		oAccountValue.addTokens(oAccountTokenValue);
 		putAccountValue(addr, oAccountValue.build());
-		return oAccountTokenValue.getBalance();
+		return ByteUtil.bytesToBigInteger(oAccountTokenValue.getBalance().toByteArray());
 	}
 
 	/**
@@ -459,14 +465,14 @@ public class AccountHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public long getBalance(ByteString addr) throws Exception {
+	public BigInteger getBalance(ByteString addr) throws Exception {
 		log.debug("find balance::" + addr);
 		Account oAccount = GetAccount(addr);
 		if (oAccount == null) {
 			throw new Exception("account not found");
 		}
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
-		return oAccountValue.getBalance();
+		return ByteUtil.bytesToBigInteger(oAccountValue.getBalance().toByteArray());
 	}
 
 	/**
@@ -476,26 +482,26 @@ public class AccountHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public long getTokenBalance(ByteString addr, ByteString token) throws Exception {
+	public BigInteger getTokenBalance(ByteString addr, ByteString token) throws Exception {
 		Account.Builder oAccount = GetAccount(addr).toBuilder();
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 		for (int i = 0; i < oAccountValue.getTokensCount(); i++) {
 			if (oAccountValue.getTokens(i).getToken().equals(token)) {
-				return oAccountValue.getTokens(i).getBalance();
+				return ByteUtil.bytesToBigInteger(oAccountValue.getTokens(i).getBalance().toByteArray());
 			}
 		}
-		return 0;
+		return BigInteger.ZERO;
 	}
 
-	public long getTokenLockedBalance(ByteString addr, ByteString token) throws Exception {
+	public BigInteger getTokenLockedBalance(ByteString addr, ByteString token) throws Exception {
 		Account.Builder oAccount = GetAccount(addr).toBuilder();
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 		for (int i = 0; i < oAccountValue.getTokensCount(); i++) {
 			if (oAccountValue.getTokens(i).getToken().equals(token)) {
-				return oAccountValue.getTokens(i).getLocked();
+				return ByteUtil.bytesToBigInteger(oAccountValue.getTokens(i).getLocked().toByteArray());
 			}
 		}
-		return 0;
+		return BigInteger.ZERO;
 	}
 
 	/**
@@ -561,7 +567,7 @@ public class AccountHelper implements ActorService {
 		putAccountValue(addr, oAccountValue.build());
 	}
 
-	public void createToken(ByteString addr, String token, long total) throws Exception {
+	public void createToken(ByteString addr, String token, BigInteger total) throws Exception {
 		OValue oValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN)).get();
 		ERC20Token.Builder oERC20Token;
 		if (oValue == null) {
@@ -574,7 +580,7 @@ public class AccountHelper implements ActorService {
 		oICOValue.setAddress(encApi.hexEnc(addr.toByteArray()));
 		oICOValue.setTimestamp(System.currentTimeMillis());
 		oICOValue.setToken(token);
-		oICOValue.setTotal(total);
+		oICOValue.setTotal(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(total)));
 		oERC20Token.addValue(oICOValue);
 
 		dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN),
@@ -629,20 +635,13 @@ public class AccountHelper implements ActorService {
 	}
 
 	public void putAccountValue(ByteString addr, AccountValue oAccountValue) {
-		if (oAccountValue.getCode() != null && oAccountValue.getAddressCount() > 0) {
-			dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(addr), OEntityBuilder.byteValue2OValue(
-					oAccountValue.toByteArray(), encApi.hexEnc(oAccountValue.getAddress(0).toByteArray())));
-		} else {
-			dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(addr),
-					OEntityBuilder.byteValue2OValue(oAccountValue.toByteArray()));
-		}
-
+		dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(addr),
+				OEntityBuilder.byteValue2OValue(oAccountValue.toByteArray()));
 		if (this.stateTrie != null) {
 			log.warn("put state trie::" + encApi.hexEnc(addr.toByteArray()) + " "
 					+ encApi.hexEnc(oAccountValue.toByteArray()));
 
 			this.stateTrie.put(addr.toByteArray(), oAccountValue.toByteArray());
-			// this.stateTrie.flush();
 		}
 	}
 
@@ -652,14 +651,7 @@ public class AccountHelper implements ActorService {
 
 		LinkedList<OValue> list = new LinkedList<>();
 		for (int i = 0; i < values.size(); i++) {
-
-			if (values.get(i).getCode() != null && values.get(i).getAddressCount() > 0) {
-				list.add(OEntityBuilder.byteValue2OValue(values.get(i).toByteArray(),
-						encApi.hexEnc(values.get(i).getAddress(0).toByteArray())));
-			} else {
-				list.add(OEntityBuilder.byteValue2OValue(values.get(i).toByteArray()));
-			}
-
+			list.add(OEntityBuilder.byteValue2OValue(values.get(i).toByteArray()));
 			if (this.stateTrie != null) {
 				log.debug("put state trie::" + encApi.hexEnc(keys.get(i).getData().toByteArray()) + " "
 						+ encApi.hexEnc(values.get(i).toByteArray()));
@@ -680,14 +672,7 @@ public class AccountHelper implements ActorService {
 			String key = iterator.next();
 			AccountValue value = accountValues.get(key).getValue();
 			keysArray[i] = OEntityBuilder.byteKey2OKey(encApi.hexDec(key));
-
-			if (value.getCode() != null && value.getAddressCount() > 0) {
-				valuesArray[i] = OEntityBuilder.byteValue2OValue(value.toByteArray(),
-						encApi.hexEnc(value.getAddress(0).toByteArray()));
-			} else {
-				valuesArray[i] = OEntityBuilder.byteValue2OValue(value.toByteArray());
-			}
-
+			valuesArray[i] = OEntityBuilder.byteValue2OValue(value.toByteArray());
 			if (this.stateTrie != null) {
 				log.debug("put state trie::" + key + " " + encApi.hexEnc(value.toByteArray()));
 				this.stateTrie.put(encApi.hexDec(key), value.toByteArray());

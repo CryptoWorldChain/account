@@ -41,8 +41,8 @@ message RespCreateAccount {
 
 message ReqCreateUnionAccount {
     string address = 1;
-    int64 max = 2;
-    int64 acceptMax = 3;
+    string max = 2;
+    string acceptMax = 3;
     int32 acceptLimit = 4;
     repeated string relAddress = 5;
     repeated string signature = 6;
@@ -76,10 +76,10 @@ message RespGetAccounts {
 
 message AccountValueImpl {
     int32 nonce = 1;
-    int64 balance = 2;
+    string balance = 2;
     string pubKey = 3;
-    int64 max = 4;
-    int64 acceptMax = 5;
+    string max = 4;
+    string acceptMax = 5;
     int32 acceptLimit = 6;
     repeated string address = 7;
     repeated AccountTokenValueImpl tokens = 8;
@@ -93,8 +93,8 @@ message AccountValueImpl {
 
 message AccountTokenValueImpl {
     string token = 1;
-    int64 balance = 2;
-    int64 locked = 3;
+    string balance = 2;
+    string locked = 3;
 }
 
 message AccountCryptoValueImpl {

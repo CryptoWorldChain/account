@@ -214,17 +214,6 @@ public class BlockHelper implements ActorService {
 	// }
 
 	/**
-	 * 区块奖励
-	 * 
-	 * @param oBlock
-	 * @throws Exception
-	 */
-	public void applyReward(BlockEntity oCurrentBlock) throws Exception {
-		accountHelper.addTokenBalance(ByteString.copyFrom(encApi.hexDec(oCurrentBlock.getMiner().getAddress())), "CWS",
-				oCurrentBlock.getMiner().getReward());
-	}
-
-	/**
 	 * 根据区块Hash获取区块信息
 	 * 
 	 * @param blockHash

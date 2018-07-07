@@ -30,6 +30,7 @@ message ReqGetBlock {
 message RespGetBlock {
 	BlockHeaderImpl header = 1;
 	BlockMinerImpl miner = 4;
+	string version = 5;
 	int32 retCode = 2;
 	string retMsg = 3;
 }

@@ -58,6 +58,9 @@ public class GetBlockByNumberImpl extends SessionModules<ReqGetBlockByNumber> {
 			oBlockHeaderImpl.setReward(oBlockEntity.getHeader().getReward());
 			oBlockHeaderImpl.setSliceId(oBlockEntity.getHeader().getSliceId());
 			oBlockHeaderImpl.setTimestamp(oBlockEntity.getHeader().getTimestamp());
+			oBlockHeaderImpl.setState(oBlockEntity.getHeader().getStateRoot());
+			oBlockHeaderImpl.setReceipt(oBlockEntity.getHeader().getReceiptTrieRoot());
+			oBlockHeaderImpl.setTxTrieRoot(oBlockEntity.getHeader().getTxTrieRoot());
 
 			for (String oTxhash : oBlockEntity.getHeader().getTxHashsList()) {
 				oBlockHeaderImpl.addTxHashs(oTxhash);
@@ -69,6 +72,7 @@ public class GetBlockByNumberImpl extends SessionModules<ReqGetBlockByNumber> {
 			oBlockMinerImpl.setNode(oBlockEntity.getMiner().getNode());
 			oBlockMinerImpl.setReward(oBlockEntity.getMiner().getReward());
 
+			oRespGetBlock.setVersion(String.valueOf(oBlockEntity.getVersion()));
 			oRespGetBlock.setHeader(oBlockHeaderImpl);
 			oRespGetBlock.setMiner(oBlockMinerImpl);
 			oRespGetBlock.setRetCode(1);

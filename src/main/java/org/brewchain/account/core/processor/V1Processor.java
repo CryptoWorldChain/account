@@ -1,5 +1,6 @@
 package org.brewchain.account.core.processor;
 
+import java.math.BigInteger;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -99,7 +100,7 @@ public class V1Processor implements IProcessor, ActorService {
 	@Override
 	public void applyReward(BlockEntity oCurrentBlock) throws Exception {
 		accountHelper.addTokenBalance(ByteString.copyFrom(encApi.hexDec(oCurrentBlock.getMiner().getAddress())), "CWS",
-				oCurrentBlock.getMiner().getReward());
+				new BigInteger(String.valueOf(oCurrentBlock.getMiner().getReward())));
 	}
 
 	@Override
@@ -210,7 +211,7 @@ public class V1Processor implements IProcessor, ActorService {
 
 		// reward
 		accountHelper.addTokenBalance(ByteString.copyFrom(encApi.hexDec(oBlockEntity.getMiner().getAddress())), "CWS",
-				oBlockEntity.getMiner().getReward());
+				new BigInteger(String.valueOf(oBlockEntity.getMiner().getReward())));
 
 		header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
 		oBlockEntity.setHeader(header);

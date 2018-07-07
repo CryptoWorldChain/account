@@ -1,5 +1,6 @@
 package org.brewchain.account.sample;
 
+import java.math.BigInteger;
 import java.util.Date;
 
 import org.brewchain.account.core.AccountHelper;
@@ -17,6 +18,7 @@ import org.brewchain.evmapi.gens.Tx.MultiTransactionBody;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionOutput;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionSignature;
+import org.brewchain.rcvm.utils.ByteUtil;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;
@@ -67,9 +69,7 @@ public class TransactionCreateContract extends SessionModules<ReqCreateContract>
 
 			MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
 			oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(pb.getAddress())));
-			oMultiTransactionInput4.setAmount(0);
-			oMultiTransactionInput4.setFee(0);
-			oMultiTransactionInput4.setFeeLimit(0);
+			oMultiTransactionInput4.setAmount(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(BigInteger.ZERO)));
 			int nonce = accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(pb.getAddress())));
 			oMultiTransactionInput4.setNonce(nonce);
 			oMultiTransactionBody.addInputs(oMultiTransactionInput4);
