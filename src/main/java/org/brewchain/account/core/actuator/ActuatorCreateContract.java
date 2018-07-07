@@ -5,11 +5,13 @@ import java.util.Map;
 
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockHelper;
+import org.brewchain.account.core.KeyConstant;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.evmapi.EvmApiImp;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.util.ByteUtil;
+import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.evmapi.gens.Act.Account;
 import org.brewchain.evmapi.gens.Act.AccountValue;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
@@ -107,6 +109,8 @@ public class ActuatorCreateContract extends AbstractTransactionActuator implemen
 				oContractValue.addAddress(oCreateAccount.getAddress());
 				contract.setValue(oContractValue);
 				accounts.put(encApi.hexEnc(contract.getAddress().toByteArray()), contract);
+				
+				oAccountHelper.createContract(oCreateAccount.getAddress(), contract.getAddress());
 			}
 			return ByteString.EMPTY;
 		}

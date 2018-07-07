@@ -26,6 +26,8 @@ import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.bcapi.gens.Oentity.OPair;
 import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.brewchain.evmapi.gens.Act.Account;
+import org.brewchain.evmapi.gens.Act.AccountContract;
+import org.brewchain.evmapi.gens.Act.AccountContractValue;
 import org.brewchain.evmapi.gens.Act.AccountCryptoToken;
 import org.brewchain.evmapi.gens.Act.AccountCryptoValue;
 import org.brewchain.evmapi.gens.Act.AccountTokenValue;
@@ -169,19 +171,19 @@ public class AccountHelper implements ActorService {
 		return null;
 	}
 
-	public List<Account> getContractByCreator(ByteString addr) {
-		List<Account> contracts = new ArrayList<>();
+	public List<AccountContractValue> getContractByCreator(ByteString addr) {
+		List<AccountContractValue> contracts = new ArrayList<>();
 		try {
-			List<OPair> oPairs = dao.getAccountDao().listBySecondKey(encApi.hexEnc(addr.toByteArray())).get();
-			if (oPairs.size() > 0) {
-				for (OPair oPair : oPairs) {
-
-					Account.Builder oAccount = Account.newBuilder();
-					oAccount.setAddress(oPair.getKey().getData());
-					AccountValue.Builder oAccountValue = AccountValue.newBuilder();
-					oAccountValue.mergeFrom(oPair.getValue().getExtdata());
-					oAccount.setValue(oAccountValue);
-					contracts.add(oAccount.build());
+			AccountContract oAccountContract = null;
+			OValue oOValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_EXISTS_CONTRACT)).get();
+			if (oOValue != null && oOValue.getExtdata() != null) {
+				oAccountContract = AccountContract.parseFrom(oOValue.getExtdata().toByteArray());
+			}
+			if (oAccountContract != null) {
+				for (AccountContractValue oAccountContractValue : oAccountContract.getValueList()) {
+					if (oAccountContractValue.getAddress().equals(encApi.hexEnc(addr.toByteArray()))) {
+						contracts.add(oAccountContractValue);
+					}
 				}
 			}
 		} catch (Throwable e) {
@@ -585,6 +587,25 @@ public class AccountHelper implements ActorService {
 
 		dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN),
 				OEntityBuilder.byteValue2OValue(oERC20Token.build().toByteArray()));
+	}
+
+	public void createContract(ByteString addr, ByteString contract) throws Exception {
+		OValue oValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_EXISTS_CONTRACT)).get();
+		AccountContract.Builder oAccountContract;
+		if (oValue == null || oValue.getExtdata() == null) {
+			oAccountContract = AccountContract.newBuilder();
+		} else {
+			oAccountContract = AccountContract.parseFrom(oValue.getExtdata().toByteArray()).toBuilder();
+		}
+
+		AccountContractValue.Builder oAccountContractValue = AccountContractValue.newBuilder();
+		oAccountContractValue.setAddress(encApi.hexEnc(addr.toByteArray()));
+		oAccountContractValue.setContractHash(encApi.hexEnc(contract.toByteArray()));
+		oAccountContractValue.setTimestamp(System.currentTimeMillis());
+		oAccountContract.addValue(oAccountContractValue);
+
+		dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_EXISTS_CONTRACT),
+				OEntityBuilder.byteValue2OValue(oAccountContract.build().toByteArray()));
 	}
 
 	public List<ERC20TokenValue> getTokens(String address, String token) {
