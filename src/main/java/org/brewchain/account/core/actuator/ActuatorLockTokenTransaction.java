@@ -59,7 +59,7 @@ public class ActuatorLockTokenTransaction extends AbstractTransactionActuator im
 			if (ByteUtil.bytesSub(tokenBalance, oInput.getAmount().toByteArray()).compareTo(BigInteger.ZERO) == 1) {
 				// 余额足够
 			} else {
-				throw new Exception(String.format("sender balance %s less than %s", tokenBalance, oInput.getAmount()));
+				throw new Exception(String.format("sender balance %s less than %s", tokenBalance, ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray())));
 			}
 
 			// 判断nonce是否一致

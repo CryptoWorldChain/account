@@ -76,13 +76,13 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 
 			if (ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray()).compareTo(BigInteger.ZERO) == -1) {
 				throw new IllegalArgumentException(
-						String.format("transaction value %s less than 0", oInput.getAmount()));
+						String.format("transaction value %s less than 0", ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray())));
 			}
 
 			if (tokenBalance.subtract(ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray()))
 					.compareTo(BigInteger.ZERO) == -1) {// - oInput.getFeeLimit()
 				// 余额不够
-				throw new Exception(String.format("sender balance %s less than %s", tokenBalance, oInput.getAmount()));
+				throw new Exception(String.format("sender balance %s less than %s", tokenBalance, ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray())));
 			}
 
 			// 判断nonce是否一致
@@ -96,7 +96,7 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
 			if (ByteUtil.bytesToBigInteger(oOutput.getAmount().toByteArray()).compareTo(BigInteger.ZERO) == -1) {
 				throw new IllegalArgumentException(
-						String.format("receive balance %s less than 0", oOutput.getAmount()));
+						String.format("receive balance %s less than 0", ByteUtil.bytesToBigInteger(oOutput.getAmount().toByteArray())));
 			}
 			outputsTotal = ByteUtil.bytesAdd(outputsTotal, oOutput.getAmount().toByteArray());
 		}
