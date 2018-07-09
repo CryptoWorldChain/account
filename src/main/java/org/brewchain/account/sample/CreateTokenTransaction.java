@@ -71,7 +71,7 @@ public class CreateTokenTransaction extends SessionModules<ReqCreateToken> {
 			MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
 			oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(pb.getFromAccount().getAddress())));
 			oMultiTransactionInput4.setAmount(
-					ByteString.copyFrom(ByteUtil.bigIntegerToBytes(new BigInteger(String.valueOf(pb.getTotal())))));
+					ByteString.copyFrom(ByteUtil.bigIntegerToBytes(new BigInteger(String.valueOf(pb.getTotal() + "000000000000000000")))));
 			int nonce = accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(pb.getFromAccount().getAddress())));
 			oMultiTransactionInput4.setNonce(nonce);
 			oMultiTransactionInput4.setPubKey(ByteString.copyFrom(encApi.hexDec(pb.getFromAccount().getPutkey())));

@@ -54,11 +54,9 @@ public class V1Processor implements IProcessor, ActorService {
 	BlockChainHelper blockChainHelper;
 	@ActorRequire(name = "BlockChain_Config", scope = "global")
 	BlockChainConfig blockChainConfig;
-	@ActorRequire(name = "Processor_Manager", scope = "global")
-	ProcessorManager oProcessorManager;
 	@ActorRequire(name = "Account_Helper", scope = "global")
 	AccountHelper oAccountHelper;
-	
+
 	@Override
 	public Map<String, ByteString> ExecuteTransaction(LinkedList<MultiTransaction> oMultiTransactions,
 			BlockEntity currentBlock) throws Exception {
@@ -96,7 +94,7 @@ public class V1Processor implements IProcessor, ActorService {
 		// oStateTrie.flush();
 		// return oStateTrie.getRootHash();
 	}
-	
+
 	@Override
 	public void applyReward(BlockEntity oCurrentBlock) throws Exception {
 		accountHelper.addTokenBalance(ByteString.copyFrom(encApi.hexDec(oCurrentBlock.getMiner().getAddress())), "CWS",
@@ -123,9 +121,8 @@ public class V1Processor implements IProcessor, ActorService {
 
 		// 确保时间戳不重复
 		long currentTimestamp = System.currentTimeMillis();
-		oBlockHeader.setTimestamp(
-				System.currentTimeMillis() == oBestBlockHeader.getTimestamp() ? oBestBlockHeader.getTimestamp() + 1
-						: currentTimestamp);
+		oBlockHeader.setTimestamp(System.currentTimeMillis() == oBestBlockHeader.getTimestamp()
+				? oBestBlockHeader.getTimestamp() + 1 : currentTimestamp);
 		oBlockHeader.setNumber(oBestBlockHeader.getNumber() + 1);
 		oBlockHeader.setReward(KeyConstant.BLOCK_REWARD);
 		oBlockHeader.setExtraData(extraData);
@@ -247,15 +244,16 @@ public class V1Processor implements IProcessor, ActorService {
 						applyBlock = pBlockEntity.toBuilder();
 						oBlockStoreSummary = blockChainHelper.addBlock(applyBlock.build());
 					} else {
-						log.debug("need prev block number::" + (applyBlock.getHeader().getNumber()
-								- (blockChainConfig.getDefaultRollBackCount() + 1)));
+						long rollBackNumber = applyBlock.getHeader().getNumber() > blockChainConfig
+								.getDefaultRollBackCount()
+										? applyBlock.getHeader().getNumber()
+												- (blockChainConfig.getDefaultRollBackCount() + 1)
+										: applyBlock.getHeader().getNumber() - 2;
+						log.debug("need prev block number::" + rollBackNumber);
 						oAddBlockResponse.setRetCode(-9);
-						oAddBlockResponse.setCurrentNumber(
-								applyBlock.getHeader().getNumber() - (blockChainConfig.getDefaultRollBackCount() + 1));
-						oAddBlockResponse.setWantNumber(
-								applyBlock.getHeader().getNumber() - blockChainConfig.getDefaultRollBackCount());
-						blockChainHelper.rollbackTo(
-								applyBlock.getHeader().getNumber() - (blockChainConfig.getDefaultRollBackCount() + 1));
+						oAddBlockResponse.setCurrentNumber(rollBackNumber);
+						oAddBlockResponse.setWantNumber(rollBackNumber + 1);
+						blockChainHelper.rollbackTo(rollBackNumber);
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 					}
 				} catch (Exception e1) {

@@ -54,8 +54,6 @@ public class DefaultProcessor implements IProcessor, ActorService {
 	BlockChainHelper blockChainHelper;
 	@ActorRequire(name = "BlockChain_Config", scope = "global")
 	BlockChainConfig blockChainConfig;
-	@ActorRequire(name = "Processor_Manager", scope = "global")
-	ProcessorManager oProcessorManager;
 	@ActorRequire(name = "Account_Helper", scope = "global")
 	AccountHelper oAccountHelper;
 
