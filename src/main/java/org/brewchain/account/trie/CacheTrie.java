@@ -18,11 +18,11 @@ import static org.brewchain.account.util.RLP.encodeElement;
 import static org.brewchain.account.util.RLP.encodeList;
 
 public class CacheTrie {
-	private final static Object NULL_NODE = new Object();
-	private final static int MIN_BRANCHES_CONCURRENTLY = 3;
-	private static ExecutorService executor;
+	private Object NULL_NODE = new Object();
+	private int MIN_BRANCHES_CONCURRENTLY = 3;
+	private ExecutorService executor;
 
-	public synchronized static ExecutorService getExecutor() {
+	public synchronized ExecutorService getExecutor() {
 		if (executor == null) {
 			executor = Executors.newFixedThreadPool(4,
 					new ThreadFactoryBuilder().setNameFormat("trie-calc-thread-%d").build());
@@ -34,7 +34,7 @@ public class CacheTrie {
 		BranchNode, KVNodeValue, KVNodeNode
 	}
 
-	public final class Node {
+	public class Node {
 		private byte[] hash = null;
 		private byte[] rlp = null;
 		private RLP.LList parsedRlp = null;
