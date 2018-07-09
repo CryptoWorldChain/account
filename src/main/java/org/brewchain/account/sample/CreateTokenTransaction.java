@@ -19,6 +19,7 @@ import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionSignature;
 import org.brewchain.rcvm.utils.ByteUtil;
 import org.fc.brewchain.bcapi.EncAPI;
+import org.fc.brewchain.bcapi.UnitUtil;
 
 import com.google.protobuf.ByteString;
 
@@ -71,7 +72,7 @@ public class CreateTokenTransaction extends SessionModules<ReqCreateToken> {
 			MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
 			oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(pb.getFromAccount().getAddress())));
 			oMultiTransactionInput4.setAmount(
-					ByteString.copyFrom(ByteUtil.bigIntegerToBytes(new BigInteger(String.valueOf(pb.getTotal() + "000000000000000000")))));
+					ByteString.copyFrom(ByteUtil.bigIntegerToBytes(UnitUtil.toWei(pb.getTotal()))));
 			int nonce = accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(pb.getFromAccount().getAddress())));
 			oMultiTransactionInput4.setNonce(nonce);
 			oMultiTransactionInput4.setPubKey(ByteString.copyFrom(encApi.hexDec(pb.getFromAccount().getPutkey())));

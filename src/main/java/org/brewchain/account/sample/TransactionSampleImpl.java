@@ -19,6 +19,7 @@ import org.brewchain.evmapi.gens.Tx.MultiTransactionOutput;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionSignature;
 import org.brewchain.rcvm.utils.ByteUtil;
 import org.fc.brewchain.bcapi.EncAPI;
+import org.fc.brewchain.bcapi.UnitUtil;
 
 import com.google.protobuf.ByteString;
 
@@ -69,7 +70,7 @@ public class TransactionSampleImpl extends SessionModules<ReqCreateTransactionTe
 				MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
 				oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(input.getAddress())));
 				oMultiTransactionInput4.setAmount(ByteString
-						.copyFrom(ByteUtil.bigIntegerToBytes(new BigInteger(String.valueOf(input.getAmount())))));
+						.copyFrom(ByteUtil.bigIntegerToBytes(UnitUtil.toWei(input.getAmount()))));
 				int nonce = accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(input.getAddress())));
 				oMultiTransactionInput4.setNonce(nonce);
 				oMultiTransactionInput4.setCryptoToken(ByteString.copyFrom(encApi.hexDec(input.getErc721Token())));
@@ -88,7 +89,7 @@ public class TransactionSampleImpl extends SessionModules<ReqCreateTransactionTe
 				MultiTransactionOutput.Builder oMultiTransactionOutput1 = MultiTransactionOutput.newBuilder();
 				oMultiTransactionOutput1.setAddress(ByteString.copyFrom(encApi.hexDec(output.getAddress())));
 				oMultiTransactionOutput1.setAmount(ByteString
-						.copyFrom(ByteUtil.bigIntegerToBytes(new BigInteger(String.valueOf(output.getAmount())))));
+						.copyFrom(ByteUtil.bigIntegerToBytes(UnitUtil.toWei(output.getAmount()))));
 				oMultiTransactionOutput1.setCryptoToken(ByteString.copyFrom(encApi.hexDec(output.getErc721Token())));
 				oMultiTransactionOutput1.setSymbol(output.getErc721Symbol());
 				oMultiTransactionBody.addOutputs(oMultiTransactionOutput1);
