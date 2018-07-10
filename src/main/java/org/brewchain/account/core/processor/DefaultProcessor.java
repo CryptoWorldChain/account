@@ -19,6 +19,7 @@ import org.brewchain.account.core.store.BlockStoreSummary.BLOCK_BEHAVIOR;
 import org.brewchain.account.gens.Blockimpl.AddBlockResponse;
 import org.brewchain.account.trie.CacheTrie;
 import org.brewchain.account.trie.StateTrie;
+import org.brewchain.core.util.ByteUtil;
 import org.brewchain.evmapi.gens.Act.Account;
 import org.brewchain.evmapi.gens.Act.AccountValue;
 import org.brewchain.evmapi.gens.Block.BlockBody;
@@ -137,7 +138,8 @@ public class DefaultProcessor implements IProcessor, ActorService {
 		oBlockMiner.setAddress(encApi.hexEnc(KeyConstant.node.getoAccount().getAddress().toByteArray()));
 		oBlockMiner.setNode(KeyConstant.node.getNode());
 		oBlockMiner.setBcuid(KeyConstant.node.getBcuid());
-		oBlockMiner.setReward(KeyConstant.BLOCK_REWARD);
+		oBlockMiner.setReward(ByteString
+				.copyFrom(ByteUtil.bigIntegerToBytes(blockChainConfig.getMinerReward())));
 		// oBlockMiner.setAddress(value);
 
 		oBlockHeader.setTxTrieRoot(encApi.hexEnc(oTrieImpl.getRootHash()));

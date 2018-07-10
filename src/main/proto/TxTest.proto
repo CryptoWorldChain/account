@@ -21,7 +21,6 @@ enum PTSTCommand {
 	LTR = 9; // load test perpare result
 
 	TCT = 10; // create token
-	CAT = 11; // create account
 	TCC = 12; // create contract transaction
 	TEC = 13; // call contract transaction
 }

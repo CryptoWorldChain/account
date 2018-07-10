@@ -11,6 +11,7 @@ import org.brewchain.account.gens.Blockimpl.RespGetBlock;
 import org.brewchain.account.util.ByteUtil;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.fc.brewchain.bcapi.EncAPI;
+import org.fc.brewchain.bcapi.UnitUtil;
 
 import com.google.protobuf.ByteString;
 
@@ -70,7 +71,8 @@ public class GetBlockByNumberImpl extends SessionModules<ReqGetBlockByNumber> {
 			oBlockMinerImpl.setBcuid(oBlockEntity.getMiner().getBcuid());
 			oBlockMinerImpl.setAddress(oBlockEntity.getMiner().getAddress());
 			oBlockMinerImpl.setNode(oBlockEntity.getMiner().getNode());
-			oBlockMinerImpl.setReward(oBlockEntity.getMiner().getReward());
+			oBlockMinerImpl.setReward(
+					String.valueOf(UnitUtil.fromWei(ByteUtil.bytesToBigInteger(oBlockEntity.getMiner().getReward().toByteArray()))));
 
 			oRespGetBlock.setVersion(String.valueOf(oBlockEntity.getVersion()));
 			oRespGetBlock.setHeader(oBlockHeaderImpl);

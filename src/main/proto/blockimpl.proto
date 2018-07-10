@@ -93,7 +93,7 @@ message BlockHeaderImpl {
 
 message BlockMinerImpl {
 	string node = 1;
-	int32 reward = 3;
+	string reward = 3;
 	string address = 4;
 	string bcuid = 5;
 }

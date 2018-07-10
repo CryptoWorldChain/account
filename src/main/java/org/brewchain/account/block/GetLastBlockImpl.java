@@ -7,8 +7,10 @@ import org.brewchain.account.gens.Blockimpl.PBCTCommand;
 import org.brewchain.account.gens.Blockimpl.PBCTModule;
 import org.brewchain.account.gens.Blockimpl.ReqBlockInfo;
 import org.brewchain.account.gens.Blockimpl.RespBlockDetail;
+import org.brewchain.account.util.ByteUtil;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.fc.brewchain.bcapi.EncAPI;
+import org.fc.brewchain.bcapi.UnitUtil;
 
 import com.google.protobuf.ByteString;
 
@@ -65,7 +67,8 @@ public class GetLastBlockImpl extends SessionModules<ReqBlockInfo> {
 			oBlockMinerImpl.setBcuid(oBlockEntity.getMiner().getBcuid());
 			oBlockMinerImpl.setAddress(oBlockEntity.getMiner().getAddress());
 			oBlockMinerImpl.setNode(oBlockEntity.getMiner().getNode());
-			oBlockMinerImpl.setReward(oBlockEntity.getMiner().getReward());
+			oBlockMinerImpl.setReward(
+					String.valueOf(UnitUtil.fromWei(ByteUtil.bytesToBigInteger(oBlockEntity.getMiner().getReward().toByteArray()))));
 			
 			oRespBlockDetail.setMiner(oBlockMinerImpl);
 			oRespBlockDetail.setRetCode(1);

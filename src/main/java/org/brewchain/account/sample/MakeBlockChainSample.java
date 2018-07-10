@@ -13,11 +13,14 @@ import org.brewchain.account.gens.TxTest.PTSTModule;
 import org.brewchain.account.gens.TxTest.ReqStartNewFork;
 import org.brewchain.account.gens.TxTest.RespStartNewFork;
 import org.brewchain.account.trie.CacheTrie;
+import org.brewchain.core.util.ByteUtil;
 import org.brewchain.evmapi.gens.Block.BlockBody;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.brewchain.evmapi.gens.Block.BlockHeader;
 import org.brewchain.evmapi.gens.Block.BlockMiner;
 import org.fc.brewchain.bcapi.EncAPI;
+
+import com.google.protobuf.ByteString;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -81,8 +84,8 @@ public class MakeBlockChainSample extends SessionModules<ReqStartNewFork> {
 
 		// 确保时间戳不重复
 		long currentTimestamp = System.currentTimeMillis();
-		oBlockHeader.setTimestamp(
-				currentTimestamp == oBestBlockHeader.getTimestamp() ? oBestBlockHeader.getTimestamp() + 1
+		oBlockHeader
+				.setTimestamp(currentTimestamp == oBestBlockHeader.getTimestamp() ? oBestBlockHeader.getTimestamp() + 1
 						: currentTimestamp);
 		oBlockHeader.setNumber(oBestBlockHeader.getNumber() + 1);
 		oBlockHeader.setReward(KeyConstant.BLOCK_REWARD);
@@ -92,7 +95,8 @@ public class MakeBlockChainSample extends SessionModules<ReqStartNewFork> {
 		oBlockMiner.setAddress(encApi.hexEnc(KeyConstant.node.getoAccount().getAddress().toByteArray()));
 		oBlockMiner.setNode(KeyConstant.node.getNode());
 		oBlockMiner.setBcuid(KeyConstant.node.getBcuid());
-		oBlockMiner.setReward(KeyConstant.BLOCK_REWARD);
+		oBlockMiner.setReward(ByteString
+				.copyFrom(ByteUtil.bigIntegerToBytes(transactionHelper.getBlockChainConfig().getMinerReward())));
 		// oBlockMiner.setAddress(value);
 
 		oBlockHeader.setTxTrieRoot(encApi.hexEnc(oTrieImpl.getRootHash()));

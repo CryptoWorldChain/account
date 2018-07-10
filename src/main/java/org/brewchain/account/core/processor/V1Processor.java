@@ -19,6 +19,7 @@ import org.brewchain.account.core.store.BlockStoreSummary.BLOCK_BEHAVIOR;
 import org.brewchain.account.gens.Blockimpl.AddBlockResponse;
 import org.brewchain.account.trie.CacheTrie;
 import org.brewchain.account.trie.StateTrie;
+import org.brewchain.core.util.ByteUtil;
 import org.brewchain.evmapi.gens.Act.Account;
 import org.brewchain.evmapi.gens.Act.AccountValue;
 import org.brewchain.evmapi.gens.Block.BlockBody;
@@ -125,7 +126,7 @@ public class V1Processor implements IProcessor, ActorService {
 				System.currentTimeMillis() == oBestBlockHeader.getTimestamp() ? oBestBlockHeader.getTimestamp() + 1
 						: currentTimestamp);
 		oBlockHeader.setNumber(oBestBlockHeader.getNumber() + 1);
-		oBlockHeader.setReward(KeyConstant.BLOCK_REWARD);
+		// oBlockHeader.setReward(bloc);
 		oBlockHeader.setExtraData(extraData);
 		// 构造MPT Trie
 		CacheTrie oTrieImpl = new CacheTrie();
@@ -137,7 +138,7 @@ public class V1Processor implements IProcessor, ActorService {
 		oBlockMiner.setAddress(encApi.hexEnc(KeyConstant.node.getoAccount().getAddress().toByteArray()));
 		oBlockMiner.setNode(KeyConstant.node.getNode());
 		oBlockMiner.setBcuid(KeyConstant.node.getBcuid());
-		oBlockMiner.setReward(KeyConstant.BLOCK_REWARD);
+		oBlockMiner.setReward(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(blockChainConfig.getMinerReward())));
 		// oBlockMiner.setAddress(value);
 
 		oBlockHeader.setTxTrieRoot(encApi.hexEnc(oTrieImpl.getRootHash()));
@@ -210,7 +211,7 @@ public class V1Processor implements IProcessor, ActorService {
 
 		// reward
 		accountHelper.addTokenBalance(ByteString.copyFrom(encApi.hexDec(oBlockEntity.getMiner().getAddress())), "CWS",
-				new BigInteger(String.valueOf(oBlockEntity.getMiner().getReward())));
+				ByteUtil.bytesToBigInteger(oBlockEntity.getMiner().getReward().toByteArray()));
 
 		header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
 		oBlockEntity.setHeader(header);

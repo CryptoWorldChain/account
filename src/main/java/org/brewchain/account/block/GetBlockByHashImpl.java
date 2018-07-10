@@ -9,8 +9,10 @@ import org.brewchain.account.gens.Blockimpl.PBCTModule;
 import org.brewchain.account.gens.Blockimpl.ReqGetBlockByHash;
 import org.brewchain.account.gens.Blockimpl.ReqGetBlockByNumber;
 import org.brewchain.account.gens.Blockimpl.RespGetBlock;
+import org.brewchain.account.util.ByteUtil;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.fc.brewchain.bcapi.EncAPI;
+import org.fc.brewchain.bcapi.UnitUtil;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -67,7 +69,8 @@ public class GetBlockByHashImpl extends SessionModules<ReqGetBlockByHash> {
 			oBlockMinerImpl.setBcuid(oBlockEntity.getMiner().getBcuid());
 			oBlockMinerImpl.setAddress(oBlockEntity.getMiner().getAddress());
 			oBlockMinerImpl.setNode(oBlockEntity.getMiner().getNode());
-			oBlockMinerImpl.setReward(oBlockEntity.getMiner().getReward());
+			oBlockMinerImpl.setReward(
+					String.valueOf(UnitUtil.fromWei(ByteUtil.bytesToBigInteger(oBlockEntity.getMiner().getReward().toByteArray()))));
 
 			oRespGetBlock.setHeader(oBlockHeaderImpl);
 			oRespGetBlock.setMiner(oBlockMinerImpl);
