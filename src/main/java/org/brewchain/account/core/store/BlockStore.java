@@ -241,6 +241,7 @@ public class BlockStore implements ActorService {
 				maxStableNumber = block.getHeader().getNumber();
 				maxStableBlock = block;
 			}
+			unStableStore.removeForkBlock(block.getHeader().getNumber());
 			oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 			return oBlockStoreSummary;
 		}

@@ -331,7 +331,7 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 		try (ALock l = readLock.lock()) {
 			for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.entrySet().iterator(); it.hasNext();) {
 				Map.Entry<String, BlockStoreNodeValue> item = it.next();
-				if (item.getValue().getNumber() == number) {
+				if (item.getValue().getNumber() <= number) {
 					dao.getBlockDao().delete(OEntityBuilder.byteKey2OKey(encApi.hexDec(item.getKey())));
 					it.remove();
 				}
