@@ -1,15 +1,20 @@
 package org.brewchain.account.sys;
 
+import java.util.Iterator;
+import java.util.Map;
+
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockChainHelper;
 import org.brewchain.account.core.WaitBlockHashMapDB;
 import org.brewchain.account.core.WaitSendHashMapDB;
+import org.brewchain.account.core.store.BlockStoreNodeValue;
 import org.brewchain.account.gens.Sys.PSYSCommand;
 import org.brewchain.account.gens.Sys.PSYSModule;
 import org.brewchain.account.gens.Sys.ReqAddCryptoToken;
 import org.brewchain.account.gens.Sys.ReqGetSummary;
 import org.brewchain.account.gens.Sys.RespAddCryptoToken;
 import org.brewchain.account.gens.Sys.RespGetSummary;
+import org.brewchain.account.gens.Sys.UnStableItems;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import lombok.Data;
@@ -57,6 +62,15 @@ public class GetSummaryImpl extends SessionModules<ReqGetSummary>  {
 		oRespGetSummary.setUnStable(String.valueOf(blockChainHelper.getBlockStore().getUnStableStore().getStorage().size()));
 		oRespGetSummary.setWaitBlock(String.valueOf(oPendingHashMapDB.getStorage().size()));
 		oRespGetSummary.setWaitSync(String.valueOf(oSendingHashMapDB.getStorage().size()));
+		
+		for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = blockChainHelper.getBlockStore().getUnStableStore().getStorage().entrySet().iterator(); it.hasNext();) {
+			Map.Entry<String, BlockStoreNodeValue> item = it.next();
+			UnStableItems.Builder oUnStableItems = UnStableItems.newBuilder();
+			oUnStableItems.setNumber(String.valueOf(item.getValue().getNumber()));
+			oUnStableItems.setHash(item.getValue().getBlockHash());
+			oRespGetSummary.addItems(oUnStableItems.build());
+		}
+		
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespGetSummary.build()));
 	}
 }

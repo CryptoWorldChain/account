@@ -19,6 +19,12 @@ message RespGetSummary {
 	string maxStable = 4;
 	string unStable = 5;
 	string stable = 6;
+	repeated UnStableItems items = 7;
+}
+
+message UnStableItems {
+	string number = 1;
+	string hash = 2;
 }
 
 message ReqAddCryptoToken {
