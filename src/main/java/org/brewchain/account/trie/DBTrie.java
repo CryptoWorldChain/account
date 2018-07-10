@@ -44,10 +44,12 @@ public class DBTrie  {
 	private Object NULL_NODE = new Object();
 	private int MIN_BRANCHES_CONCURRENTLY = 3;
 	private ExecutorService executor = Executors.newFixedThreadPool(4,
-			new ThreadFactoryBuilder().setNameFormat("trie-calc-thread-%d").build());;
-
-	public DBTrie(DefDaos dao) {
+			new ThreadFactoryBuilder().setNameFormat("trie-calc-thread-%d").build());
+	
+	private OEntityBuilder oEntityHelper;
+	public DBTrie(DefDaos dao, OEntityBuilder oEntityHelper) {
 		this.dao = dao;
+		this.oEntityHelper = oEntityHelper;
 	}
 	
 	public ExecutorService getExecutor() {
@@ -480,7 +482,7 @@ public class DBTrie  {
 	private byte[] getHash(byte[] hash) {
 		OValue v;
 		try {
-			v = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(hash)).get();
+			v = dao.getAccountDao().get(oEntityHelper.byteKey2OKey(hash)).get();
 			if (v != null && v.getExtdata() != null && !v.getExtdata().equals(ByteString.EMPTY)) {
 				return v.getExtdata().toByteArray();
 			}
@@ -492,11 +494,11 @@ public class DBTrie  {
 	}
 
 	private void addHash(byte[] hash, byte[] ret) {
-		dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(hash), OEntityBuilder.byteValue2OValue(ret));
+		dao.getAccountDao().put(oEntityHelper.byteKey2OKey(hash), oEntityHelper.byteValue2OValue(ret));
 	}
 
 	private void deleteHash(byte[] hash) {
-		dao.getAccountDao().delete(OEntityBuilder.byteKey2OKey(hash));
+		dao.getAccountDao().delete(oEntityHelper.byteKey2OKey(hash));
 	}
 
 	public byte[] get(byte[] key) {

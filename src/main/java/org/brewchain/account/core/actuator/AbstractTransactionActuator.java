@@ -203,7 +203,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 					.bytesSubToBytes(senderAccountValue.getBalance().toByteArray(), oInput.getAmount().toByteArray())));
 
 			senderAccountValue.setNonce(senderAccountValue.getNonce() + 1);
-			DBTrie oCacheTrie = new DBTrie(this.dao);
+			DBTrie oCacheTrie = new DBTrie(this.dao, oTransactionHelper.getOEntityHelper());
 			if (senderAccountValue.getStorage() == null) {
 				oCacheTrie.setRoot(null);
 			} else {
@@ -221,7 +221,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			receiverAccountValue.setBalance(ByteString.copyFrom(ByteUtil.bytesAddToBytes(
 					receiverAccountValue.getBalance().toByteArray(), oOutput.getAmount().toByteArray())));
 
-			DBTrie oCacheTrie = new DBTrie(this.dao);
+			DBTrie oCacheTrie = new DBTrie(this.dao, oTransactionHelper.getOEntityHelper());
 			if (receiverAccountValue.getStorage() == null) {
 				oCacheTrie.setRoot(null);
 			} else {

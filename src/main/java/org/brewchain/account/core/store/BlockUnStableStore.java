@@ -32,6 +32,8 @@ import onight.tfw.ntrans.api.annotation.ActorRequire;
 @Slf4j
 @Data
 public class BlockUnStableStore implements IBlockStore, ActorService {
+	@ActorRequire(name = "OEntity_Helper", scope = "global")
+	OEntityBuilder oEntityHelper;
 	@ActorRequire(name = "Def_Daos", scope = "global")
 	DefDaos dao;
 	@ActorRequire(name = "bc_encoder", scope = "global")
@@ -149,8 +151,8 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 				this.storage.put(hash, oNode);
 
 				// log.debug("====put connect block::" + hash);
-				dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK),
-						OEntityBuilder.byteValue2OValue(encApi.hexDec(oNode.getBlockHash())));
+				dao.getBlockDao().put(oEntityHelper.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK),
+						oEntityHelper.byteValue2OValue(encApi.hexDec(oNode.getBlockHash())));
 				// dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK),
 				// OEntityBuilder.byteValue2OValue(encApi.hexDec(oNode.getBlockHash())));
 				log.debug("success connect block number::" + oNode.getNumber() + " hash::" + oNode.getBlockHash()
@@ -257,8 +259,8 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 				this.storage.put(hash, oBlockStoreNodeValue);
 
 				// log.debug("====put save block::" + hash);
-				dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(encApi.hexDec(block.getHeader().getBlockHash())),
-						OEntityBuilder.byteValue2OValue(block.toByteArray(),
+				dao.getBlockDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(block.getHeader().getBlockHash())),
+						oEntityHelper.byteValue2OValue(block.toByteArray(),
 								String.valueOf(block.getHeader().getNumber())));
 			}
 		}
@@ -291,8 +293,8 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 					}
 
 					// log.debug("====put rollback block::" + hash);
-					dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK),
-							OEntityBuilder.byteValue2OValue(encApi.hexDec(oNode.getBlockHash())));
+					dao.getBlockDao().put(oEntityHelper.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK),
+							oEntityHelper.byteValue2OValue(encApi.hexDec(oNode.getBlockHash())));
 					return oNode.getBlockEntity();
 				} else {
 					return null;
@@ -323,8 +325,8 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 		}
 
 		// log.debug("====put disconnect block::" + block.getHeader().getBlockHash());
-		dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK),
-				OEntityBuilder.byteValue2OValue(encApi.hexDec(block.getHeader().getBlockHash())));
+		dao.getBlockDao().put(oEntityHelper.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK),
+				oEntityHelper.byteValue2OValue(encApi.hexDec(block.getHeader().getBlockHash())));
 	}
 
 	public void removeForkBlock(long number) {
@@ -332,7 +334,7 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 			for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.entrySet().iterator(); it.hasNext();) {
 				Map.Entry<String, BlockStoreNodeValue> item = it.next();
 				if (item.getValue().getNumber() <= number) {
-					dao.getBlockDao().delete(OEntityBuilder.byteKey2OKey(encApi.hexDec(item.getKey())));
+					dao.getBlockDao().delete(oEntityHelper.byteKey2OKey(encApi.hexDec(item.getKey())));
 					it.remove();
 				}
 			}

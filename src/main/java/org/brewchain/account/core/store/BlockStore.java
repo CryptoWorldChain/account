@@ -31,6 +31,8 @@ import onight.tfw.ntrans.api.annotation.ActorRequire;
 @Slf4j
 @Data
 public class BlockStore implements ActorService {
+	@ActorRequire(name = "OEntity_Helper", scope = "global")
+	OEntityBuilder oEntityHelper;
 	@ActorRequire(name = "bc_encoder", scope = "global")
 	EncAPI encApi;
 	@ActorRequire(name = "BlockStore_Stable", scope = "global")
@@ -51,9 +53,9 @@ public class BlockStore implements ActorService {
 
 	public void init() throws Exception {
 		String lastBlockHash = null;
-		OValue oOValue = dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK)).get();
+		OValue oOValue = dao.getBlockDao().get(oEntityHelper.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK)).get();
 		if (oOValue == null || oOValue.getExtdata() == null || oOValue.getExtdata().equals(ByteString.EMPTY)) {
-			oOValue = dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get();
+			oOValue = dao.getBlockDao().get(oEntityHelper.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get();
 			if (oOValue == null || oOValue.getExtdata() == null || oOValue.getExtdata().equals(ByteString.EMPTY)) {
 				log.warn(String.format("not found last block, start empty node"));
 				return;

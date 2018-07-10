@@ -39,6 +39,8 @@ public class BlockChainHelper implements ActorService {
 	// @ActorRequire(name = "Block_Cache_DLL", scope = "global")
 	// DoubleLinkedList blockCache;
 	//
+	@ActorRequire(name = "OEntity_Helper", scope = "global")
+	OEntityBuilder oEntityHelper;
 	@ActorRequire(name = "BlockChain_Config", scope = "global")
 	BlockChainConfig blockChainConfig;
 	// @ActorRequire(name = "BlockChainTempStore_HashMapDB", scope = "global")
@@ -282,7 +284,7 @@ public class BlockChainHelper implements ActorService {
 	public String getNodeAccount() {
 		OValue oOValue;
 		try {
-			oOValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey("org.bc.manage.node.account".getBytes()))
+			oOValue = dao.getAccountDao().get(oEntityHelper.byteKey2OKey("org.bc.manage.node.account".getBytes()))
 					.get();
 			if (oOValue == null || oOValue.getExtdata() == null || oOValue.getExtdata().equals(ByteString.EMPTY)) {
 				// get net config
@@ -315,8 +317,8 @@ public class BlockChainHelper implements ActorService {
 							return null;
 						} else {
 							dao.getAccountDao().put(
-									OEntityBuilder.byteKey2OKey("org.bc.manage.node.account".getBytes()),
-									OEntityBuilder.byteValue2OValue(encApi.hexDec(oKeyStoreValue.getAddress())));
+									oEntityHelper.byteKey2OKey("org.bc.manage.node.account".getBytes()),
+									oEntityHelper.byteValue2OValue(encApi.hexDec(oKeyStoreValue.getAddress())));
 							return oKeyStoreValue.getAddress();
 						}
 					} catch (Exception e) {

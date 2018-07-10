@@ -9,7 +9,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.brewchain.account.util.ALock;
-import org.brewchain.account.util.ByteArrayMap;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 
 import lombok.Data;

@@ -136,7 +136,7 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 			}
 			oAccountValue.setNonce(oAccountValue.getNonce() + 1);
 
-			DBTrie oCacheTrie = new DBTrie(this.dao);
+			DBTrie oCacheTrie = new DBTrie(this.dao, oTransactionHelper.getOEntityHelper());
 			if (oAccountValue.getStorage() == null) {
 				oCacheTrie.setRoot(null);
 			} else {
@@ -181,8 +181,8 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 
 					// update token mapping acocunt
 					this.dao.getAccountDao().put(
-							OEntityBuilder.byteKey2OKey(oAccountCryptoToken.getHash().toByteArray()),
-							OEntityBuilder.byteValue2OValue(oAccountCryptoToken.build().toByteArray()));
+							oTransactionHelper.getOEntityHelper().byteKey2OKey(oAccountCryptoToken.getHash().toByteArray()),
+							oTransactionHelper.getOEntityHelper().byteValue2OValue(oAccountCryptoToken.build().toByteArray()));
 					break;
 				}
 			}
@@ -200,11 +200,11 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 
 				receiverAccountValue.addCryptos(oAccountCryptoValue);
 				// update token mapping acocunt
-				this.dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(oAccountCryptoToken.getHash().toByteArray()),
-						OEntityBuilder.byteValue2OValue(oAccountCryptoToken.build().toByteArray()));
+				this.dao.getAccountDao().put(oTransactionHelper.getOEntityHelper().byteKey2OKey(oAccountCryptoToken.getHash().toByteArray()),
+						oTransactionHelper.getOEntityHelper().byteValue2OValue(oAccountCryptoToken.build().toByteArray()));
 			}
 
-			DBTrie oCacheTrie = new DBTrie(this.dao);
+			DBTrie oCacheTrie = new DBTrie(this.dao, oTransactionHelper.getOEntityHelper());
 			if (receiverAccountValue.getStorage() == null) {
 				oCacheTrie.setRoot(null);
 			} else {

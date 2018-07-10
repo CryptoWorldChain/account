@@ -121,8 +121,9 @@ public class V1Processor implements IProcessor, ActorService {
 
 		// 确保时间戳不重复
 		long currentTimestamp = System.currentTimeMillis();
-		oBlockHeader.setTimestamp(System.currentTimeMillis() == oBestBlockHeader.getTimestamp()
-				? oBestBlockHeader.getTimestamp() + 1 : currentTimestamp);
+		oBlockHeader.setTimestamp(
+				System.currentTimeMillis() == oBestBlockHeader.getTimestamp() ? oBestBlockHeader.getTimestamp() + 1
+						: currentTimestamp);
 		oBlockHeader.setNumber(oBestBlockHeader.getNumber() + 1);
 		oBlockHeader.setReward(KeyConstant.BLOCK_REWARD);
 		oBlockHeader.setExtraData(extraData);
@@ -232,9 +233,13 @@ public class V1Processor implements IProcessor, ActorService {
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 				break;
 			case EXISTS_DROP:
-				// if (blockChainHelper.get)
-				log.info("already exists, drop block number::" + applyBlock.getHeader().getNumber());
-				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
+				if (blockChainHelper.getLastBlockNumber() == applyBlock.getHeader().getNumber() - 1) {
+					log.info("already exists, try to apply::" + applyBlock.getHeader().getNumber());
+					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
+				} else {
+					log.info("already exists, drop it::" + applyBlock.getHeader().getNumber());
+					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
+				}
 				break;
 			case EXISTS_PREV:
 				log.info("block exists, but cannot find parent block number::" + applyBlock.getHeader().getNumber());

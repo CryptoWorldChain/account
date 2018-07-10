@@ -39,7 +39,8 @@ import onight.tfw.ntrans.api.annotation.ActorRequire;
 @Slf4j
 @Data
 public class BlockStableStore implements IBlockStore, ActorService {
-
+	@ActorRequire(name = "OEntity_Helper", scope = "global")
+	OEntityBuilder oEntityHelper;
 	@ActorRequire(name = "bc_encoder", scope = "global")
 	EncAPI encApi;
 
@@ -108,8 +109,8 @@ public class BlockStableStore implements IBlockStore, ActorService {
 			LinkedList<OValue> txBlockValueList = new LinkedList<OValue>();
 
 			for (MultiTransaction oMultiTransaction : block.getBody().getTxsList()) {
-				txBlockKeyList.add(OEntityBuilder.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash())));
-				txBlockValueList.add(OEntityBuilder.byteValue2OValue(encApi.hexDec(block.getHeader().getBlockHash())));
+				txBlockKeyList.add(oEntityHelper.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash())));
+				txBlockValueList.add(oEntityHelper.byteValue2OValue(encApi.hexDec(block.getHeader().getBlockHash())));
 			}
 
 			// log.debug("====put transaction rel block::"+
@@ -125,10 +126,10 @@ public class BlockStableStore implements IBlockStore, ActorService {
 		if (maxNumber < number) {
 			maxNumber = number;
 			dao.getBlockDao().batchPuts(
-					new OKey[] { OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK),
-							OEntityBuilder.byteKey2OKey(encApi.hexDec(block.getHeader().getBlockHash())) },
-					new OValue[] { OEntityBuilder.byteValue2OValue(encApi.hexDec(block.getHeader().getBlockHash())),
-							OEntityBuilder.byteValue2OValue(block.toByteArray(),
+					new OKey[] { oEntityHelper.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK),
+							oEntityHelper.byteKey2OKey(encApi.hexDec(block.getHeader().getBlockHash())) },
+					new OValue[] { oEntityHelper.byteValue2OValue(encApi.hexDec(block.getHeader().getBlockHash())),
+							oEntityHelper.byteValue2OValue(block.toByteArray(),
 									String.valueOf(block.getHeader().getNumber())) });
 		}
 		return true;
@@ -155,8 +156,8 @@ public class BlockStableStore implements IBlockStore, ActorService {
 	public BlockEntity rollBackTo(long number) {
 		BlockEntity block = null;
 		block = getBlockByNumber(number);
-		dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK),
-				OEntityBuilder.byteValue2OValue(encApi.hexDec(block.getHeader().getBlockHash())));
+		dao.getBlockDao().put(oEntityHelper.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK),
+				oEntityHelper.byteValue2OValue(encApi.hexDec(block.getHeader().getBlockHash())));
 		return block;
 	}
 
@@ -173,7 +174,7 @@ public class BlockStableStore implements IBlockStore, ActorService {
 		BlockEntity block = null;
 		OValue v = null;
 		try {
-			v = dao.getBlockDao().get(OEntityBuilder.byteKey2OKey(encApi.hexDec(hash))).get();
+			v = dao.getBlockDao().get(oEntityHelper.byteKey2OKey(encApi.hexDec(hash))).get();
 			if (v != null) {
 				block = BlockEntity.parseFrom(v.getExtdata());
 				try (ALock l = writeLock.lock()) {

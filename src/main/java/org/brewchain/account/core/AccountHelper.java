@@ -62,7 +62,9 @@ public class AccountHelper implements ActorService {
 	StateTrie stateTrie;
 	@ActorRequire(name = "Storage_TrieCache", scope = "global")
 	StorageTrieCache storageTrieCache;
-
+	@ActorRequire(name = "OEntity_Helper", scope = "global")
+	OEntityBuilder oEntityHelper;
+	
 	public AccountHelper() {
 	}
 
@@ -114,7 +116,7 @@ public class AccountHelper implements ActorService {
 	 */
 
 	public void DeleteAccount(byte[] address) {
-		dao.getAccountDao().delete(OEntityBuilder.byteKey2OKey(address));
+		dao.getAccountDao().delete(oEntityHelper.byteKey2OKey(address));
 		if (this.stateTrie != null)
 			this.stateTrie.delete(address);
 	}
@@ -154,7 +156,7 @@ public class AccountHelper implements ActorService {
 				valueHash = this.stateTrie.get(addr.toByteArray());
 			}
 			if (valueHash == null) {
-				OValue oValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(addr)).get();
+				OValue oValue = dao.getAccountDao().get(oEntityHelper.byteKey2OKey(addr)).get();
 				if (oValue != null && oValue.getExtdata() != null) {
 					valueHash = oValue.getExtdata().toByteArray();
 				} else {
@@ -175,7 +177,7 @@ public class AccountHelper implements ActorService {
 		List<AccountContractValue> contracts = new ArrayList<>();
 		try {
 			AccountContract oAccountContract = null;
-			OValue oOValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_EXISTS_CONTRACT)).get();
+			OValue oOValue = dao.getAccountDao().get(oEntityHelper.byteKey2OKey(KeyConstant.DB_EXISTS_CONTRACT)).get();
 			if (oOValue != null && oOValue.getExtdata() != null) {
 				oAccountContract = AccountContract.parseFrom(oOValue.getExtdata().toByteArray());
 			}
@@ -570,7 +572,7 @@ public class AccountHelper implements ActorService {
 	}
 
 	public void createToken(ByteString addr, String token, BigInteger total) throws Exception {
-		OValue oValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN)).get();
+		OValue oValue = dao.getAccountDao().get(oEntityHelper.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN)).get();
 		ERC20Token.Builder oERC20Token;
 		if (oValue == null) {
 			oERC20Token = ERC20Token.newBuilder();
@@ -585,12 +587,12 @@ public class AccountHelper implements ActorService {
 		oICOValue.setTotal(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(total)));
 		oERC20Token.addValue(oICOValue);
 
-		dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN),
-				OEntityBuilder.byteValue2OValue(oERC20Token.build().toByteArray()));
+		dao.getAccountDao().put(oEntityHelper.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN),
+				oEntityHelper.byteValue2OValue(oERC20Token.build().toByteArray()));
 	}
 
 	public void createContract(ByteString addr, ByteString contract) throws Exception {
-		OValue oValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_EXISTS_CONTRACT)).get();
+		OValue oValue = dao.getAccountDao().get(oEntityHelper.byteKey2OKey(KeyConstant.DB_EXISTS_CONTRACT)).get();
 		AccountContract.Builder oAccountContract;
 		if (oValue == null || oValue.getExtdata() == null) {
 			oAccountContract = AccountContract.newBuilder();
@@ -604,15 +606,15 @@ public class AccountHelper implements ActorService {
 		oAccountContractValue.setTimestamp(System.currentTimeMillis());
 		oAccountContract.addValue(oAccountContractValue);
 
-		dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_EXISTS_CONTRACT),
-				OEntityBuilder.byteValue2OValue(oAccountContract.build().toByteArray()));
+		dao.getAccountDao().put(oEntityHelper.byteKey2OKey(KeyConstant.DB_EXISTS_CONTRACT),
+				oEntityHelper.byteValue2OValue(oAccountContract.build().toByteArray()));
 	}
 
 	public List<ERC20TokenValue> getTokens(String address, String token) {
 		List<ERC20TokenValue> list = new ArrayList<>();
 		OValue oValue;
 		try {
-			oValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN)).get();
+			oValue = dao.getAccountDao().get(oEntityHelper.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN)).get();
 			if (oValue == null) {
 				return list;
 			}
@@ -641,7 +643,7 @@ public class AccountHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public boolean isExistsToken(String token) throws Exception {
-		OValue oValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN)).get();
+		OValue oValue = dao.getAccountDao().get(oEntityHelper.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN)).get();
 		if (oValue == null) {
 			return false;
 		}
@@ -656,8 +658,8 @@ public class AccountHelper implements ActorService {
 	}
 
 	public void putAccountValue(ByteString addr, AccountValue oAccountValue) {
-		dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(addr),
-				OEntityBuilder.byteValue2OValue(oAccountValue.toByteArray()));
+		dao.getAccountDao().put(oEntityHelper.byteKey2OKey(addr),
+				oEntityHelper.byteValue2OValue(oAccountValue.toByteArray()));
 		if (this.stateTrie != null) {
 			log.warn("put state trie::" + encApi.hexEnc(addr.toByteArray()) + " "
 					+ encApi.hexEnc(oAccountValue.toByteArray()));
@@ -672,7 +674,7 @@ public class AccountHelper implements ActorService {
 
 		LinkedList<OValue> list = new LinkedList<>();
 		for (int i = 0; i < values.size(); i++) {
-			list.add(OEntityBuilder.byteValue2OValue(values.get(i).toByteArray()));
+			list.add(oEntityHelper.byteValue2OValue(values.get(i).toByteArray()));
 			if (this.stateTrie != null) {
 				log.debug("put state trie::" + encApi.hexEnc(keys.get(i).getData().toByteArray()) + " "
 						+ encApi.hexEnc(values.get(i).toByteArray()));
@@ -692,8 +694,8 @@ public class AccountHelper implements ActorService {
 		while (iterator.hasNext()) {
 			String key = iterator.next();
 			AccountValue value = accountValues.get(key).getValue();
-			keysArray[i] = OEntityBuilder.byteKey2OKey(encApi.hexDec(key));
-			valuesArray[i] = OEntityBuilder.byteValue2OValue(value.toByteArray());
+			keysArray[i] = oEntityHelper.byteKey2OKey(encApi.hexDec(key));
+			valuesArray[i] = oEntityHelper.byteValue2OValue(value.toByteArray());
 			if (this.stateTrie != null) {
 				log.debug("put state trie::" + key + " " + encApi.hexEnc(value.toByteArray()));
 				this.stateTrie.put(encApi.hexDec(key), value.toByteArray());
@@ -706,8 +708,8 @@ public class AccountHelper implements ActorService {
 	public void tokenMappingAccount(AccountCryptoToken.Builder acBuilder) {
 		// log.debug("====put tokenMappingAccount::");
 
-		dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(acBuilder.getHash()),
-				OEntityBuilder.byteValue2OValue(acBuilder.build().toByteArray()));
+		dao.getAccountDao().put(oEntityHelper.byteKey2OKey(acBuilder.getHash()),
+				oEntityHelper.byteValue2OValue(acBuilder.build().toByteArray()));
 	}
 
 	/**
@@ -719,7 +721,7 @@ public class AccountHelper implements ActorService {
 	public AccountCryptoToken.Builder getCryptoTokenByTokenHash(ByteString tokenHash) {
 		AccountCryptoToken.Builder cryptoTokenBuild = null;
 		try {
-			OValue otValue = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(tokenHash)).get();
+			OValue otValue = dao.getAccountDao().get(oEntityHelper.byteKey2OKey(tokenHash)).get();
 			cryptoTokenBuild = AccountCryptoToken.parseFrom(otValue.getExtdata()).toBuilder();
 		} catch (Exception e) {
 			e.printStackTrace();

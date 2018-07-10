@@ -29,7 +29,8 @@ import onight.tfw.otransio.api.beans.FramePacket;
 @Slf4j
 @Data
 public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
-
+	@ActorRequire(name = "OEntity_Helper", scope = "global")
+	OEntityBuilder oEntityHelper;
 	@ActorRequire(name = "bc_encoder", scope = "global")
 	EncAPI encApi;
 	@ActorRequire(name = "Def_Daos", scope = "global")
@@ -65,7 +66,7 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 			oRespBlockInfo.setWaitSync(oSendingHashMapDB.keys().size());
 			oRespBlockInfo.setWaitBlock(oPendingHashMapDB.keys().size());
 			LinkedList<BlockEntity> list = blockChainHelper.getParentsBlocks(encApi.hexEnc(dao.getBlockDao()
-					.get(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get().getExtdata().toByteArray()),
+					.get(oEntityHelper.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get().getExtdata().toByteArray()),
 					null, 10000);
 			int curr = 0;
 			String retCache = "";

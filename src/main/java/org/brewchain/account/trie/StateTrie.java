@@ -44,7 +44,9 @@ public class StateTrie implements ActorService {
 	EncAPI encApi;
 	@ActorRequire(name = "Def_Daos", scope = "global")
 	DefDaos dao;
-
+	@ActorRequire(name = "OEntity_Helper", scope = "global")
+	OEntityBuilder oEntityHelper;
+	
 	private final static Object NULL_NODE = new Object();
 	private final static int MIN_BRANCHES_CONCURRENTLY = 3;
 	private static ExecutorService executor = Executors.newFixedThreadPool(4,
@@ -480,7 +482,7 @@ public class StateTrie implements ActorService {
 	private byte[] getHash(byte[] hash) {
 		OValue v;
 		try {
-			v = dao.getAccountDao().get(OEntityBuilder.byteKey2OKey(hash)).get();
+			v = dao.getAccountDao().get(oEntityHelper.byteKey2OKey(hash)).get();
 			if (v != null && v.getExtdata() != null && !v.getExtdata().equals(ByteString.EMPTY)) {
 				return v.getExtdata().toByteArray();
 			}
@@ -492,7 +494,7 @@ public class StateTrie implements ActorService {
 	}
 
 	private void addHash(byte[] hash, byte[] ret) {
-		dao.getAccountDao().put(OEntityBuilder.byteKey2OKey(hash), OEntityBuilder.byteValue2OValue(ret));
+		dao.getAccountDao().put(oEntityHelper.byteKey2OKey(hash), oEntityHelper.byteValue2OValue(ret));
 	}
 
 	private void deleteHash(byte[] hash) {

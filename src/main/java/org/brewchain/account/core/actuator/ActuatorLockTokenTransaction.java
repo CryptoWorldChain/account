@@ -103,7 +103,7 @@ public class ActuatorLockTokenTransaction extends AbstractTransactionActuator im
 			senderAccountValue.setBalance(senderAccountValue.getBalance());
 			senderAccountValue.setNonce(senderAccountValue.getNonce() + 1);
 
-			DBTrie oCacheTrie = new DBTrie(this.dao);
+			DBTrie oCacheTrie = new DBTrie(this.dao, oTransactionHelper.getOEntityHelper());
 			if (senderAccountValue.getStorage() == null) {
 				oCacheTrie.setRoot(null);
 			} else {

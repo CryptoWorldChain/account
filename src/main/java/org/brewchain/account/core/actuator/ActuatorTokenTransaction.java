@@ -137,7 +137,7 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 
 			senderAccountValue.setNonce(senderAccountValue.getNonce() + 1);
 
-			DBTrie oCacheTrie = new DBTrie(this.dao);
+			DBTrie oCacheTrie = new DBTrie(this.dao, oTransactionHelper.getOEntityHelper());
 			if (senderAccountValue.getStorage() == null) {
 				oCacheTrie.setRoot(null);
 			} else {
@@ -177,7 +177,7 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 				receiverAccountValue.addTokens(oAccountTokenValue);
 			}
 
-			DBTrie oCacheTrie = new DBTrie(this.dao);
+			DBTrie oCacheTrie = new DBTrie(this.dao, oTransactionHelper.getOEntityHelper());
 			if (receiverAccountValue.getStorage() == null) {
 				oCacheTrie.setRoot(null);
 			} else {

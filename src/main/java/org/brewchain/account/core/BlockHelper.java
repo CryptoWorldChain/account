@@ -54,6 +54,8 @@ import onight.tfw.ntrans.api.annotation.ActorRequire;
 @Slf4j
 @Data
 public class BlockHelper implements ActorService {
+	@ActorRequire(name = "OEntity_Helper", scope = "global")
+	OEntityBuilder oEntityHelper;
 	@ActorRequire(name = "Transaction_Helper", scope = "global")
 	TransactionHelper transactionHelper;
 	@ActorRequire(name = "BlockChain_Helper", scope = "global")
@@ -265,7 +267,7 @@ public class BlockHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public BlockEntity getBlockByTransaction(byte[] txHash) throws Exception {
-		OValue oOValue = dao.getTxblockDao().get(OEntityBuilder.byteKey2OKey(txHash)).get();
+		OValue oOValue = dao.getTxblockDao().get(oEntityHelper.byteKey2OKey(txHash)).get();
 		if (oOValue != null && oOValue.getExtdata() != null) {
 			String blockHash = encApi.hexEnc(oOValue.getExtdata().toByteArray());
 			return getBlock(blockHash).build();

@@ -82,6 +82,8 @@ public class TransactionHelper implements ActorService {
 	WaitBlockHashMapDB oPendingHashMapDB; // 保存待打包block的交易
 	@ActorRequire(name = "Block_StateTrie", scope = "global")
 	StateTrie stateTrie;
+	@ActorRequire(name = "OEntity_Helper", scope = "global")
+	OEntityBuilder oEntityHelper;
 
 	/**
 	 * 保存交易方法。 交易不会立即执行，而是等待被广播和打包。只有在Block中的交易，才会被执行。 交易签名规则 1. 清除signatures 2.
@@ -142,8 +144,8 @@ public class TransactionHelper implements ActorService {
 		// log.debug("====put genesis transaction::"+
 		// multiTransaction.getTxHash());
 
-		dao.getTxsDao().put(OEntityBuilder.byteKey2OKey(encApi.hexDec(multiTransaction.getTxHash())),
-				OEntityBuilder.byteValue2OValue(multiTransaction.toByteArray()));
+		dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(multiTransaction.getTxHash())),
+				oEntityHelper.byteValue2OValue(multiTransaction.toByteArray()));
 
 		return multiTransaction.getTxHash();
 	}
@@ -255,7 +257,7 @@ public class TransactionHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public MultiTransaction GetTransaction(String txHash) throws Exception {
-		OValue oValue = dao.getTxsDao().get(OEntityBuilder.byteKey2OKey(encApi.hexDec(txHash))).get();
+		OValue oValue = dao.getTxsDao().get(oEntityHelper.byteKey2OKey(encApi.hexDec(txHash))).get();
 		MultiTransaction.Builder oTransaction = MultiTransaction.newBuilder();
 		if (oValue == null || oValue.getExtdata() == null) {
 			throw new Exception(String.format("没有找到hash %s 的交易数据", txHash));
@@ -577,8 +579,8 @@ public class TransactionHelper implements ActorService {
 		// log.debug("====put verify and save transaction::"+
 		// multiTransaction.getTxHash());
 
-		dao.getTxsDao().put(OEntityBuilder.byteKey2OKey(encApi.hexDec(multiTransaction.getTxHash())),
-				OEntityBuilder.byteValue2OValue(multiTransaction.toByteArray()));
+		dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(multiTransaction.getTxHash())),
+				oEntityHelper.byteValue2OValue(multiTransaction.toByteArray()));
 
 		return multiTransaction;
 	}
@@ -678,8 +680,8 @@ public class TransactionHelper implements ActorService {
 		tx.setResult(result);
 		// log.debug("====put transaction done::"+ txHash);
 
-		dao.getTxsDao().put(OEntityBuilder.byteKey2OKey(encApi.hexDec(tx.getTxHash())),
-				OEntityBuilder.byteValue2OValue(tx.build().toByteArray()));
+		dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(tx.getTxHash())),
+				oEntityHelper.byteValue2OValue(tx.build().toByteArray()));
 	}
 
 	public void setTransactionError(String txHash, ByteString result) throws Exception {
@@ -688,8 +690,8 @@ public class TransactionHelper implements ActorService {
 		tx.setResult(result);
 		// log.debug("====put transaction error::"+ txHash);
 
-		dao.getTxsDao().put(OEntityBuilder.byteKey2OKey(encApi.hexDec(tx.getTxHash())),
-				OEntityBuilder.byteValue2OValue(tx.build().toByteArray()));
+		dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(tx.getTxHash())),
+				oEntityHelper.byteValue2OValue(tx.build().toByteArray()));
 	}
 
 	/**
@@ -722,7 +724,7 @@ public class TransactionHelper implements ActorService {
 	public boolean isExistsTransaction(String txHash) {
 		OValue oOValue;
 		try {
-			oOValue = dao.getTxsDao().get(OEntityBuilder.byteKey2OKey(encApi.hexDec(txHash))).get();
+			oOValue = dao.getTxsDao().get(oEntityHelper.byteKey2OKey(encApi.hexDec(txHash))).get();
 			if (oOValue == null || oOValue.getExtdata() == null) {
 				return false;
 			} else {
