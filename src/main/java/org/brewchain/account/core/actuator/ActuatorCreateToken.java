@@ -48,7 +48,7 @@ public class ActuatorCreateToken extends AbstractTransactionActuator implements 
 								.subtract(this.oTransactionHelper.getBlockChainConfig().getToken_lock_balance()))));
 		sender.setValue(senderAccountValue);
 
-		Account.Builder locker = accounts.get(encApi.hexEnc(input.getAddress().toByteArray()));
+		Account.Builder locker = accounts.get(this.oTransactionHelper.getBlockChainConfig().getLock_account_address());
 		AccountValue.Builder lockerAccountValue = locker.getValue().toBuilder();
 		lockerAccountValue.setBalance(ByteString.copyFrom(
 				ByteUtil.bigIntegerToBytes(ByteUtil.bytesToBigInteger(lockerAccountValue.getBalance().toByteArray())

@@ -28,14 +28,14 @@ public class BlockChainConfig extends SessionModules<Message> {
 	private String net = readNet();
 	private int stableBlocks = props().get("org.brewchain.stable.blocks", KeyConstant.STABLE_BLOCK);
 	private BigInteger contract_lock_balance = new BigInteger(props().get("org.brewchain.contract.lock.balance", "0"));
-	private String lock_account_address = props().get("org.brewchain.account.lock.address", "");
+	private String lock_account_address = props().get("org.brewchain.account.lock.address", null);
 	private boolean isDev = props().get("org.brewchain.man.dev", "true").equals("true");
 	private BigInteger token_lock_balance = new BigInteger(props().get("org.brewchain.token.lock.balance", "0"));
 	private int defaultRollBackCount = props().get("org.brewchain.manage.rollback.count", 10);
 	private int accountVersion = props().get("org.brewchain.account.version", 0);
 	private BigInteger maxTokenTotal = new BigInteger(props().get("org.brewchain.token.max.total", "0"));
 	private BigInteger minTokenTotal = new BigInteger(props().get("org.brewchain.token.min.total", "0"));
-
+	
 	
 	@Override
 	public String[] getCmds() {
@@ -49,10 +49,20 @@ public class BlockChainConfig extends SessionModules<Message> {
 
 	@Override
 	public void onDaoServiceAllReady() {
-		// 校验配置是否有效
-		log.info(String.format("配置 %s = %s", "block.miner.reward", minerReward));
-		log.info(String.format("配置 %s = %s", "org.bc.manage.node.dev.pwd", pwd));
-		log.info(String.format("配置 %s = %s", "org.bc.manage.node.keystore.num", keystoreNumber));
+		log.info(String.format("configuration %s = %s", "block.miner.reward", minerReward));
+		log.info(String.format("configuration %s = %s", "org.bc.manage.node.dev.pwd", pwd));
+		log.info(String.format("configuration %s = %s", "org.bc.manage.node.keystore.num", keystoreNumber));
+		log.info(String.format("configuration %s = %s", "org.bc.manage.node.keystore.num", keystoreNumber));
+		log.info(String.format("configuration %s = %s", "org.brewchain.stable.blocks", stableBlocks));
+		log.info(String.format("configuration %s = %s", "org.brewchain.contract.lock.balance", contract_lock_balance));
+		log.info(String.format("configuration %s = %s", "org.brewchain.account.lock.address", lock_account_address));
+		log.info(String.format("configuration %s = %s", "org.brewchain.man.dev", isDev));
+		log.info(String.format("configuration %s = %s", "org.brewchain.token.lock.balance", token_lock_balance));
+		log.info(String.format("configuration %s = %s", "org.brewchain.manage.rollback.count", defaultRollBackCount));
+		log.info(String.format("configuration %s = %s", "org.brewchain.account.version", accountVersion));
+		log.info(String.format("configuration %s = %s", "org.brewchain.token.max.total", maxTokenTotal));
+		log.info(String.format("configuration %s = %s", "org.brewchain.token.min.total", minTokenTotal));
+		log.info(String.format("configuration %s = %s", "org.bc.manage.node.net", net));
 	}
 
 	private String readNet() {

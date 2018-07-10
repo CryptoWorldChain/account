@@ -110,6 +110,15 @@ public class ActuatorCreateContract extends AbstractTransactionActuator implemen
 				contract.setValue(oContractValue);
 				accounts.put(encApi.hexEnc(contract.getAddress().toByteArray()), contract);
 				
+				Account.Builder locker = accounts.get(this.oTransactionHelper.getBlockChainConfig().getLock_account_address());
+				AccountValue.Builder lockerAccountValue = locker.getValue().toBuilder();
+				lockerAccountValue.setBalance(ByteString.copyFrom(
+						ByteUtil.bigIntegerToBytes(ByteUtil.bytesToBigInteger(lockerAccountValue.getBalance().toByteArray())
+								.add(this.oTransactionHelper.getBlockChainConfig().getContract_lock_balance()))));
+
+				locker.setValue(lockerAccountValue);
+				accounts.put(encApi.hexEnc(locker.getAddress().toByteArray()), locker);
+				
 				oAccountHelper.createContract(oCreateAccount.getAddress(), contract.getAddress());
 			}
 			return ByteString.EMPTY;

@@ -19,6 +19,7 @@ import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.bcapi.gens.Oentity.KeyStoreValue;
 import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
+import org.brewchain.evmapi.gens.Block.BlockEntity.Builder;
 import org.fc.brewchain.bcapi.EncAPI;
 import org.fc.brewchain.bcapi.KeyStoreHelper;
 
@@ -178,7 +179,10 @@ public class BlockChainHelper implements ActorService {
 	public BlockStoreSummary addBlock(BlockEntity oBlock) {
 		return blockStore.addBlock(oBlock);
 	}
-	
+
+	public void reAddBlock(BlockEntity applyBlock) {
+		blockStore.getUnStableStore().add(applyBlock);
+	}
 	/**
 	 * 从一个块开始遍历整个区块链，返回该块的所有子孙
 	 * 

@@ -235,6 +235,7 @@ public class V1Processor implements IProcessor, ActorService {
 			case EXISTS_DROP:
 				if (blockChainHelper.getLastBlockNumber() == applyBlock.getHeader().getNumber() - 1) {
 					log.info("already exists, try to apply::" + applyBlock.getHeader().getNumber());
+					blockChainHelper.reAddBlock(applyBlock.build());
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
 				} else {
 					log.info("already exists, drop it::" + applyBlock.getHeader().getNumber());

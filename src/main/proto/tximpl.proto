@@ -21,6 +21,16 @@ enum PTXTCommand {
 
 	SCT = 5; // send transaction of the contract creation
 	CTS = 6;//触网冷钱包-保存交易
+
+
+
+	NOT = 50; // normal transfer
+	COT = 51; // create contract
+	CAC = 52; // call contract
+	TOT = 53; // create token
+	TOS = 54; // token transfer
+	LOT = 55; // lock token
+	CYT = 56; // crypto token transfer
 }
 message ReqCreateContractTransaction {
 	MultiTransactionInputImpl input = 1;
@@ -134,5 +144,127 @@ message ReqCreateTxColdPurse {//创建交易请求
 	string publickey = 6;//公钥
 	int64 timestamp = 7;//交易时间
 	string token = 8;//erc2.0 token
-	
-};
+}
+
+message SendNormalTransferTransaction {
+	NormalTransferTransactionInput input = 1;
+	repeated NormalTransferTransactionOutput outputs = 2;
+	string exdata = 3;
+	repeated TransactionSignature signatures = 4;
+}
+
+message NormalTransferTransactionInput {
+	string nonce = 1;
+	string address = 2;
+	string amount = 3;
+}
+message NormalTransferTransactionOutput {
+	string address = 1;
+	string amount = 2;
+}
+
+message SendCreateContractTransaction {
+	CreateContractTransactionInput input = 1;
+	string data = 2;
+	string exdata = 3;
+	TransactionSignature signature = 4;
+}
+
+message CreateContractTransactionInput {
+	string nonce = 1;
+	string address = 2;
+}
+
+message SendCallContractTransaction {
+	CallContractTransactionInput input = 1;
+	CallContractTransactionOutput output = 2;
+	string data = 3;
+	string exdata = 4;
+	TransactionSignature signature = 5;
+}
+
+message CallContractTransactionInput {
+	string nonce = 1;
+	string address = 2;
+}
+
+message CallContractTransactionOutput {
+	string address = 1;
+}
+
+message SendCreateTokenTransaction {
+	CreateTokenTransactionInput input = 1;
+	string exdata = 2;
+	TransactionSignature signature = 3;
+}
+
+message CreateTokenTransactionInput {
+	string nonce = 1;
+	string address = 2;
+	string amount = 3;
+	string token = 4;
+}
+
+message SendTokenTransferTransaction {
+	TokenTransferTransactionInput input = 1;
+	repeated TokenTransferTransactionOutput outputs = 2;
+	string exdata = 3;
+	TransactionSignature signature = 4;
+}
+
+message TokenTransferTransactionInput {
+	string nonce = 1;
+	string address = 2;
+	string amount = 3;
+	string token = 4;
+}
+
+message TokenTransferTransactionOutput {
+	string address = 1;
+	string amount = 2;
+}
+
+message SendLockTokenTransaction {
+	LockTokenTransactionInput input = 1;
+	string exdata = 2;
+	TransactionSignature signature = 3;
+}
+
+message LockTokenTransactionInput {
+	string nonce = 1;
+	string address = 2;
+	string amount = 3;
+	string token = 4;
+}
+
+message SendCryptoTokenTransferTransaction {
+	repeated CryptoTokenTransferTransactionInput inputs = 1;
+	repeated CryptoTokenTransferTransactionOutput outputs = 2;
+	string exdata = 3;
+	TransactionSignature signature = 4;
+}
+
+message CryptoTokenTransferTransactionInput {
+	string nonce = 1;
+	string address = 2;
+	string symbol = 3;
+	string cryptoToken = 4;
+}
+
+message CryptoTokenTransferTransactionOutput {
+	string address = 1;
+	string symbol = 2;
+	string cryptoToken = 3;
+}
+
+message TransactionSignature {
+	string signature = 1;
+	string pubKey = 2;
+}
+
+message SendTransactionResult {
+	string txHash = 1;
+	string contractHash = 2;
+	int32 retCode = 3;
+	string retMsg = 4;
+}

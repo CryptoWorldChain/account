@@ -638,7 +638,6 @@ public class TransactionHelper implements ActorService {
 	}
 
 	/**
-	 * 交易发送方、接收方统一使用一个集合，避免产生两个对象导致的账户余额放生错误变化的问题
 	 * 
 	 * @param oMultiTransaction
 	 */
@@ -654,6 +653,13 @@ public class TransactionHelper implements ActorService {
 					oAccountHelper.GetAccountOrCreate(oOutput.getAddress()).toBuilder());
 		}
 
+		if (StringUtils.isNotBlank(blockChainConfig.getLock_account_address())) {
+			accounts.put(blockChainConfig.getLock_account_address(),
+					oAccountHelper
+							.GetAccountOrCreate(
+									ByteString.copyFrom(encApi.hexDec(blockChainConfig.getLock_account_address())))
+							.toBuilder());
+		}
 		return accounts;
 	}
 
