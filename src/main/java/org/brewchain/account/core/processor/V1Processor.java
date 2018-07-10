@@ -187,6 +187,7 @@ public class V1Processor implements IProcessor, ActorService {
 			if (oMultiTransaction.getStatus() == null || oMultiTransaction.getStatus().isEmpty()) {
 				txs.add(oMultiTransaction);
 			}
+			oMultiTransaction = null;
 		}
 		if (!oBlockEntity.getHeader().getTxTrieRoot().equals(encApi.hexEnc(oTrieImpl.getRootHash()))) {
 			throw new Exception(String.format("transaction trie root hash %s not equal %s",

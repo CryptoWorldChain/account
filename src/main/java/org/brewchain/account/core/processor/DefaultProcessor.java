@@ -176,23 +176,10 @@ public class DefaultProcessor implements IProcessor, ActorService {
 		BlockBody.Builder bb = oBlockEntity.getBody().toBuilder();
 		// 校验交易完整性
 		for (String txHash : oBlockHeader.getTxHashsList()) {
-			// 从本地缓存中移除交易
 			transactionHelper.removeWaitBlockTx(txHash);
 
-			// 交易必须都存在
 			MultiTransaction oMultiTransaction = transactionHelper.GetTransaction(txHash);
 
-			// 验证交易是否被篡改
-			// 1. 重新Hash，比对交易Hash
-			// MultiTransaction.Builder oReHashMultiTransaction =
-			// oMultiTransaction.toBuilder();
-			// byte[] newHash =
-			// encApi.sha256Encode(oReHashMultiTransaction.getTxBody().toByteArray());
-			// if (!encApi.hexEnc(newHash).equals(oMultiTransaction.getTxHash())) {
-			// throw new Exception(String.format("交易Hash %s 与 %s 不一致", txHash,
-			// encApi.hexEnc(newHash)));
-			// }
-			// 2. 重构MPT Trie，比对RootHash
 			oTrieImpl.put(encApi.hexDec(oMultiTransaction.getTxHash()),
 					transactionHelper.getTransactionContent(oMultiTransaction));
 
@@ -201,6 +188,8 @@ public class DefaultProcessor implements IProcessor, ActorService {
 			if (oMultiTransaction.getStatus() == null || oMultiTransaction.getStatus().isEmpty()) {
 				txs.add(oMultiTransaction);
 			}
+			
+			oMultiTransaction = null;
 		}
 		if (!oBlockEntity.getHeader().getTxTrieRoot().equals(encApi.hexEnc(oTrieImpl.getRootHash()))) {
 			throw new Exception(String.format("transaction trie root hash %s not equal %s",

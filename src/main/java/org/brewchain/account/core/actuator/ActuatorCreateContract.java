@@ -88,7 +88,7 @@ public class ActuatorCreateContract extends AbstractTransactionActuator implemen
 					createProgramInvoke, oMultiTransaction);
 			VM createVM = new VM();
 			createVM.play(createProgram);
-			ProgramResult createResult = ProgramResult.createEmpty();
+			ProgramResult createResult = createProgram.getResult();
 			if (createResult.getException() != null) {
 				throw createResult.getException();
 			} else {
