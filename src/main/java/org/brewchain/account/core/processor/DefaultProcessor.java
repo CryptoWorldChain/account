@@ -126,7 +126,6 @@ public class DefaultProcessor implements IProcessor, ActorService {
 				System.currentTimeMillis() == oBestBlockHeader.getTimestamp() ? oBestBlockHeader.getTimestamp() + 1
 						: currentTimestamp);
 		oBlockHeader.setNumber(oBestBlockHeader.getNumber() + 1);
-		oBlockHeader.setReward(KeyConstant.BLOCK_REWARD);
 		oBlockHeader.setExtraData(extraData);
 		// 构造MPT Trie
 		CacheTrie oTrieImpl = new CacheTrie();

@@ -137,7 +137,6 @@ public class BlockHelper implements ActorService {
 		long currentTimestamp = System.currentTimeMillis();
 		oBlockHeader.setTimestamp(currentTimestamp);
 		oBlockHeader.setNumber(KeyConstant.GENESIS_NUMBER);
-		oBlockHeader.setReward(0);
 		oBlockHeader.setExtraData(extraData);
 		// 构造MPT Trie
 		CacheTrie oTrieImpl = new CacheTrie();
@@ -157,7 +156,7 @@ public class BlockHelper implements ActorService {
 		oBlockEntity.setBody(oBlockBody);
 
 		// oBlockStorageDB.setLastBlock(oBlockEntity.build());
-		blockChainHelper.addBlock(oBlockEntity.build());
+		// blockChainHelper.addBlock(oBlockEntity.build());
 		blockChainHelper.stableBlock(oBlockEntity.build());
 	}
 

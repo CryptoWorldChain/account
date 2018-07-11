@@ -56,7 +56,6 @@ public class GetBlockByNumberImpl extends SessionModules<ReqGetBlockByNumber> {
 			oBlockHeaderImpl.setExtraData(oBlockEntity.getHeader().getExtraData());
 			oBlockHeaderImpl.setNumber(oBlockEntity.getHeader().getNumber());
 			oBlockHeaderImpl.setParentHash(oBlockEntity.getHeader().getParentHash());
-			oBlockHeaderImpl.setReward(oBlockEntity.getHeader().getReward());
 			oBlockHeaderImpl.setSliceId(oBlockEntity.getHeader().getSliceId());
 			oBlockHeaderImpl.setTimestamp(oBlockEntity.getHeader().getTimestamp());
 			oBlockHeaderImpl.setState(oBlockEntity.getHeader().getStateRoot());

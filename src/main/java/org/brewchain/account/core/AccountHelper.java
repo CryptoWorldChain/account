@@ -64,7 +64,7 @@ public class AccountHelper implements ActorService {
 	StorageTrieCache storageTrieCache;
 	@ActorRequire(name = "OEntity_Helper", scope = "global")
 	OEntityBuilder oEntityHelper;
-	
+
 	public AccountHelper() {
 	}
 
@@ -307,31 +307,37 @@ public class AccountHelper implements ActorService {
 	 */
 	public synchronized long addCryptoBalance(ByteString addr, String symbol, AccountCryptoToken.Builder token)
 			throws Exception {
-		Account.Builder oAccount = GetAccount(addr).toBuilder();
-		if (oAccount == null) {
-			throw new Exception("account not founded::" + addr);
+		
+		
+		OValue oValue = dao.getAccountDao().get(oEntityHelper.byteKey2OKey(addr)).get();
+		if (oValue != null && oValue.getExtdata() != null) {
+		} else {
+			return 0;
 		}
+	
+		AccountValue.Builder oAccountValue = AccountValue.newBuilder();
+		oAccountValue.mergeFrom(oValue.getExtdata().toByteArray());
+		
 		token.setOwner(addr);
 		token.setNonce(token.getNonce() + 1);
 		token.setOwnertime(System.currentTimeMillis());
-		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
-
+		
 		for (int i = 0; i < oAccountValue.getCryptosList().size(); i++) {
 			if (oAccountValue.getCryptosList().get(i).getSymbol().equals(symbol)) {
 				AccountCryptoValue.Builder oAccountCryptoValue = oAccountValue.getCryptos(i).toBuilder();
-				boolean isTokenExists = false;
-				for (int k = 0; k < oAccountCryptoValue.getTokensCount(); k++) {
-					if (oAccountCryptoValue.getTokens(k).getHash().equals(token.getHash())) {
-						isTokenExists = true;
-						break;
-					}
-				}
-				if (!isTokenExists) {
-					oAccountCryptoValue.addTokens(token);
-					oAccountValue.setCryptos(i, oAccountCryptoValue);
-				}
+				// boolean isTokenExists = false;
+				// for (int k = 0; k < oAccountCryptoValue.getTokensCount(); k++) {
+				// if (oAccountCryptoValue.getTokens(k).getHash().equals(token.getHash())) {
+				// isTokenExists = true;
+				// break;
+				// }
+				// }
+				// if (!isTokenExists) {
+				oAccountCryptoValue.addTokens(token);
+				oAccountValue.setCryptos(i, oAccountCryptoValue);
+				// }
 				tokenMappingAccount(token);
-				putAccountValue(addr, oAccountValue.build());
+				putAccountValue(addr, oAccountValue.build(), false);
 				return oAccountValue.getCryptosList().get(i).getTokensCount();
 			}
 		}
@@ -342,7 +348,7 @@ public class AccountHelper implements ActorService {
 		oAccountCryptoValue.addTokens(token);
 		oAccountValue.addCryptos(oAccountCryptoValue.build());
 		tokenMappingAccount(token);
-		putAccountValue(addr, oAccountValue.build());
+		putAccountValue(addr, oAccountValue.build(), false);
 		return 1;
 	}
 
@@ -657,15 +663,19 @@ public class AccountHelper implements ActorService {
 		return false;
 	}
 
-	public void putAccountValue(ByteString addr, AccountValue oAccountValue) {
+	public void putAccountValue(ByteString addr, AccountValue oAccountValue, boolean stateable) {
 		dao.getAccountDao().put(oEntityHelper.byteKey2OKey(addr),
 				oEntityHelper.byteValue2OValue(oAccountValue.toByteArray()));
-		if (this.stateTrie != null) {
+		if (this.stateTrie != null && stateable) {
 			log.warn("put state trie::" + encApi.hexEnc(addr.toByteArray()) + " "
 					+ encApi.hexEnc(oAccountValue.toByteArray()));
 
 			this.stateTrie.put(addr.toByteArray(), oAccountValue.toByteArray());
 		}
+	}
+
+	public void putAccountValue(ByteString addr, AccountValue oAccountValue) {
+		putAccountValue(addr, oAccountValue, true);
 	}
 
 	public void BatchPutAccounts(LinkedList<OKey> keys, LinkedList<AccountValue> values) {

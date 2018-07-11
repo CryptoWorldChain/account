@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.commons.lang3.StringUtils;
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
@@ -34,7 +35,21 @@ public class ActuatorCallContract extends AbstractTransactionActuator implements
 
 	@Override
 	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Builder> accounts) throws Exception {
-		// TODO Auto-generated method stub
+		if (oMultiTransaction.getTxBody().getInputsCount() != 1
+				|| oMultiTransaction.getTxBody().getOutputsCount() != 1) {
+			throw new TransactionExecuteException("parameter invalid, the inputs or outputs must be only one");
+		}
+
+		MultiTransactionInput input = oMultiTransaction.getTxBody().getInputs(0);
+		if (StringUtils.isNotBlank(input.getToken())) {
+			throw new TransactionExecuteException("parameter invalid, token must be null");
+		}
+
+		if (StringUtils.isNotBlank(input.getSymbol())
+				|| (input.getCryptoToken() != null || input.getCryptoToken() != ByteString.EMPTY)) {
+			throw new TransactionExecuteException("parameter invalid, crypto token must be null");
+		}
+
 		super.onPrepareExecute(oMultiTransaction, accounts);
 	}
 
@@ -56,9 +71,8 @@ public class ActuatorCallContract extends AbstractTransactionActuator implements
 		MultiTransactionInput oInput = oMultiTransaction.getTxBody().getInputs(0);
 		ProgramInvokeImpl programInvoke = new ProgramInvokeImpl(existsContract.getAddress().toByteArray(),
 				callAccount.getAddress().toByteArray(), callAccount.getAddress().toByteArray(),
-				oInput.getAmount().toByteArray(),
-				ByteUtil.bigIntegerToBytes(BigInteger.ZERO), oMultiTransaction.getTxBody().getData().toByteArray(),
-				null, // encApi.hexDec(oBlock.getHeader().getParentHash()),
+				oInput.getAmount().toByteArray(), ByteUtil.bigIntegerToBytes(BigInteger.ZERO),
+				oMultiTransaction.getTxBody().getData().toByteArray(), null, // encApi.hexDec(oBlock.getHeader().getParentHash()),
 				null, // encApi.hexDec(oBlock.getMiner().getAddress()),
 				Long.parseLong(String.valueOf(oBlock.getHeader().getTimestamp())),
 				Long.parseLong(String.valueOf(oBlock.getHeader().getNumber())), ByteString.EMPTY.toByteArray(),

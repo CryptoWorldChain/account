@@ -16,6 +16,7 @@ import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
 import org.fc.brewchain.bcapi.EncAPI;
+import org.fc.brewchain.bcapi.UnitUtil;
 
 import com.google.protobuf.ByteString;
 
@@ -69,47 +70,55 @@ public class ActuatorCreateToken extends AbstractTransactionActuator implements 
 			throws Exception {
 
 		if (oMultiTransaction.getTxBody().getInputsCount() != 1) {
-			throw new Exception(String.format("exists multi sender address"));
+			throw new TransactionExecuteException("parameter invalid, inputs must be only one");
+		}
+
+		if (oMultiTransaction.getTxBody().getOutputsCount() != 0) {
+			throw new TransactionExecuteException("parameter invalid, outputs must be null");
 		}
 
 		MultiTransactionInput oInput = oMultiTransaction.getTxBody().getInputs(0);
 
 		String token = oInput.getToken();
 		if (token == null || token.isEmpty()) {
-			throw new Exception(String.format("token must not be empty"));
+			throw new TransactionExecuteException(String.format("parameter invalid, token name must not be empty"));
 		}
 
 		if (token.toUpperCase().startsWith("CW")) {
-			throw new Exception(String.format("token name invalid"));
+			throw new TransactionExecuteException(String.format("parameter invalid, token name invalid"));
 		}
 
 		if (!token.toUpperCase().equals(token)) {
-			throw new Exception(String.format("token name invalid"));
+			throw new TransactionExecuteException(String.format("parameter invalid, token name invalid"));
 		}
 
-		if (ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray()).compareTo(BigInteger.ZERO) == -1
+		if (ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray())
+				.compareTo(oTransactionHelper.getBlockChainConfig().getMinerReward()) == -1
 				|| ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray())
-						.compareTo(new BigInteger("10000000000000000000000000000")) == 1) {
-			throw new Exception(String.format("token amount invalid"));
+						.compareTo(oTransactionHelper.getBlockChainConfig().getMaxTokenTotal()) == 1) {
+			throw new TransactionExecuteException(String.format("parameter invalid, token amount must between %s and %s ",
+					UnitUtil.fromWei(oTransactionHelper.getBlockChainConfig().getMinTokenTotal()),
+					UnitUtil.fromWei(oTransactionHelper.getBlockChainConfig().getMaxTokenTotal())));
 		}
 
-		// 判断nonce是否一致
 		Account.Builder sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 		AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
+		if (ByteUtil.bytesToBigInteger(senderAccountValue.getBalance().toByteArray())
+				.compareTo(this.oTransactionHelper.getBlockChainConfig().getToken_lock_balance()) == -1) {
+			throw new TransactionExecuteException(String.format("parameter invalid, not enough deposit %s to create token",
+					this.oTransactionHelper.getBlockChainConfig().getToken_lock_balance()));
+		}
+
+		if (oAccountHelper.isExistsToken(token)) {
+			throw new TransactionExecuteException(String.format("parameter invalid, duplicate token name %s", token));
+		}
 
 		int nonce = senderAccountValue.getNonce();
 		if (nonce != oInput.getNonce()) {
-			throw new Exception(
+			throw new TransactionExecuteException(
 					String.format("sender nonce %s is not equal with transaction nonce %s", nonce, oInput.getNonce()));
 		}
-		if (ByteUtil.bytesToBigInteger(senderAccountValue.getBalance().toByteArray())
-				.compareTo(this.oTransactionHelper.getBlockChainConfig().getToken_lock_balance()) == -1) {
-			throw new Exception(String.format("not enough deposit %s",
-					this.oTransactionHelper.getBlockChainConfig().getToken_lock_balance()));
-		}
-		// Token不允许重复
-		if (oAccountHelper.isExistsToken(token)) {
-			throw new Exception(String.format("duplicate token name %s", token));
-		}
+
+		super.onPrepareExecute(oMultiTransaction, accounts);
 	}
 }

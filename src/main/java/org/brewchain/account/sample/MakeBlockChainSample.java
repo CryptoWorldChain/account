@@ -88,7 +88,6 @@ public class MakeBlockChainSample extends SessionModules<ReqStartNewFork> {
 				.setTimestamp(currentTimestamp == oBestBlockHeader.getTimestamp() ? oBestBlockHeader.getTimestamp() + 1
 						: currentTimestamp);
 		oBlockHeader.setNumber(oBestBlockHeader.getNumber() + 1);
-		oBlockHeader.setReward(KeyConstant.BLOCK_REWARD);
 		oBlockHeader.setExtraData("");
 		// 构造MPT Trie
 		CacheTrie oTrieImpl = new CacheTrie();

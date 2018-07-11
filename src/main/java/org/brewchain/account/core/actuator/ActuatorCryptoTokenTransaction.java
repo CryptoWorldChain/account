@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
@@ -46,22 +47,34 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts)
 			throws Exception {
 
-		List<String> inputSymbol = new ArrayList<>();
+		if (oMultiTransaction.getTxBody().getOutputsCount() != oMultiTransaction.getTxBody().getInputsCount()) {
+			throw new TransactionExecuteException("parameter invalid, inputs count not equal with outputs count");
+		}
 
-		// 发送方账户中必须存在该token
+		List<String> inputSymbol = new ArrayList<>();
+		List<String> inputTokens = new ArrayList<>();
+
+		String existsSender = "";
 		for (int i = 0; i < oMultiTransaction.getTxBody().getInputsCount(); i++) {
 			boolean isTokenExists = false;
 			MultiTransactionInput oInput = oMultiTransaction.getTxBody().getInputs(i);
-			if (!inputSymbol.contains(oInput.getSymbol()) && !oInput.getSymbol().isEmpty()) {
-				inputSymbol.add(oInput.getSymbol());
-			} else {
-				throw new TransactionExecuteException("duplicate ");
+			if (StringUtils.isBlank(existsSender)) {
+				existsSender = encApi.hexEnc(oInput.getAddress().toByteArray());
 			}
+			if (!existsSender.equals(encApi.hexEnc(oInput.getAddress().toByteArray()))) {
+				throw new TransactionExecuteException("parameter invalid, sender address must be unique");
+			}
+			inputSymbol.add(oInput.getSymbol());
+			if (inputTokens.contains(encApi.hexEnc(oInput.getCryptoToken().toByteArray()))) {
+				throw new TransactionExecuteException("parameter invalid, duplicate token");
+			} else
+				inputTokens.add(encApi.hexEnc(oInput.getCryptoToken().toByteArray()));
+
 			Account.Builder oAccount = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue oAccountValue = oAccount.getValue();
 
 			for (int j = 0; j < oAccountValue.getCryptosCount(); j++) {
-				if (oAccountValue.getCryptos(i).getSymbol().equals(inputSymbol)) {
+				if (oAccountValue.getCryptos(i).getSymbol().equals(oInput.getSymbol())) {
 					AccountCryptoValue oAccountCryptoValue = oAccountValue.getCryptos(i);
 					for (int k = 0; k < oAccountCryptoValue.getTokensCount(); k++) {
 						if (oAccountCryptoValue.getTokens(k).getHash().equals(oInput.getCryptoToken())) {
@@ -75,29 +88,20 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 				}
 			}
 			if (!isTokenExists) {
-				throw new Exception(String.format("sender %s not found token %s with hash %s", oInput.getAddress(),
-						inputSymbol, oInput.getCryptoToken().toString()));
+				throw new TransactionExecuteException(String.format("sender %s not found token %s with hash %s",
+						oInput.getAddress(), oInput.getSymbol(), encApi.hexEnc(oInput.getCryptoToken().toByteArray())));
+			}
+
+			for (int j = 0; j < oMultiTransaction.getTxBody().getOutputsCount(); j++) {
+				MultiTransactionOutput oOutput = oMultiTransaction.getTxBody().getOutputs(i);
+				if (!oOutput.getSymbol().isEmpty() && !oOutput.getSymbol().equals(inputSymbol)) {
+					throw new TransactionExecuteException(String.format("crypto token from sender %s to %s not equal",
+							inputSymbol, oOutput.getSymbol()));
+				}
 			}
 		}
-
-		for (int i = 0; i < oMultiTransaction.getTxBody().getOutputsCount(); i++) {
-			MultiTransactionOutput oOutput = oMultiTransaction.getTxBody().getOutputs(i);
-			if (!oOutput.getSymbol().isEmpty() && !oOutput.getSymbol().equals(inputSymbol)) {
-				throw new Exception(
-						String.format("crypto token from sender %s to %s not equal", inputSymbol, oOutput.getSymbol()));
-			}
-		}
-
 	}
 
-	/*
-	 * 支持 加密token -> cwb ; cwb -> 加密token ; 加密token -> 加密token;
-	 * 
-	 * @see
-	 * org.brewchain.account.core.actuator.AbstractTransactionActuator#onExecute
-	 * (org.brewchain.account.gens.Tx.MultiTransaction.Builder, java.util.Map,
-	 * java.util.Map)
-	 */
 	@Override
 	public ByteString onExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts)
 			throws Exception {
@@ -180,9 +184,11 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 					isExistToken = true;
 
 					// update token mapping acocunt
-					this.dao.getAccountDao().put(
-							oTransactionHelper.getOEntityHelper().byteKey2OKey(oAccountCryptoToken.getHash().toByteArray()),
-							oTransactionHelper.getOEntityHelper().byteValue2OValue(oAccountCryptoToken.build().toByteArray()));
+					this.dao.getAccountDao()
+							.put(oTransactionHelper.getOEntityHelper()
+									.byteKey2OKey(oAccountCryptoToken.getHash().toByteArray()),
+									oTransactionHelper.getOEntityHelper()
+											.byteValue2OValue(oAccountCryptoToken.build().toByteArray()));
 					break;
 				}
 			}
@@ -200,8 +206,10 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 
 				receiverAccountValue.addCryptos(oAccountCryptoValue);
 				// update token mapping acocunt
-				this.dao.getAccountDao().put(oTransactionHelper.getOEntityHelper().byteKey2OKey(oAccountCryptoToken.getHash().toByteArray()),
-						oTransactionHelper.getOEntityHelper().byteValue2OValue(oAccountCryptoToken.build().toByteArray()));
+				this.dao.getAccountDao().put(
+						oTransactionHelper.getOEntityHelper().byteKey2OKey(oAccountCryptoToken.getHash().toByteArray()),
+						oTransactionHelper.getOEntityHelper()
+								.byteValue2OValue(oAccountCryptoToken.build().toByteArray()));
 			}
 
 			DBTrie oCacheTrie = new DBTrie(this.dao, oTransactionHelper.getOEntityHelper());

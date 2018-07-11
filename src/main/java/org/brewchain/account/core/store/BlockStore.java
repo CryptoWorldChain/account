@@ -187,10 +187,6 @@ public class BlockStore implements ActorService {
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.CACHE);
 				} else if (oParentNode != null && !oParentNode.isConnect()) {
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.CACHE);
-				} else if (unStableStore.increaseRetryTimes(hash) > 2) {
-					unStableStore.resetRetryTimes(hash);
-					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_PREV);
-
 				} else {
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
 				}
