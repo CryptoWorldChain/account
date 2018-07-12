@@ -23,18 +23,16 @@ public class ActuatorDefault extends AbstractTransactionActuator implements iTra
 	}
 
 	@Override
-	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception {
+	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts)
+			throws Exception {
 
-		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
-			if (!accounts.containsKey(encApi.hexEnc(oInput.getAddress().toByteArray()))) {
-				throw new Exception(String.format("can not find sender account %s", oInput.getAddress().toString()));
-			}
+		if (oMultiTransaction.getTxBody().getInputsCount() > 1 && oMultiTransaction.getTxBody().getOutputsCount() > 1) {
+			throw new TransactionExecuteException("parameter invalid, multi inputs and outputs");
 		}
 
-		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
-			if (!accounts.containsKey(encApi.hexEnc(oOutput.getAddress().toByteArray()))) {
-				oAccountHelper.CreateAccount(oOutput.getAddress());
-			}
+		if (oMultiTransaction.getTxBody().getInputsCount() == 0
+				|| oMultiTransaction.getTxBody().getOutputsCount() == 0) {
+			throw new TransactionExecuteException("parameter invalid, inputs or outputs must not be null");
 		}
 
 		super.onPrepareExecute(oMultiTransaction, accounts);

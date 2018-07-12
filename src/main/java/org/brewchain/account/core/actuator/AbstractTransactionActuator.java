@@ -2,6 +2,7 @@ package org.brewchain.account.core.actuator;
 
 import static java.lang.String.format;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
@@ -138,13 +139,15 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 		}
 
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
-			inputsTotal = ByteUtil.bytesAdd(inputsTotal, oInput.getAmount().toByteArray());
+			BigInteger bi = ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray());
+			if (bi.compareTo(BigInteger.ZERO) < 0) {
+				throw new TransactionExecuteException("amount must large than 0");
+			}
+			inputsTotal = inputsTotal.add(bi);
 
-			// 取发送方账户
 			Account.Builder sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 
-			// 判断发送方余额是否足够
 			BigInteger balance = ByteUtil.bytesToBigInteger(senderAccountValue.getBalance().toByteArray());
 
 			if (balance.compareTo(BigInteger.ZERO) == -1) {
@@ -156,15 +159,11 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 						String.format("transaction value %s less than 0", oInput.getAmount()));
 			}
 
-			if (ByteUtil.bytesSub(balance, oInput.getAmount().toByteArray()).compareTo(BigInteger.ZERO) == -1) {// -
-																												// oInput.getFeeLimit()
-				// 余额不够
+			if (ByteUtil.bytesSub(balance, oInput.getAmount().toByteArray()).compareTo(BigInteger.ZERO) == -1) {
 				throw new TransactionExecuteException(
-						String.format("sender balance %s less than %s", balance, oInput.getAmount()));// +
-				// oInput.getFeeLimit()
+						String.format("sender balance %s less than %s", balance, oInput.getAmount()));
 			}
 
-			// 判断nonce是否一致
 			int nonce = senderAccountValue.getNonce();
 			if (nonce != oInput.getNonce()) {
 				throw new TransactionExecuteException(String
@@ -173,7 +172,11 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 		}
 
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
-			outputsTotal = ByteUtil.bytesAdd(outputsTotal, oOutput.getAmount().toByteArray());
+			BigInteger bi = ByteUtil.bytesToBigInteger(oOutput.getAmount().toByteArray());
+			if (bi.compareTo(BigInteger.ZERO) < 0) {
+				throw new TransactionExecuteException("amount must large than 0");
+			}
+			outputsTotal = outputsTotal.add(bi);
 
 			BigInteger balance = ByteUtil.bytesToBigInteger(oOutput.getAmount().toByteArray());
 			if (balance.compareTo(BigInteger.ZERO) == -1) {
@@ -181,9 +184,9 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			}
 		}
 
-		if (inputsTotal.compareTo(outputsTotal) == -1) {
+		if (inputsTotal.compareTo(outputsTotal) != 0) {
 			throw new TransactionExecuteException(
-					String.format("transaction value %s less than %s", inputsTotal, outputsTotal));
+					String.format("transaction value %s not equal with %s", inputsTotal, outputsTotal));
 		}
 	}
 

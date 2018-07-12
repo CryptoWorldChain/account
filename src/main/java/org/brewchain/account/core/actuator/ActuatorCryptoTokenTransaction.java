@@ -88,16 +88,24 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 				}
 			}
 			if (!isTokenExists) {
-				throw new TransactionExecuteException(String.format("sender %s not found token %s with hash %s",
-						oInput.getAddress(), oInput.getSymbol(), encApi.hexEnc(oInput.getCryptoToken().toByteArray())));
+				throw new TransactionExecuteException(String.format(
+						"parameter invalid, sender %s not found token %s with hash %s", oInput.getAddress(),
+						oInput.getSymbol(), encApi.hexEnc(oInput.getCryptoToken().toByteArray())));
 			}
 
+			boolean isExistsOutput = false;
 			for (int j = 0; j < oMultiTransaction.getTxBody().getOutputsCount(); j++) {
 				MultiTransactionOutput oOutput = oMultiTransaction.getTxBody().getOutputs(i);
-				if (!oOutput.getSymbol().isEmpty() && !oOutput.getSymbol().equals(inputSymbol)) {
-					throw new TransactionExecuteException(String.format("crypto token from sender %s to %s not equal",
-							inputSymbol, oOutput.getSymbol()));
+				if (oOutput.getSymbol().equals(oInput.getSymbol())
+						&& oOutput.getCryptoToken().equals(oInput.getCryptoToken())) {
+					isExistsOutput = true;
+					break;
 				}
+			}
+			if (!isExistsOutput) {
+				throw new TransactionExecuteException(
+						String.format("parameter invalid, not found token %s with hash %s in receive list",
+								oInput.getSymbol(), encApi.hexEnc(oInput.getCryptoToken().toByteArray())));
 			}
 		}
 	}

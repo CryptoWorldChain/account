@@ -6,6 +6,7 @@ import java.util.Map;
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
+import org.brewchain.account.core.actuator.AbstractTransactionActuator.TransactionExecuteException;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.trie.DBTrie;
 import org.brewchain.account.trie.StateTrie;
@@ -25,49 +26,45 @@ public class ActuatorLockTokenTransaction extends AbstractTransactionActuator im
 	@Override
 	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts)
 			throws Exception {
+		if (oMultiTransaction.getTxBody().getInputsCount() != 1) {
+			throw new TransactionExecuteException("parameter invalid, inputs must be only one");
+		}
 
-		String token = "";
-		BigInteger inputsTotal = BigInteger.ZERO;
-		BigInteger outputsTotal = BigInteger.ZERO;
+		if (oMultiTransaction.getTxBody().getOutputsCount() != 0) {
+			throw new TransactionExecuteException("parameter invalid, outputs must be null");
+		}
 
-		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
-			if (oInput.getToken().isEmpty() || oInput.getToken() == "") {
-				throw new Exception(String.format("token must not be empty"));
+		MultiTransactionInput oInput = oMultiTransaction.getTxBody().getInputs(0);
+
+		// 取发送方账户
+		Account.Builder sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
+		AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
+		BigInteger tokenBalance = BigInteger.ZERO;
+		for (int i = 0; i < senderAccountValue.getTokensCount(); i++) {
+			if (senderAccountValue.getTokens(i).getToken().equals(oInput.getToken())) {
+				tokenBalance = ByteUtil.bytesAdd(tokenBalance,
+						senderAccountValue.getTokens(i).getBalance().toByteArray());
+				break;
 			}
-			if (token == "") {
-				token = oInput.getToken();
-			} else {
-				if (!token.equals(oInput.getToken())) {
-					throw new Exception(String.format("not allow multi token %s %s", token, oInput.getToken()));
-				}
-			}
+		}
+		
+		BigInteger bi = ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray());
+		if (bi.compareTo(BigInteger.ZERO) < 0) {
+			throw new TransactionExecuteException("amount must large than 0");
+		}
 
-			// 取发送方账户
-			Account.Builder sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
-			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
-			BigInteger tokenBalance = BigInteger.ZERO;
-			for (int i = 0; i < senderAccountValue.getTokensCount(); i++) {
-				if (senderAccountValue.getTokens(i).getToken().equals(oInput.getToken())) {
-					tokenBalance = ByteUtil.bytesAdd(tokenBalance,
-							senderAccountValue.getTokens(i).getBalance().toByteArray());
-					break;
-				}
-			}
+		if (tokenBalance.compareTo(bi) >= 0) {
+			// 余额足够
+		} else {
+			throw new TransactionExecuteException(String.format("sender balance %s less than %s", tokenBalance,
+					ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray())));
+		}
 
-			inputsTotal = inputsTotal.add(tokenBalance);
-
-			if (ByteUtil.bytesSub(tokenBalance, oInput.getAmount().toByteArray()).compareTo(BigInteger.ZERO) == 1) {
-				// 余额足够
-			} else {
-				throw new Exception(String.format("sender balance %s less than %s", tokenBalance, ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray())));
-			}
-
-			// 判断nonce是否一致
-			int nonce = senderAccountValue.getNonce();
-			if (nonce != oInput.getNonce()) {
-				throw new Exception(String.format("sender nonce %s is not equal with transaction nonce %s", nonce,
-						oInput.getNonce()));
-			}
+		// 判断nonce是否一致
+		int nonce = senderAccountValue.getNonce();
+		if (nonce != oInput.getNonce()) {
+			throw new TransactionExecuteException(
+					String.format("sender nonce %s is not equal with transaction nonce %s", nonce, oInput.getNonce()));
 		}
 	}
 
@@ -96,7 +93,8 @@ public class ActuatorLockTokenTransaction extends AbstractTransactionActuator im
 				}
 			}
 			if (!isExistToken) {
-				throw new Exception(String.format("cannot found token %s in sender account", oInput.getToken()));
+				throw new TransactionExecuteException(
+						String.format("cannot found token %s in sender account", oInput.getToken()));
 			}
 
 			// 不论任何交易类型，都默认执行账户余额的更改

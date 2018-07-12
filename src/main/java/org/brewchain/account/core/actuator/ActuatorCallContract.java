@@ -37,7 +37,7 @@ public class ActuatorCallContract extends AbstractTransactionActuator implements
 	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Builder> accounts) throws Exception {
 		if (oMultiTransaction.getTxBody().getInputsCount() != 1
 				|| oMultiTransaction.getTxBody().getOutputsCount() != 1) {
-			throw new TransactionExecuteException("parameter invalid, the inputs or outputs must be only one");
+			throw new TransactionExecuteException("parameter invalid, the inputs and outputs must be only one");
 		}
 
 		MultiTransactionInput input = oMultiTransaction.getTxBody().getInputs(0);
