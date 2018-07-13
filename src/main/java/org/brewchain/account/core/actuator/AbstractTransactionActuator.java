@@ -78,25 +78,33 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 		// 校验交易签名
 		int i = 0;
 		for (MultiTransactionSignature oMultiTransactionSignature : oMultiTransaction.getTxBody().getSignaturesList()) {
-			// byte[] address = encApi.ecToAddress(oMultiTransactionEncode,
-			// encApi.hexEnc(oMultiTransactionSignature.getSignature().toByteArray()));
-			// if (!encApi.hexEnc(address)
-			// .equals(encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(i).getAddress().toByteArray())))
-			// {
-			// throw new TransactionExecuteException(
-			// String.format("signature address %s not equal with sender address %s ",
-			// encApi.hexEnc(address),
-			// encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(i).getAddress().toByteArray())));
-			// }
-			//
-			// byte[] pubKey = encApi.ecToKeyBytes(oMultiTransactionEncode,
-			// encApi.hexEnc(oMultiTransactionSignature.getSignature().toByteArray()));
-			if (!encApi.ecVerify(encApi.hexEnc(oMultiTransactionSignature.getPubKey().toByteArray()),
-					oMultiTransactionEncode, oMultiTransactionSignature.getSignature().toByteArray())) {
-				throw new TransactionExecuteException(String.format("signature %s verify fail with pubkey %s",
-						encApi.hexEnc(oMultiTransactionSignature.getSignature().toByteArray()),
-						encApi.hexEnc(oMultiTransactionSignature.getPubKey().toByteArray())));
+			String hexAddress = encApi.hexEnc(oMultiTransactionSignature.getSignature().toByteArray()).substring(128,
+					168);
+			String hexPubKey = encApi.hexEnc(oMultiTransactionSignature.getSignature().toByteArray()).substring(0, 128);
+
+			// byte[] address = encApi.hexDec(hexAddress);
+			if (!hexAddress
+					.equals(encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(i).getAddress().toByteArray()))) {
+				throw new TransactionExecuteException(
+						String.format("signature address %s not equal with sender address %s ", hexAddress,
+								encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(i).getAddress().toByteArray())));
 			}
+
+			if (!encApi.ecVerify(hexPubKey, oMultiTransactionEncode,
+					oMultiTransactionSignature.getSignature().toByteArray())) {
+				throw new TransactionExecuteException(String.format("signature %s verify fail with pubkey %s",
+						encApi.hexEnc(oMultiTransactionSignature.getSignature().toByteArray()), hexPubKey));
+			}
+
+			// if
+			// (!encApi.ecVerify(encApi.hexEnc(oMultiTransactionSignature.getPubKey().toByteArray()),
+			// oMultiTransactionEncode,
+			// oMultiTransactionSignature.getSignature().toByteArray())) {
+			// throw new TransactionExecuteException(String.format("signature %s verify fail
+			// with pubkey %s",
+			// encApi.hexEnc(oMultiTransactionSignature.getSignature().toByteArray()),
+			// encApi.hexEnc(oMultiTransactionSignature.getPubKey().toByteArray())));
+			// }
 
 			i += 1;
 		}

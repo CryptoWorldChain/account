@@ -460,7 +460,7 @@ public class TransactionHelper implements ActorService {
 		for (MultiTransactionSignature signature : oMultiTransactionBody.getSignaturesList()) {
 			MultiTransactionSignatureImpl.Builder oMultiTransactionSignatureImpl = MultiTransactionSignatureImpl
 					.newBuilder();
-			oMultiTransactionSignatureImpl.setPubKey(encApi.hexEnc(signature.getPubKey().toByteArray()));
+			// oMultiTransactionSignatureImpl.setPubKey(encApi.hexEnc(signature.getPubKey().toByteArray()));
 			oMultiTransactionSignatureImpl.setSignature(encApi.hexEnc(signature.getSignature().toByteArray()));
 			oMultiTransactionBodyImpl.addSignatures(oMultiTransactionSignatureImpl);
 		}
@@ -506,7 +506,7 @@ public class TransactionHelper implements ActorService {
 		// oMultiTransactionBodyImpl.setSignatures(index, value)
 		for (MultiTransactionSignatureImpl signature : oMultiTransactionBodyImpl.getSignaturesList()) {
 			MultiTransactionSignature.Builder oMultiTransactionSignature = MultiTransactionSignature.newBuilder();
-			oMultiTransactionSignature.setPubKey(ByteString.copyFrom(encApi.hexDec(signature.getPubKey())));
+			// oMultiTransactionSignature.setPubKey(ByteString.copyFrom(encApi.hexDec(signature.getPubKey())));
 			oMultiTransactionSignature.setSignature(ByteString.copyFrom(encApi.hexDec(signature.getSignature())));
 			oMultiTransactionBody.addSignatures(oMultiTransactionSignature);
 		}

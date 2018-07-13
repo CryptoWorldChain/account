@@ -125,7 +125,6 @@ message MultiTransactionOutputImpl {
 
 message MultiTransactionSignatureImpl {
 	string signature = 1;
-	string pubKey = 2;
 }
 
 
@@ -259,7 +258,6 @@ message CryptoTokenTransferTransactionOutput {
 
 message TransactionSignature {
 	string signature = 1;
-	string pubKey = 2;
 }
 
 message SendTransactionResult {

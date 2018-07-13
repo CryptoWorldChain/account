@@ -7,6 +7,7 @@ import java.util.Map;
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
+import org.brewchain.account.core.actuator.AbstractTransactionActuator.TransactionExecuteException;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.trie.DBTrie;
 import org.brewchain.account.trie.StateTrie;
@@ -39,7 +40,17 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 	@Override
 	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts)
 			throws Exception {
-		// 交易中的Token必须一致
+		
+		if (oMultiTransaction.getTxBody().getInputsCount() != 1) {
+			throw new TransactionExecuteException("parameter invalid, inputs must be only one");
+		}
+
+		if (oMultiTransaction.getTxBody().getOutputsCount() == 0) {
+			throw new TransactionExecuteException("parameter invalid, outputs must not be null");
+		}
+		
+		
+
 		String token = "";
 		BigInteger inputsTotal = BigInteger.ZERO;
 		BigInteger outputsTotal = BigInteger.ZERO;

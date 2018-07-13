@@ -14,7 +14,7 @@ import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.trie.DBTrie;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.util.OEntityBuilder;
-import org.brewchain.core.util.ByteUtil;
+import org.brewchain.account.util.ByteUtil;
 import org.brewchain.evmapi.gens.Act.Account;
 import org.brewchain.evmapi.gens.Act.AccountCryptoToken;
 import org.brewchain.evmapi.gens.Act.AccountCryptoValue;
@@ -108,16 +108,14 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 								oInput.getSymbol(), encApi.hexEnc(oInput.getCryptoToken().toByteArray())));
 			}
 		}
+		
+		super.onPrepareExecute(oMultiTransaction, accounts);
 	}
 
 	@Override
 	public ByteString onExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts)
 			throws Exception {
-		// LinkedList<OKey> keys = new LinkedList<>();
-		// LinkedList<AccountValue> values = new LinkedList<>();
-
 		Map<String, AccountCryptoToken> tokens = new HashMap<String, AccountCryptoToken>();
-		// 发送方移除balance
 		for (int i = 0; i < oMultiTransaction.getTxBody().getInputsCount(); i++) {
 			MultiTransactionInput oInput = oMultiTransaction.getTxBody().getInputs(i);
 
@@ -125,8 +123,7 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 			Account.Builder sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue.Builder oAccountValue = sender.getValue().toBuilder();
 
-			// 不论任何交易类型，都默认执行账户余额的更改
-			// oAccountValue.setBalance(oAccountValue.getBalance() - oInput.getFee());
+			oAccountValue.setBalance(ByteString.copyFrom(ByteUtil.bytesSubToBytes(oAccountValue.getBalance().toByteArray(), oInput.getAmount().toByteArray())));
 
 			for (int k = 0; k < oAccountValue.getCryptosCount(); k++) {
 
