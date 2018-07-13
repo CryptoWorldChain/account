@@ -17,6 +17,8 @@ import org.brewchain.account.gens.Sys.RespGetSummary;
 import org.brewchain.account.gens.Sys.UnStableItems;
 import org.fc.brewchain.bcapi.EncAPI;
 
+import com.google.common.collect.Table.Cell;
+
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import onight.oapi.scala.commons.SessionModules;
@@ -29,7 +31,7 @@ import onight.tfw.otransio.api.beans.FramePacket;
 @NActorProvider
 @Slf4j
 @Data
-public class GetSummaryImpl extends SessionModules<ReqGetSummary>  {
+public class GetSummaryImpl extends SessionModules<ReqGetSummary> {
 	@ActorRequire(name = "Account_Helper", scope = "global")
 	AccountHelper oAccountHelper;
 	@ActorRequire(name = "bc_encoder", scope = "global")
@@ -42,7 +44,6 @@ public class GetSummaryImpl extends SessionModules<ReqGetSummary>  {
 	@ActorRequire(name = "WaitBlock_HashMapDB", scope = "global")
 	WaitBlockHashMapDB oPendingHashMapDB; // 保存待打包block的交易
 
-	
 	@Override
 	public String[] getCmds() {
 		return new String[] { PSYSCommand.SUM.name() };
@@ -59,18 +60,20 @@ public class GetSummaryImpl extends SessionModules<ReqGetSummary>  {
 		oRespGetSummary.setMaxConnection(String.valueOf(blockChainHelper.getBlockStore().getMaxConnectNumber()));
 		oRespGetSummary.setMaxStable(String.valueOf(blockChainHelper.getBlockStore().getMaxStableNumber()));
 		oRespGetSummary.setStable(String.valueOf(blockChainHelper.getBlockStore().getStableStore().getBlocks().size()));
-		oRespGetSummary.setUnStable(String.valueOf(blockChainHelper.getBlockStore().getUnStableStore().getStorage().size()));
+		oRespGetSummary
+				.setUnStable(String.valueOf(blockChainHelper.getBlockStore().getUnStableStore().getStorage().size()));
 		oRespGetSummary.setWaitBlock(String.valueOf(oPendingHashMapDB.getStorage().size()));
 		oRespGetSummary.setWaitSync(String.valueOf(oSendingHashMapDB.getStorage().size()));
-		
-		for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = blockChainHelper.getBlockStore().getUnStableStore().getStorage().entrySet().iterator(); it.hasNext();) {
-			Map.Entry<String, BlockStoreNodeValue> item = it.next();
+
+		for (Iterator<Cell<String, Long, BlockStoreNodeValue>> it = blockChainHelper.getBlockStore().getUnStableStore()
+				.getStorage().cellSet().iterator(); it.hasNext();) {
+			Cell<String, Long, BlockStoreNodeValue> item = it.next();
 			UnStableItems.Builder oUnStableItems = UnStableItems.newBuilder();
 			oUnStableItems.setNumber(String.valueOf(item.getValue().getNumber()));
 			oUnStableItems.setHash(item.getValue().getBlockHash());
 			oRespGetSummary.addItems(oUnStableItems.build());
 		}
-		
+
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespGetSummary.build()));
 	}
 }

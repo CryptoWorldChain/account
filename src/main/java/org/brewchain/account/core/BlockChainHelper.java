@@ -131,7 +131,8 @@ public class BlockChainHelper implements ActorService {
 		if (oBlockEntity.getHeader().getNumber() == KeyConstant.GENESIS_NUMBER) {
 			return oBlockEntity;
 		}
-		throw new Exception(String.format("genesis block not exists, current block number is %s", oBlockEntity.getHeader().getNumber()));
+		throw new Exception(String.format("genesis block not exists, current block number is %s",
+				oBlockEntity.getHeader().getNumber()));
 	}
 
 	public boolean isExistsGenesisBlock() throws Exception {
@@ -159,19 +160,15 @@ public class BlockChainHelper implements ActorService {
 	public BlockStoreSummary stableBlock(BlockEntity oBlock) {
 		return blockStore.stableBlock(oBlock);
 	}
-	
+
 	public BlockEntity getChildBlock(BlockEntity oBlock) {
-		List<BlockEntity> list = blockStore.getReadyConnectBlock(oBlock.getHeader().getBlockHash());
-		if (list.size() > 0) {
-			return list.get(0);
-		}
-		return null;
+		return blockStore.getReadyConnectBlock(oBlock.getHeader().getBlockHash(), oBlock.getHeader().getNumber());
 	}
 
 	public BlockEntity rollbackTo(BlockEntity block) {
 		return blockStore.rollBackTo(block.getHeader().getNumber());
 	}
-	
+
 	public BlockEntity rollbackTo(long number) {
 		return blockStore.rollBackTo(number);
 	}
@@ -183,6 +180,7 @@ public class BlockChainHelper implements ActorService {
 	public void reAddBlock(BlockEntity applyBlock) {
 		blockStore.getUnStableStore().add(applyBlock);
 	}
+
 	/**
 	 * 从一个块开始遍历整个区块链，返回该块的所有子孙
 	 * 
@@ -320,8 +318,7 @@ public class BlockChainHelper implements ActorService {
 						if (oKeyStoreValue == null) {
 							return null;
 						} else {
-							dao.getAccountDao().put(
-									oEntityHelper.byteKey2OKey("org.bc.manage.node.account".getBytes()),
+							dao.getAccountDao().put(oEntityHelper.byteKey2OKey("org.bc.manage.node.account".getBytes()),
 									oEntityHelper.byteValue2OValue(encApi.hexDec(oKeyStoreValue.getAddress())));
 							return oKeyStoreValue.getAddress();
 						}

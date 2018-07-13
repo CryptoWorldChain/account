@@ -20,6 +20,10 @@ import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.fc.brewchain.bcapi.EncAPI;
 
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Table;
+import com.google.common.collect.Table.Cell;
+
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import onight.osgi.annotation.NActorProvider;
@@ -31,7 +35,7 @@ import onight.tfw.ntrans.api.annotation.ActorRequire;
 @Instantiate(name = "BlockStore_UnStable")
 @Slf4j
 @Data
-public class BlockUnStableStore implements IBlockStore, ActorService {
+public class BlockUnStableStore implements ActorService {
 	@ActorRequire(name = "OEntity_Helper", scope = "global")
 	OEntityBuilder oEntityHelper;
 	@ActorRequire(name = "Def_Daos", scope = "global")
@@ -41,27 +45,38 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 	@ActorRequire(name = "BlockChain_Config", scope = "global")
 	BlockChainConfig blockChainConfig;
 
-	protected final ConcurrentHashMap<String, BlockStoreNodeValue> storage;
+	protected final Table<String, Long, BlockStoreNodeValue> storage;
 
 	protected ReadWriteLock rwLock = new ReentrantReadWriteLock();
 	protected ALock readLock = new ALock(rwLock.readLock());
 	protected ALock writeLock = new ALock(rwLock.writeLock());
 
 	public BlockUnStableStore() {
-		storage = new ConcurrentHashMap<String, BlockStoreNodeValue>();
+		storage = HashBasedTable.create();
 	}
 
-	@Override
 	public boolean containKey(String hash) {
 		try (ALock l = readLock.lock()) {
-			return this.storage.containsKey(hash);
+			return this.storage.containsRow(hash);
 		}
 	}
 
-	@Override
 	public BlockEntity get(String hash) {
 		try (ALock l = writeLock.lock()) {
-			BlockStoreNodeValue oBlockStoreNodeValue = this.storage.get(hash);
+			if (this.storage.containsRow(hash)) {
+				BlockStoreNodeValue oBlockStoreNodeValue = (BlockStoreNodeValue) this.storage.row(hash).values()
+						.toArray()[0];
+				if (oBlockStoreNodeValue != null) {
+					return oBlockStoreNodeValue.getBlockEntity();
+				}
+			}
+			return null;
+		}
+	}
+
+	public BlockEntity get(String hash, long number) {
+		try (ALock l = writeLock.lock()) {
+			BlockStoreNodeValue oBlockStoreNodeValue = this.storage.get(hash, number);
 			if (oBlockStoreNodeValue != null) {
 				return oBlockStoreNodeValue.getBlockEntity();
 			}
@@ -69,20 +84,18 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 		}
 	}
 
-	@Override
 	public boolean add(BlockEntity block) {
 		String hash = block.getHeader().getBlockHash();
+		long number = block.getHeader().getNumber();
 		String parentHash = block.getHeader().getParentHash();
 
 		try (ALock l = writeLock.lock()) {
 			try {
 				BlockStoreNodeValue oNode = null;
-				if (!this.storage.containsKey(hash)) {
-					oNode = new BlockStoreNodeValue(hash, parentHash, block.getHeader().getNumber(), block);
-					this.storage.put(hash, oNode);
+				if (!this.storage.containsRow(hash)) {
+					oNode = new BlockStoreNodeValue(hash, parentHash, number, block);
+					this.storage.put(hash, number, oNode);
 					log.debug("add block into cache number::" + oNode.getNumber() + " hash::" + oNode.getBlockHash());
-					// dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(block.getHeader().getBlockHash()),
-					// OEntityBuilder.byteValue2OValue(block.toByteArray()));
 				}
 				return true;
 			} catch (Exception e) {
@@ -96,9 +109,9 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 		return this.storage.size();
 	}
 
-	public BlockStoreNodeValue getNode(String hash) {
+	public BlockStoreNodeValue getNode(String hash, long number) {
 		try (ALock l = writeLock.lock()) {
-			BlockStoreNodeValue oBlockStoreNodeValue = this.storage.get(hash);
+			BlockStoreNodeValue oBlockStoreNodeValue = this.storage.get(hash, number);
 			if (oBlockStoreNodeValue != null) {
 				return oBlockStoreNodeValue;
 			}
@@ -107,12 +120,12 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 		}
 	}
 
-	public int increaseRetryTimes(String hash) {
+	public int increaseRetryTimes(String hash, long number) {
 		try (ALock l = writeLock.lock()) {
-			if (this.storage.containsKey(hash)) {
-				BlockStoreNodeValue oNode = this.storage.get(hash);
+			if (this.storage.contains(hash, number)) {
+				BlockStoreNodeValue oNode = this.storage.get(hash, number);
 				oNode.increaseRetryTimes();
-				this.storage.put(hash, oNode);
+				this.storage.put(hash, number, oNode);
 				return oNode.getRetryTimes();
 			} else {
 				return 0;
@@ -120,35 +133,35 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 		}
 	}
 
-	public void resetRetryTimes(String hash) {
+	public void resetRetryTimes(String hash, long number) {
 		try (ALock l = writeLock.lock()) {
-			if (this.storage.containsKey(hash)) {
-				BlockStoreNodeValue oNode = this.storage.get(hash);
+			if (this.storage.contains(hash, number)) {
+				BlockStoreNodeValue oNode = this.storage.get(hash, number);
 				oNode.setRetryTimes(0);
-				this.storage.put(hash, oNode);
+				this.storage.put(hash, number, oNode);
 			}
 		}
 	}
 
-	public boolean isConnect(String hash) {
+	public boolean isConnect(String hash, long number) {
 		try (ALock l = readLock.lock()) {
-			if (this.storage.containsKey(hash)) {
-				BlockStoreNodeValue oNode = this.storage.get(hash);
+			if (this.storage.contains(hash, number)) {
+				BlockStoreNodeValue oNode = this.storage.get(hash, number);
 				return oNode.isConnect();
 			}
 			return false;
 		}
 	}
 
-	public void connect(String hash) throws BlockNotFoundInStoreException {
+	public void connect(String hash, long number) throws BlockNotFoundInStoreException {
 		try (ALock l = writeLock.lock()) {
-			if (!this.storage.containsKey(hash)) {
+			if (!this.storage.contains(hash, number)) {
 				throw new BlockNotFoundInStoreException("block unable to connect to block chain.");
 			}
-			BlockStoreNodeValue oNode = this.storage.get(hash);
+			BlockStoreNodeValue oNode = this.storage.get(hash, number);
 			if (!oNode.isConnect()) {
 				oNode.connect();
-				this.storage.put(hash, oNode);
+				this.storage.put(hash, number, oNode);
 
 				// log.debug("====put connect block::" + hash);
 				dao.getBlockDao().put(oEntityHelper.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK),
@@ -160,16 +173,16 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 			}
 		}
 	}
-	
-	public void append(String hash) throws BlockNotFoundInStoreException {
+
+	public void append(String hash, long number) throws BlockNotFoundInStoreException {
 		try (ALock l = writeLock.lock()) {
-			if (!this.storage.containsKey(hash)) {
+			if (!this.storage.contains(hash, number)) {
 				throw new BlockNotFoundInStoreException("block unable to connect to block chain.");
 			}
-			BlockStoreNodeValue oNode = this.storage.get(hash);
+			BlockStoreNodeValue oNode = this.storage.get(hash, number);
 			if (!oNode.isConnect()) {
 				oNode.connect();
-				this.storage.put(hash, oNode);
+				this.storage.put(hash, number, oNode);
 
 				log.debug("success append block number::" + oNode.getNumber() + " hash::" + oNode.getBlockHash()
 						+ " stateroot::" + oNode.getBlockEntity().getHeader().getStateRoot());
@@ -177,44 +190,54 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 		}
 	}
 
-	public boolean containsUnConnectChild(String hash) {
+	public boolean containsUnConnectChild(String parentHash, long number) {
 		try (ALock l = readLock.lock()) {
-			for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.entrySet().iterator(); it.hasNext();) {
-				Map.Entry<String, BlockStoreNodeValue> item = it.next();
-				if (item.getValue().getParentHash().equals(hash) && !item.getValue().isConnect()) {
-					return true;
-				}
-			}
+			return this.storage.contains(parentHash, number);
+			//
+			// for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it =
+			// storage.entrySet().iterator(); it.hasNext();) {
+			// Map.Entry<String, BlockStoreNodeValue> item = it.next();
+			// if (item.getValue().getParentHash().equals(hash) &&
+			// !item.getValue().isConnect()) {
+			// return true;
+			// }
+			// }
 		}
-		return false;
+		// return false;
 	}
 
-	public List<BlockEntity> getUnConnectChild(String hash) {
-		List<BlockEntity> list = new ArrayList<>();
-		try (ALock l = readLock.lock()) {
-			BlockStoreNodeValue oParent = this.storage.get(hash);
-			for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.entrySet().iterator(); it.hasNext();) {
-				Map.Entry<String, BlockStoreNodeValue> item = it.next();
-				if (item.getValue().getParentHash().equals(hash) && !item.getValue().isConnect()
-						&& item.getValue().getNumber() == (oParent.getNumber() + 1)) {
-					list.add(item.getValue().getBlockEntity());
-				}
-			}
-		}
-		return list;
-	}
+	// public BlockEntity getUnConnectChild(String paretHash, long number) {
+	//
+	// try (ALock l = readLock.lock()) {
+	//
+	//
+	// return this.storage.get(paretHash, number + 1).getBlockEntity();
+	// //
+	// // for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it =
+	// // storage.entrySet().iterator(); it.hasNext();) {
+	// // Map.Entry<String, BlockStoreNodeValue> item = it.next();
+	// // if (item.getValue().getParentHash().equals(hash) &&
+	// // !item.getValue().isConnect()
+	// // && item.getValue().getNumber() == (oParent.getNumber() + 1)) {
+	// // list.add(item.getValue().getBlockEntity());
+	// // }
+	// // }
+	// }
+	// // return list;
+	// }
 
-	public BlockStoreNodeValue tryPop(String hash) {
-		BlockStoreNodeValue oBlockStoreNodeValue = this.storage.get(hash);
+	public BlockStoreNodeValue tryPop(String hash, long number) {
+		BlockStoreNodeValue oBlockStoreNodeValue = this.storage.get(hash, number);
 		int count = 0;
-		BlockStoreNodeValue oParent = this.storage.get(oBlockStoreNodeValue.getParentHash());
+		BlockStoreNodeValue oParent = this.storage.get(oBlockStoreNodeValue.getParentHash(),
+				oBlockStoreNodeValue.getNumber() - 1);
 		while (oParent != null) {
 			count += 1;
 			oBlockStoreNodeValue = oParent;
-			oParent = this.storage.get(oParent.getParentHash());
+			oParent = this.storage.get(oParent.getParentHash(), oParent.getNumber() - 1);
 		}
 		if (oBlockStoreNodeValue != null && count >= blockChainConfig.getStableBlocks()) {
-			storage.remove(oBlockStoreNodeValue.getBlockHash());
+			storage.remove(oBlockStoreNodeValue.getBlockHash(), oBlockStoreNodeValue.getNumber());
 			log.debug("stable block number::" + oBlockStoreNodeValue.getNumber() + " hash::"
 					+ oBlockStoreNodeValue.getBlockHash());
 			return oBlockStoreNodeValue;
@@ -222,23 +245,29 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 		return null;
 	}
 
-	@Override
 	public BlockEntity getBlockByNumber(long number) {
 		try (ALock l = readLock.lock()) {
-			for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.entrySet().iterator(); it.hasNext();) {
-				Map.Entry<String, BlockStoreNodeValue> item = it.next();
-				if (item.getValue().getNumber() == number && item.getValue().isConnect()) {
-					return item.getValue().getBlockEntity();
-				}
-			}
+			if (storage.containsColumn(number)) {
+				return ((BlockStoreNodeValue)storage.column(number).values().toArray()[0]).getBlockEntity();
+			} 
+			return null;
+			
+			// for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it =
+			// storage.entrySet().iterator(); it.hasNext();) {
+			// Map.Entry<String, BlockStoreNodeValue> item = it.next();
+			// if (item.getValue().getNumber() == number && item.getValue().isConnect()) {
+			// return item.getValue().getBlockEntity();
+			// }
+			// }
 		}
-		return null;
+		// return null;
 	}
 
 	public List<BlockEntity> getBlocksByNumber(long number) {
 		try (ALock l = readLock.lock()) {
 			List<BlockEntity> list = new ArrayList<>();
-			for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.entrySet().iterator(); it.hasNext();) {
+			for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.column(number).entrySet().iterator(); it
+					.hasNext();) {
 				Map.Entry<String, BlockStoreNodeValue> item = it.next();
 				if (item.getValue().getNumber() == number && item.getValue().isConnect()) {
 					list.add(item.getValue().getBlockEntity());
@@ -250,13 +279,13 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 
 	public void put(String hash, BlockEntity block) {
 		try (ALock l = writeLock.lock()) {
-			BlockStoreNodeValue oBlockStoreNodeValue = this.storage.get(hash);
+			BlockStoreNodeValue oBlockStoreNodeValue = this.storage.get(hash, block.getHeader().getNumber());
 			if (oBlockStoreNodeValue != null) {
 				oBlockStoreNodeValue.setBlockEntity(block);
 				log.debug("put block number::" + oBlockStoreNodeValue.getNumber() + " hash::"
 						+ oBlockStoreNodeValue.getBlockHash() + " stateroot::"
 						+ oBlockStoreNodeValue.getBlockEntity().getHeader().getStateRoot());
-				this.storage.put(hash, oBlockStoreNodeValue);
+				this.storage.put(hash, block.getHeader().getNumber(), oBlockStoreNodeValue);
 
 				// log.debug("====put save block::" + hash);
 				dao.getBlockDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(block.getHeader().getBlockHash())),
@@ -266,33 +295,31 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 		}
 	}
 
-	@Override
-	public BlockEntity rollBackTo(long number) {
-		BlockEntity oBlockEntity = getBlockByNumber(number);
+	public BlockEntity rollBackTo(long number, BlockEntity oBlockEntity) {
 		if (oBlockEntity != null) {
 			try (ALock l = writeLock.lock()) {
-				String hash = oBlockEntity.getHeader().getBlockHash();
-				if (this.storage.containsKey(hash)) {
-					BlockStoreNodeValue oNode = this.storage.get(hash);
-					while (StringUtils.isNotBlank(hash)) {
-						boolean isExistsChild = false;
-						for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.entrySet().iterator(); it
-								.hasNext();) {
-							Map.Entry<String, BlockStoreNodeValue> item = it.next();
-							if (item.getValue().getParentHash().equals(hash) && item.getValue().isConnect()) {
-								BlockStoreNodeValue newValue = item.getValue();
-								newValue.disConnect();
-								this.storage.put(item.getKey(), newValue);
-								hash = item.getValue().getBlockHash();
-								isExistsChild = true;
-							}
-						}
-						if (!isExistsChild) {
-							hash = null;
-						}
+				String fHash = oBlockEntity.getHeader().getParentHash();
+				long fNumber = oBlockEntity.getHeader().getNumber() - 1;
+				BlockStoreNodeValue oNode = null;
+				while (fHash != null && this.storage.contains(fHash, fNumber)) {
+					boolean isExistsChild = false;
+					oNode = this.storage.get(fHash, fNumber);
+
+					if (oNode.isConnect()) {
+						oNode.disConnect();
+						this.storage.put(oNode.getBlockHash(), oNode.getNumber(), oNode);
+
+						fHash = oNode.getBlockEntity().getHeader().getBlockHash();
+						fNumber = oNode.getBlockEntity().getHeader().getNumber() - 1;
+						isExistsChild = true;
 					}
 
-					// log.debug("====put rollback block::" + hash);
+					if (!isExistsChild) {
+						fHash = null;
+					}
+				}
+
+				if (oNode != null) {
 					dao.getBlockDao().put(oEntityHelper.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK),
 							oEntityHelper.byteValue2OValue(encApi.hexDec(oNode.getBlockHash())));
 					return oNode.getBlockEntity();
@@ -304,23 +331,22 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 		return null;
 	}
 
-	@Override
 	public void clear() {
-		for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.entrySet().iterator(); it.hasNext();) {
-			Map.Entry<String, BlockStoreNodeValue> item = it.next();
+		for (Iterator<Cell<String, Long, BlockStoreNodeValue>> it = storage.cellSet().iterator(); it.hasNext();) {
+			Cell<String, Long, BlockStoreNodeValue> item = it.next();
 			if (!item.getValue().isConnect()) {
-				this.storage.remove(item.getKey());
+				this.storage.remove(item.getRowKey(), item.getColumnKey());
 			}
 		}
 	}
 
 	public void disconnectAll(BlockEntity block) {
-		for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.entrySet().iterator(); it.hasNext();) {
-			Map.Entry<String, BlockStoreNodeValue> item = it.next();
+		for (Iterator<Cell<String, Long, BlockStoreNodeValue>> it = storage.cellSet().iterator(); it.hasNext();) {
+			Cell<String, Long, BlockStoreNodeValue> item = it.next();
 			if (item.getValue().isConnect()) {
 				BlockStoreNodeValue newValue = item.getValue();
 				newValue.disConnect();
-				this.storage.put(item.getKey(), newValue);
+				this.storage.put(item.getRowKey(), item.getColumnKey(), newValue);
 			}
 		}
 
@@ -331,10 +357,10 @@ public class BlockUnStableStore implements IBlockStore, ActorService {
 
 	public void removeForkBlock(long number) {
 		try (ALock l = readLock.lock()) {
-			for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.entrySet().iterator(); it.hasNext();) {
-				Map.Entry<String, BlockStoreNodeValue> item = it.next();
+			for (Iterator<Cell<String, Long, BlockStoreNodeValue>> it = storage.cellSet().iterator(); it.hasNext();) {
+				Cell<String, Long, BlockStoreNodeValue> item = it.next();
 				if (item.getValue().getNumber() <= number) {
-					dao.getBlockDao().delete(oEntityHelper.byteKey2OKey(encApi.hexDec(item.getKey())));
+					dao.getBlockDao().delete(oEntityHelper.byteKey2OKey(encApi.hexDec(item.getRowKey())));
 					it.remove();
 				}
 			}

@@ -3,6 +3,7 @@ package org.brewchain.account.core.store;
 import static java.lang.String.format;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
@@ -81,7 +82,7 @@ public class BlockStore implements ActorService {
 						+ oBlockEntity.getHeader().getBlockHash() + " stateroot::"
 						+ oBlockEntity.getHeader().getStateRoot());
 				unStableStore.add(oBlockEntity);
-				unStableStore.connect(oBlockEntity.getHeader().getBlockHash());
+				unStableStore.connect(oBlockEntity.getHeader().getBlockHash(), oBlockEntity.getHeader().getNumber());
 				if (maxReceiveNumber < oBlockEntity.getHeader().getNumber()) {
 					maxReceiveNumber = oBlockEntity.getHeader().getNumber();
 					maxReceiveBlock = oBlockEntity;
@@ -96,10 +97,11 @@ public class BlockStore implements ActorService {
 			long maxBlockNumber = blockNumber;
 			int c = 0;
 			String parentHash = oBlockEntity.getHeader().getParentHash();
+			long parentNumber = oBlockEntity.getHeader().getNumber() - 1;
 			while (StringUtils.isNotBlank(parentHash) && c < KeyConstant.CACHE_SIZE) {
 				c += 1;
 				BlockEntity loopBlockEntity = null;
-				loopBlockEntity = getBlockByHash(parentHash);
+				loopBlockEntity = getBlockByHash(parentHash, parentNumber);
 				if (loopBlockEntity == null) {
 					break;
 				} else {
@@ -122,7 +124,7 @@ public class BlockStore implements ActorService {
 								+ " hash::" + loopBlockEntity.getHeader().getBlockHash() + " stateroot::"
 								+ loopBlockEntity.getHeader().getStateRoot());
 						unStableStore.add(loopBlockEntity);
-						unStableStore.append(parentHash);
+						unStableStore.append(parentHash, parentNumber);
 						if (maxReceiveNumber < loopBlockEntity.getHeader().getNumber()) {
 							maxReceiveNumber = loopBlockEntity.getHeader().getNumber();
 							maxReceiveBlock = loopBlockEntity;
@@ -134,6 +136,7 @@ public class BlockStore implements ActorService {
 					}
 					if (loopBlockEntity.getHeader().getParentHash() != null) {
 						parentHash = loopBlockEntity.getHeader().getParentHash();
+						parentNumber = loopBlockEntity.getHeader().getNumber() - 1;
 					} else {
 						break;
 					}
@@ -145,6 +148,7 @@ public class BlockStore implements ActorService {
 	public BlockStoreSummary addBlock(BlockEntity block) {
 		BlockStoreSummary oBlockStoreSummary = new BlockStoreSummary();
 		String hash = block.getHeader().getBlockHash();
+		long number = block.getHeader().getNumber();
 		String parentHash = block.getHeader().getParentHash();
 
 		if (maxReceiveNumber < block.getHeader().getNumber()) {
@@ -152,7 +156,7 @@ public class BlockStore implements ActorService {
 			maxReceiveBlock = block;
 		}
 
-		if (unStableStore.containKey(hash) && unStableStore.isConnect(hash)) {
+		if (unStableStore.containKey(hash) && unStableStore.isConnect(hash, number)) {
 			oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_DROP);
 			return oBlockStoreSummary;
 		} else if (stableStore.containKey(hash)) {
@@ -165,7 +169,7 @@ public class BlockStore implements ActorService {
 			}
 		}
 		if (unStableStore.add(block)) {
-			BlockStoreNodeValue oParentNode = unStableStore.getNode(parentHash);
+			BlockStoreNodeValue oParentNode = unStableStore.getNode(parentHash, number - 1);
 			BlockEntity oParent = null;
 			if (oParentNode == null && block.getHeader().getNumber() == 1) {
 				oParent = stableStore.get(block.getHeader().getParentHash());
@@ -201,12 +205,13 @@ public class BlockStore implements ActorService {
 		BlockStoreSummary oBlockStoreSummary = new BlockStoreSummary();
 
 		String hash = block.getHeader().getBlockHash();
+		long number = block.getHeader().getNumber();
 		log.debug("connect block number::" + block.getHeader().getNumber() + " hash::" + hash + " stateroot::"
 				+ block.getHeader().getStateRoot());
 
 		if (unStableStore.containKey(hash) || block.getHeader().getNumber() == 1) {
 			unStableStore.put(hash, block);
-			unStableStore.connect(hash);
+			unStableStore.connect(hash, number);
 			BlockStoreNodeValue oBlockStoreNodeValue = null;
 
 			if (maxConnectNumber < block.getHeader().getNumber()) {
@@ -214,12 +219,13 @@ public class BlockStore implements ActorService {
 				maxConnectBlock = block;
 			}
 
-			oBlockStoreNodeValue = unStableStore.tryPop(hash);
+			oBlockStoreNodeValue = unStableStore.tryPop(hash, number);
 			if (oBlockStoreNodeValue != null) {
 				stableBlock(oBlockStoreNodeValue.getBlockEntity());
-				unStableStore.removeForkBlock(oBlockStoreNodeValue.getNumber());
+				// ?
+				// unStableStore.removeForkBlock(oBlockStoreNodeValue.getNumber());
 			}
-			if (unStableStore.containsUnConnectChild(hash)) {
+			if (unStableStore.containsUnConnectChild(hash, number + 1)) {
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY_CHILD);
 				return oBlockStoreSummary;
 			} else {
@@ -263,8 +269,23 @@ public class BlockStore implements ActorService {
 		return oBlockEntity;
 	}
 
-	public List<BlockEntity> getReadyConnectBlock(String hash) {
-		return unStableStore.getUnConnectChild(hash);
+	public BlockEntity getBlockByHash(String hash, long number) {
+		BlockEntity oBlockEntity = unStableStore.get(hash, number);
+		if (oBlockEntity == null) {
+			oBlockEntity = stableStore.get(hash);
+		}
+		return oBlockEntity;
+	}
+
+	public BlockEntity getReadyConnectBlock(String hash, long number) {
+		List<BlockEntity> lists = unStableStore.getBlocksByNumber(number + 1);
+		for (Iterator iterator = lists.iterator(); iterator.hasNext();) {
+			BlockEntity blockEntity = (BlockEntity) iterator.next();
+			if (blockEntity.getHeader().getParentHash().equals(hash)) {
+				return blockEntity;
+			}
+		}
+		return null;
 	}
 
 	public List<BlockEntity> getChildListBlocksEndWith(String blockHash, String endBlockHash, int maxCount) {
@@ -299,10 +320,12 @@ public class BlockStore implements ActorService {
 		blocks.add(firstBlock);
 
 		String currentBlock = firstBlock.getHeader().getParentHash();
+		long currentNumber = firstBlock.getHeader().getNumber();
 		for (int i = 1; i <= maxCount; ++i) {
-			BlockEntity child = getBlockByHash(currentBlock);
+			BlockEntity child = getBlockByHash(currentBlock, currentNumber);
 			if (child != null) {
 				currentBlock = child.getHeader().getParentHash();
+				currentNumber = child.getHeader().getNumber();
 				blocks.add(child);
 				if (StringUtils.isNotBlank(endBlockHash) && child.getHeader().getBlockHash().equals(endBlockHash)) {
 					return blocks;
@@ -314,8 +337,8 @@ public class BlockStore implements ActorService {
 		return blocks;
 	}
 
-	public boolean isConnect(String hash) {
-		if (unStableStore.isConnect(hash) || stableStore.containKey(hash)) {
+	public boolean isConnect(String hash, long number) {
+		if (unStableStore.isConnect(hash, number) || stableStore.containKey(hash)) {
 			return true;
 		}
 		return false;
@@ -329,7 +352,7 @@ public class BlockStore implements ActorService {
 		log.info("blockstore try to rollback to number::" + number + " maxconnect::" + this.getMaxConnectNumber()
 				+ " maxstable::" + this.getMaxStableNumber());
 
-		BlockEntity oBlockEntity = unStableStore.rollBackTo(number);
+		BlockEntity oBlockEntity = unStableStore.rollBackTo(number, maxConnectBlock);
 		if (oBlockEntity == null) {
 			oBlockEntity = stableStore.rollBackTo(number);
 			unStableStore.clear();
