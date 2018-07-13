@@ -7,6 +7,7 @@ import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
@@ -23,6 +24,7 @@ import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionOutput;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionSignature;
 import org.fc.brewchain.bcapi.EncAPI;
+import org.fc.brewchain.bcapi.UnitUtil;
 
 import com.google.protobuf.ByteString;
 
@@ -138,18 +140,27 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 		BigInteger inputsTotal = BigInteger.ZERO;
 		BigInteger outputsTotal = BigInteger.ZERO;
 
-		if (oMultiTransaction.getTxBody().getInputsList().size() > 1
-				&& oMultiTransaction.getTxBody().getOutputsList().size() > 1) {
-			throw new TransactionExecuteException(
-					String.format("some error in transaction parameters, sender %s，receiver %s",
-							oMultiTransaction.getTxBody().getInputsList().size(),
-							oMultiTransaction.getTxBody().getOutputsList().size()));
-		}
+		// if (oMultiTransaction.getTxBody().getInputsList().size() > 1
+		// && oMultiTransaction.getTxBody().getOutputsList().size() > 1) {
+		// throw new TransactionExecuteException(
+		// String.format("some error in transaction parameters, sender %s，receiver %s",
+		// oMultiTransaction.getTxBody().getInputsList().size(),
+		// oMultiTransaction.getTxBody().getOutputsList().size()));
+		// }
 
+		String uniqueInputAddress = "";
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
-			BigInteger bi = ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray());
+			if (StringUtils.isBlank(uniqueInputAddress)) {
+				uniqueInputAddress = encApi.hexEnc(oInput.getAddress().toByteArray());
+			} else {
+				if (!uniqueInputAddress.equals(encApi.hexEnc(oInput.getAddress().toByteArray()))) {
+					throw new TransactionExecuteException("parameter invalid, input address must be unique");
+				}
+			}
+
+			BigInteger bi = UnitUtil.fromWei(ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray()));
 			if (bi.compareTo(BigInteger.ZERO) < 0) {
-				throw new TransactionExecuteException("amount must large than 0");
+				throw new TransactionExecuteException("parameter invalid, amount must large than 0");
 			}
 			inputsTotal = inputsTotal.add(bi);
 
@@ -163,13 +174,13 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 						encApi.hexEnc(sender.getAddress().toByteArray()), balance));
 			}
 			if (ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray()).compareTo(BigInteger.ZERO) == -1) {
-				throw new TransactionExecuteException(
-						String.format("transaction value %s less than 0", oInput.getAmount()));
+				throw new TransactionExecuteException(String.format("transaction value %s less than 0",
+						UnitUtil.fromWei(ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray()))));
 			}
 
-			if (ByteUtil.bytesSub(balance, oInput.getAmount().toByteArray()).compareTo(BigInteger.ZERO) == -1) {
-				throw new TransactionExecuteException(
-						String.format("sender balance %s less than %s", balance, oInput.getAmount()));
+			if (ByteUtil.bytesToBigInteger(balance.toByteArray()).compareTo(inputsTotal) == -1) {
+				throw new TransactionExecuteException(String.format("sender balance %s less than %s", balance,
+						UnitUtil.fromWei(ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray()))));
 			}
 
 			int nonce = senderAccountValue.getNonce();
@@ -180,7 +191,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 		}
 
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
-			BigInteger bi = ByteUtil.bytesToBigInteger(oOutput.getAmount().toByteArray());
+			BigInteger bi = UnitUtil.fromWei(ByteUtil.bytesToBigInteger(oOutput.getAmount().toByteArray()));
 			if (bi.compareTo(BigInteger.ZERO) < 0) {
 				throw new TransactionExecuteException("amount must large than 0");
 			}

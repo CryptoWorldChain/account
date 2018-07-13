@@ -100,6 +100,7 @@ message ReqCreateTransactionTest {
 	repeated ReqTransactionAccount input = 1;
 	repeated ReqTransactionAccount output = 2;
 	string data = 3;
+	repeated ReqTransactionSignature signature = 4;
 }
 
 message RespCreateTransactionTest {
@@ -118,4 +119,8 @@ message ReqTransactionAccount {
 	string erc20symbol = 6;
 	string erc721token = 7;
 	string erc721symbol = 8;
+}
+
+message ReqTransactionSignature {
+	string privKey = 1;
 }

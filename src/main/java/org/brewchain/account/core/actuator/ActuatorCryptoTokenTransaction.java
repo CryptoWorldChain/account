@@ -15,6 +15,7 @@ import org.brewchain.account.trie.DBTrie;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.account.util.ByteUtil;
+import org.brewchain.account.util.FastByteComparisons;
 import org.brewchain.evmapi.gens.Act.Account;
 import org.brewchain.evmapi.gens.Act.AccountCryptoToken;
 import org.brewchain.evmapi.gens.Act.AccountCryptoValue;
@@ -74,8 +75,8 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 			AccountValue oAccountValue = oAccount.getValue();
 
 			for (int j = 0; j < oAccountValue.getCryptosCount(); j++) {
-				if (oAccountValue.getCryptos(i).getSymbol().equals(oInput.getSymbol())) {
-					AccountCryptoValue oAccountCryptoValue = oAccountValue.getCryptos(i);
+				if (oAccountValue.getCryptos(j).getSymbol().equals(oInput.getSymbol())) {
+					AccountCryptoValue oAccountCryptoValue = oAccountValue.getCryptos(j);
 					for (int k = 0; k < oAccountCryptoValue.getTokensCount(); k++) {
 						if (oAccountCryptoValue.getTokens(k).getHash().equals(oInput.getCryptoToken())) {
 							isTokenExists = true;
@@ -89,22 +90,22 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 			}
 			if (!isTokenExists) {
 				throw new TransactionExecuteException(String.format(
-						"parameter invalid, sender %s not found token %s with hash %s", oInput.getAddress(),
+						"parameter invalid, input %s not found token [%s] with hash [%s]", encApi.hexEnc(oInput.getAddress().toByteArray()) ,
 						oInput.getSymbol(), encApi.hexEnc(oInput.getCryptoToken().toByteArray())));
 			}
 
 			boolean isExistsOutput = false;
 			for (int j = 0; j < oMultiTransaction.getTxBody().getOutputsCount(); j++) {
-				MultiTransactionOutput oOutput = oMultiTransaction.getTxBody().getOutputs(i);
+				MultiTransactionOutput oOutput = oMultiTransaction.getTxBody().getOutputs(j);
 				if (oOutput.getSymbol().equals(oInput.getSymbol())
-						&& oOutput.getCryptoToken().equals(oInput.getCryptoToken())) {
+						&& FastByteComparisons.equal(oOutput.getCryptoToken().toByteArray(), oInput.getCryptoToken().toByteArray())) {
 					isExistsOutput = true;
 					break;
 				}
 			}
 			if (!isExistsOutput) {
 				throw new TransactionExecuteException(
-						String.format("parameter invalid, not found token %s with hash %s in receive list",
+						String.format("parameter invalid, not found token %s with hash %s in output list",
 								oInput.getSymbol(), encApi.hexEnc(oInput.getCryptoToken().toByteArray())));
 			}
 		}
@@ -128,7 +129,7 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 			for (int k = 0; k < oAccountValue.getCryptosCount(); k++) {
 
 				if (oAccountValue.getCryptosList().get(k).getSymbol().equals(oInput.getSymbol())) {
-					AccountCryptoValue.Builder value = oAccountValue.getCryptosList().get(i).toBuilder();
+					AccountCryptoValue.Builder value = oAccountValue.getCryptosList().get(k).toBuilder();
 
 					for (int j = 0; j < value.getTokensCount(); j++) {
 						if (value.getTokensBuilderList().get(j).getHash().equals(oInput.getCryptoToken())) {
@@ -139,7 +140,7 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 							break;
 						}
 					}
-					oAccountValue.setCryptos(i, value);
+					oAccountValue.setCryptos(k, value);
 					break;
 				}
 			}
