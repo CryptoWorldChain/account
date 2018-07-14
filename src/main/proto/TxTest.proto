@@ -24,6 +24,7 @@ enum PTSTCommand {
 	TCC = 12; // create contract transaction
 	TEC = 13; // call contract transaction
 	TRO = 14; // crypto token transaction
+	TOO = 15; // token transaction
 }
 
 message ReqCreateContract {

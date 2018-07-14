@@ -36,7 +36,7 @@ import onight.tfw.otransio.api.beans.FramePacket;
 @NActorProvider
 @Slf4j
 @Data
-public class CryptoTransactionSampleImpl extends SessionModules<ReqCreateTransactionTest> {
+public class CryptoTransactionSample extends SessionModules<ReqCreateTransactionTest> {
 	@ActorRequire(name = "Block_Helper", scope = "global")
 	BlockHelper blockHelper;
 	@ActorRequire(name = "bc_encoder", scope = "global")

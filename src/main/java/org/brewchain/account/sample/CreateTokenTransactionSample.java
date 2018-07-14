@@ -12,10 +12,15 @@ import org.brewchain.account.enums.TransTypeEnum;
 import org.brewchain.account.gens.TxTest.PTSTCommand;
 import org.brewchain.account.gens.TxTest.PTSTModule;
 import org.brewchain.account.gens.TxTest.ReqCreateToken;
+import org.brewchain.account.gens.TxTest.ReqCreateTransactionTest;
+import org.brewchain.account.gens.TxTest.ReqTransactionAccount;
+import org.brewchain.account.gens.TxTest.ReqTransactionSignature;
 import org.brewchain.account.gens.TxTest.RespCreateToken;
+import org.brewchain.account.gens.TxTest.RespCreateTransactionTest;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionBody;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
+import org.brewchain.evmapi.gens.Tx.MultiTransactionOutput;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionSignature;
 import org.brewchain.rcvm.utils.ByteUtil;
 import org.fc.brewchain.bcapi.EncAPI;
@@ -35,7 +40,7 @@ import onight.tfw.otransio.api.beans.FramePacket;
 @NActorProvider
 @Slf4j
 @Data
-public class CreateTokenTransaction extends SessionModules<ReqCreateToken> {
+public class CreateTokenTransactionSample extends SessionModules<ReqCreateTransactionTest> {
 	@ActorRequire(name = "Block_Helper", scope = "global")
 	BlockHelper blockHelper;
 	@ActorRequire(name = "bc_encoder", scope = "global")
@@ -62,40 +67,51 @@ public class CreateTokenTransaction extends SessionModules<ReqCreateToken> {
 	}
 
 	@Override
-	public void onPBPacket(final FramePacket pack, final ReqCreateToken pb, final CompleteHandler handler) {
-		RespCreateToken.Builder oRespCreateToken = RespCreateToken.newBuilder();
+	public void onPBPacket(final FramePacket pack, final ReqCreateTransactionTest pb, final CompleteHandler handler) {
+		RespCreateTransactionTest.Builder oRespCreateTransactionTest = RespCreateTransactionTest.newBuilder();
 
 		MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 		MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
 
 		try {
-			MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
-			oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(pb.getFromAccount().getAddress())));
-			oMultiTransactionInput4.setAmount(
-					ByteString.copyFrom(ByteUtil.bigIntegerToBytes(UnitUtil.toWei(pb.getTotal()))));
-			int nonce = accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(pb.getFromAccount().getAddress())));
-			oMultiTransactionInput4.setNonce(nonce);
-			oMultiTransactionInput4.setPubKey(ByteString.copyFrom(encApi.hexDec(pb.getFromAccount().getPutkey())));
-			oMultiTransactionInput4.setToken(pb.getToken());
-			oMultiTransactionBody.addInputs(oMultiTransactionInput4);
-			oMultiTransactionBody.setType(TransTypeEnum.TYPE_CreateToken.value());
+
+			for (ReqTransactionAccount input : pb.getInputList()) {
+				MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
+				oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(input.getAddress())));
+				oMultiTransactionInput4.setAmount(ByteString
+						.copyFrom(ByteUtil.bigIntegerToBytes(UnitUtil.toWei(input.getAmount()))));
+				int nonce = accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(input.getAddress())));
+				oMultiTransactionInput4.setNonce(nonce);
+				oMultiTransactionInput4.setToken(input.getErc20Symbol());
+
+				oMultiTransactionBody.addInputs(oMultiTransactionInput4);
+
+				oRespCreateTransactionTest
+						.addTrace("add input address::" + input.getAddress() + " nonce::" + nonce + " balance::"
+								+ accountHelper.getBalance(ByteString.copyFrom(encApi.hexDec(input.getAddress()))));
+			}
+
+			oMultiTransactionBody.setData(ByteString.copyFrom(encApi.hexDec(pb.getData())));
 			oMultiTransaction.clearTxHash();
 			oMultiTransactionBody.clearSignatures();
 			oMultiTransactionBody.setTimestamp(System.currentTimeMillis());
 			// 签名
-			MultiTransactionSignature.Builder oMultiTransactionSignature21 = MultiTransactionSignature.newBuilder();
-			oMultiTransactionSignature21.setPubKey(ByteString.copyFrom(encApi.hexDec(pb.getFromAccount().getPutkey())));
-			oMultiTransactionSignature21.setSignature(ByteString.copyFrom(
-					encApi.ecSign(pb.getFromAccount().getPrikey(), oMultiTransactionBody.build().toByteArray())));
-			oMultiTransactionBody.addSignatures(oMultiTransactionSignature21);
+			for (ReqTransactionSignature input : pb.getSignatureList()) {
+				MultiTransactionSignature.Builder oMultiTransactionSignature21 = MultiTransactionSignature.newBuilder();
+				oMultiTransactionSignature21.setSignature(ByteString
+						.copyFrom(encApi.ecSign(input.getPrivKey(), oMultiTransactionBody.build().toByteArray())));
+				oMultiTransactionBody.addSignatures(oMultiTransactionSignature21);
+			}
 			oMultiTransaction.setTxBody(oMultiTransactionBody);
-			String txHash = transactionHelper.CreateMultiTransaction(oMultiTransaction);
-			oRespCreateToken.setTxHash(txHash);
 
+			String txHash = transactionHelper.CreateMultiTransaction(oMultiTransaction);
+			oRespCreateTransactionTest.setTxhash(txHash);
 		} catch (Exception e) {
 			e.printStackTrace();
+			oRespCreateTransactionTest.setRetcode(-1);
+			oRespCreateTransactionTest.setRetmsg(e.getMessage());
 		}
-		handler.onFinished(PacketHelper.toPBReturn(pack, oRespCreateToken.build()));
+		handler.onFinished(PacketHelper.toPBReturn(pack, oRespCreateTransactionTest.build()));
 		return;
 	}
 }

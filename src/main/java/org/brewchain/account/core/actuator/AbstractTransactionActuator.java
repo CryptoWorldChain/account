@@ -4,7 +4,10 @@ import static java.lang.String.format;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
@@ -71,6 +74,14 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	@Override
 	public void onVerifySignature(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts)
 			throws Exception {
+
+		List<String> inputAddresses = new ArrayList<>();
+		for (int i = 0; i < oMultiTransaction.getTxBody().getInputsCount(); i++) {
+			String inputAddress = encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(i).getAddress().toByteArray());
+			if (!inputAddresses.contains(inputAddress))
+				inputAddresses.add(inputAddress);
+		}
+
 		// 获取交易原始encode
 		MultiTransaction.Builder signatureTx = oMultiTransaction.toBuilder();
 		MultiTransactionBody.Builder txBody = signatureTx.getTxBodyBuilder();
@@ -84,13 +95,15 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 					168);
 			String hexPubKey = encApi.hexEnc(oMultiTransactionSignature.getSignature().toByteArray()).substring(0, 128);
 
-			// byte[] address = encApi.hexDec(hexAddress);
-			if (!hexAddress
-					.equals(encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(i).getAddress().toByteArray()))) {
-				throw new TransactionExecuteException(
-						String.format("signature address %s not equal with sender address %s ", hexAddress,
-								encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(i).getAddress().toByteArray())));
-			}
+			inputAddresses.remove(hexAddress);
+			// if (!hexAddress
+			// .equals(encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(i).getAddress().toByteArray())))
+			// {
+			// throw new TransactionExecuteException(
+			// String.format("signature address %s not equal with sender address
+			// %s ", hexAddress,
+			// encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(i).getAddress().toByteArray())));
+			// }
 
 			if (!encApi.ecVerify(hexPubKey, oMultiTransactionEncode,
 					oMultiTransactionSignature.getSignature().toByteArray())) {
@@ -102,13 +115,19 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			// (!encApi.ecVerify(encApi.hexEnc(oMultiTransactionSignature.getPubKey().toByteArray()),
 			// oMultiTransactionEncode,
 			// oMultiTransactionSignature.getSignature().toByteArray())) {
-			// throw new TransactionExecuteException(String.format("signature %s verify fail
+			// throw new TransactionExecuteException(String.format("signature %s
+			// verify fail
 			// with pubkey %s",
 			// encApi.hexEnc(oMultiTransactionSignature.getSignature().toByteArray()),
 			// encApi.hexEnc(oMultiTransactionSignature.getPubKey().toByteArray())));
 			// }
 
 			i += 1;
+		}
+
+		if (inputAddresses.size() > 0) {
+			throw new TransactionExecuteException(
+					String.format("signature cannot match address %s ", inputAddresses.get(0)));
 		}
 	}
 
@@ -143,7 +162,8 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 		// if (oMultiTransaction.getTxBody().getInputsList().size() > 1
 		// && oMultiTransaction.getTxBody().getOutputsList().size() > 1) {
 		// throw new TransactionExecuteException(
-		// String.format("some error in transaction parameters, sender %s，receiver %s",
+		// String.format("some error in transaction parameters, sender
+		// %s，receiver %s",
 		// oMultiTransaction.getTxBody().getInputsList().size(),
 		// oMultiTransaction.getTxBody().getOutputsList().size()));
 		// }

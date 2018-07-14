@@ -49,8 +49,6 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			throw new TransactionExecuteException("parameter invalid, outputs must not be null");
 		}
 		
-		
-
 		String token = "";
 		BigInteger inputsTotal = BigInteger.ZERO;
 		BigInteger outputsTotal = BigInteger.ZERO;
