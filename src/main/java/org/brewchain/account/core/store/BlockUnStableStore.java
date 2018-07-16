@@ -308,7 +308,7 @@ public class BlockUnStableStore implements ActorService {
 					if (currentNode!= null && currentNode.isConnect()) {
 						currentNode.disConnect();
 						this.storage.put(currentNode.getBlockHash(), currentNode.getNumber(), currentNode);
-						log.debug("disconnect unstable cache number::" + oNode.getNumber() + " hash::"
+						log.debug("disconnect unstable cache number::" + currentNode.getNumber() + " hash::"
 								+ currentNode.getBlockHash());
 						fHash = currentNode.getBlockEntity().getHeader().getBlockHash();
 						fNumber = currentNode.getBlockEntity().getHeader().getNumber() - 1;
