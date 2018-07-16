@@ -294,7 +294,7 @@ public class V1Processor implements IProcessor, ActorService {
 					// processBlock(applyBlock);
 					processBlock(applyBlock);
 
-					log.debug("=====sync-> " + oBlockEntity.getHeader().getNumber() + " parent::"
+					log.debug("=====sync-> " + applyBlock.getHeader().getNumber() + " parent::"
 							+ parentBlock.getHeader().getStateRoot() + " current::"
 							+ oBlockEntity.getHeader().getStateRoot() + " exec::"
 							+ applyBlock.getHeader().getStateRoot());
@@ -305,6 +305,8 @@ public class V1Processor implements IProcessor, ActorService {
 									.equals(applyBlock.getHeader().getReceiptTrieRoot())) {
 						log.error("begin to roll back, stateRoot::" + oBlockEntity.getHeader().getStateRoot()
 								+ " blockStateRoot::" + applyBlock.getHeader().getStateRoot());
+						
+						blockChainHelper.rollbackTo(applyBlock.getHeader().getNumber() - 1);
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.ERROR);
 					} else {
 						oBlockStoreSummary = blockChainHelper.connectBlock(applyBlock.build());
@@ -315,8 +317,8 @@ public class V1Processor implements IProcessor, ActorService {
 				}
 				break;
 			case APPLY_CHILD:
-				log.info("ready to apply child block");
 				applyBlock = blockChainHelper.getChildBlock(applyBlock.build()).toBuilder();
+				log.info("ready to apply child block::" + applyBlock.getHeader().getBlockHash());
 				oBlockStoreSummary = blockChainHelper.addBlock(applyBlock.build());
 				break;
 			case STORE:
@@ -326,7 +328,7 @@ public class V1Processor implements IProcessor, ActorService {
 				break;
 			case ERROR:
 				log.error("fail to apply block number::" + applyBlock.getHeader().getNumber());
-				// blockChainHelper.rollback();
+				// 
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 				break;
 			}

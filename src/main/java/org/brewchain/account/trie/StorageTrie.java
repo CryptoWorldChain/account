@@ -448,9 +448,10 @@ public class StorageTrie implements ActorService {
 	private Node root;
 	private boolean async = true;
 
-	public StorageTrie(DefDaos dao, EncAPI encApi) {
+	public StorageTrie(DefDaos dao, EncAPI encApi, OEntityBuilder oEntityHelper) {
 		this.dao = dao;
 		this.encApi = encApi;
+		this.oEntityHelper = oEntityHelper;
 	}
 	//
 	// public StateTrie(byte[] root) {

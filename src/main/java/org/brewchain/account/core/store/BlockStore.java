@@ -180,7 +180,7 @@ public class BlockStore implements ActorService {
 				}
 			} else {
 				if (oParentNode == null) {
-					BlockEntity existsParent = unStableStore.getBlockByNumber(block.getHeader().getNumber() - 1);
+					BlockEntity existsParent = unStableStore.getBlockByNumber(number - 1);
 					if (existsParent != null) {
 						log.warn("forks, number::" + (block.getHeader().getNumber() - 1));
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_PREV);
@@ -188,8 +188,10 @@ public class BlockStore implements ActorService {
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.CACHE);
 					}
 				} else if (oParentNode != null && (oParentNode.getNumber() + 1) != block.getHeader().getNumber()) {
+					log.warn("parent node number is wrong::" + oParentNode.getNumber());
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.CACHE);
 				} else if (oParentNode != null && !oParentNode.isConnect()) {
+					log.warn("parent node not connect");
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.CACHE);
 				} else {
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
