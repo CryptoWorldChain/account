@@ -239,7 +239,7 @@ public class V1Processor implements IProcessor, ActorService {
 					blockChainHelper.reAddBlock(applyBlock.build());
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
 				} else {
-					log.info("already exists, drop it::" + applyBlock.getHeader().getNumber());
+					log.info("already exists, drop it::" + applyBlock.getHeader().getNumber() + " last::" + blockChainHelper.getLastBlockNumber());
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 				}
 				break;

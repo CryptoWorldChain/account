@@ -248,14 +248,15 @@ public class BlockUnStableStore implements ActorService {
 	public BlockEntity getBlockByNumber(long number) {
 		try (ALock l = readLock.lock()) {
 			if (storage.containsColumn(number)) {
-				return ((BlockStoreNodeValue)storage.column(number).values().toArray()[0]).getBlockEntity();
-			} 
+				return ((BlockStoreNodeValue) storage.column(number).values().toArray()[0]).getBlockEntity();
+			}
 			return null;
-			
+
 			// for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it =
 			// storage.entrySet().iterator(); it.hasNext();) {
 			// Map.Entry<String, BlockStoreNodeValue> item = it.next();
-			// if (item.getValue().getNumber() == number && item.getValue().isConnect()) {
+			// if (item.getValue().getNumber() == number &&
+			// item.getValue().isConnect()) {
 			// return item.getValue().getBlockEntity();
 			// }
 			// }
@@ -301,17 +302,19 @@ public class BlockUnStableStore implements ActorService {
 				String fHash = oBlockEntity.getHeader().getParentHash();
 				long fNumber = oBlockEntity.getHeader().getNumber() - 1;
 				BlockStoreNodeValue oNode = null;
-				while (fHash != null && this.storage.contains(fHash, fNumber)) {
+				while (fHash != null && this.storage.contains(fHash, fNumber) && fNumber >= number) {
 					boolean isExistsChild = false;
-					oNode = this.storage.get(fHash, fNumber);
-
-					if (oNode.isConnect()) {
-						oNode.disConnect();
-						this.storage.put(oNode.getBlockHash(), oNode.getNumber(), oNode);
-
-						fHash = oNode.getBlockEntity().getHeader().getBlockHash();
-						fNumber = oNode.getBlockEntity().getHeader().getNumber() - 1;
+					BlockStoreNodeValue currentNode = this.storage.get(fHash, fNumber);
+					if (currentNode!= null && currentNode.isConnect()) {
+						currentNode.disConnect();
+						this.storage.put(currentNode.getBlockHash(), currentNode.getNumber(), currentNode);
+						log.debug("disconnect unstable cache number::" + oNode.getNumber() + " hash::"
+								+ currentNode.getBlockHash());
+						fHash = currentNode.getBlockEntity().getHeader().getBlockHash();
+						fNumber = currentNode.getBlockEntity().getHeader().getNumber() - 1;
 						isExistsChild = true;
+						
+						oNode = currentNode;
 					}
 
 					if (!isExistsChild) {
@@ -350,7 +353,8 @@ public class BlockUnStableStore implements ActorService {
 			}
 		}
 
-		// log.debug("====put disconnect block::" + block.getHeader().getBlockHash());
+		// log.debug("====put disconnect block::" +
+		// block.getHeader().getBlockHash());
 		dao.getBlockDao().put(oEntityHelper.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK),
 				oEntityHelper.byteValue2OValue(encApi.hexDec(block.getHeader().getBlockHash())));
 	}
