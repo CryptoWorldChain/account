@@ -67,17 +67,8 @@ public class TransactionLoadTestPerImpl extends SessionModules<ReqCreateTransact
 			MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 			MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
 			try {
-				// KeyPairs oFrom = encApi.genKeys( "a" + i);
-				// KeyPairs oTo = encApi.genKeys("b" + i);
 				KeyPairs oFrom = encApi.genKeys();
 				KeyPairs oTo = encApi.genKeys();
-				// accountHelper.addBalance(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())),
-				// 10);
-
-				//accountHelper.CreateAccount(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
-				// if (i % 2 == 1) {
-				//accountHelper.CreateAccount(ByteString.copyFrom(encApi.hexDec(oTo.getAddress())));
-				// }
 				MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
 				oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
 				oMultiTransactionInput4.setAmount(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(BigInteger.ZERO)));
@@ -105,10 +96,7 @@ public class TransactionLoadTestPerImpl extends SessionModules<ReqCreateTransact
 				transactionLoadTestStore.getLoads().add(oMultiTransaction);
 				log.debug("gen per tx::" + oMultiTransaction.getTxHash() + " sender::" + oFrom.getAddress()
 						+ " receiver::" + oTo.getAddress());
-				// String txHash = transactionHelper.CreateMultiTransaction(oMultiTransaction);
-			} catch (Exception e) {
-
-			}
+			} catch (Exception e) { }
 		}
 
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespCreateTransactionTest.build()));

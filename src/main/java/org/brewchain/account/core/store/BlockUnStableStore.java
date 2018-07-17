@@ -333,7 +333,7 @@ public class BlockUnStableStore implements ActorService {
 						this.storage.put(currentNode.getBlockHash(), currentNode.getNumber(), currentNode);
 						log.debug("disconnect unstable cache number::" + currentNode.getNumber() + " hash::"
 								+ currentNode.getBlockHash());
-						fHash = currentNode.getBlockEntity().getHeader().getBlockHash();
+						fHash = currentNode.getBlockEntity().getHeader().getParentHash();
 						fNumber = currentNode.getBlockEntity().getHeader().getNumber() - 1;
 						isExistsChild = true;
 
