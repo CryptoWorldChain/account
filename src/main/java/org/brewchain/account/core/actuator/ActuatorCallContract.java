@@ -46,7 +46,7 @@ public class ActuatorCallContract extends AbstractTransactionActuator implements
 		}
 
 		if (StringUtils.isNotBlank(input.getSymbol())
-				|| (input.getCryptoToken() != null || input.getCryptoToken() != ByteString.EMPTY)) {
+				|| (input.getCryptoToken() != null && !input.getCryptoToken().equals(ByteString.EMPTY))) {
 			throw new TransactionExecuteException("parameter invalid, crypto token must be null");
 		}
 
