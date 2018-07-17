@@ -85,7 +85,6 @@ public class TransactionCallContract extends SessionModules<ReqCallContract> {
 			oMultiTransactionBody.setTimestamp(System.currentTimeMillis());
 			// 签名
 			MultiTransactionSignature.Builder oMultiTransactionSignature21 = MultiTransactionSignature.newBuilder();
-			oMultiTransactionSignature21.setPubKey(ByteString.copyFrom(encApi.hexDec(pb.getPubKey())));
 			oMultiTransactionSignature21.setSignature(
 					ByteString.copyFrom(encApi.ecSign(pb.getPrivKey(), oMultiTransactionBody.build().toByteArray())));
 			oMultiTransactionBody.addSignatures(oMultiTransactionSignature21);

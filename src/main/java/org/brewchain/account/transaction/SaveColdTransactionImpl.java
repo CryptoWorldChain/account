@@ -101,7 +101,6 @@ public class SaveColdTransactionImpl extends SessionModules<ReqCreateTxColdPurse
 		oMultiTransactionInput.setCryptoToken(ByteString.EMPTY);
 		int nonce = accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(pb.getInputaddress())));
 		oMultiTransactionInput.setNonce(nonce);
-		oMultiTransactionInput.setPubKey(ByteString.copyFrom(encApi.hexDec(pb.getPublickey())));
 		oMultiTransactionInput.setSymbol("");
 		oMultiTransactionInput.setToken(pb.getToken());
 		oMultiTransactionBody.addInputs(oMultiTransactionInput);
@@ -118,7 +117,6 @@ public class SaveColdTransactionImpl extends SessionModules<ReqCreateTxColdPurse
 		// oMultiTransactionBodyImpl.setSignatures(index, value)
 		MultiTransactionSignature.Builder oMultiTransactionSignature = MultiTransactionSignature
 				.newBuilder();
-		oMultiTransactionSignature.setPubKey(ByteString.copyFrom(encApi.hexDec(pb.getPublickey())));
 		oMultiTransactionSignature.setSignature(ByteString.copyFrom(encApi.hexDec(pb.getSignature())));
 		oMultiTransactionBody.addSignatures(oMultiTransactionSignature);
 			

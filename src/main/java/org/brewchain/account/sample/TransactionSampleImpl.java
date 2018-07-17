@@ -74,7 +74,6 @@ public class TransactionSampleImpl extends SessionModules<ReqCreateTransactionTe
 				int nonce = accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(input.getAddress())));
 				oMultiTransactionInput4.setNonce(nonce);
 				oMultiTransactionInput4.setCryptoToken(ByteString.copyFrom(encApi.hexDec(input.getErc721Token())));
-				oMultiTransactionInput4.setPubKey(ByteString.copyFrom(encApi.hexDec(input.getPutkey())));
 				oMultiTransactionInput4.setSymbol(input.getErc721Symbol());
 				oMultiTransactionInput4.setToken(input.getErc20Symbol());
 
@@ -106,7 +105,6 @@ public class TransactionSampleImpl extends SessionModules<ReqCreateTransactionTe
 			// 签名
 			for (ReqTransactionAccount input : pb.getInputList()) {
 				MultiTransactionSignature.Builder oMultiTransactionSignature21 = MultiTransactionSignature.newBuilder();
-				oMultiTransactionSignature21.setPubKey(ByteString.copyFrom(encApi.hexDec(input.getPutkey())));
 				oMultiTransactionSignature21.setSignature(ByteString
 						.copyFrom(encApi.ecSign(input.getPrikey(), oMultiTransactionBody.build().toByteArray())));
 				oMultiTransactionBody.addSignatures(oMultiTransactionSignature21);

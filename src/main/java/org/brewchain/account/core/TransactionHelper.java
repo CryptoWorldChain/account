@@ -384,7 +384,6 @@ public class TransactionHelper implements ActorService {
 		oMultiTransactionInput.setAddress(ByteString.copyFrom(encApi.hexDec(oSingleTransaction.getSenderAddress())));
 		oMultiTransactionInput.setAmount(oSingleTransaction.getAmount());
 		oMultiTransactionInput.setNonce(oSingleTransaction.getNonce());
-		oMultiTransactionInput.setPubKey(ByteString.copyFrom(encApi.hexDec(oSingleTransaction.getPubKey())));
 		oMultiTransactionInput.setToken(oSingleTransaction.getToken());
 		// oMultiTransactionInput.setSymbol(oSingleTransaction.gets)
 
@@ -392,7 +391,6 @@ public class TransactionHelper implements ActorService {
 		oMultiTransactionOutput.setAmount(oSingleTransaction.getAmount());
 
 		oMultiTransactionSignature.setSignature(ByteString.copyFrom(encApi.hexDec(oSingleTransaction.getSignature())));
-		oMultiTransactionSignature.setPubKey(ByteString.copyFrom(encApi.hexDec(oSingleTransaction.getPubKey())));
 
 		for (String oDelegate : oSingleTransaction.getDelegateList()) {
 			oMultiTransactionBody.addDelegate(ByteString.copyFrom(encApi.hexDec(oDelegate)));
@@ -442,7 +440,6 @@ public class TransactionHelper implements ActorService {
 					.setAmount(ByteUtil.bytesToBigInteger(input.getAmount().toByteArray()).toString());
 			oMultiTransactionInputImpl.setCryptoToken(encApi.hexEnc(input.getCryptoToken().toByteArray()));
 			oMultiTransactionInputImpl.setNonce(input.getNonce());
-			oMultiTransactionInputImpl.setPubKey(encApi.hexEnc(input.getPubKey().toByteArray()));
 			oMultiTransactionInputImpl.setSymbol(input.getSymbol());
 			oMultiTransactionInputImpl.setToken(input.getToken());
 			oMultiTransactionBodyImpl.addInputs(oMultiTransactionInputImpl);
@@ -489,7 +486,6 @@ public class TransactionHelper implements ActorService {
 					.setAmount(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(new BigInteger(input.getAmount()))));
 			oMultiTransactionInput.setCryptoToken(ByteString.copyFrom(encApi.hexDec(input.getCryptoToken())));
 			oMultiTransactionInput.setNonce(input.getNonce());
-			oMultiTransactionInput.setPubKey(ByteString.copyFrom(encApi.hexDec(input.getPubKey())));
 			oMultiTransactionInput.setSymbol(input.getSymbol());
 			oMultiTransactionInput.setToken(input.getToken());
 			oMultiTransactionBody.addInputs(oMultiTransactionInput);

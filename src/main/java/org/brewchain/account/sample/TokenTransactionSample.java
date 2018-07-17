@@ -99,7 +99,6 @@ public class TokenTransactionSample extends SessionModules<ReqCreateTransactionT
 			// 签名
 			for (ReqTransactionAccount input : pb.getInputList()) {
 				MultiTransactionSignature.Builder oMultiTransactionSignature21 = MultiTransactionSignature.newBuilder();
-				oMultiTransactionSignature21.setPubKey(ByteString.copyFrom(encApi.hexDec(input.getPutkey())));
 				oMultiTransactionSignature21.setSignature(ByteString
 						.copyFrom(encApi.ecSign(input.getPrikey(), oMultiTransactionBody.build().toByteArray())));
 				oMultiTransactionBody.addSignatures(oMultiTransactionSignature21);

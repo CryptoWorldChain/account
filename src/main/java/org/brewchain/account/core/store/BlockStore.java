@@ -171,6 +171,10 @@ public class BlockStore implements ActorService {
 		if (unStableStore.add(block)) {
 			BlockStoreNodeValue oParentNode = unStableStore.getNode(parentHash, number - 1);
 			BlockEntity oParent = null;
+			if (oParentNode == null) {
+				log.debug("try to restore from db into unstable cache::" + parentHash + " number::" + (number - 1));
+				oParentNode = unStableStore.tryToRestoreFromDb(parentHash, number - 1);
+			}
 			if (oParentNode == null && block.getHeader().getNumber() == 1) {
 				oParent = stableStore.get(block.getHeader().getParentHash());
 				if (oParent.getHeader().getNumber() == 0) {

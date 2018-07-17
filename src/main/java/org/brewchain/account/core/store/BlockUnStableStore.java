@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -17,12 +18,15 @@ import org.brewchain.account.core.store.BlockStore.BlockNotFoundInStoreException
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.util.ALock;
 import org.brewchain.account.util.OEntityBuilder;
+import org.brewchain.bcapi.backend.ODBException;
+import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import com.google.common.collect.Table.Cell;
+import com.google.protobuf.InvalidProtocolBufferException;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -115,7 +119,7 @@ public class BlockUnStableStore implements ActorService {
 			if (oBlockStoreNodeValue != null) {
 				return oBlockStoreNodeValue;
 			}
-			log.warn(" not found hash::" + hash);
+			log.warn(" not found hash::" + hash + " number::" + number);
 			return null;
 		}
 	}
@@ -264,6 +268,25 @@ public class BlockUnStableStore implements ActorService {
 		// return null;
 	}
 
+	public BlockEntity getBlockByNumberAndHash(String hash, long number) {
+		try (ALock l = readLock.lock()) {
+			if (storage.contains(hash, number)) {
+				return storage.get(hash, number).getBlockEntity();
+			}
+			return null;
+
+			// for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it =
+			// storage.entrySet().iterator(); it.hasNext();) {
+			// Map.Entry<String, BlockStoreNodeValue> item = it.next();
+			// if (item.getValue().getNumber() == number &&
+			// item.getValue().isConnect()) {
+			// return item.getValue().getBlockEntity();
+			// }
+			// }
+		}
+		// return null;
+	}
+
 	public List<BlockEntity> getBlocksByNumber(long number) {
 		try (ALock l = readLock.lock()) {
 			List<BlockEntity> list = new ArrayList<>();
@@ -305,7 +328,7 @@ public class BlockUnStableStore implements ActorService {
 				while (fHash != null && this.storage.contains(fHash, fNumber) && fNumber >= number) {
 					boolean isExistsChild = false;
 					BlockStoreNodeValue currentNode = this.storage.get(fHash, fNumber);
-					if (currentNode!= null && currentNode.isConnect()) {
+					if (currentNode != null && currentNode.isConnect()) {
 						currentNode.disConnect();
 						this.storage.put(currentNode.getBlockHash(), currentNode.getNumber(), currentNode);
 						log.debug("disconnect unstable cache number::" + currentNode.getNumber() + " hash::"
@@ -313,7 +336,7 @@ public class BlockUnStableStore implements ActorService {
 						fHash = currentNode.getBlockEntity().getHeader().getBlockHash();
 						fNumber = currentNode.getBlockEntity().getHeader().getNumber() - 1;
 						isExistsChild = true;
-						
+
 						oNode = currentNode;
 					}
 
@@ -364,10 +387,37 @@ public class BlockUnStableStore implements ActorService {
 			for (Iterator<Cell<String, Long, BlockStoreNodeValue>> it = storage.cellSet().iterator(); it.hasNext();) {
 				Cell<String, Long, BlockStoreNodeValue> item = it.next();
 				if (item.getValue().getNumber() <= number) {
+					log.debug("remove fork block number::" + item.getColumnKey() + " hash::" + item.getRowKey());
 					dao.getBlockDao().delete(oEntityHelper.byteKey2OKey(encApi.hexDec(item.getRowKey())));
 					it.remove();
 				}
 			}
 		}
+	}
+
+	public BlockStoreNodeValue tryToRestoreFromDb(String hash, long number) {
+		BlockEntity block = getFromDB(hash);
+		if (block != null) {
+			if (number == block.getHeader().getNumber()) {
+				add(block);
+				return getNode(hash, block.getHeader().getNumber());
+			}
+		}
+		return null;
+	}
+
+	public BlockEntity getFromDB(String hash) {
+		BlockEntity block = null;
+		OValue v = null;
+		try {
+			v = dao.getBlockDao().get(oEntityHelper.byteKey2OKey(encApi.hexDec(hash))).get();
+			if (v != null) {
+				block = BlockEntity.parseFrom(v.getExtdata());
+			}
+		} catch (ODBException | InterruptedException | ExecutionException | InvalidProtocolBufferException e) {
+			log.error("get block from db error :: " + e.getMessage());
+		}
+
+		return block;
 	}
 }
