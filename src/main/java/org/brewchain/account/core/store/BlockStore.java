@@ -5,6 +5,7 @@ import static java.lang.String.format;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -14,11 +15,14 @@ import org.brewchain.account.core.KeyConstant;
 import org.brewchain.account.core.store.BlockStoreSummary.BLOCK_BEHAVIOR;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.util.OEntityBuilder;
+import org.brewchain.bcapi.backend.ODBException;
+import org.brewchain.bcapi.gens.Oentity.OPair;
 import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -100,11 +104,9 @@ public class BlockStore implements ActorService {
 			long parentNumber = oBlockEntity.getHeader().getNumber() - 1;
 			while (StringUtils.isNotBlank(parentHash) && c < KeyConstant.CACHE_SIZE) {
 				c += 1;
-				BlockEntity loopBlockEntity = null;
-				loopBlockEntity = getBlockByHash(parentHash, parentNumber);
-				if (loopBlockEntity == null) {
-					break;
-				} else {
+				// load block by number
+				List<BlockEntity> loopBlocks = getBlocksByNumber(parentNumber);
+				for (BlockEntity loopBlockEntity : loopBlocks) {
 					if (blockNumber - 1 != loopBlockEntity.getHeader().getNumber()) {
 						throw new Exception(String.format("respect block number %s ,get block number %s",
 								blockNumber - 1, loopBlockEntity.getHeader().getNumber()));
@@ -134,13 +136,9 @@ public class BlockStore implements ActorService {
 							maxConnectBlock = loopBlockEntity;
 						}
 					}
-					if (loopBlockEntity.getHeader().getParentHash() != null) {
-						parentHash = loopBlockEntity.getHeader().getParentHash();
-						parentNumber = loopBlockEntity.getHeader().getNumber() - 1;
-					} else {
-						break;
-					}
 				}
+
+				parentNumber -= 1;
 			}
 		}
 	}
@@ -171,10 +169,12 @@ public class BlockStore implements ActorService {
 		if (unStableStore.add(block)) {
 			BlockStoreNodeValue oParentNode = unStableStore.getNode(parentHash, number - 1);
 			BlockEntity oParent = null;
-			if (oParentNode == null) {
-				log.debug("try to restore from db into unstable cache::" + parentHash + " number::" + (number - 1));
-				oParentNode = unStableStore.tryToRestoreFromDb(parentHash, number - 1);
-			}
+			// if (oParentNode == null && block.getHeader().getNumber() != 1) {
+			// log.debug("try to restore from db into unstable cache::" +
+			// parentHash + " number::" + (number - 1));
+			// oParentNode = unStableStore.tryToRestoreFromDb(parentHash, number
+			// - 1);
+			// }
 			if (oParentNode == null && block.getHeader().getNumber() == 1) {
 				oParent = stableStore.get(block.getHeader().getParentHash());
 				if (oParent.getHeader().getNumber() == 0) {
@@ -265,6 +265,21 @@ public class BlockStore implements ActorService {
 			oBlockEntity = stableStore.getBlockByNumber(number);
 		}
 		return oBlockEntity;
+	}
+
+	public List<BlockEntity> getBlocksByNumber(long number) {
+		List<BlockEntity> ret = new ArrayList<>();
+		try {
+			List<OPair> oPairs = dao.getBlockDao().listBySecondKey(String.valueOf(number)).get();
+			if (oPairs.size() > 0) {
+				BlockEntity block = BlockEntity.parseFrom(oPairs.get(0).getValue().getExtdata());
+				ret.add(block);
+			}
+		} catch (ODBException | InterruptedException | ExecutionException | InvalidProtocolBufferException e) {
+			log.error("get block from db error :: " + e.getMessage());
+		}
+
+		return ret;
 	}
 
 	public BlockEntity getBlockByHash(String hash) {
