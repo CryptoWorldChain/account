@@ -82,64 +82,68 @@ public class BlockStore implements ActorService {
 					maxStableBlock = oBlockEntity;
 				}
 			} else {
-				log.debug("load block into unstable cache number::" + oBlockEntity.getHeader().getNumber() + " hash::"
-						+ oBlockEntity.getHeader().getBlockHash() + " stateroot::"
-						+ oBlockEntity.getHeader().getStateRoot());
-				unStableStore.add(oBlockEntity);
-				unStableStore.connect(oBlockEntity.getHeader().getBlockHash(), oBlockEntity.getHeader().getNumber());
-				if (maxReceiveNumber < oBlockEntity.getHeader().getNumber()) {
-					maxReceiveNumber = oBlockEntity.getHeader().getNumber();
-					maxReceiveBlock = oBlockEntity;
-				}
-				if (maxConnectNumber < oBlockEntity.getHeader().getNumber()) {
-					maxConnectNumber = oBlockEntity.getHeader().getNumber();
-					maxConnectBlock = oBlockEntity;
-				}
-			}
-
-			long blockNumber = oBlockEntity.getHeader().getNumber();
-			long maxBlockNumber = blockNumber;
-			int c = 0;
-			String parentHash = oBlockEntity.getHeader().getParentHash();
-			long parentNumber = oBlockEntity.getHeader().getNumber() - 1;
-			while (StringUtils.isNotBlank(parentHash) && c < KeyConstant.CACHE_SIZE) {
-				c += 1;
-				// load block by number
-				List<BlockEntity> loopBlocks = getBlocksByNumber(parentNumber);
-				for (BlockEntity loopBlockEntity : loopBlocks) {
-					if (blockNumber - 1 != loopBlockEntity.getHeader().getNumber()) {
-						throw new Exception(String.format("respect block number %s ,get block number %s",
-								blockNumber - 1, loopBlockEntity.getHeader().getNumber()));
+				long blockNumber = oBlockEntity.getHeader().getNumber();
+				long maxBlockNumber = blockNumber;
+				int c = 0;
+				// String parentHash = oBlockEntity.getHeader().getParentHash();
+				// long parentNumber = oBlockEntity.getHeader().getNumber() - 1;
+				while (blockNumber > 0 && c < KeyConstant.CACHE_SIZE) {
+					c += 1;
+					// load block by number
+					List<BlockEntity> loopBlocks = getBlocksByNumber(blockNumber);
+					for (BlockEntity loopBlockEntity : loopBlocks) {
+						if (blockNumber != loopBlockEntity.getHeader().getNumber()) {
+							throw new Exception(String.format("respect block number %s ,get block number %s",
+									blockNumber, loopBlockEntity.getHeader().getNumber()));
+						}
+						if (maxBlockNumber > (blockNumber + blockChainConfig.getStableBlocks())) {
+							log.debug("load block into stable cache number::" + loopBlockEntity.getHeader().getNumber()
+									+ " hash::" + loopBlockEntity.getHeader().getBlockHash() + " stateroot::"
+									+ loopBlockEntity.getHeader().getStateRoot());
+							stableStore.add(loopBlockEntity);
+							if (maxStableNumber < loopBlockEntity.getHeader().getNumber()) {
+								maxStableNumber = loopBlockEntity.getHeader().getNumber();
+								maxStableBlock = loopBlockEntity;
+							}
+						} else {
+							log.debug(
+									"load block into unstable cache number::" + loopBlockEntity.getHeader().getNumber()
+											+ " hash::" + loopBlockEntity.getHeader().getBlockHash() + " stateroot::"
+											+ loopBlockEntity.getHeader().getStateRoot());
+							unStableStore.add(loopBlockEntity);
+							unStableStore.append(loopBlockEntity.getHeader().getBlockHash(), loopBlockEntity.getHeader().getNumber());
+							if (maxReceiveNumber < loopBlockEntity.getHeader().getNumber()) {
+								maxReceiveNumber = loopBlockEntity.getHeader().getNumber();
+								maxReceiveBlock = loopBlockEntity;
+							}
+							if (maxConnectNumber < loopBlockEntity.getHeader().getNumber()) {
+								maxConnectNumber = loopBlockEntity.getHeader().getNumber();
+								maxConnectBlock = loopBlockEntity;
+							}
+						}
 					}
+
 					blockNumber -= 1;
-					if (maxBlockNumber > (blockNumber + blockChainConfig.getStableBlocks())) {
-						log.debug("load block into stable cache number::" + loopBlockEntity.getHeader().getNumber()
-								+ " hash::" + loopBlockEntity.getHeader().getBlockHash() + " stateroot::"
-								+ loopBlockEntity.getHeader().getStateRoot());
-						stableStore.add(loopBlockEntity);
-						if (maxStableNumber < loopBlockEntity.getHeader().getNumber()) {
-							maxStableNumber = loopBlockEntity.getHeader().getNumber();
-							maxStableBlock = loopBlockEntity;
-						}
-					} else {
-						log.debug("load block into unstable cache number::" + loopBlockEntity.getHeader().getNumber()
-								+ " hash::" + loopBlockEntity.getHeader().getBlockHash() + " stateroot::"
-								+ loopBlockEntity.getHeader().getStateRoot());
-						unStableStore.add(loopBlockEntity);
-						unStableStore.append(parentHash, parentNumber);
-						if (maxReceiveNumber < loopBlockEntity.getHeader().getNumber()) {
-							maxReceiveNumber = loopBlockEntity.getHeader().getNumber();
-							maxReceiveBlock = loopBlockEntity;
-						}
-						if (maxConnectNumber < loopBlockEntity.getHeader().getNumber()) {
-							maxConnectNumber = loopBlockEntity.getHeader().getNumber();
-							maxConnectBlock = loopBlockEntity;
-						}
-					}
 				}
-
-				parentNumber -= 1;
 			}
+			// else {
+			// log.debug("load block into unstable cache number::" +
+			// oBlockEntity.getHeader().getNumber() + " hash::"
+			// + oBlockEntity.getHeader().getBlockHash() + " stateroot::"
+			// + oBlockEntity.getHeader().getStateRoot());
+			// unStableStore.add(oBlockEntity);
+			// unStableStore.connect(oBlockEntity.getHeader().getBlockHash(),
+			// oBlockEntity.getHeader().getNumber());
+			// if (maxReceiveNumber < oBlockEntity.getHeader().getNumber()) {
+			// maxReceiveNumber = oBlockEntity.getHeader().getNumber();
+			// maxReceiveBlock = oBlockEntity;
+			// }
+			// if (maxConnectNumber < oBlockEntity.getHeader().getNumber()) {
+			// maxConnectNumber = oBlockEntity.getHeader().getNumber();
+			// maxConnectBlock = oBlockEntity;
+			// }
+			// }
+
 		}
 	}
 
