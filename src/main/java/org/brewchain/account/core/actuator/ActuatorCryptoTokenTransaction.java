@@ -160,14 +160,14 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 				isIncreaseNonce = true;
 			}
 
-			DBTrie oCacheTrie = new DBTrie(this.dao, oTransactionHelper.getOEntityHelper());
-			if (oAccountValue.getStorage() == null) {
-				oCacheTrie.setRoot(null);
-			} else {
-				oCacheTrie.setRoot(oAccountValue.getStorage().toByteArray());
-			}
-			oCacheTrie.put(oInput.getAddress().toByteArray(), oAccountValue.build().toByteArray());
-			oAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
+//			DBTrie oCacheTrie = new DBTrie(this.dao, oTransactionHelper.getOEntityHelper());
+//			if (oAccountValue.getStorage() == null) {
+//				oCacheTrie.setRoot(null);
+//			} else {
+//				oCacheTrie.setRoot(oAccountValue.getStorage().toByteArray());
+//			}
+//			oCacheTrie.put(oInput.getAddress().toByteArray(), oAccountValue.build().toByteArray());
+//			oAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
 
 			// keys.add(OEntityBuilder.byteKey2OKey(oInput.getAddress().toByteArray()));
 			// values.add(oAccountValue.build());
@@ -182,6 +182,9 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 			MultiTransactionOutput oOutput = oMultiTransaction.getTxBody().getOutputs(i);
 
 			Account.Builder receiver = accounts.get(encApi.hexEnc(oOutput.getAddress().toByteArray()));
+			if (receiver == null) {
+				receiver = oAccountHelper.CreateAccount(oOutput.getAddress()).toBuilder();
+			}
 			AccountValue.Builder receiverAccountValue = receiver.getValue().toBuilder();
 
 			receiverAccountValue.setBalance(ByteString.copyFrom(ByteUtil
@@ -235,14 +238,14 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 				}
 			}
 
-			DBTrie oCacheTrie = new DBTrie(this.dao, oTransactionHelper.getOEntityHelper());
-			if (receiverAccountValue.getStorage() == null) {
-				oCacheTrie.setRoot(null);
-			} else {
-				oCacheTrie.setRoot(receiverAccountValue.getStorage().toByteArray());
-			}
-			oCacheTrie.put(receiver.getAddress().toByteArray(), receiverAccountValue.build().toByteArray());
-			receiverAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
+//			DBTrie oCacheTrie = new DBTrie(this.dao, oTransactionHelper.getOEntityHelper());
+//			if (receiverAccountValue.getStorage() == null) {
+//				oCacheTrie.setRoot(null);
+//			} else {
+//				oCacheTrie.setRoot(receiverAccountValue.getStorage().toByteArray());
+//			}
+//			oCacheTrie.put(receiver.getAddress().toByteArray(), receiverAccountValue.build().toByteArray());
+//			receiverAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
 
 			// keys.add(OEntityBuilder.byteKey2OKey(oOutput.getAddress().toByteArray()));
 			// values.add(receiverAccountValue.build());

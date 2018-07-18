@@ -110,7 +110,8 @@ public class TransactionHelper implements ActorService {
 		oPendingHashMapDB.put(formatMultiTransaction.getTxHash(), formatMultiTransaction);
 
 		// {node} {component} {opt} {type} {msg}
-		log.info(String.format("LOGFILTER %s %s %s %s 创建交易[%s]", KeyConstant.node.getNode(), "account", "create",
+		log.info(String.format("LOGFILTER %s %s %s %s 创建交易[%s]",
+				encApi.hexEnc(KeyConstant.node.getoAccount().getAddress().toByteArray()), "account", "create",
 				"transaction", formatMultiTransaction.getTxHash()));
 
 		return formatMultiTransaction.getTxHash();
@@ -161,13 +162,16 @@ public class TransactionHelper implements ActorService {
 	}
 
 	public void syncTransaction(MultiTransaction.Builder oMultiTransaction, boolean isBroadCast) {
-		log.debug("receive sync txhash::" + oMultiTransaction.getTxHash());
+		log.debug("receive sync txhash::" + oMultiTransaction.getTxHash() + " status::" + oMultiTransaction.getStatus());
 		try {
 			OValue oValue = dao.getTxsDao()
 					.get(oEntityHelper.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash()))).get();
 			if (oValue != null) {
 				log.warn("transaction " + oMultiTransaction.getTxHash() + " exists, drop it");
 			} else {
+				oMultiTransaction.clearStatus();
+				oMultiTransaction.clearResult();
+				
 				dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash())),
 						oEntityHelper.byteValue2OValue(oMultiTransaction.build().toByteArray()));
 
@@ -647,19 +651,19 @@ public class TransactionHelper implements ActorService {
 		Map<String, Account.Builder> accounts = new HashMap<>();
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			accounts.put(encApi.hexEnc(oInput.getAddress().toByteArray()),
-					oAccountHelper.GetAccountOrCreate(oInput.getAddress()).toBuilder());
+					oAccountHelper.GetAccount(oInput.getAddress()).toBuilder());
 		}
 
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
+			Account receiver = oAccountHelper.GetAccount(oOutput.getAddress());
 			accounts.put(encApi.hexEnc(oOutput.getAddress().toByteArray()),
-					oAccountHelper.GetAccountOrCreate(oOutput.getAddress()).toBuilder());
+					receiver == null ? null : receiver.toBuilder());
 		}
 
 		if (StringUtils.isNotBlank(blockChainConfig.getLock_account_address())) {
 			accounts.put(blockChainConfig.getLock_account_address(),
 					oAccountHelper
-							.GetAccountOrCreate(
-									ByteString.copyFrom(encApi.hexDec(blockChainConfig.getLock_account_address())))
+							.GetAccount(ByteString.copyFrom(encApi.hexDec(blockChainConfig.getLock_account_address())))
 							.toBuilder());
 		}
 		return accounts;

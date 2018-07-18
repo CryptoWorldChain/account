@@ -101,14 +101,14 @@ public class ActuatorLockTokenTransaction extends AbstractTransactionActuator im
 			senderAccountValue.setBalance(senderAccountValue.getBalance());
 			senderAccountValue.setNonce(senderAccountValue.getNonce() + 1);
 
-			DBTrie oCacheTrie = new DBTrie(this.dao, oTransactionHelper.getOEntityHelper());
-			if (senderAccountValue.getStorage() == null) {
-				oCacheTrie.setRoot(null);
-			} else {
-				oCacheTrie.setRoot(senderAccountValue.getStorage().toByteArray());
-			}
-			oCacheTrie.put(sender.getAddress().toByteArray(), senderAccountValue.build().toByteArray());
-			senderAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
+//			DBTrie oCacheTrie = new DBTrie(this.dao, oTransactionHelper.getOEntityHelper());
+//			if (senderAccountValue.getStorage() == null) {
+//				oCacheTrie.setRoot(null);
+//			} else {
+//				oCacheTrie.setRoot(senderAccountValue.getStorage().toByteArray());
+//			}
+//			oCacheTrie.put(sender.getAddress().toByteArray(), senderAccountValue.build().toByteArray());
+//			senderAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
 
 			sender.setValue(senderAccountValue);
 			accounts.put(encApi.hexEnc(sender.getAddress().toByteArray()), sender);

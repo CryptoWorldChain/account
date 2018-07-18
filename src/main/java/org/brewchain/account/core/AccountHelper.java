@@ -105,7 +105,7 @@ public class AccountHelper implements ActorService {
 	}
 
 	public Account CreateUnionAccount(Account oAccount) {
-		putAccountValue(oAccount.getAddress(), oAccount.getValue());
+		// putAccountValue(oAccount.getAddress(), oAccount.getValue());
 		return oAccount;
 	}
 

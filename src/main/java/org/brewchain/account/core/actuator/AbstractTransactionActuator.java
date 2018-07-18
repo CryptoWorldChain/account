@@ -245,32 +245,35 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 					.bytesSubToBytes(senderAccountValue.getBalance().toByteArray(), oInput.getAmount().toByteArray())));
 
 			senderAccountValue.setNonce(senderAccountValue.getNonce() + 1);
-			DBTrie oCacheTrie = new DBTrie(this.dao, oTransactionHelper.getOEntityHelper());
-			if (senderAccountValue.getStorage() == null) {
-				oCacheTrie.setRoot(null);
-			} else {
-				oCacheTrie.setRoot(senderAccountValue.getStorage().toByteArray());
-			}
-			oCacheTrie.put(sender.getAddress().toByteArray(), senderAccountValue.build().toByteArray());
-			senderAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
+//			DBTrie oCacheTrie = new DBTrie(this.dao, oTransactionHelper.getOEntityHelper());
+//			if (senderAccountValue.getStorage() == null) {
+//				oCacheTrie.setRoot(null);
+//			} else {
+//				oCacheTrie.setRoot(senderAccountValue.getStorage().toByteArray());
+//			}
+//			oCacheTrie.put(sender.getAddress().toByteArray(), senderAccountValue.build().toByteArray());
+//			senderAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
 			sender.setValue(senderAccountValue);
 			accounts.put(encApi.hexEnc(sender.getAddress().toByteArray()), sender);
 		}
 
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
 			Account.Builder receiver = accounts.get(encApi.hexEnc(oOutput.getAddress().toByteArray()));
+			if (receiver == null) {
+				receiver = oAccountHelper.CreateAccount(oOutput.getAddress()).toBuilder();
+			}
 			AccountValue.Builder receiverAccountValue = receiver.getValue().toBuilder();
 			receiverAccountValue.setBalance(ByteString.copyFrom(ByteUtil.bytesAddToBytes(
 					receiverAccountValue.getBalance().toByteArray(), oOutput.getAmount().toByteArray())));
 
-			DBTrie oCacheTrie = new DBTrie(this.dao, oTransactionHelper.getOEntityHelper());
-			if (receiverAccountValue.getStorage() == null) {
-				oCacheTrie.setRoot(null);
-			} else {
-				oCacheTrie.setRoot(receiverAccountValue.getStorage().toByteArray());
-			}
-			oCacheTrie.put(receiver.getAddress().toByteArray(), receiverAccountValue.build().toByteArray());
-			receiverAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
+//			DBTrie oCacheTrie = new DBTrie(this.dao, oTransactionHelper.getOEntityHelper());
+//			if (receiverAccountValue.getStorage() == null) {
+//				oCacheTrie.setRoot(null);
+//			} else {
+//				oCacheTrie.setRoot(receiverAccountValue.getStorage().toByteArray());
+//			}
+//			oCacheTrie.put(receiver.getAddress().toByteArray(), receiverAccountValue.build().toByteArray());
+//			receiverAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
 			receiver.setValue(receiverAccountValue);
 			accounts.put(encApi.hexEnc(receiver.getAddress().toByteArray()), receiver);
 		}

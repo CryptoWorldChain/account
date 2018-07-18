@@ -158,7 +158,7 @@ public class V1Processor implements IProcessor, ActorService {
 			// .setHeader(oBlockEntity.getHeaderBuilder().setStateRoot(oBlockEntity.getHeader().getStateRoot()));
 			blockChainHelper.connectBlock(oBlockEntity.build());
 
-			log.info(String.format("LOGFILTER %s %s %s %s 执行区块[%s]", KeyConstant.node.getoAccount().getAddress(),
+			log.info(String.format("LOGFILTER %s %s %s %s 执行区块[%s]", encApi.hexEnc(KeyConstant.node.getoAccount().getAddress().toByteArray()),
 					"account", "apply", "block", oBlockEntity.getHeader().getBlockHash()));
 
 			log.debug("new block, number::" + oBlockEntity.getHeader().getNumber() + " hash::"

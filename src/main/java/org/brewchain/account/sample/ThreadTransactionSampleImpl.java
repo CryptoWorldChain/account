@@ -101,7 +101,7 @@ public class ThreadTransactionSampleImpl extends SessionModules<ReqThreadTransac
 						// KeyPairs oFrom = encApi.genKeys();
 						KeyPairs oTo = encApi.genKeys();
 
-						accountHelper.addBalance(ByteString.copyFrom(encApi.hexDec(address)), new BigInteger("100"));
+						// accountHelper.addBalance(ByteString.copyFrom(encApi.hexDec(address)), new BigInteger("100"));
 
 						MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 						MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
