@@ -304,8 +304,8 @@ public class BlockStore implements ActorService {
 
 	public BlockEntity getReadyConnectBlock(String hash, long number) {
 		List<BlockEntity> lists = unStableStore.getBlocksByNumber(number + 1);
-		for (Iterator iterator = lists.iterator(); iterator.hasNext();) {
-			BlockEntity blockEntity = (BlockEntity) iterator.next();
+		for (Iterator<BlockEntity> iterator = lists.iterator(); iterator.hasNext();) {
+			BlockEntity blockEntity = iterator.next();
 			if (blockEntity.getHeader().getParentHash().equals(hash)) {
 				return blockEntity;
 			}
