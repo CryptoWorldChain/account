@@ -183,6 +183,12 @@ public class V1Processor implements IProcessor, ActorService {
 		for (String txHash : oBlockHeader.getTxHashsList()) {
 			transactionHelper.removeWaitBlockTx(txHash);
 			MultiTransaction oMultiTransaction = transactionHelper.GetTransaction(txHash);
+
+			log.debug("Thread Transaction Test ==> exec hash::" + txHash + " from::"
+					+ encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(0).getAddress().toByteArray()) + " nonce::"
+					+ oMultiTransaction.getTxBody().getInputs(0).getNonce() + " to::"
+					+ encApi.hexEnc(oMultiTransaction.getTxBody().getOutputs(0).getAddress().toByteArray()));
+
 			oTrieImpl.put(encApi.hexDec(oMultiTransaction.getTxHash()),
 					transactionHelper.getTransactionContent(oMultiTransaction));
 			bb.addTxs(oMultiTransaction);
@@ -239,7 +245,8 @@ public class V1Processor implements IProcessor, ActorService {
 					blockChainHelper.reAddBlock(applyBlock.build());
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
 				} else {
-					log.info("already exists, drop it::" + applyBlock.getHeader().getNumber() + " last::" + blockChainHelper.getLastBlockNumber());
+					log.info("already exists, drop it::" + applyBlock.getHeader().getNumber() + " last::"
+							+ blockChainHelper.getLastBlockNumber());
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 				}
 				break;
@@ -284,6 +291,7 @@ public class V1Processor implements IProcessor, ActorService {
 				}
 				if (oAddBlockResponse.getTxHashsCount() > 0) {
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.ERROR);
+					oAddBlockResponse.setWantNumber(applyBlock.getHeader().getNumber());
 					break;
 				}
 
@@ -305,7 +313,7 @@ public class V1Processor implements IProcessor, ActorService {
 									.equals(applyBlock.getHeader().getReceiptTrieRoot())) {
 						log.error("begin to roll back, stateRoot::" + oBlockEntity.getHeader().getStateRoot()
 								+ " blockStateRoot::" + applyBlock.getHeader().getStateRoot());
-						
+
 						blockChainHelper.rollbackTo(applyBlock.getHeader().getNumber() - 1);
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.ERROR);
 					} else {
@@ -328,7 +336,7 @@ public class V1Processor implements IProcessor, ActorService {
 				break;
 			case ERROR:
 				log.error("fail to apply block number::" + applyBlock.getHeader().getNumber());
-				// 
+				//
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 				break;
 			}

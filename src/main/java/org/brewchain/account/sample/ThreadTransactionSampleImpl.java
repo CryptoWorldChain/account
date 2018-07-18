@@ -62,20 +62,31 @@ public class ThreadTransactionSampleImpl extends SessionModules<ReqThreadTransac
 	public void onPBPacket(final FramePacket pack, final ReqThreadTransaction pb, final CompleteHandler handler) {
 		RespCommonTest.Builder oRespCommonTest = RespCommonTest.newBuilder();
 		for (int i = 0; i < pb.getThreads(); i++) {
-			ThreadTransaction oThreadTransaction = new ThreadTransaction(transactionHelper, encApi);
+			ThreadTransaction oThreadTransaction = new ThreadTransaction(transactionHelper, encApi, pb.getDuration(),
+					pb.getAddress(i), pb.getPrivKey(i), "");
 			oThreadTransaction.start();
 		}
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespCommonTest.build()));
 		return;
+
 	}
 
 	public class ThreadTransaction extends Thread {
 		private final TransactionHelper th;
 		private final EncAPI encApi;
+		private final int duration;
+		private final String address;
+		private final String privKey;
+		private final String pubKey;
 
-		public ThreadTransaction(TransactionHelper transactionHelper, EncAPI enc) {
+		public ThreadTransaction(TransactionHelper transactionHelper, EncAPI enc, int duration, String address,
+				String privKey, String pubKey) {
 			this.th = transactionHelper;
 			this.encApi = enc;
+			this.duration = duration;
+			this.address = address;
+			this.privKey = privKey;
+			this.pubKey = pubKey;
 		}
 
 		@Override
@@ -87,26 +98,28 @@ public class ThreadTransactionSampleImpl extends SessionModules<ReqThreadTransac
 				@Override
 				public void run() {
 					try {
-						KeyPairs oFrom = encApi.genKeys();
+						// KeyPairs oFrom = encApi.genKeys();
 						KeyPairs oTo = encApi.genKeys();
 
-						accountHelper.addBalance(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())),new BigInteger("100"));
+						accountHelper.addBalance(ByteString.copyFrom(encApi.hexDec(address)), new BigInteger("100"));
 
 						MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 						MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
 
 						MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
-						oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
-						oMultiTransactionInput4.setAmount(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(new BigInteger("2"))));
+						oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(address)));
+						oMultiTransactionInput4
+								.setAmount(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(new BigInteger("2"))));
 						int nonce = 0;
-						nonce = accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
+						nonce = accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(address)));
 						// nonce = nonce + i - 1;
 						oMultiTransactionInput4.setNonce(nonce);
 						oMultiTransactionBody.addInputs(oMultiTransactionInput4);
 
 						MultiTransactionOutput.Builder oMultiTransactionOutput1 = MultiTransactionOutput.newBuilder();
 						oMultiTransactionOutput1.setAddress(ByteString.copyFrom(encApi.hexDec(oTo.getAddress())));
-						oMultiTransactionOutput1.setAmount(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(new BigInteger("2"))));
+						oMultiTransactionOutput1
+								.setAmount(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(new BigInteger("2"))));
 						oMultiTransactionBody.addOutputs(oMultiTransactionOutput1);
 
 						// oMultiTransactionBody.setData(pb.getData());
@@ -116,18 +129,20 @@ public class ThreadTransactionSampleImpl extends SessionModules<ReqThreadTransac
 						// 签名
 						MultiTransactionSignature.Builder oMultiTransactionSignature21 = MultiTransactionSignature
 								.newBuilder();
-						oMultiTransactionSignature21.setSignature(ByteString.copyFrom(
-								encApi.ecSign(oFrom.getPrikey(), oMultiTransactionBody.build().toByteArray())));
+						oMultiTransactionSignature21.setSignature(ByteString
+								.copyFrom(encApi.ecSign(privKey, oMultiTransactionBody.build().toByteArray())));
 						oMultiTransactionBody.addSignatures(oMultiTransactionSignature21);
 
 						oMultiTransaction.setTxBody(oMultiTransactionBody);
-						th.CreateMultiTransaction(oMultiTransaction);
+						String txHash = th.CreateMultiTransaction(oMultiTransaction);
+						log.debug("Thread Transaction Test ==> txHash::" + txHash + " form::" + address + " nonce::" + nonce + " to::"
+								+ oTo.getAddress());
 					} catch (Exception e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				}
-			}, 0, 100);
+			}, 0, this.duration);
 		}
 	}
 }

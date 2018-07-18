@@ -87,6 +87,10 @@ message RespStopFork {
 
 message ReqThreadTransaction {
 	int32 threads = 1;
+	int32 duration = 2;
+	repeated string address = 3;
+	repeated string privKey = 4;
+	repeated string pubKey = 5;
 }
 
 message ReqCommonTest {

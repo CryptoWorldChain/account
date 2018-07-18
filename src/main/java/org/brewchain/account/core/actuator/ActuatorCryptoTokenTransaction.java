@@ -137,7 +137,7 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 			if (oInput.getCryptoToken() != null && !oInput.getCryptoToken().equals(ByteString.EMPTY)) {
 				for (int k = 0; k < oAccountValue.getCryptosCount(); k++) {
 
-					if (oAccountValue.getCryptosList().get(k+5).getSymbol().equals(oInput.getSymbol())) {
+					if (oAccountValue.getCryptosList().get(k).getSymbol().equals(oInput.getSymbol())) {
 						AccountCryptoValue.Builder value = oAccountValue.getCryptosList().get(k).toBuilder();
 
 						for (int j = 0; j < value.getTokensCount(); j++) {

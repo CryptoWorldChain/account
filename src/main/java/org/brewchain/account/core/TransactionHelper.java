@@ -163,13 +163,19 @@ public class TransactionHelper implements ActorService {
 	public void syncTransaction(MultiTransaction.Builder oMultiTransaction, boolean isBroadCast) {
 		log.debug("receive sync txhash::" + oMultiTransaction.getTxHash());
 		try {
-			MultiTransaction formatMultiTransaction = verifyAndSaveMultiTransaction(oMultiTransaction);
+			OValue oValue = dao.getTxsDao()
+					.get(oEntityHelper.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash()))).get();
+			if (oValue != null) {
+				log.warn("transaction " + oMultiTransaction.getTxHash() + " exists, drop it");
+			} else {
+				dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash())),
+						oEntityHelper.byteValue2OValue(oMultiTransaction.build().toByteArray()));
 
-			if (isBroadCast) {
-				// 保存交易到缓存中，用于打包
-				log.debug("add to wait block txhash::" + oMultiTransaction.getTxHash());
-
-				oPendingHashMapDB.put(formatMultiTransaction.getTxHash(), formatMultiTransaction);
+				if (isBroadCast) {
+					// 保存交易到缓存中，用于打包
+					log.debug("add to wait block txhash::" + oMultiTransaction.getTxHash());
+					oPendingHashMapDB.put(oMultiTransaction.getTxHash(), oMultiTransaction.build());
+				}
 			}
 		} catch (Exception e) {
 			log.error("fail to sync transaction::" + oMultiTransaction.getTxHash() + " error::" + e);
