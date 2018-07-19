@@ -195,10 +195,13 @@ public class BlockUnStableStore implements ActorService {
 	}
 
 	public boolean containsUnConnectChild(String hash, long number) {
+		log.debug("try to find UnConnect Child number::" + number + " parentHash::" + hash);
 		try (ALock l = readLock.lock()) {
 			for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.column(number).entrySet().iterator(); it
 					.hasNext();) {
 				Map.Entry<String, BlockStoreNodeValue> item = it.next();
+				log.debug("find child in cache, hash::" + item.getKey() + " parent::" + item.getValue().getParentHash()
+						+ " number::" + item.getValue().getNumber());
 				if (item.getValue().getParentHash().equals(hash) && !item.getValue().isConnect()) {
 					return true;
 				}
