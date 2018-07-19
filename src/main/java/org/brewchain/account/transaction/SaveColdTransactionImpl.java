@@ -123,12 +123,6 @@ public class SaveColdTransactionImpl extends SessionModules<ReqCreateTxColdPurse
 		oMultiTransactionBody.setTimestamp(pb.getTimestamp());
 		oMultiTransaction.setTxBody(oMultiTransactionBody);
 		
-		
-		
-		boolean flag = encApi.ecVerify(pb.getPublickey(), oMultiTransactionBody.build().toByteArray(),encApi.hexDec(pb.getSignature()));
-		
-		oMultiTransactionBody.clearSignatures();
-		String str = encApi.hexEnc(encApi.ecSign("a0f9654215003e4382822c7c1aff7ed212502ba67294a920d018d43cd3395132", oMultiTransactionBody.build().toByteArray()));
 		return oMultiTransaction;
 	}
 }
