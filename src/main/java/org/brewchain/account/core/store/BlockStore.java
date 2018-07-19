@@ -199,7 +199,7 @@ public class BlockStore implements ActorService {
 					log.warn("parent node number is wrong::" + oParentNode.getNumber());
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.CACHE);
 				} else if (oParentNode != null && !oParentNode.isConnect()) {
-					log.warn("parent node not connect");
+					log.warn("parent node not connect hash::" + oParentNode.getBlockHash() + " number::" + oParentNode.getNumber());
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.CACHE);
 				} else {
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
@@ -302,15 +302,15 @@ public class BlockStore implements ActorService {
 		return oBlockEntity;
 	}
 
-	public BlockEntity getReadyConnectBlock(String hash, long number) {
-		List<BlockEntity> lists = unStableStore.getBlocksByNumber(number + 1);
-		for (Iterator<BlockEntity> iterator = lists.iterator(); iterator.hasNext();) {
-			BlockEntity blockEntity = iterator.next();
-			if (blockEntity.getHeader().getParentHash().equals(hash)) {
-				return blockEntity;
-			}
-		}
-		return null;
+	public List<BlockEntity> getReadyConnectBlock(String hash, long number) {
+		return unStableStore.getUnConnectChild(hash, number + 1);
+//		for (Iterator<BlockEntity> iterator = lists.iterator(); iterator.hasNext();) {
+//			BlockEntity blockEntity = iterator.next();
+//			if (blockEntity.getHeader().getParentHash().equals(hash)) {
+//				return blockEntity;
+//			}
+//		}
+//		return null;
 	}
 
 	public List<BlockEntity> getChildListBlocksEndWith(String blockHash, String endBlockHash, int maxCount) {

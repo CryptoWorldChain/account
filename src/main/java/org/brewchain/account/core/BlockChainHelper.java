@@ -161,7 +161,7 @@ public class BlockChainHelper implements ActorService {
 		return blockStore.stableBlock(oBlock);
 	}
 
-	public BlockEntity getChildBlock(BlockEntity oBlock) {
+	public List<BlockEntity> getChildBlock(BlockEntity oBlock) {
 		return blockStore.getReadyConnectBlock(oBlock.getHeader().getBlockHash(), oBlock.getHeader().getNumber());
 	}
 

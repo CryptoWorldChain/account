@@ -288,7 +288,7 @@ public class DefaultProcessor implements IProcessor, ActorService {
 				break;
 			case APPLY_CHILD:
 				log.info("ready to apply child block");
-				oBlockEntity = blockChainHelper.getChildBlock(oBlockEntity);
+				oBlockEntity = blockChainHelper.getChildBlock(oBlockEntity).get(0);
 				oBlockStoreSummary = blockChainHelper.addBlock(oBlockEntity);
 				break;
 			case STORE:

@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -158,8 +159,9 @@ public class V1Processor implements IProcessor, ActorService {
 			// .setHeader(oBlockEntity.getHeaderBuilder().setStateRoot(oBlockEntity.getHeader().getStateRoot()));
 			blockChainHelper.connectBlock(oBlockEntity.build());
 
-			log.info(String.format("LOGFILTER %s %s %s %s 执行区块[%s]", encApi.hexEnc(KeyConstant.node.getoAccount().getAddress().toByteArray()),
-					"account", "apply", "block", oBlockEntity.getHeader().getBlockHash()));
+			log.info(String.format("LOGFILTER %s %s %s %s 执行区块[%s]",
+					encApi.hexEnc(KeyConstant.node.getoAccount().getAddress().toByteArray()), "account", "apply",
+					"block", oBlockEntity.getHeader().getBlockHash()));
 
 			log.debug("new block, number::" + oBlockEntity.getHeader().getNumber() + " hash::"
 					+ oBlockEntity.getHeader().getBlockHash() + " parent::" + oBlockEntity.getHeader().getParentHash()
@@ -325,9 +327,15 @@ public class V1Processor implements IProcessor, ActorService {
 				}
 				break;
 			case APPLY_CHILD:
-				applyBlock = blockChainHelper.getChildBlock(applyBlock.build()).toBuilder();
-				log.info("ready to apply child block::" + applyBlock.getHeader().getBlockHash());
-				oBlockStoreSummary = blockChainHelper.addBlock(applyBlock.build());
+				List<BlockEntity> childs = blockChainHelper.getChildBlock(applyBlock.build());
+				for (BlockEntity blockEntity : childs) {
+					applyBlock = blockEntity.toBuilder();
+					log.info("ready to apply child block::" + applyBlock.getHeader().getBlockHash() + " number::"
+							+ applyBlock.getHeader().getNumber());
+					ApplyBlock(blockEntity);
+					// oBlockStoreSummary = blockChainHelper.addBlock(applyBlock.build());
+				}
+				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 				break;
 			case STORE:
 			case DONE:

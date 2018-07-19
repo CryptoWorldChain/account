@@ -209,6 +209,22 @@ public class BlockUnStableStore implements ActorService {
 		}
 		return false;
 	}
+	
+	public List<BlockEntity> getUnConnectChild(String hash, long number) {
+		List<BlockEntity> list = new ArrayList<>();
+		try (ALock l = readLock.lock()) {
+			for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.column(number).entrySet().iterator(); it
+					.hasNext();) {
+				Map.Entry<String, BlockStoreNodeValue> item = it.next();
+				log.debug("find child in cache, hash::" + item.getKey() + " parent::" + item.getValue().getParentHash()
+						+ " number::" + item.getValue().getNumber());
+				if (item.getValue().getParentHash().equals(hash) && !item.getValue().isConnect()) {
+					list.add(item.getValue().getBlockEntity());
+				}
+			}
+		}
+		return list;
+	}
 
 	// public BlockEntity getUnConnectChild(String paretHash, long number) {
 	//
