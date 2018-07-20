@@ -165,12 +165,12 @@ public class BlockChainHelper implements ActorService {
 		return blockStore.getReadyConnectBlock(oBlock.getHeader().getBlockHash(), oBlock.getHeader().getNumber());
 	}
 
-	public BlockEntity rollbackTo(BlockEntity block) {
-		return blockStore.rollBackTo(block.getHeader().getNumber());
-	}
+//	public BlockEntity rollbackTo(BlockEntity block) {
+//		return blockStore.rollBackTo(block.getHeader().getNumber());
+//	}
 
-	public BlockEntity rollbackTo(long number) {
-		return blockStore.rollBackTo(number);
+	public BlockEntity rollbackTo(long number, BlockEntity fromBlock) {
+		return blockStore.rollBackTo(number, fromBlock);
 	}
 
 	public BlockStoreSummary addBlock(BlockEntity oBlock) {

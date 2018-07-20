@@ -111,7 +111,8 @@ public class BlockStore implements ActorService {
 											+ " hash::" + loopBlockEntity.getHeader().getBlockHash() + " stateroot::"
 											+ loopBlockEntity.getHeader().getStateRoot());
 							unStableStore.add(loopBlockEntity);
-							unStableStore.append(loopBlockEntity.getHeader().getBlockHash(), loopBlockEntity.getHeader().getNumber());
+							unStableStore.append(loopBlockEntity.getHeader().getBlockHash(),
+									loopBlockEntity.getHeader().getNumber());
 							if (maxReceiveNumber < loopBlockEntity.getHeader().getNumber()) {
 								maxReceiveNumber = loopBlockEntity.getHeader().getNumber();
 								maxReceiveBlock = loopBlockEntity;
@@ -196,7 +197,8 @@ public class BlockStore implements ActorService {
 					log.warn("parent node number is wrong::" + oParentNode.getNumber());
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.CACHE);
 				} else if (oParentNode != null && !oParentNode.isConnect()) {
-					log.warn("parent node not connect hash::" + oParentNode.getBlockHash() + " number::" + oParentNode.getNumber());
+					log.warn("parent node not connect hash::" + oParentNode.getBlockHash() + " number::"
+							+ oParentNode.getNumber());
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.CACHE);
 				} else {
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
@@ -301,13 +303,14 @@ public class BlockStore implements ActorService {
 
 	public List<BlockEntity> getReadyConnectBlock(String hash, long number) {
 		return unStableStore.getUnConnectChild(hash, number + 1);
-//		for (Iterator<BlockEntity> iterator = lists.iterator(); iterator.hasNext();) {
-//			BlockEntity blockEntity = iterator.next();
-//			if (blockEntity.getHeader().getParentHash().equals(hash)) {
-//				return blockEntity;
-//			}
-//		}
-//		return null;
+		// for (Iterator<BlockEntity> iterator = lists.iterator(); iterator.hasNext();)
+		// {
+		// BlockEntity blockEntity = iterator.next();
+		// if (blockEntity.getHeader().getParentHash().equals(hash)) {
+		// return blockEntity;
+		// }
+		// }
+		// return null;
 	}
 
 	public List<BlockEntity> getChildListBlocksEndWith(String blockHash, String endBlockHash, int maxCount) {
@@ -370,11 +373,11 @@ public class BlockStore implements ActorService {
 		return stableStore.containKey(hash);
 	}
 
-	public BlockEntity rollBackTo(long number) {
+	public BlockEntity rollBackTo(long number, BlockEntity fromBlock) {
 		log.info("blockstore try to rollback to number::" + number + " maxconnect::" + this.getMaxConnectNumber()
 				+ " maxstable::" + this.getMaxStableNumber());
 
-		BlockEntity oBlockEntity = unStableStore.rollBackTo(number, maxConnectBlock);
+		BlockEntity oBlockEntity = unStableStore.rollBackTo(number, fromBlock == null ? maxConnectBlock : fromBlock);
 		if (oBlockEntity == null) {
 			oBlockEntity = stableStore.rollBackTo(number);
 			unStableStore.clear();

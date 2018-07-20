@@ -238,7 +238,7 @@ public class DefaultProcessor implements IProcessor, ActorService {
 						oAddBlockResponse.setRetCode(-9);
 						oAddBlockResponse.setCurrentNumber(oBlockEntity.getHeader().getNumber() - 2);
 						oAddBlockResponse.setWantNumber(oBlockEntity.getHeader().getNumber() - 1);
-						blockChainHelper.rollbackTo(oBlockEntity.getHeader().getNumber() - 2);
+						blockChainHelper.rollbackTo(oBlockEntity.getHeader().getNumber() - 2, oBlockEntity);
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 					}
 				} catch (Exception e1) {
@@ -277,7 +277,7 @@ public class DefaultProcessor implements IProcessor, ActorService {
 					if (!oBlockEntity.getHeader().getStateRoot().equals(encApi.hexEnc(stateRoot))) {
 						log.error("begin to roll back, stateRoot::" + encApi.hexEnc(stateRoot) + " blockStateRoot::"
 								+ oBlockEntity.getHeader().getStateRoot());
-						blockChainHelper.rollbackTo(oBlockEntity.getHeader().getNumber() - 2);
+						blockChainHelper.rollbackTo(oBlockEntity.getHeader().getNumber() - 2, oBlockEntity);
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 					} else {
 						oBlockStoreSummary = blockChainHelper.connectBlock(oBlockEntity);
@@ -299,7 +299,7 @@ public class DefaultProcessor implements IProcessor, ActorService {
 				break;
 			case ERROR:
 				log.error("fail to apply block number::" + oBlockEntity.getHeader().getNumber());
-				blockChainHelper.rollbackTo(oBlockEntity.getHeader().getNumber() - 1);
+				blockChainHelper.rollbackTo(oBlockEntity.getHeader().getNumber() - 1, oBlockEntity);
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 				break;
 			}

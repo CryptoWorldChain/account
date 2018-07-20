@@ -209,7 +209,7 @@ public class BlockUnStableStore implements ActorService {
 		}
 		return false;
 	}
-	
+
 	public List<BlockEntity> getUnConnectChild(String hash, long number) {
 		List<BlockEntity> list = new ArrayList<>();
 		try (ALock l = readLock.lock()) {
@@ -335,14 +335,18 @@ public class BlockUnStableStore implements ActorService {
 		}
 	}
 
-	public BlockEntity rollBackTo(long number, BlockEntity oBlockEntity) {
-		if (oBlockEntity != null) {
+	public BlockEntity rollBackTo(long number, BlockEntity maxConnectBlock) {
+		if (maxConnectBlock != null) {
 			try (ALock l = writeLock.lock()) {
-				String fHash = oBlockEntity.getHeader().getParentHash();
-				long fNumber = oBlockEntity.getHeader().getNumber() - 1;
+				String fHash = maxConnectBlock.getHeader().getParentHash();
+				long fNumber = maxConnectBlock.getHeader().getNumber() - 1;
 				BlockStoreNodeValue oNode = null;
+				log.debug("roll back from hash::" + maxConnectBlock.getHeader().getBlockHash() + " parent::"
+						+ maxConnectBlock.getHeader().getParentHash() + " number::"
+						+ maxConnectBlock.getHeader().getNumber());
 				while (fHash != null && this.storage.contains(fHash, fNumber) && fNumber >= number) {
 					boolean isExistsChild = false;
+					log.debug("roll back to::" + fHash + " number::" + fNumber);
 					BlockStoreNodeValue currentNode = this.storage.get(fHash, fNumber);
 					if (currentNode != null && currentNode.isConnect()) {
 						currentNode.disConnect();
