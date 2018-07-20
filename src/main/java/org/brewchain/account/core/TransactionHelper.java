@@ -162,7 +162,8 @@ public class TransactionHelper implements ActorService {
 	}
 
 	public void syncTransaction(MultiTransaction.Builder oMultiTransaction, boolean isBroadCast) {
-		log.debug("receive sync txhash::" + oMultiTransaction.getTxHash() + " status::" + oMultiTransaction.getStatus());
+		log.debug(
+				"receive sync txhash::" + oMultiTransaction.getTxHash() + " status::" + oMultiTransaction.getStatus());
 		try {
 			OValue oValue = dao.getTxsDao()
 					.get(oEntityHelper.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash()))).get();
@@ -171,7 +172,7 @@ public class TransactionHelper implements ActorService {
 			} else {
 				oMultiTransaction.clearStatus();
 				oMultiTransaction.clearResult();
-				
+
 				dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash())),
 						oEntityHelper.byteValue2OValue(oMultiTransaction.build().toByteArray()));
 
@@ -651,13 +652,12 @@ public class TransactionHelper implements ActorService {
 		Map<String, Account.Builder> accounts = new HashMap<>();
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			accounts.put(encApi.hexEnc(oInput.getAddress().toByteArray()),
-					oAccountHelper.GetAccount(oInput.getAddress()).toBuilder());
+					oAccountHelper.GetAccountOrCreate(oInput.getAddress()).toBuilder());
 		}
 
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
-			Account receiver = oAccountHelper.GetAccount(oOutput.getAddress());
 			accounts.put(encApi.hexEnc(oOutput.getAddress().toByteArray()),
-					receiver == null ? null : receiver.toBuilder());
+					oAccountHelper.GetAccountOrCreate(oOutput.getAddress()).toBuilder());
 		}
 
 		if (StringUtils.isNotBlank(blockChainConfig.getLock_account_address())) {

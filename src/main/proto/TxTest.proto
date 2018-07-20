@@ -110,6 +110,8 @@ message ReqCreateTransactionTest {
 
 message RespCreateTransactionTest {
 	string txhash = 1;
+	string from = 5;
+	string to = 6;
 	int32 retcode = 2;
 	string retmsg = 3;
 	repeated string trace = 4;

@@ -8,6 +8,7 @@ import org.brewchain.account.gens.TxTest.PTSTCommand;
 import org.brewchain.account.gens.TxTest.PTSTModule;
 import org.brewchain.account.gens.TxTest.ReqCommonTest;
 import org.brewchain.account.gens.TxTest.RespCommonTest;
+import org.brewchain.account.gens.TxTest.RespCreateTransactionTest;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import org.fc.brewchain.bcapi.EncAPI;
 
@@ -49,18 +50,25 @@ public class TransactionLoadTestExecImpl extends SessionModules<ReqCommonTest> {
 
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqCommonTest pb, final CompleteHandler handler) {
-		RespCommonTest.Builder oRespCreateTransactionTest = RespCommonTest.newBuilder();
+		RespCreateTransactionTest.Builder oRespCreateTransactionTest = RespCreateTransactionTest.newBuilder();
 
 		String txHash = "";
 		try {
 			MultiTransaction.Builder tx = transactionLoadTestStore.getOne();
 			if (tx != null) {
 				txHash = transactionHelper.CreateMultiTransaction(tx);
-				oRespCreateTransactionTest.setRetmsg(txHash);
+				oRespCreateTransactionTest.setRetmsg("success");
+				oRespCreateTransactionTest.setTxhash(txHash);
+				oRespCreateTransactionTest
+						.setFrom(encApi.hexEnc(tx.getTxBody().getInputs(0).getAddress().toByteArray()));
+				oRespCreateTransactionTest
+						.setTo(encApi.hexEnc(tx.getTxBody().getOutputs(0).getAddress().toByteArray()));
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			log.error("test fail::", e);
+			oRespCreateTransactionTest.clear();
+			oRespCreateTransactionTest.setRetmsg("error");
 		}
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespCreateTransactionTest.build()));
 		return;
