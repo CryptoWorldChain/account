@@ -85,6 +85,8 @@ public class ActuatorCreateContract extends AbstractTransactionActuator implemen
 			senderAccountValue.setBalance(ByteString.copyFrom(
 					ByteUtil.bigIntegerToBytes(ByteUtil.bytesToBigInteger(senderAccountValue.getBalance().toByteArray())
 							.subtract(this.oTransactionHelper.getBlockChainConfig().getContract_lock_balance()))));
+			
+			senderAccountValue.setNonce(senderAccountValue.getNonce() + 1);
 			sender.setValue(senderAccountValue);
 
 			accounts.put(encApi.hexEnc(sender.getAddress().toByteArray()), sender);
@@ -115,7 +117,6 @@ public class ActuatorCreateContract extends AbstractTransactionActuator implemen
 
 				Account.Builder oCreateAccount = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 				AccountValue.Builder oValue = oCreateAccount.getValueBuilder();
-				oValue.setNonce(oValue.getNonce() + 1);
 				oCreateAccount.setValue(oValue.build());
 				accounts.put(encApi.hexEnc(oCreateAccount.getAddress().toByteArray()), oCreateAccount);
 

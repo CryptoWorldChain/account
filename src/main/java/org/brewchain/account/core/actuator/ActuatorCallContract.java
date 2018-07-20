@@ -14,6 +14,7 @@ import org.brewchain.account.evmapi.EvmApiImp;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.util.ByteUtil;
 import org.brewchain.evmapi.gens.Act.Account;
+import org.brewchain.evmapi.gens.Act.AccountValue;
 import org.brewchain.evmapi.gens.Act.Account.Builder;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
@@ -60,7 +61,12 @@ public class ActuatorCallContract extends AbstractTransactionActuator implements
 				.get(encApi.hexEnc(oMultiTransaction.getTxBody().getOutputs(0).getAddress().toByteArray()));
 		Account.Builder callAccount = accounts
 				.get(encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(0).getAddress().toByteArray()));
-
+		
+		AccountValue.Builder senderAccountValue = callAccount.getValue().toBuilder();
+		senderAccountValue.setNonce(senderAccountValue.getNonce() + 1);
+		callAccount.setValue(senderAccountValue);
+		accounts.put(encApi.hexEnc(callAccount.getAddress().toByteArray()), callAccount);
+		
 		// BlockEntity.Builder oBlock = oBlockHelper.GetBestBlock();
 
 		EvmApiImp evmApiImp = new EvmApiImp();

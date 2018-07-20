@@ -3,15 +3,13 @@ syntax = "proto3";
 package org.brewchain.account.gens;
 
 enum PTSTModule {
-    TST = 0; // 交易
+	TST = 0; // 交易
 };
 
 enum PTSTCommand {
 	CSI = 0; // contract
 	STT = 1; // transaction
-	
 	ECT = 2; // contract
-	
 	LTP = 3; // load test perpare
 	LTE = 4; // load test exec
 	MTT = 5; // thread test
@@ -19,7 +17,6 @@ enum PTSTCommand {
 	BFS = 7; // remove forks
 	BCV = 8; // block chain view
 	LTR = 9; // load test perpare result
-
 	TCT = 10; // create token
 	TCC = 12; // create contract transaction
 	TEC = 13; // call contract transaction
@@ -33,6 +30,7 @@ message ReqCreateContract {
 	string privKey = 3;
 	string data = 4;
 }
+
 message ReqCallContract {
 	string address = 1;
 	string pubKey = 2;
@@ -78,11 +76,9 @@ message RespStartNewFork {
 }
 
 message ReqStopFork {
-	
 }
 
 message RespStopFork {
-	
 }
 
 message ReqThreadTransaction {
@@ -96,6 +92,7 @@ message ReqThreadTransaction {
 message ReqCommonTest {
 	string arg1 = 1;
 }
+
 message RespCommonTest {
 	int32 retcode = 1;
 	string retmsg = 2;
@@ -106,6 +103,13 @@ message ReqCreateTransactionTest {
 	repeated ReqTransactionAccount output = 2;
 	string data = 3;
 	repeated ReqTransactionSignature signature = 4;
+	int32 defaultTx = 5;
+	int32 erc20Tx = 6;
+	string erc20TxToken = 11;
+	int32 contractCall = 7;
+	string contractCallAddress = 9;
+	int32 contractTx = 8;
+	string contractTxAddress = 10;
 }
 
 message RespCreateTransactionTest {
