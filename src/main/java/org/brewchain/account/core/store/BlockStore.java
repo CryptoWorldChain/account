@@ -158,10 +158,7 @@ public class BlockStore implements ActorService {
 			maxReceiveBlock = block;
 		}
 
-		if (unStableStore.containKey(hash) && unStableStore.isConnect(hash, number)) {
-			oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_DROP);
-			return oBlockStoreSummary;
-		} else if (stableStore.containKey(hash)) {
+		if (unStableStore.containKey(hash)) {
 			oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_DROP);
 			return oBlockStoreSummary;
 		} else {
