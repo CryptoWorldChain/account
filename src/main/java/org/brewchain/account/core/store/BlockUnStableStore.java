@@ -377,25 +377,17 @@ public class BlockUnStableStore implements ActorService {
 		return null;
 	}
 
-	public void clear() {
-		for (Iterator<Cell<String, Long, BlockStoreNodeValue>> it = storage.cellSet().iterator(); it.hasNext();) {
-			Cell<String, Long, BlockStoreNodeValue> item = it.next();
-			if (!item.getValue().isConnect()) {
-				this.storage.remove(item.getRowKey(), item.getColumnKey());
-			}
-		}
-	}
-
 	public void disconnectAll(BlockEntity block) {
-		for (Iterator<Cell<String, Long, BlockStoreNodeValue>> it = storage.cellSet().iterator(); it.hasNext();) {
-			Cell<String, Long, BlockStoreNodeValue> item = it.next();
-			if (item.getValue().isConnect()) {
-				BlockStoreNodeValue newValue = item.getValue();
-				newValue.disConnect();
-				this.storage.put(item.getRowKey(), item.getColumnKey(), newValue);
+		try (ALock l = writeLock.lock()) {
+			for (Iterator<Cell<String, Long, BlockStoreNodeValue>> it = storage.cellSet().iterator(); it.hasNext();) {
+				Cell<String, Long, BlockStoreNodeValue> item = it.next();
+				if (item.getValue().isConnect()) {
+					BlockStoreNodeValue newValue = item.getValue();
+					newValue.disConnect();
+					this.storage.put(item.getRowKey(), item.getColumnKey(), newValue);
+				}
 			}
 		}
-
 		// log.debug("====put disconnect block::" +
 		// block.getHeader().getBlockHash());
 		dao.getBlockDao().put(oEntityHelper.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK),
@@ -403,7 +395,7 @@ public class BlockUnStableStore implements ActorService {
 	}
 
 	public void removeForkBlock(long number) {
-		try (ALock l = readLock.lock()) {
+		try (ALock l = writeLock.lock()) {
 			for (Iterator<Cell<String, Long, BlockStoreNodeValue>> it = storage.cellSet().iterator(); it.hasNext();) {
 				Cell<String, Long, BlockStoreNodeValue> item = it.next();
 				if (item.getValue().getNumber() <= number) {

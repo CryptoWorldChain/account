@@ -380,7 +380,6 @@ public class BlockStore implements ActorService {
 		BlockEntity oBlockEntity = unStableStore.rollBackTo(number, fromBlock == null ? maxConnectBlock : fromBlock);
 		if (oBlockEntity == null) {
 			oBlockEntity = stableStore.rollBackTo(number);
-			unStableStore.clear();
 			unStableStore.disconnectAll(oBlockEntity);
 
 			maxConnectNumber = oBlockEntity.getHeader().getNumber();

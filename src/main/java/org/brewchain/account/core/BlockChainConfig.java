@@ -31,7 +31,7 @@ public class BlockChainConfig extends SessionModules<Message> {
 	private String lock_account_address = props().get("org.brewchain.account.lock.address", null);
 	private boolean isDev = props().get("org.brewchain.man.dev", "true").equals("true");
 	private BigInteger token_lock_balance = new BigInteger(props().get("org.brewchain.token.lock.balance", "0"));
-	private int defaultRollBackCount = props().get("org.brewchain.manage.rollback.count", 10);
+	private int defaultRollBackCount = props().get("org.brewchain.manage.rollback.count", 1);
 	private int accountVersion = props().get("org.brewchain.account.version", 0);
 	private BigInteger maxTokenTotal = new BigInteger(props().get("org.brewchain.token.max.total", "0"));
 	private BigInteger minTokenTotal = new BigInteger(props().get("org.brewchain.token.min.total", "0"));
