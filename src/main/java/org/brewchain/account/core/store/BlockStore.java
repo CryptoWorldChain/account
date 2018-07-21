@@ -210,6 +210,18 @@ public class BlockStore implements ActorService {
 		return oBlockStoreSummary;
 	}
 
+	public BlockStoreSummary tryAddBlock(BlockEntity block) {
+		BlockStoreSummary oBlockStoreSummary = new BlockStoreSummary();
+		BlockStoreNodeValue oNode = unStableStore.getNode(block.getHeader().getParentHash(),
+				block.getHeader().getNumber() - 1);
+		if (oNode != null && oNode.isConnect()) {
+			oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
+		} else {
+			oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
+		}
+		return oBlockStoreSummary;
+	}
+
 	public BlockStoreSummary connectBlock(BlockEntity block) throws BlockNotFoundInStoreException {
 		BlockStoreSummary oBlockStoreSummary = new BlockStoreSummary();
 

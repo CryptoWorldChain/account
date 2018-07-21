@@ -242,15 +242,16 @@ public class V1Processor implements IProcessor, ActorService {
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 				break;
 			case EXISTS_DROP:
-				if (blockChainHelper.getLastBlockNumber() == applyBlock.getHeader().getNumber() - 1) {
-					log.info("already exists, try to apply::" + applyBlock.getHeader().getNumber());
-					blockChainHelper.reAddBlock(applyBlock.build());
-					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
-				} else {
-					log.info("already exists, drop it::" + applyBlock.getHeader().getNumber() + " last::"
-							+ blockChainHelper.getLastBlockNumber());
-					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
-				}
+				// if (blockChainHelper.getLastBlockNumber() ==
+				// applyBlock.getHeader().getNumber() - 1) {
+				// } else {
+				// log.info("already exists, drop it::" + applyBlock.getHeader().getNumber() + "
+				// last::"
+				// + blockChainHelper.getLastBlockNumber());
+				// oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
+				// }
+				log.info("already exists, try to apply::" + applyBlock.getHeader().getNumber());
+				oBlockStoreSummary.setBehavior(blockChainHelper.tryAddBlock(applyBlock.build()).getBehavior());
 				break;
 			case EXISTS_PREV:
 				log.info("block exists, but cannot find parent block number::" + applyBlock.getHeader().getNumber());
@@ -261,16 +262,18 @@ public class V1Processor implements IProcessor, ActorService {
 						applyBlock = pBlockEntity.toBuilder();
 						oBlockStoreSummary = blockChainHelper.addBlock(applyBlock.build());
 					} else {
-						long rollBackNumber = applyBlock.getHeader().getNumber() > blockChainConfig
-								.getDefaultRollBackCount()
-										? applyBlock.getHeader().getNumber()
-												- (blockChainConfig.getDefaultRollBackCount() + 1)
-										: applyBlock.getHeader().getNumber() - 2;
+						// long rollBackNumber = applyBlock.getHeader().getNumber() > blockChainConfig
+						// .getDefaultRollBackCount()
+						// ? applyBlock.getHeader().getNumber()
+						// - (blockChainConfig.getDefaultRollBackCount() + 1)
+						// : applyBlock.getHeader().getNumber() - 2;
+
+						long rollBackNumber = applyBlock.getHeader().getNumber() - 2;
 						log.debug("need prev block number::" + rollBackNumber);
 						oAddBlockResponse.setRetCode(-9);
 						oAddBlockResponse.setCurrentNumber(rollBackNumber);
 						oAddBlockResponse.setWantNumber(rollBackNumber + 1);
-						blockChainHelper.rollbackTo(rollBackNumber, applyBlock.build());
+						// blockChainHelper.rollbackTo(rollBackNumber, applyBlock.build());
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 					}
 				} catch (Exception e1) {
@@ -328,11 +331,12 @@ public class V1Processor implements IProcessor, ActorService {
 				break;
 			case APPLY_CHILD:
 				List<BlockEntity> childs = blockChainHelper.getChildBlock(applyBlock.build());
+				log.debug("find childs count::" + childs.size());
 				for (BlockEntity blockEntity : childs) {
 					applyBlock = blockEntity.toBuilder();
 					log.info("ready to apply child block::" + applyBlock.getHeader().getBlockHash() + " number::"
 							+ applyBlock.getHeader().getNumber());
-					ApplyBlock(blockEntity);
+					return ApplyBlock(blockEntity);
 					// oBlockStoreSummary = blockChainHelper.addBlock(applyBlock.build());
 				}
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);

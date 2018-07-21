@@ -177,8 +177,8 @@ public class BlockChainHelper implements ActorService {
 		return blockStore.addBlock(oBlock);
 	}
 
-	public void reAddBlock(BlockEntity applyBlock) {
-		blockStore.getUnStableStore().add(applyBlock);
+	public BlockStoreSummary tryAddBlock(BlockEntity applyBlock) {
+		return blockStore.tryAddBlock(applyBlock);
 	}
 
 	/**
