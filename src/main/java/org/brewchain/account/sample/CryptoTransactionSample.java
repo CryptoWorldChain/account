@@ -91,9 +91,9 @@ public class CryptoTransactionSample extends SessionModules<ReqCreateTransaction
 				oMultiTransactionOutput1.setSymbol(output.getErc721Symbol());
 				oMultiTransactionBody.addOutputs(oMultiTransactionOutput1);
 
-				oRespCreateTransactionTest.addTrace("add output address::" + output.getAddress() + " nonce::"
-						+ accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(output.getAddress()))) + " balance::"
-						+ accountHelper.getBalance(ByteString.copyFrom(encApi.hexDec(output.getAddress()))));
+//				oRespCreateTransactionTest.addTrace("add output address::" + output.getAddress() + " nonce::"
+//						+ accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(output.getAddress()))) + " balance::"
+//						+ accountHelper.getBalance(ByteString.copyFrom(encApi.hexDec(output.getAddress()))));
 			}
 
 			oMultiTransactionBody.setType(TransTypeEnum.TYPE_CryptoTokenTransaction.value());

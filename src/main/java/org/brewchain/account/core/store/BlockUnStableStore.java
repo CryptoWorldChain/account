@@ -52,7 +52,7 @@ public class BlockUnStableStore implements ActorService {
 	protected final Table<String, Long, BlockStoreNodeValue> storage;
 
 	protected ReadWriteLock rwLock = new ReentrantReadWriteLock();
-	protected ALock readLock = new ALock(rwLock.readLock());
+	// protected ALock readLock = new ALock(rwLock.readLock());
 	protected ALock writeLock = new ALock(rwLock.writeLock());
 
 	public BlockUnStableStore() {
@@ -60,7 +60,7 @@ public class BlockUnStableStore implements ActorService {
 	}
 
 	public boolean containKey(String hash) {
-		try (ALock l = readLock.lock()) {
+		try (ALock l = writeLock.lock()) {
 			return this.storage.containsRow(hash);
 		}
 	}
@@ -148,7 +148,7 @@ public class BlockUnStableStore implements ActorService {
 	}
 
 	public boolean isConnect(String hash, long number) {
-		try (ALock l = readLock.lock()) {
+		try (ALock l = writeLock.lock()) {
 			if (this.storage.contains(hash, number)) {
 				BlockStoreNodeValue oNode = this.storage.get(hash, number);
 				return oNode.isConnect();
@@ -196,7 +196,7 @@ public class BlockUnStableStore implements ActorService {
 
 	public boolean containsUnConnectChild(String hash, long number) {
 		log.debug("try to find UnConnect Child number::" + number + " parentHash::" + hash);
-		try (ALock l = readLock.lock()) {
+		try (ALock l = writeLock.lock()) {
 			for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.column(number).entrySet().iterator(); it
 					.hasNext();) {
 				Map.Entry<String, BlockStoreNodeValue> item = it.next();
@@ -212,7 +212,7 @@ public class BlockUnStableStore implements ActorService {
 
 	public List<BlockEntity> getUnConnectChild(String hash, long number) {
 		List<BlockEntity> list = new ArrayList<>();
-		try (ALock l = readLock.lock()) {
+		try (ALock l = writeLock.lock()) {
 			for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.column(number).entrySet().iterator(); it
 					.hasNext();) {
 				Map.Entry<String, BlockStoreNodeValue> item = it.next();
@@ -266,7 +266,7 @@ public class BlockUnStableStore implements ActorService {
 	}
 
 	public BlockEntity getBlockByNumber(long number) {
-		try (ALock l = readLock.lock()) {
+		try (ALock l = writeLock.lock()) {
 			if (storage.containsColumn(number)) {
 				return ((BlockStoreNodeValue) storage.column(number).values().toArray()[0]).getBlockEntity();
 			}
@@ -285,7 +285,7 @@ public class BlockUnStableStore implements ActorService {
 	}
 
 	public BlockEntity getBlockByNumberAndHash(String hash, long number) {
-		try (ALock l = readLock.lock()) {
+		try (ALock l = writeLock.lock()) {
 			if (storage.contains(hash, number)) {
 				return storage.get(hash, number).getBlockEntity();
 			}
@@ -304,7 +304,7 @@ public class BlockUnStableStore implements ActorService {
 	}
 
 	public List<BlockEntity> getBlocksByNumber(long number) {
-		try (ALock l = readLock.lock()) {
+		try (ALock l = writeLock.lock()) {
 			List<BlockEntity> list = new ArrayList<>();
 			for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.column(number).entrySet().iterator(); it
 					.hasNext();) {
