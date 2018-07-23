@@ -188,8 +188,7 @@ public class V1Processor implements IProcessor, ActorService {
 
 			log.debug("Thread Transaction Test ==> exec hash::" + txHash + " from::"
 					+ encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(0).getAddress().toByteArray()) + " nonce::"
-					+ oMultiTransaction.getTxBody().getInputs(0).getNonce() + " to::"
-					+ encApi.hexEnc(oMultiTransaction.getTxBody().getOutputs(0).getAddress().toByteArray()));
+					+ oMultiTransaction.getTxBody().getInputs(0).getNonce());
 
 			oTrieImpl.put(encApi.hexDec(oMultiTransaction.getTxHash()),
 					transactionHelper.getTransactionContent(oMultiTransaction));

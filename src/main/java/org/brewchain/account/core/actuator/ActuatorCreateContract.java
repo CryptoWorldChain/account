@@ -75,8 +75,10 @@ public class ActuatorCreateContract extends AbstractTransactionActuator implemen
 		if (oAccountHelper.isExist(newContractAddress)) {
 			throw new TransactionExecuteException("contract address already exists");
 		} else {
-			accounts.put(encApi.hexEnc(newContractAddress.toByteArray()),
-					oAccountHelper.CreateAccount(newContractAddress).toBuilder());
+			Account.Builder contract = oAccountHelper.CreateAccount(newContractAddress).toBuilder();
+			accounts.put(encApi.hexEnc(newContractAddress.toByteArray()), contract);
+
+			oAccountHelper.putAccountValue(newContractAddress, contract.getValue(), false);
 
 			MultiTransactionInput oInput = oMultiTransaction.getTxBody().getInputs(0);
 			Account.Builder sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
@@ -85,7 +87,7 @@ public class ActuatorCreateContract extends AbstractTransactionActuator implemen
 			senderAccountValue.setBalance(ByteString.copyFrom(
 					ByteUtil.bigIntegerToBytes(ByteUtil.bytesToBigInteger(senderAccountValue.getBalance().toByteArray())
 							.subtract(this.oTransactionHelper.getBlockChainConfig().getContract_lock_balance()))));
-			
+
 			senderAccountValue.setNonce(senderAccountValue.getNonce() + 1);
 			sender.setValue(senderAccountValue);
 
@@ -120,7 +122,7 @@ public class ActuatorCreateContract extends AbstractTransactionActuator implemen
 				oCreateAccount.setValue(oValue.build());
 				accounts.put(encApi.hexEnc(oCreateAccount.getAddress().toByteArray()), oCreateAccount);
 
-				Account.Builder contract = accounts.get(encApi.hexEnc(newContractAddress.toByteArray()));
+				// Account.Builder contract = accounts.get(encApi.hexEnc(newContractAddress.toByteArray()));
 				AccountValue.Builder oContractValue = contract.getValueBuilder();
 				oContractValue.setCode(ByteString.copyFrom(createResult.getHReturn()));
 				oContractValue

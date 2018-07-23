@@ -68,10 +68,12 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 				throw new TransactionExecuteException("parameter invalid, sender address must be unique");
 			}
 			inputSymbol.add(oInput.getSymbol());
-			if (inputTokens.contains(encApi.hexEnc(oInput.getCryptoToken().toByteArray()))) {
-				throw new TransactionExecuteException("parameter invalid, duplicate token");
-			} else
-				inputTokens.add(encApi.hexEnc(oInput.getCryptoToken().toByteArray()));
+			if (oInput.getCryptoToken() != null && !oInput.getCryptoToken().equals(ByteString.EMPTY)) {
+				if (inputTokens.contains(encApi.hexEnc(oInput.getCryptoToken().toByteArray()))) {
+					throw new TransactionExecuteException("parameter invalid, duplicate token");
+				} else
+					inputTokens.add(encApi.hexEnc(oInput.getCryptoToken().toByteArray()));
+			}
 
 			Account.Builder oAccount = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue oAccountValue = oAccount.getValue();
@@ -160,14 +162,16 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 				isIncreaseNonce = true;
 			}
 
-//			DBTrie oCacheTrie = new DBTrie(this.dao, oTransactionHelper.getOEntityHelper());
-//			if (oAccountValue.getStorage() == null) {
-//				oCacheTrie.setRoot(null);
-//			} else {
-//				oCacheTrie.setRoot(oAccountValue.getStorage().toByteArray());
-//			}
-//			oCacheTrie.put(oInput.getAddress().toByteArray(), oAccountValue.build().toByteArray());
-//			oAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
+			// DBTrie oCacheTrie = new DBTrie(this.dao,
+			// oTransactionHelper.getOEntityHelper());
+			// if (oAccountValue.getStorage() == null) {
+			// oCacheTrie.setRoot(null);
+			// } else {
+			// oCacheTrie.setRoot(oAccountValue.getStorage().toByteArray());
+			// }
+			// oCacheTrie.put(oInput.getAddress().toByteArray(),
+			// oAccountValue.build().toByteArray());
+			// oAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
 
 			// keys.add(OEntityBuilder.byteKey2OKey(oInput.getAddress().toByteArray()));
 			// values.add(oAccountValue.build());
@@ -238,14 +242,16 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 				}
 			}
 
-//			DBTrie oCacheTrie = new DBTrie(this.dao, oTransactionHelper.getOEntityHelper());
-//			if (receiverAccountValue.getStorage() == null) {
-//				oCacheTrie.setRoot(null);
-//			} else {
-//				oCacheTrie.setRoot(receiverAccountValue.getStorage().toByteArray());
-//			}
-//			oCacheTrie.put(receiver.getAddress().toByteArray(), receiverAccountValue.build().toByteArray());
-//			receiverAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
+			// DBTrie oCacheTrie = new DBTrie(this.dao,
+			// oTransactionHelper.getOEntityHelper());
+			// if (receiverAccountValue.getStorage() == null) {
+			// oCacheTrie.setRoot(null);
+			// } else {
+			// oCacheTrie.setRoot(receiverAccountValue.getStorage().toByteArray());
+			// }
+			// oCacheTrie.put(receiver.getAddress().toByteArray(),
+			// receiverAccountValue.build().toByteArray());
+			// receiverAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
 
 			// keys.add(OEntityBuilder.byteKey2OKey(oOutput.getAddress().toByteArray()));
 			// values.add(receiverAccountValue.build());
