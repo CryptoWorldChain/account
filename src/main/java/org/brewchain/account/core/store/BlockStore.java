@@ -214,9 +214,18 @@ public class BlockStore implements ActorService {
 		BlockStoreSummary oBlockStoreSummary = new BlockStoreSummary();
 		BlockStoreNodeValue oNode = unStableStore.getNode(block.getHeader().getParentHash(),
 				block.getHeader().getNumber() - 1);
+		
+		log.debug("try to find hash::" + block.getHeader().getParentHash() + " number::" + block.getHeader().getNumber());
+		
 		if (oNode != null && oNode.isConnect()) {
+			log.debug("try add block, find connected node");
 			oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
 		} else {
+			if (oNode == null ) {
+				log.debug("try add block, not find node");
+			} else {
+				log.debug("try add block, find node but not connect");
+			}
 			oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
 		}
 		return oBlockStoreSummary;
@@ -315,7 +324,8 @@ public class BlockStore implements ActorService {
 
 	public List<BlockEntity> getReadyConnectBlock(String hash, long number) {
 		return unStableStore.getUnConnectChild(hash, number + 1);
-		// for (Iterator<BlockEntity> iterator = lists.iterator(); iterator.hasNext();)
+		// for (Iterator<BlockEntity> iterator = lists.iterator();
+		// iterator.hasNext();)
 		// {
 		// BlockEntity blockEntity = iterator.next();
 		// if (blockEntity.getHeader().getParentHash().equals(hash)) {
