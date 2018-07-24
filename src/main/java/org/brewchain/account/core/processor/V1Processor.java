@@ -85,11 +85,13 @@ public class V1Processor implements IProcessor, ActorService {
 				oiTransactionActuator.onExecuteDone(oTransaction, result);
 				results.put(oTransaction.getTxHash(), result);
 			} catch (Exception e) {
-				e.printStackTrace();
-				oiTransactionActuator.onExecuteError(oTransaction, ByteString.copyFromUtf8(e.getMessage()));
-				results.put(oTransaction.getTxHash(), ByteString.copyFromUtf8(e.getMessage()));
+				oiTransactionActuator.onExecuteError(oTransaction,
+						ByteString.copyFromUtf8(e.getMessage() == null ? "unknown exception" : e.getMessage()));
+
+				results.put(oTransaction.getTxHash(),
+						ByteString.copyFromUtf8(e.getMessage() == null ? "unknown exception" : e.getMessage()));
 				// throw e;
-				log.error("error on exec tx::" + e.getMessage(), e);
+				log.error("error on exec tx::", e);
 			}
 		}
 		return results;
@@ -123,9 +125,8 @@ public class V1Processor implements IProcessor, ActorService {
 
 		// 确保时间戳不重复
 		long currentTimestamp = System.currentTimeMillis();
-		oBlockHeader.setTimestamp(
-				System.currentTimeMillis() == oBestBlockHeader.getTimestamp() ? oBestBlockHeader.getTimestamp() + 1
-						: currentTimestamp);
+		oBlockHeader.setTimestamp(System.currentTimeMillis() == oBestBlockHeader.getTimestamp()
+				? oBestBlockHeader.getTimestamp() + 1 : currentTimestamp);
 		oBlockHeader.setNumber(oBestBlockHeader.getNumber() + 1);
 		// oBlockHeader.setReward(bloc);
 		oBlockHeader.setExtraData(extraData);
@@ -244,7 +245,8 @@ public class V1Processor implements IProcessor, ActorService {
 				// if (blockChainHelper.getLastBlockNumber() ==
 				// applyBlock.getHeader().getNumber() - 1) {
 				// } else {
-				// log.info("already exists, drop it::" + applyBlock.getHeader().getNumber() + "
+				// log.info("already exists, drop it::" +
+				// applyBlock.getHeader().getNumber() + "
 				// last::"
 				// + blockChainHelper.getLastBlockNumber());
 				// oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
@@ -261,7 +263,8 @@ public class V1Processor implements IProcessor, ActorService {
 						applyBlock = pBlockEntity.toBuilder();
 						oBlockStoreSummary = blockChainHelper.addBlock(applyBlock.build());
 					} else {
-						// long rollBackNumber = applyBlock.getHeader().getNumber() > blockChainConfig
+						// long rollBackNumber =
+						// applyBlock.getHeader().getNumber() > blockChainConfig
 						// .getDefaultRollBackCount()
 						// ? applyBlock.getHeader().getNumber()
 						// - (blockChainConfig.getDefaultRollBackCount() + 1)
@@ -336,7 +339,8 @@ public class V1Processor implements IProcessor, ActorService {
 					log.info("ready to apply child block::" + applyBlock.getHeader().getBlockHash() + " number::"
 							+ applyBlock.getHeader().getNumber());
 					return ApplyBlock(blockEntity);
-					// oBlockStoreSummary = blockChainHelper.addBlock(applyBlock.build());
+					// oBlockStoreSummary =
+					// blockChainHelper.addBlock(applyBlock.build());
 				}
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 				break;

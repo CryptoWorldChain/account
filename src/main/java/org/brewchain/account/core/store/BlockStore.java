@@ -214,19 +214,26 @@ public class BlockStore implements ActorService {
 		BlockStoreSummary oBlockStoreSummary = new BlockStoreSummary();
 		BlockStoreNodeValue oNode = unStableStore.getNode(block.getHeader().getParentHash(),
 				block.getHeader().getNumber() - 1);
-		
-		log.debug("try to find hash::" + block.getHeader().getParentHash() + " number::" + block.getHeader().getNumber());
-		
+
+		log.debug(
+				"try to find hash::" + block.getHeader().getParentHash() + " number::" + block.getHeader().getNumber());
+
 		if (oNode != null && oNode.isConnect()) {
 			log.debug("try add block, find connected node");
 			oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
 		} else {
-			if (oNode == null ) {
-				log.debug("try add block, not find node");
+			if (oNode == null) {
+				if (maxConnectNumber == block.getHeader().getNumber() - 1) {
+					log.debug("try add block, not find node, may be forked");
+					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_PREV);
+				} else {
+					log.debug("try add block, not find node");
+					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
+				}
 			} else {
 				log.debug("try add block, find node but not connect");
+				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
 			}
-			oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
 		}
 		return oBlockStoreSummary;
 	}

@@ -22,8 +22,7 @@ import onight.tfw.ntrans.api.ActorService;
 @Slf4j
 @Data
 public class WaitBlockHashMapDB implements ActorService {
-	protected final ConcurrentHashMap<String, MultiTransaction> storage;
-
+	protected ConcurrentHashMap<String, MultiTransaction> storage;
 	protected ReadWriteLock rwLock = new ReentrantReadWriteLock();
 	protected ALock readLock = new ALock(rwLock.readLock());
 	protected ALock writeLock = new ALock(rwLock.writeLock());

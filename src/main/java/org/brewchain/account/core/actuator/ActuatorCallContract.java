@@ -90,7 +90,11 @@ public class ActuatorCallContract extends AbstractTransactionActuator implements
 		ProgramResult result = program.getResult();
 
 		if (result.getException() != null || result.isRevert()) {
-			throw result.getException();
+			if (result.getException() != null) {
+                throw result.getException();
+            } else {
+            	throw new TransactionExecuteException("REVERT opcode executed");
+            }
 		} else {
 			Iterator iter = evmApiImp.getTouchAccount().entrySet().iterator();
 			while (iter.hasNext()) {
