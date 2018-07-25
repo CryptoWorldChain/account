@@ -182,6 +182,8 @@ public class TransactionHelper implements ActorService {
 					oPendingHashMapDB.put(oMultiTransaction.getTxHash(), oMultiTransaction.build());
 				}
 			}
+			
+			KeyConstant.counter += 1;
 		} catch (Exception e) {
 			log.error("fail to sync transaction::" + oMultiTransaction.getTxHash() + " error::" + e);
 		}

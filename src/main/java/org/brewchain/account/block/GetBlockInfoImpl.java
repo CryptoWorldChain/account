@@ -60,49 +60,49 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 		RespBlockInfo.Builder oRespBlockInfo = RespBlockInfo.newBuilder();
 		try {
 			oRespBlockInfo.setBlockCount(blockChainHelper.getLastStableBlockNumber());
-
+			oRespBlockInfo.setCache(String.valueOf(KeyConstant.counter));
 			oRespBlockInfo.setNumber(blockChainHelper.getLastBlockNumber());
 			// oRespBlockInfo.setCache(blockChainHelper.getBlockCacheDump());
 			oRespBlockInfo.setWaitSync(oSendingHashMapDB.keys().size());
 			oRespBlockInfo.setWaitBlock(oPendingHashMapDB.keys().size());
-			LinkedList<BlockEntity> list = blockChainHelper.getParentsBlocks(encApi.hexEnc(dao.getBlockDao()
-					.get(oEntityHelper.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get().getExtdata().toByteArray()),
-					null, 10000);
-			int curr = 0;
-			String retCache = "";
-			String parent = "";
-			for (int i = 0; i < list.size(); i++) {
-				oRespBlockInfo.addDump(String.format("%s %s %s", list.get(i).getHeader().getNumber(),
-						list.get(i).getHeader().getBlockHash(), list.get(i).getHeader().getParentHash()));
+//			LinkedList<BlockEntity> list = blockChainHelper.getParentsBlocks(encApi.hexEnc(dao.getBlockDao()
+//					.get(oEntityHelper.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get().getExtdata().toByteArray()),
+//					null, 10000);
+//			int curr = 0;
+//			String retCache = "";
+//			String parent = "";
+//			for (int i = 0; i < list.size(); i++) {
+//				oRespBlockInfo.addDump(String.format("%s %s %s", list.get(i).getHeader().getNumber(),
+//						list.get(i).getHeader().getBlockHash(), list.get(i).getHeader().getParentHash()));
+//
+//				if (parent.isEmpty()) {
+//					parent = list.get(i).getHeader().getParentHash();
+//
+//				} else {
+//					if (!parent.equals(list.get(i).getHeader().getBlockHash())) {
+//						retCache += String.format("%s %s %s ;", list.get(i).getHeader().getNumber(),
+//								list.get(i).getHeader().getBlockHash(), list.get(i).getHeader().getParentHash());
+//					}
+//					parent = list.get(i).getHeader().getParentHash();
+//
+//				}
+//
+//				// if (i == 0)
+//				// retCache = list.get(i).getHeader().getNumber() + ";";
+//				// else
+//				// retCache = list.get(i).getHeader().getNumber() + "->" + retCache;
+//				// if (curr == 0) {
+//				// curr = list.get(i).getHeader().getNumber();
+//				// } else {
+//				// if ((curr - 1) != list.get(i).getHeader().getNumber()) {
+//				// retCache += "error:" + list.get(i).getHeader().getNumber() + ";";
+//				// } else {
+//				// curr = list.get(i).getHeader().getNumber();
+//				// }
+//				// }
+//			}
 
-				if (parent.isEmpty()) {
-					parent = list.get(i).getHeader().getParentHash();
-
-				} else {
-					if (!parent.equals(list.get(i).getHeader().getBlockHash())) {
-						retCache += String.format("%s %s %s ;", list.get(i).getHeader().getNumber(),
-								list.get(i).getHeader().getBlockHash(), list.get(i).getHeader().getParentHash());
-					}
-					parent = list.get(i).getHeader().getParentHash();
-
-				}
-
-				// if (i == 0)
-				// retCache = list.get(i).getHeader().getNumber() + ";";
-				// else
-				// retCache = list.get(i).getHeader().getNumber() + "->" + retCache;
-				// if (curr == 0) {
-				// curr = list.get(i).getHeader().getNumber();
-				// } else {
-				// if ((curr - 1) != list.get(i).getHeader().getNumber()) {
-				// retCache += "error:" + list.get(i).getHeader().getNumber() + ";";
-				// } else {
-				// curr = list.get(i).getHeader().getNumber();
-				// }
-				// }
-			}
-
-			oRespBlockInfo.setCache(retCache);
+			//oRespBlockInfo.setCache(retCache);
 
 			// StateTrie oStateTrie = new StateTrie(this.dao,this.encApi);
 			// oStateTrie.setRoot(list.getFirst().getHeader().getStateRoot().toByteArray());

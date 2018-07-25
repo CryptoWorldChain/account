@@ -28,4 +28,6 @@ public class KeyConstant {
 	public static boolean isStart = false;
 	public static NodeDef node;
 	public static String PWD;
+	
+	public static int counter = 0;
 }

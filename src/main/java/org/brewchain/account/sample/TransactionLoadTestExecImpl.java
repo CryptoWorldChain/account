@@ -63,6 +63,8 @@ public class TransactionLoadTestExecImpl extends SessionModules<ReqCommonTest> {
 						.setFrom(encApi.hexEnc(tx.getTxBody().getInputs(0).getAddress().toByteArray()));
 				oRespCreateTransactionTest
 						.setTo(encApi.hexEnc(tx.getTxBody().getOutputs(0).getAddress().toByteArray()));
+			} else {
+				log.error("cannot find test case::");
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block

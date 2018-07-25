@@ -92,16 +92,11 @@ public class ThreadTransactionSampleImpl extends SessionModules<ReqThreadTransac
 		@Override
 		public void run() {
 			final Timer timer = new Timer();
-			// 设定定时任务
-			timer.schedule(new TimerTask() {
-				// 定时任务执行方法
+			TimerTask oTimerTask = new TimerTask() {
 				@Override
 				public void run() {
 					try {
-						// KeyPairs oFrom = encApi.genKeys();
 						KeyPairs oTo = encApi.genKeys();
-
-						// accountHelper.addBalance(ByteString.copyFrom(encApi.hexDec(address)), new BigInteger("100"));
 
 						MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 						MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
@@ -112,7 +107,6 @@ public class ThreadTransactionSampleImpl extends SessionModules<ReqThreadTransac
 								.setAmount(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(new BigInteger("2"))));
 						int nonce = 0;
 						nonce = accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(address)));
-						// nonce = nonce + i - 1;
 						oMultiTransactionInput4.setNonce(nonce);
 						oMultiTransactionBody.addInputs(oMultiTransactionInput4);
 
@@ -122,7 +116,6 @@ public class ThreadTransactionSampleImpl extends SessionModules<ReqThreadTransac
 								.setAmount(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(new BigInteger("2"))));
 						oMultiTransactionBody.addOutputs(oMultiTransactionOutput1);
 
-						// oMultiTransactionBody.setData(pb.getData());
 						oMultiTransaction.clearTxHash();
 						oMultiTransactionBody.clearSignatures();
 						oMultiTransactionBody.setTimestamp(System.currentTimeMillis());
@@ -135,14 +128,15 @@ public class ThreadTransactionSampleImpl extends SessionModules<ReqThreadTransac
 
 						oMultiTransaction.setTxBody(oMultiTransactionBody);
 						String txHash = th.CreateMultiTransaction(oMultiTransaction);
-						log.debug("Thread Transaction Test ==> txHash::" + txHash + " form::" + address + " nonce::" + nonce + " to::"
-								+ oTo.getAddress());
+						log.debug("Thread Transaction Test ==> txHash::" + txHash + " form::" + address + " nonce::"
+								+ nonce + " to::" + oTo.getAddress());
 					} catch (Exception e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				}
-			}, 0, this.duration);
+			};
+			timer.schedule(oTimerTask, 0, this.duration);
+			oTimerTask = null;
 		}
 	}
 }

@@ -107,6 +107,10 @@ public class V1Processor implements IProcessor, ActorService {
 
 	@Override
 	public BlockEntity.Builder CreateNewBlock(LinkedList<MultiTransaction> txs, String extraData) throws Exception {
+		
+		log.error("call create new block");
+		log.info("call create new block");
+
 		BlockEntity.Builder oBlockEntity = BlockEntity.newBuilder();
 		BlockHeader.Builder oBlockHeader = BlockHeader.newBuilder();
 		BlockBody.Builder oBlockBody = BlockBody.newBuilder();
@@ -181,6 +185,7 @@ public class V1Processor implements IProcessor, ActorService {
 		BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
 		LinkedList<MultiTransaction> txs = new LinkedList<MultiTransaction>();
 		CacheTrie oTrieImpl = new CacheTrie();
+		CacheTrie receiptTrie = new CacheTrie();
 
 		BlockBody.Builder bb = oBlockEntity.getBody().toBuilder();
 		for (String txHash : oBlockHeader.getTxHashsList()) {
@@ -207,7 +212,6 @@ public class V1Processor implements IProcessor, ActorService {
 		Map<String, ByteString> results = ExecuteTransaction(txs, oBlockEntity.build());
 		BlockHeader.Builder header = oBlockEntity.getHeaderBuilder();
 
-		CacheTrie receiptTrie = new CacheTrie();
 		Iterator<String> iter = results.keySet().iterator();
 		while (iter.hasNext()) {
 			String key = iter.next();
