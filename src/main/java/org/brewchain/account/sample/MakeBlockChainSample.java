@@ -12,7 +12,6 @@ import org.brewchain.account.gens.TxTest.PTSTCommand;
 import org.brewchain.account.gens.TxTest.PTSTModule;
 import org.brewchain.account.gens.TxTest.ReqStartNewFork;
 import org.brewchain.account.gens.TxTest.RespStartNewFork;
-import org.brewchain.account.trie.CacheTrie;
 import org.brewchain.core.util.ByteUtil;
 import org.brewchain.evmapi.gens.Block.BlockBody;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
@@ -72,39 +71,39 @@ public class MakeBlockChainSample extends SessionModules<ReqStartNewFork> {
 	}
 
 	public void makeBlock(BlockEntity fromBlock) {
-		BlockEntity.Builder oBlockEntity = BlockEntity.newBuilder();
-		BlockHeader.Builder oBlockHeader = BlockHeader.newBuilder();
-		BlockBody.Builder oBlockBody = BlockBody.newBuilder();
-		BlockMiner.Builder oBlockMiner = BlockMiner.newBuilder();
-		BlockHeader oBestBlockHeader = fromBlock.getHeader();
-
-		// 构造Block Header
-		// oBlockHeader.setCoinbase(ByteString.copyFrom(coinBase));
-		oBlockHeader.setParentHash(oBestBlockHeader.getBlockHash());
-
-		// 确保时间戳不重复
-		long currentTimestamp = System.currentTimeMillis();
-		oBlockHeader
-				.setTimestamp(currentTimestamp == oBestBlockHeader.getTimestamp() ? oBestBlockHeader.getTimestamp() + 1
-						: currentTimestamp);
-		oBlockHeader.setNumber(oBestBlockHeader.getNumber() + 1);
-		oBlockHeader.setExtraData("");
-		// 构造MPT Trie
-		CacheTrie oTrieImpl = new CacheTrie();
-		oBlockMiner.setAddress(encApi.hexEnc(KeyConstant.node.getoAccount().getAddress().toByteArray()));
-		oBlockMiner.setNode(KeyConstant.node.getNode());
-		oBlockMiner.setBcuid(KeyConstant.node.getBcuid());
-		oBlockMiner.setReward(ByteString
-				.copyFrom(ByteUtil.bigIntegerToBytes(transactionHelper.getBlockChainConfig().getMinerReward())));
-		// oBlockMiner.setAddress(value);
-
-		oBlockHeader.setTxTrieRoot(encApi.hexEnc(oTrieImpl.getRootHash()));
-		oBlockHeader.setBlockHash(encApi.hexEnc(encApi.sha256Encode(oBlockHeader.build().toByteArray())));
-		oBlockEntity.setHeader(oBlockHeader);
-		oBlockEntity.setBody(oBlockBody);
-		oBlockEntity.setMiner(oBlockMiner);
-
-		BlockStoreSummary oSummary = blockChainHelper.addBlock(oBlockEntity.build());
+//		BlockEntity.Builder oBlockEntity = BlockEntity.newBuilder();
+//		BlockHeader.Builder oBlockHeader = BlockHeader.newBuilder();
+//		BlockBody.Builder oBlockBody = BlockBody.newBuilder();
+//		BlockMiner.Builder oBlockMiner = BlockMiner.newBuilder();
+//		BlockHeader oBestBlockHeader = fromBlock.getHeader();
+//
+//		// 构造Block Header
+//		// oBlockHeader.setCoinbase(ByteString.copyFrom(coinBase));
+//		oBlockHeader.setParentHash(oBestBlockHeader.getBlockHash());
+//
+//		// 确保时间戳不重复
+//		long currentTimestamp = System.currentTimeMillis();
+//		oBlockHeader
+//				.setTimestamp(currentTimestamp == oBestBlockHeader.getTimestamp() ? oBestBlockHeader.getTimestamp() + 1
+//						: currentTimestamp);
+//		oBlockHeader.setNumber(oBestBlockHeader.getNumber() + 1);
+//		oBlockHeader.setExtraData("");
+//		// 构造MPT Trie
+//		CacheTrie oTrieImpl = new CacheTrie();
+//		oBlockMiner.setAddress(encApi.hexEnc(KeyConstant.node.getoAccount().getAddress().toByteArray()));
+//		oBlockMiner.setNode(KeyConstant.node.getNode());
+//		oBlockMiner.setBcuid(KeyConstant.node.getBcuid());
+//		oBlockMiner.setReward(ByteString
+//				.copyFrom(ByteUtil.bigIntegerToBytes(transactionHelper.getBlockChainConfig().getMinerReward())));
+//		// oBlockMiner.setAddress(value);
+//
+//		oBlockHeader.setTxTrieRoot(encApi.hexEnc(oTrieImpl.getRootHash()));
+//		oBlockHeader.setBlockHash(encApi.hexEnc(encApi.sha256Encode(oBlockHeader.build().toByteArray())));
+//		oBlockEntity.setHeader(oBlockHeader);
+//		oBlockEntity.setBody(oBlockBody);
+//		oBlockEntity.setMiner(oBlockMiner);
+//
+//		BlockStoreSummary oSummary = blockChainHelper.addBlock(oBlockEntity.build());
 		// blockChainHelper.connectBlock(oBlockEntity.build());
 	}
 }

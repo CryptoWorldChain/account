@@ -11,7 +11,7 @@ import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.dao.DefDaos;
-import org.brewchain.account.trie.DBTrie;
+import org.brewchain.account.trie.CacheTrie;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.account.util.ByteUtil;

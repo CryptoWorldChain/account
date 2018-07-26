@@ -1,40 +1,21 @@
 package org.brewchain.account.core;
 
-import java.util.Date;
-import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.Map;
 
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
-import org.brewchain.account.core.actuator.ActuatorCallContract;
-import org.brewchain.account.core.actuator.ActuatorCallInternalFunction;
-import org.brewchain.account.core.actuator.ActuatorCreateContract;
-import org.brewchain.account.core.actuator.ActuatorCreateToken;
-import org.brewchain.account.core.actuator.ActuatorCreateUnionAccount;
-import org.brewchain.account.core.actuator.ActuatorCryptoTokenTransaction;
-import org.brewchain.account.core.actuator.ActuatorDefault;
-import org.brewchain.account.core.actuator.ActuatorLockTokenTransaction;
-import org.brewchain.account.core.actuator.ActuatorTokenTransaction;
-import org.brewchain.account.core.actuator.ActuatorUnionAccountTransaction;
-import org.brewchain.account.core.actuator.iTransactionActuator;
 import org.brewchain.account.core.processor.ProcessorManager;
-import org.brewchain.account.core.store.BlockStoreSummary;
-import org.brewchain.account.core.store.BlockStoreSummary.BLOCK_BEHAVIOR;
 import org.brewchain.account.dao.DefDaos;
-import org.brewchain.account.enums.TransTypeEnum;
 import org.brewchain.account.gens.Blockimpl.AddBlockResponse;
-import org.brewchain.account.trie.CacheTrie;
 import org.brewchain.account.trie.StateTrie;
+import org.brewchain.account.trie.CacheTrie;
 import org.brewchain.account.util.ByteUtil;
-import org.brewchain.account.util.FastByteComparisons;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.brewchain.evmapi.gens.Act.Account;
 import org.brewchain.evmapi.gens.Block.BlockBody;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.brewchain.evmapi.gens.Block.BlockHeader;
-import org.brewchain.evmapi.gens.Block.BlockMiner;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionOutput;
@@ -74,7 +55,7 @@ public class BlockHelper implements ActorService {
 	StateTrie stateTrie;
 	@ActorRequire(name = "Processor_Manager", scope = "global")
 	ProcessorManager oProcessorManager;
-
+	
 	/**
 	 * 创建新区块
 	 * 
@@ -138,19 +119,21 @@ public class BlockHelper implements ActorService {
 		oBlockHeader.setTimestamp(currentTimestamp);
 		oBlockHeader.setNumber(KeyConstant.GENESIS_NUMBER);
 		oBlockHeader.setExtraData(extraData);
-		// 构造MPT Trie
-		CacheTrie oTrieImpl = new CacheTrie();
+		
+		CacheTrie oTransactionTrie = new CacheTrie(this.encApi);
+		
 		for (int i = 0; i < txs.size(); i++) {
 			oBlockHeader.addTxHashs(txs.get(i).getTxHash());
 			oBlockBody.addTxs(txs.get(i));
-			oTrieImpl.put(encApi.hexDec(txs.get(i).getTxHash()), txs.get(i).toByteArray());
+			oTransactionTrie.put(encApi.hexDec(txs.get(i).getTxHash()), txs.get(i).toByteArray());
 		}
 
 		for (Account oAccount : accounts) {
 			this.stateTrie.put(oAccount.getAddress().toByteArray(), oAccount.getValue().toByteArray());
 		}
 		oBlockHeader.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
-		oBlockHeader.setTxTrieRoot(encApi.hexEnc(oTrieImpl.getRootHash()));
+		oBlockHeader.setTxTrieRoot(encApi.hexEnc(oTransactionTrie.getRootHash()));
+		//oBlockHeader.setReceiptTrieRoot(value)
 		oBlockHeader.setBlockHash(encApi.hexEnc(encApi.sha256Encode(oBlockHeader.build().toByteArray())));
 		oBlockEntity.setHeader(oBlockHeader);
 		oBlockEntity.setBody(oBlockBody);

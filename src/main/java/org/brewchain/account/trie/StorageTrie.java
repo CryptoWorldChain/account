@@ -698,9 +698,9 @@ public class StorageTrie implements ActorService {
 		if (o == null || getClass() != o.getClass())
 			return false;
 
-		CacheTrie trieImpl1 = (CacheTrie) o;
+		StorageTrie oStorageTrie = (StorageTrie) o;
 
-		return FastByteComparisons.equal(getRootHash(), trieImpl1.getRootHash());
+		return FastByteComparisons.equal(getRootHash(), oStorageTrie.getRootHash());
 
 	}
 

@@ -14,16 +14,12 @@ import onight.tfw.ntrans.api.annotation.ActorRequire;
 @Slf4j
 @Data
 public class ProcessorManager implements ActorService {
-	@ActorRequire(name = "Default_Processor", scope = "global")
-	DefaultProcessor defaultProcessor;
-
+	
 	@ActorRequire(name = "V1_Processor", scope = "global")
 	V1Processor v1Processor;
 
 	public IProcessor getProcessor(int version) {
-		if (version == 0) {
-			return defaultProcessor;
-		} else if (version == 1) {
+		if (version == 1) {
 			return v1Processor;
 		} else {
 			throw new RuntimeException("worng account version::" + version);

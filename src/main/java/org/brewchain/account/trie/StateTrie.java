@@ -46,7 +46,7 @@ public class StateTrie implements ActorService {
 	DefDaos dao;
 	@ActorRequire(name = "OEntity_Helper", scope = "global")
 	OEntityBuilder oEntityHelper;
-	
+
 	private final static Object NULL_NODE = new Object();
 	private final static int MIN_BRANCHES_CONCURRENTLY = 3;
 	private static ExecutorService executor = Executors.newFixedThreadPool(4,
@@ -695,9 +695,9 @@ public class StateTrie implements ActorService {
 		if (o == null || getClass() != o.getClass())
 			return false;
 
-		CacheTrie trieImpl1 = (CacheTrie) o;
+		StateTrie oStateTrie = (StateTrie) o;
 
-		return FastByteComparisons.equal(getRootHash(), trieImpl1.getRootHash());
+		return FastByteComparisons.equal(getRootHash(), oStateTrie.getRootHash());
 
 	}
 
