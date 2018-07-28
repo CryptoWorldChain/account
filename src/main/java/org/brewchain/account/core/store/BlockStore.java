@@ -411,6 +411,7 @@ public class BlockStore implements ActorService {
 			// put all block into unstable store which height large than number
 			long t = maxStableNumber;
 			while (number <= t) {
+				log.debug("put into unstable number::" + number + " from::" + t);
 				BlockEntity oBlock = stableStore.getBlockByNumber(t);
 				unStableStore.add(oBlock);
 				try {
