@@ -295,7 +295,7 @@ public class V1Processor implements IProcessor, ActorService {
 						oAddBlockResponse.setRetCode(-9);
 						oAddBlockResponse.setCurrentNumber(rollBackNumber);
 						oAddBlockResponse.setWantNumber(rollBackNumber + 1);
-						blockChainHelper.rollbackTo(rollBackNumber, applyBlock.build());
+						blockChainHelper.rollbackTo(rollBackNumber, null);
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 					}
 				} catch (Exception e1) {

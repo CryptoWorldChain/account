@@ -148,7 +148,7 @@ public class BlockStore implements ActorService {
 		}
 	}
 
-	public BlockStoreSummary addBlock(BlockEntity block) {
+	public synchronized BlockStoreSummary addBlock(BlockEntity block) {
 		BlockStoreSummary oBlockStoreSummary = new BlockStoreSummary();
 		String hash = block.getHeader().getBlockHash();
 		long number = block.getHeader().getNumber();
@@ -210,7 +210,7 @@ public class BlockStore implements ActorService {
 		return oBlockStoreSummary;
 	}
 
-	public BlockStoreSummary tryAddBlock(BlockEntity block) {
+	public synchronized BlockStoreSummary tryAddBlock(BlockEntity block) {
 		BlockStoreSummary oBlockStoreSummary = new BlockStoreSummary();
 		BlockStoreNodeValue oNode = unStableStore.getNode(block.getHeader().getParentHash(),
 				block.getHeader().getNumber() - 1);
@@ -238,7 +238,7 @@ public class BlockStore implements ActorService {
 		return oBlockStoreSummary;
 	}
 
-	public BlockStoreSummary connectBlock(BlockEntity block) throws BlockNotFoundInStoreException {
+	public synchronized BlockStoreSummary connectBlock(BlockEntity block) throws BlockNotFoundInStoreException {
 		BlockStoreSummary oBlockStoreSummary = new BlockStoreSummary();
 
 		String hash = block.getHeader().getBlockHash();
@@ -275,7 +275,7 @@ public class BlockStore implements ActorService {
 		}
 	}
 
-	public BlockStoreSummary stableBlock(BlockEntity block) {
+	public synchronized BlockStoreSummary stableBlock(BlockEntity block) {
 		BlockStoreSummary oBlockStoreSummary = new BlockStoreSummary();
 		if (stableStore.add(block)) {
 			if (maxStableNumber < block.getHeader().getNumber()) {
@@ -290,7 +290,7 @@ public class BlockStore implements ActorService {
 		return oBlockStoreSummary;
 	}
 
-	public BlockEntity getBlockByNumber(long number) {
+	public synchronized BlockEntity getBlockByNumber(long number) {
 		BlockEntity oBlockEntity = unStableStore.getBlockByNumber(number);
 		if (oBlockEntity == null) {
 			oBlockEntity = stableStore.getBlockByNumber(number);
@@ -298,7 +298,7 @@ public class BlockStore implements ActorService {
 		return oBlockEntity;
 	}
 
-	public List<BlockEntity> getBlocksByNumber(long number) {
+	public synchronized List<BlockEntity> getBlocksByNumber(long number) {
 		List<BlockEntity> ret = new ArrayList<>();
 		try {
 			List<OPair> oPairs = dao.getBlockDao().listBySecondKey(String.valueOf(number)).get();
@@ -313,7 +313,7 @@ public class BlockStore implements ActorService {
 		return ret;
 	}
 
-	public BlockEntity getBlockByHash(String hash) {
+	public synchronized BlockEntity getBlockByHash(String hash) {
 		BlockEntity oBlockEntity = unStableStore.get(hash);
 		if (oBlockEntity == null) {
 			oBlockEntity = stableStore.get(hash);
@@ -321,7 +321,7 @@ public class BlockStore implements ActorService {
 		return oBlockEntity;
 	}
 
-	public BlockEntity getBlockByHash(String hash, long number) {
+	public synchronized BlockEntity getBlockByHash(String hash, long number) {
 		BlockEntity oBlockEntity = unStableStore.get(hash, number);
 		if (oBlockEntity == null) {
 			oBlockEntity = stableStore.get(hash);
@@ -329,7 +329,7 @@ public class BlockStore implements ActorService {
 		return oBlockEntity;
 	}
 
-	public List<BlockEntity> getReadyConnectBlock(String hash, long number) {
+	public synchronized List<BlockEntity> getReadyConnectBlock(String hash, long number) {
 		return unStableStore.getUnConnectChild(hash, number + 1);
 		// for (Iterator<BlockEntity> iterator = lists.iterator();
 		// iterator.hasNext();)
@@ -342,7 +342,7 @@ public class BlockStore implements ActorService {
 		// return null;
 	}
 
-	public List<BlockEntity> getChildListBlocksEndWith(String blockHash, String endBlockHash, int maxCount) {
+	public synchronized List<BlockEntity> getChildListBlocksEndWith(String blockHash, String endBlockHash, int maxCount) {
 		BlockEntity firstBlock = getBlockByHash(blockHash);
 		if (firstBlock == null) {
 			return new ArrayList<>();
@@ -365,7 +365,7 @@ public class BlockStore implements ActorService {
 		return blocks;
 	}
 
-	public List<BlockEntity> getParentListBlocksEndWith(String blockHash, String endBlockHash, long maxCount) {
+	public synchronized List<BlockEntity> getParentListBlocksEndWith(String blockHash, String endBlockHash, long maxCount) {
 		BlockEntity firstBlock = getBlockByHash(blockHash);
 		if (firstBlock == null) {
 			return new ArrayList<>();
@@ -391,18 +391,18 @@ public class BlockStore implements ActorService {
 		return blocks;
 	}
 
-	public boolean isConnect(String hash, long number) {
+	public synchronized boolean isConnect(String hash, long number) {
 		if (unStableStore.isConnect(hash, number) || stableStore.containKey(hash)) {
 			return true;
 		}
 		return false;
 	}
 
-	public boolean isStable(String hash) {
+	public synchronized boolean isStable(String hash) {
 		return stableStore.containKey(hash);
 	}
 
-	public BlockEntity rollBackTo(long number, BlockEntity fromBlock) {
+	public synchronized BlockEntity rollBackTo(long number, BlockEntity fromBlock) {
 		log.info("blockstore try to rollback to number::" + number + " maxconnect::" + this.getMaxConnectNumber()
 				+ " maxstable::" + this.getMaxStableNumber());
 
