@@ -231,7 +231,7 @@ public class BlockStore implements ActorService {
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
 				}
 			} else {
-				log.debug("try add block, find node but not connect");
+				log.debug("try add block, find node but not connect number::" + oNode.getNumber());
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
 			}
 		}
@@ -408,7 +408,21 @@ public class BlockStore implements ActorService {
 
 		BlockEntity oBlockEntity = unStableStore.rollBackTo(number, fromBlock == null ? maxConnectBlock : fromBlock);
 		if (oBlockEntity == null) {
+			// put all block into unstable store which height large than number
+			long t = maxStableNumber;
+			while (number <= t) {
+				BlockEntity oBlock = stableStore.getBlockByNumber(t);
+				unStableStore.add(oBlock);
+				try {
+					unStableStore.connect(oBlock.getHeader().getBlockHash(), t);
+				} catch (BlockNotFoundInStoreException e) {
+					log.error("block not found::", e);
+				}
+				t -= 1;
+			}
+
 			oBlockEntity = stableStore.rollBackTo(number);
+
 			unStableStore.disconnectAll(oBlockEntity);
 
 			maxConnectNumber = oBlockEntity.getHeader().getNumber();

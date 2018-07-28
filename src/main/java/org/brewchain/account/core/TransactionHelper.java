@@ -271,12 +271,12 @@ public class TransactionHelper implements ActorService {
 	 */
 	public MultiTransaction GetTransaction(String txHash) throws Exception {
 		OValue oValue = dao.getTxsDao().get(oEntityHelper.byteKey2OKey(encApi.hexDec(txHash))).get();
-		MultiTransaction.Builder oTransaction = MultiTransaction.newBuilder();
+		
 		if (oValue == null || oValue.getExtdata() == null) {
 			throw new Exception(String.format("没有找到hash %s 的交易数据", txHash));
 		}
-		oTransaction.mergeFrom(oValue.getExtdata().toByteArray());
-		return oTransaction.build();
+		MultiTransaction oTransaction = MultiTransaction.parseFrom(oValue.getExtdata().toByteArray());
+		return oTransaction;
 	}
 
 	/**

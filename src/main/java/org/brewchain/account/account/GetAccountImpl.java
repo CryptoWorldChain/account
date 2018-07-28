@@ -100,12 +100,14 @@ public class GetAccountImpl extends SessionModules<ReqGetAccount> {
 				oAccountValueImpl.setStorage(encApi.hexEnc(oAccountValue.getStorage().toByteArray()));
 				oAccountValueImpl.setCode(encApi.hexEnc(oAccountValue.getCode().toByteArray()));
 				oAccountValueImpl.setCodeHash(encApi.hexEnc(oAccountValue.getCodeHash().toByteArray()));
+			} else {
+				log.error("cannot find address::" + pb.getAddress());
 			}
 			oRespGetAccount.setAddress(pb.getAddress());
 			oRespGetAccount.setAccount(oAccountValueImpl);
 			oRespGetAccount.setRetCode(1);
 		} catch (Exception e) {
-			log.error("GetAccountImpl error", e);
+			log.error("GetAccountImpl error::" + pb.getAddress(), e);
 			oRespGetAccount.clear();
 			oRespGetAccount.setRetCode(-1);
 		}

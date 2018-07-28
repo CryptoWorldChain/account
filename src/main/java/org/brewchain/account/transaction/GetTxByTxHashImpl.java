@@ -44,7 +44,8 @@ public class GetTxByTxHashImpl extends SessionModules<ReqGetTxByHash> {
 
 		try {
 			MultiTransaction oTransaction = transactionHelper
-					.GetTransaction(ByteUtil.formatHexAddress(pb.getHexTxHash()));
+					.GetTransaction(pb.getHexTxHash());
+			
 			MultiTransactionImpl.Builder oMultiTransactionImpl = transactionHelper.parseToImpl(oTransaction);
 			oRespGetTxByHash.setTransaction(oMultiTransactionImpl);
 			oRespGetTxByHash.setRetCode(1);
@@ -54,5 +55,6 @@ public class GetTxByTxHashImpl extends SessionModules<ReqGetTxByHash> {
 			log.error("GetTxByTxHashImpl error",e);
 		}
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespGetTxByHash.build()));
+		return;
 	}
 }

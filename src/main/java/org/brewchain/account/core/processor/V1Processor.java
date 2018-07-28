@@ -141,15 +141,19 @@ public class V1Processor implements IProcessor, ActorService {
 		for (int i = 0; i < txs.size(); i++) {
 			oBlockHeader.addTxHashs(txs.get(i).getTxHash());
 			oBlockBody.addTxs(txs.get(i));
-//			this.transactionTrie.put(RLP.encodeInt(i),
-//					transactionHelper.getTransactionContent(txs.get(i)));
+			// this.transactionTrie.put(RLP.encodeInt(i),
+			// transactionHelper.getTransactionContent(txs.get(i)));
 		}
 		oBlockMiner.setAddress(encApi.hexEnc(KeyConstant.node.getoAccount().getAddress().toByteArray()));
 		oBlockMiner.setNode(KeyConstant.node.getNode());
 		oBlockMiner.setBcuid(KeyConstant.node.getBcuid());
-		oBlockMiner.setReward(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(blockChainConfig.getMinerReward())));
-		// oBlockMiner.setAddress(value);
 
+		// cal reward
+//		oBlockMiner.setReward(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(
+//				blockChainConfig.getMinerReward().multiply(blockChainConfig.getBlockEpochSecond()))));
+		// oBlockMiner.setAddress(value);
+		oBlockMiner.setReward(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(blockChainConfig.getMinerReward())));
+		
 		// oBlockHeader.setTxTrieRoot(encApi.hexEnc(this.transactionTrie.getRootHash()));
 		oBlockHeader.setBlockHash(encApi.hexEnc(encApi.sha256Encode(oBlockHeader.build().toByteArray())));
 		oBlockEntity.setHeader(oBlockHeader);
@@ -189,7 +193,7 @@ public class V1Processor implements IProcessor, ActorService {
 		LinkedList<MultiTransaction> txs = new LinkedList<MultiTransaction>();
 		CacheTrie oTransactionTrie = new CacheTrie(this.encApi);
 		CacheTrie oReceiptTrie = new CacheTrie(this.encApi);
-		
+
 		BlockBody.Builder bb = oBlockEntity.getBody().toBuilder();
 		int i = 0;
 		for (String txHash : oBlockHeader.getTxHashsList()) {
@@ -206,14 +210,18 @@ public class V1Processor implements IProcessor, ActorService {
 				txs.add(oMultiTransaction);
 			}
 			oMultiTransaction = null;
-			
-			i ++ ;
+
+			i++;
 		}
-//		if (!oBlockEntity.getHeader().getTxTrieRoot().equals(encApi.hexEnc(this.transactionTrie.getRootHash() == null
-//				? ByteUtil.EMPTY_BYTE_ARRAY : this.transactionTrie.getRootHash()))) {
-//			throw new Exception(String.format("transaction trie root hash %s not equal %s",
-//					oBlockEntity.getHeader().getTxTrieRoot(), encApi.hexEnc(this.transactionTrie.getRootHash())));
-//		}
+		// if
+		// (!oBlockEntity.getHeader().getTxTrieRoot().equals(encApi.hexEnc(this.transactionTrie.getRootHash()
+		// == null
+		// ? ByteUtil.EMPTY_BYTE_ARRAY : this.transactionTrie.getRootHash()))) {
+		// throw new Exception(String.format("transaction trie root hash %s not
+		// equal %s",
+		// oBlockEntity.getHeader().getTxTrieRoot(),
+		// encApi.hexEnc(this.transactionTrie.getRootHash())));
+		// }
 		oBlockEntity.setBody(bb);
 		Map<String, ByteString> results = ExecuteTransaction(txs, oBlockEntity.build());
 		BlockHeader.Builder header = oBlockEntity.getHeaderBuilder();
@@ -229,10 +237,10 @@ public class V1Processor implements IProcessor, ActorService {
 		accountHelper.addTokenBalance(ByteString.copyFrom(encApi.hexDec(oBlockEntity.getMiner().getAddress())), "CWS",
 				ByteUtil.bytesToBigInteger(oBlockEntity.getMiner().getReward().toByteArray()));
 
-		header.setReceiptTrieRoot(encApi.hexEnc(oReceiptTrie.getRootHash() == null
-				? ByteUtil.EMPTY_BYTE_ARRAY : oReceiptTrie.getRootHash()));
-		header.setTxTrieRoot(encApi.hexEnc(oTransactionTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY
-				: oTransactionTrie.getRootHash()));
+		header.setReceiptTrieRoot(encApi
+				.hexEnc(oReceiptTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY : oReceiptTrie.getRootHash()));
+		header.setTxTrieRoot(encApi.hexEnc(
+				oTransactionTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY : oTransactionTrie.getRootHash()));
 		header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
 		oBlockEntity.setHeader(header);
 	}
