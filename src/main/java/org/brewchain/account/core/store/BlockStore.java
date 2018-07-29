@@ -231,8 +231,14 @@ public class BlockStore implements ActorService {
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
 				}
 			} else {
-				log.debug("try add block, find node but not connect number::" + oNode.getNumber());
-				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
+				log.debug("try add block, find node but not connect number::" + oNode.getNumber() + " , may be forked");
+				List<BlockEntity> existsParent = unStableStore.getConnectBlocksByNumber(block.getHeader().getNumber() - 1);
+				if (existsParent.size() > 0) {
+					log.warn("forks, number::" + (block.getHeader().getNumber() - 1));
+					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_PREV);
+				} else {
+					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
+				}
 			}
 		}
 		return oBlockStoreSummary;

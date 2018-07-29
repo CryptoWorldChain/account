@@ -165,9 +165,9 @@ public class BlockChainHelper implements ActorService {
 		return blockStore.getReadyConnectBlock(oBlock.getHeader().getBlockHash(), oBlock.getHeader().getNumber());
 	}
 
-//	public BlockEntity rollbackTo(BlockEntity block) {
-//		return blockStore.rollBackTo(block.getHeader().getNumber());
-//	}
+	// public BlockEntity rollbackTo(BlockEntity block) {
+	// return blockStore.rollBackTo(block.getHeader().getNumber());
+	// }
 
 	public BlockEntity rollbackTo(long number, BlockEntity fromBlock) {
 		return blockStore.rollBackTo(number, fromBlock);
@@ -266,14 +266,10 @@ public class BlockChainHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public BlockEntity getBlockByNumber(long number) throws Exception {
+	public BlockEntity getBlockByNumber(long number) {
 		// 判断从前遍历还是从后遍历
 		BlockEntity oBlockEntity = blockStore.getBlockByNumber(number);
-		if (oBlockEntity == null) {
-			throw new Exception(String.format("cannot find the block with number %s", number));
-		} else {
-			return oBlockEntity;
-		}
+		return oBlockEntity;
 	}
 
 	/**

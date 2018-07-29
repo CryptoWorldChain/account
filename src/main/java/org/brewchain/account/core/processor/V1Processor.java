@@ -29,6 +29,7 @@ import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.brewchain.evmapi.gens.Block.BlockHeader;
 import org.brewchain.evmapi.gens.Block.BlockMiner;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
+import org.brewchain.evmapi.gens.Tx.MultiTransactionBody;
 import org.brewchain.rcvm.utils.RLP;
 import org.fc.brewchain.bcapi.EncAPI;
 
@@ -204,6 +205,8 @@ public class V1Processor implements IProcessor, ActorService {
 					+ encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(0).getAddress().toByteArray()) + " nonce::"
 					+ oMultiTransaction.getTxBody().getInputs(0).getNonce());
 
+//			oMultiTransaction.clearStatus();
+//			oMultiTransaction.clearResult();
 			oTransactionTrie.put(RLP.encodeInt(i), transactionHelper.getTransactionContent(oMultiTransaction));
 			bb.addTxs(oMultiTransaction);
 			// if (oMultiTransaction.getStatus() == null ||

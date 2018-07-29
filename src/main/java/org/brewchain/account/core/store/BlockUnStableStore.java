@@ -348,6 +348,7 @@ public class BlockUnStableStore implements ActorService {
 				}
 
 				if (oNode != null) {
+					log.debug(" dump node::"+ oNode.getBlockHash() + " number::"+ oNode.getNumber() + " connect::" + oNode.isConnect());
 					dao.getBlockDao().put(oEntityHelper.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK),
 							oEntityHelper.byteValue2OValue(encApi.hexDec(oNode.getBlockHash())));
 					return oNode.getBlockEntity();
