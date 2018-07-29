@@ -186,8 +186,8 @@ public class BlockStore implements ActorService {
 				}
 			} else {
 				if (oParentNode == null) {
-					BlockEntity existsParent = unStableStore.getBlockByNumber(number - 1);
-					if (existsParent != null) {
+					List<BlockEntity> existsParent = unStableStore.getConnectBlocksByNumber(number - 1);
+					if (existsParent.size() > 0) {
 						log.warn("forks, number::" + (block.getHeader().getNumber() - 1));
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_PREV);
 					} else {

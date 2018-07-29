@@ -271,17 +271,7 @@ public class BlockUnStableStore implements ActorService {
 				return ((BlockStoreNodeValue) storage.column(number).values().toArray()[0]).getBlockEntity();
 			}
 			return null;
-
-			// for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it =
-			// storage.entrySet().iterator(); it.hasNext();) {
-			// Map.Entry<String, BlockStoreNodeValue> item = it.next();
-			// if (item.getValue().getNumber() == number &&
-			// item.getValue().isConnect()) {
-			// return item.getValue().getBlockEntity();
-			// }
-			// }
 		}
-		// return null;
 	}
 
 	public BlockEntity getBlockByNumberAndHash(String hash, long number) {
@@ -290,20 +280,10 @@ public class BlockUnStableStore implements ActorService {
 				return storage.get(hash, number).getBlockEntity();
 			}
 			return null;
-
-			// for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it =
-			// storage.entrySet().iterator(); it.hasNext();) {
-			// Map.Entry<String, BlockStoreNodeValue> item = it.next();
-			// if (item.getValue().getNumber() == number &&
-			// item.getValue().isConnect()) {
-			// return item.getValue().getBlockEntity();
-			// }
-			// }
 		}
-		// return null;
 	}
 
-	public List<BlockEntity> getBlocksByNumber(long number) {
+	public List<BlockEntity> getConnectBlocksByNumber(long number) {
 		try (ALock l = writeLock.lock()) {
 			List<BlockEntity> list = new ArrayList<>();
 			for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.column(number).entrySet().iterator(); it
