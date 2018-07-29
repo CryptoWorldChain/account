@@ -149,11 +149,11 @@ public class V1Processor implements IProcessor, ActorService {
 		oBlockMiner.setBcuid(KeyConstant.node.getBcuid());
 
 		// cal reward
-//		oBlockMiner.setReward(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(
-//				blockChainConfig.getMinerReward().multiply(blockChainConfig.getBlockEpochSecond()))));
+		// oBlockMiner.setReward(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(
+		// blockChainConfig.getMinerReward().multiply(blockChainConfig.getBlockEpochSecond()))));
 		// oBlockMiner.setAddress(value);
 		oBlockMiner.setReward(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(blockChainConfig.getMinerReward())));
-		
+
 		// oBlockHeader.setTxTrieRoot(encApi.hexEnc(this.transactionTrie.getRootHash()));
 		oBlockHeader.setBlockHash(encApi.hexEnc(encApi.sha256Encode(oBlockHeader.build().toByteArray())));
 		oBlockEntity.setHeader(oBlockHeader);
@@ -206,10 +206,11 @@ public class V1Processor implements IProcessor, ActorService {
 
 			oTransactionTrie.put(RLP.encodeInt(i), transactionHelper.getTransactionContent(oMultiTransaction));
 			bb.addTxs(oMultiTransaction);
-			if (oMultiTransaction.getStatus() == null || oMultiTransaction.getStatus().isEmpty()) {
-				txs.add(oMultiTransaction);
-			}
-			oMultiTransaction = null;
+			// if (oMultiTransaction.getStatus() == null ||
+			// oMultiTransaction.getStatus().isEmpty()) {
+			txs.add(oMultiTransaction);
+			// }
+			// oMultiTransaction = null;
 
 			i++;
 		}

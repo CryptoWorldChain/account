@@ -201,7 +201,7 @@ public class BlockUnStableStore implements ActorService {
 					.hasNext();) {
 				Map.Entry<String, BlockStoreNodeValue> item = it.next();
 				log.debug("find child in cache, hash::" + item.getKey() + " parent::" + item.getValue().getParentHash()
-						+ " number::" + item.getValue().getNumber());
+						+ " number::" + item.getValue().getNumber() + " connect::" + item.getValue().isConnect());
 				if (item.getValue().getParentHash().equals(hash) && !item.getValue().isConnect()) {
 					return true;
 				}
