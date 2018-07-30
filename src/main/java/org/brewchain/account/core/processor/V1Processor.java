@@ -344,7 +344,7 @@ public class V1Processor implements IProcessor, ActorService {
 									.equals(applyBlock.getHeader().getReceiptTrieRoot())) {
 						log.error("begin to roll back, stateRoot::" + oBlockEntity.getHeader().getStateRoot()
 								+ " blockStateRoot::" + applyBlock.getHeader().getStateRoot());
-
+						
 						blockChainHelper.rollbackTo(applyBlock.getHeader().getNumber() - 2, applyBlock.build());
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.ERROR);
 					} else {

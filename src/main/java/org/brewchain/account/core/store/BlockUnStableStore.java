@@ -96,10 +96,16 @@ public class BlockUnStableStore implements ActorService {
 		try (ALock l = writeLock.lock()) {
 			try {
 				BlockStoreNodeValue oNode = null;
-				if (!this.storage.containsRow(hash)) {
+				oNode = this.storage.get(hash, number);
+				if (oNode == null) {
 					oNode = new BlockStoreNodeValue(hash, parentHash, number, block);
 					this.storage.put(hash, number, oNode);
 					log.debug("add block into cache number::" + oNode.getNumber() + " hash::" + oNode.getBlockHash());
+				} else if (!oNode.isConnect()) {
+					this.storage.put(hash, number, oNode);
+					log.debug("update block in cache number::" + oNode.getNumber() + " hash::" + oNode.getBlockHash());
+				} else {
+					log.debug("block already connect in cache number::" + oNode.getNumber() + " hash::" + oNode.getBlockHash());
 				}
 				return true;
 			} catch (Exception e) {
@@ -348,7 +354,8 @@ public class BlockUnStableStore implements ActorService {
 				}
 
 				if (oNode != null) {
-					log.debug(" dump node::"+ oNode.getBlockHash() + " number::"+ oNode.getNumber() + " connect::" + oNode.isConnect());
+					log.debug(" dump node::" + oNode.getBlockHash() + " number::" + oNode.getNumber() + " connect::"
+							+ oNode.isConnect());
 					dao.getBlockDao().put(oEntityHelper.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK),
 							oEntityHelper.byteValue2OValue(encApi.hexDec(oNode.getBlockHash())));
 					return oNode.getBlockEntity();

@@ -212,35 +212,50 @@ public class BlockStore implements ActorService {
 
 	public synchronized BlockStoreSummary tryAddBlock(BlockEntity block) {
 		BlockStoreSummary oBlockStoreSummary = new BlockStoreSummary();
-		BlockStoreNodeValue oNode = unStableStore.getNode(block.getHeader().getParentHash(),
+		BlockStoreNodeValue oParentNode = unStableStore.getNode(block.getHeader().getParentHash(),
 				block.getHeader().getNumber() - 1);
 
 		log.debug(
 				"try to find hash::" + block.getHeader().getParentHash() + " number::" + block.getHeader().getNumber());
 
-		if (oNode != null && oNode.isConnect()) {
-			log.debug("try add block, find connected node");
-			oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
-		} else {
-			if (oNode == null) {
-				if (maxConnectNumber == block.getHeader().getNumber() - 1) {
-					log.debug("try add block, not find node, may be forked");
-					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_PREV);
-				} else {
-					log.debug("try add block, not find node");
-					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
-				}
+		if (oParentNode == null) {
+			List<BlockEntity> existsParent = unStableStore.getConnectBlocksByNumber(block.getHeader().getNumber() - 1);
+			if (existsParent.size() > 0) {
+				log.warn("forks, number::" + (block.getHeader().getNumber() - 1));
+				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_PREV);
 			} else {
-				log.debug("try add block, find node but not connect number::" + oNode.getNumber() + " , may be forked");
-				List<BlockEntity> existsParent = unStableStore.getConnectBlocksByNumber(block.getHeader().getNumber() - 1);
-				if (existsParent.size() > 0) {
-					log.warn("forks, number::" + (block.getHeader().getNumber() - 1));
-					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_PREV);
-				} else {
-					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
-				}
+				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
 			}
+		} else if (oParentNode != null && (oParentNode.getNumber() + 1) != block.getHeader().getNumber()) {
+			log.warn("parent node number is wrong::" + oParentNode.getNumber());
+			oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
+		} else if (oParentNode != null && !oParentNode.isConnect()) {
+			log.warn("parent node not connect hash::" + oParentNode.getBlockHash() + " number::"
+					+ oParentNode.getNumber());
+			oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
+		} else {
+			oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
 		}
+		
+//		if (oNode != null && oNode.isConnect()) {
+//			log.debug("try add block, find connected node");
+//			oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
+//		} else {
+//			if (oNode == null) {
+//					log.debug("try add block, not find node");
+//					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
+//			} else {
+////				log.debug("try add block, find node but not connect number::" + oNode.getNumber() + " , may be forked");
+////				List<BlockEntity> existsParent = unStableStore.getConnectBlocksByNumber(block.getHeader().getNumber() - 1);
+////				if (existsParent.size() > 0) {
+////					log.warn("forks, number::" + (block.getHeader().getNumber() - 1));
+////					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_PREV);
+////				} else {
+////					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
+////				}
+//					
+//			}
+//		}
 		return oBlockStoreSummary;
 	}
 
