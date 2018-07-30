@@ -68,7 +68,8 @@ public class V1Processor implements IProcessor, ActorService {
 
 		Map<String, ByteString> results = new LinkedHashMap<>();
 		for (MultiTransaction oTransaction : oMultiTransactions) {
-			log.debug("exec transaction hash::" + oTransaction.getTxHash());
+			log.debug("block " + currentBlock.getHeader().getBlockHash() + " exec transaction hash::"
+					+ oTransaction.getTxHash());
 			iTransactionActuator oiTransactionActuator = transactionHelper
 					.getActuator(oTransaction.getTxBody().getType(), currentBlock);
 
@@ -82,11 +83,18 @@ public class V1Processor implements IProcessor, ActorService {
 				while (iterator.hasNext()) {
 					String key = iterator.next();
 					AccountValue value = accounts.get(key).getValue();
+					log.debug("block " + currentBlock.getHeader().getBlockHash() + " exec transaction hash::"
+							+ oTransaction.getTxHash() + " put key::" + key + " value::"
+							+ encApi.hexEnc(value.toByteArray()));
 					this.stateTrie.put(encApi.hexDec(key), value.toByteArray());
 				}
 				oAccountHelper.BatchPutAccounts(accounts);
 				oiTransactionActuator.onExecuteDone(oTransaction, result);
 				results.put(oTransaction.getTxHash(), result);
+
+				log.debug("block " + currentBlock.getHeader().getBlockHash() + " exec transaction hash::"
+						+ oTransaction.getTxHash() + " done");
+
 			} catch (Exception e) {
 				oiTransactionActuator.onExecuteError(oTransaction,
 						ByteString.copyFromUtf8(e.getMessage() == null ? "unknown exception" : e.getMessage()));
@@ -94,7 +102,10 @@ public class V1Processor implements IProcessor, ActorService {
 				results.put(oTransaction.getTxHash(),
 						ByteString.copyFromUtf8(e.getMessage() == null ? "unknown exception" : e.getMessage()));
 				// throw e;
-				log.error("error on exec tx::", e);
+				log.debug("block " + currentBlock.getHeader().getBlockHash() + " exec transaction hash::"
+						+ oTransaction.getTxHash() + " error", e);
+				// log.error("error on exec tx::" + oTransaction.getTxHash(),
+				// e);
 			}
 		}
 		return results;
@@ -201,12 +212,6 @@ public class V1Processor implements IProcessor, ActorService {
 			transactionHelper.removeWaitBlockTx(txHash);
 			MultiTransaction oMultiTransaction = transactionHelper.GetTransaction(txHash);
 
-			log.debug("Thread Transaction Test ==> exec hash::" + txHash + " from::"
-					+ encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(0).getAddress().toByteArray()) + " nonce::"
-					+ oMultiTransaction.getTxBody().getInputs(0).getNonce());
-
-//			oMultiTransaction.clearStatus();
-//			oMultiTransaction.clearResult();
 			oTransactionTrie.put(RLP.encodeInt(i), transactionHelper.getTransactionContent(oMultiTransaction));
 			bb.addTxs(oMultiTransaction);
 			// if (oMultiTransaction.getStatus() == null ||
@@ -329,6 +334,7 @@ public class V1Processor implements IProcessor, ActorService {
 				BlockEntity parentBlock;
 				try {
 					parentBlock = blockChainHelper.getBlockByHash(applyBlock.getHeader().getParentHash());
+
 					this.stateTrie.setRoot(encApi.hexDec(parentBlock.getHeader().getStateRoot()));
 					// processBlock(applyBlock);
 					processBlock(applyBlock);
@@ -344,7 +350,7 @@ public class V1Processor implements IProcessor, ActorService {
 									.equals(applyBlock.getHeader().getReceiptTrieRoot())) {
 						log.error("begin to roll back, stateRoot::" + oBlockEntity.getHeader().getStateRoot()
 								+ " blockStateRoot::" + applyBlock.getHeader().getStateRoot());
-						
+
 						blockChainHelper.rollbackTo(applyBlock.getHeader().getNumber() - 2, applyBlock.build());
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.ERROR);
 					} else {

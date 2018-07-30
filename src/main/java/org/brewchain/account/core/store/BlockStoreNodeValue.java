@@ -3,7 +3,9 @@ package org.brewchain.account.core.store;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
 
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Data
 public class BlockStoreNodeValue {
 	private String blockHash;
@@ -35,10 +37,12 @@ public class BlockStoreNodeValue {
 	}
 
 	public void connect() {
+		log.debug("connect hash::" + this.blockHash + " number::" + this.number);
 		this.isConnect = true;
 	}
 
 	public void disConnect() {
+		log.debug("disconnect hash::" + this.blockHash + " number::" + this.number);
 		this.isConnect = false;
 	}
 }

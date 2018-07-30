@@ -70,6 +70,7 @@ public class BlockUnStableStore implements ActorService {
 			if (this.storage.containsRow(hash)) {
 				BlockStoreNodeValue oBlockStoreNodeValue = (BlockStoreNodeValue) this.storage.row(hash).values()
 						.toArray()[0];
+				log.debug("find hash::" + hash + " size::" + this.storage.row(hash).values().toArray().length);
 				if (oBlockStoreNodeValue != null) {
 					return oBlockStoreNodeValue.getBlockEntity();
 				}
@@ -105,7 +106,8 @@ public class BlockUnStableStore implements ActorService {
 					this.storage.put(hash, number, oNode);
 					log.debug("update block in cache number::" + oNode.getNumber() + " hash::" + oNode.getBlockHash());
 				} else {
-					log.debug("block already connect in cache number::" + oNode.getNumber() + " hash::" + oNode.getBlockHash());
+					log.debug("block already connect in cache number::" + oNode.getNumber() + " hash::"
+							+ oNode.getBlockHash());
 				}
 				return true;
 			} catch (Exception e) {
@@ -223,7 +225,7 @@ public class BlockUnStableStore implements ActorService {
 					.hasNext();) {
 				Map.Entry<String, BlockStoreNodeValue> item = it.next();
 				log.debug("find child in cache, hash::" + item.getKey() + " parent::" + item.getValue().getParentHash()
-						+ " number::" + item.getValue().getNumber());
+						+ " number::" + item.getValue().getNumber() + " connect::" + item.getValue().isConnect());
 				if (item.getValue().getParentHash().equals(hash) && !item.getValue().isConnect()) {
 					list.add(item.getValue().getBlockEntity());
 				}

@@ -154,21 +154,16 @@ public class AccountHelper implements ActorService {
 			byte[] valueHash = null;
 			if (this.stateTrie != null) {
 				valueHash = this.stateTrie.get(addr.toByteArray());
-			}
-			if (valueHash == null) {
-				OValue oValue = dao.getAccountDao().get(oEntityHelper.byteKey2OKey(addr)).get();
-				if (oValue != null && oValue.getExtdata() != null) {
-					valueHash = oValue.getExtdata().toByteArray();
-				} else {
-					return null;
+				if (valueHash != null) {
+					AccountValue.Builder oAccountValue = AccountValue.newBuilder();
+					oAccountValue.mergeFrom(valueHash);
+					oAccount.setValue(oAccountValue);
+
+					return oAccount.build();
 				}
-			}
-			AccountValue.Builder oAccountValue = AccountValue.newBuilder();
-			oAccountValue.mergeFrom(valueHash);
-			oAccount.setValue(oAccountValue);
-			return oAccount.build();
+			} 
 		} catch (Exception e) {
-			log.error("account not found::" + addr);
+			log.error("account not found::" + encApi.hexEnc(addr.toByteArray()));
 		}
 		return null;
 	}
@@ -307,27 +302,29 @@ public class AccountHelper implements ActorService {
 	 */
 	public synchronized long addCryptoBalance(ByteString addr, String symbol, AccountCryptoToken.Builder token)
 			throws Exception {
-		
-		
+
 		OValue oValue = dao.getAccountDao().get(oEntityHelper.byteKey2OKey(addr)).get();
 		if (oValue != null && oValue.getExtdata() != null) {
 		} else {
 			return 0;
 		}
-	
+
 		AccountValue.Builder oAccountValue = AccountValue.newBuilder();
 		oAccountValue.mergeFrom(oValue.getExtdata().toByteArray());
-		
+
 		token.setOwner(addr);
 		token.setNonce(token.getNonce() + 1);
 		token.setOwnertime(System.currentTimeMillis());
-		
+
 		for (int i = 0; i < oAccountValue.getCryptosList().size(); i++) {
 			if (oAccountValue.getCryptosList().get(i).getSymbol().equals(symbol)) {
 				AccountCryptoValue.Builder oAccountCryptoValue = oAccountValue.getCryptos(i).toBuilder();
 				// boolean isTokenExists = false;
-				// for (int k = 0; k < oAccountCryptoValue.getTokensCount(); k++) {
-				// if (oAccountCryptoValue.getTokens(k).getHash().equals(token.getHash())) {
+				// for (int k = 0; k < oAccountCryptoValue.getTokensCount();
+				// k++) {
+				// if
+				// (oAccountCryptoValue.getTokens(k).getHash().equals(token.getHash()))
+				// {
 				// isTokenExists = true;
 				// break;
 				// }

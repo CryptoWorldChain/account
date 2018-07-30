@@ -231,31 +231,40 @@ public class BlockStore implements ActorService {
 			oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
 		} else if (oParentNode != null && !oParentNode.isConnect()) {
 			log.warn("parent node not connect hash::" + oParentNode.getBlockHash() + " number::"
-					+ oParentNode.getNumber());
-			oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
+					+ oParentNode.getNumber() + ", may be forked");
+			List<BlockEntity> existsParent = unStableStore.getConnectBlocksByNumber(block.getHeader().getNumber() - 1);
+			if (existsParent.size() > 0) {
+				log.warn("forks, number::" + (block.getHeader().getNumber() - 1));
+				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_PREV);
+			} else {
+				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
+			}
 		} else {
 			oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
 		}
-		
-//		if (oNode != null && oNode.isConnect()) {
-//			log.debug("try add block, find connected node");
-//			oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
-//		} else {
-//			if (oNode == null) {
-//					log.debug("try add block, not find node");
-//					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
-//			} else {
-////				log.debug("try add block, find node but not connect number::" + oNode.getNumber() + " , may be forked");
-////				List<BlockEntity> existsParent = unStableStore.getConnectBlocksByNumber(block.getHeader().getNumber() - 1);
-////				if (existsParent.size() > 0) {
-////					log.warn("forks, number::" + (block.getHeader().getNumber() - 1));
-////					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_PREV);
-////				} else {
-////					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
-////				}
-//					
-//			}
-//		}
+
+		// if (oNode != null && oNode.isConnect()) {
+		// log.debug("try add block, find connected node");
+		// oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
+		// } else {
+		// if (oNode == null) {
+		// log.debug("try add block, not find node");
+		// oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
+		// } else {
+		//// log.debug("try add block, find node but not connect number::" +
+		// oNode.getNumber() + " , may be forked");
+		//// List<BlockEntity> existsParent =
+		// unStableStore.getConnectBlocksByNumber(block.getHeader().getNumber()
+		// - 1);
+		//// if (existsParent.size() > 0) {
+		//// log.warn("forks, number::" + (block.getHeader().getNumber() - 1));
+		//// oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_PREV);
+		//// } else {
+		//// oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
+		//// }
+		//
+		// }
+		// }
 		return oBlockStoreSummary;
 	}
 
@@ -363,7 +372,8 @@ public class BlockStore implements ActorService {
 		// return null;
 	}
 
-	public synchronized List<BlockEntity> getChildListBlocksEndWith(String blockHash, String endBlockHash, int maxCount) {
+	public synchronized List<BlockEntity> getChildListBlocksEndWith(String blockHash, String endBlockHash,
+			int maxCount) {
 		BlockEntity firstBlock = getBlockByHash(blockHash);
 		if (firstBlock == null) {
 			return new ArrayList<>();
@@ -386,7 +396,8 @@ public class BlockStore implements ActorService {
 		return blocks;
 	}
 
-	public synchronized List<BlockEntity> getParentListBlocksEndWith(String blockHash, String endBlockHash, long maxCount) {
+	public synchronized List<BlockEntity> getParentListBlocksEndWith(String blockHash, String endBlockHash,
+			long maxCount) {
 		BlockEntity firstBlock = getBlockByHash(blockHash);
 		if (firstBlock == null) {
 			return new ArrayList<>();
@@ -427,35 +438,42 @@ public class BlockStore implements ActorService {
 		log.info("blockstore try to rollback to number::" + number + " maxconnect::" + this.getMaxConnectNumber()
 				+ " maxstable::" + this.getMaxStableNumber());
 
-		BlockEntity oBlockEntity = unStableStore.rollBackTo(number, fromBlock == null ? maxConnectBlock : fromBlock);
-		if (oBlockEntity == null) {
-			// put all block into unstable store which height large than number
-			long t = maxStableNumber;
-			while (number <= t) {
-				log.debug("put into unstable number::" + number + " from::" + t);
-				BlockEntity oBlock = stableStore.getBlockByNumber(t);
-				unStableStore.add(oBlock);
-				try {
-					unStableStore.connect(oBlock.getHeader().getBlockHash(), t);
-				} catch (BlockNotFoundInStoreException e) {
-					log.error("block not found::", e);
+		if (this.getMaxConnectNumber() > number) {
+			BlockEntity oBlockEntity = unStableStore.rollBackTo(number,
+					fromBlock == null ? maxConnectBlock : fromBlock);
+			if (oBlockEntity == null) {
+				// put all block into unstable store which height large than
+				// number
+				long t = maxStableNumber;
+				while (number <= t) {
+					log.debug("put into unstable number::" + number + " from::" + t);
+					BlockEntity oBlock = stableStore.getBlockByNumber(t);
+					unStableStore.add(oBlock);
+					try {
+						unStableStore.connect(oBlock.getHeader().getBlockHash(), t);
+					} catch (BlockNotFoundInStoreException e) {
+						log.error("block not found::", e);
+					}
+					t -= 1;
 				}
-				t -= 1;
+
+				log.warn("roll back stable store!!");
+				oBlockEntity = stableStore.rollBackTo(number);
+
+				unStableStore.disconnectAll(oBlockEntity);
+
+				maxConnectNumber = oBlockEntity.getHeader().getNumber();
+				maxConnectBlock = oBlockEntity;
+				maxStableNumber = oBlockEntity.getHeader().getNumber();
+				maxStableBlock = oBlockEntity;
+			} else {
+				maxConnectNumber = oBlockEntity.getHeader().getNumber();
+				maxConnectBlock = oBlockEntity;
 			}
-
-			oBlockEntity = stableStore.rollBackTo(number);
-
-			unStableStore.disconnectAll(oBlockEntity);
-
-			maxConnectNumber = oBlockEntity.getHeader().getNumber();
-			maxConnectBlock = oBlockEntity;
-			maxStableNumber = oBlockEntity.getHeader().getNumber();
-			maxStableBlock = oBlockEntity;
+			return oBlockEntity;
 		} else {
-			maxConnectNumber = oBlockEntity.getHeader().getNumber();
-			maxConnectBlock = oBlockEntity;
+			return maxConnectBlock;
 		}
-		return oBlockEntity;
 	}
 
 	public static class IllegalOperationException extends Exception {
