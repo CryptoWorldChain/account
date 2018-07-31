@@ -215,8 +215,8 @@ public class BlockStore implements ActorService {
 		BlockStoreNodeValue oParentNode = unStableStore.getNode(block.getHeader().getParentHash(),
 				block.getHeader().getNumber() - 1);
 
-		log.debug(
-				"try to find hash::" + block.getHeader().getParentHash() + " number::" + block.getHeader().getNumber());
+		log.debug("try to find hash::" + block.getHeader().getParentHash() + " number::"
+				+ (block.getHeader().getNumber() - 1));
 
 		if (oParentNode == null) {
 			List<BlockEntity> existsParent = unStableStore.getConnectBlocksByNumber(block.getHeader().getNumber() - 1);

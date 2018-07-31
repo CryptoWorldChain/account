@@ -68,7 +68,7 @@ public class GetLastBlockImpl extends SessionModules<ReqBlockInfo> {
 			oBlockMinerImpl.setAddress(oBlockEntity.getMiner().getAddress());
 			oBlockMinerImpl.setNode(oBlockEntity.getMiner().getNode());
 			oBlockMinerImpl.setReward(
-					String.valueOf(UnitUtil.fromWei(ByteUtil.bytesToBigInteger(oBlockEntity.getMiner().getReward().toByteArray()))));
+					String.valueOf(ByteUtil.bytesToBigInteger(oBlockEntity.getMiner().getReward().toByteArray())));
 			
 			oRespBlockDetail.setMiner(oBlockMinerImpl);
 			oRespBlockDetail.setRetCode(1);

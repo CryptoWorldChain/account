@@ -161,10 +161,10 @@ public class V1Processor implements IProcessor, ActorService {
 		oBlockMiner.setBcuid(KeyConstant.node.getBcuid());
 
 		// cal reward
-		// oBlockMiner.setReward(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(
-		// blockChainConfig.getMinerReward().multiply(blockChainConfig.getBlockEpochSecond()))));
-		// oBlockMiner.setAddress(value);
-		oBlockMiner.setReward(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(blockChainConfig.getMinerReward())));
+		oBlockMiner.setReward(ByteString.copyFrom(
+				ByteUtil.bigIntegerToBytes(blockChainConfig.getMinerReward().multiply(new BigInteger(String.valueOf(
+						Math.max(blockChainConfig.getBlockEpochSecond(), blockChainConfig.getBlockEpochMSecond())))))));
+		// oBlockMiner.setReward(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(blockChainConfig.getMinerReward())));
 
 		// oBlockHeader.setTxTrieRoot(encApi.hexEnc(this.transactionTrie.getRootHash()));
 		oBlockHeader.setBlockHash(encApi.hexEnc(encApi.sha256Encode(oBlockHeader.build().toByteArray())));
