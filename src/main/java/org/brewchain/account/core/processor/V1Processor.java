@@ -286,27 +286,30 @@ public class V1Processor implements IProcessor, ActorService {
 			case EXISTS_PREV:
 				log.info("block exists, but cannot find parent block number::" + applyBlock.getHeader().getNumber());
 				try {
-					BlockEntity pBlockEntity = blockChainHelper.getBlockByHash(applyBlock.getHeader().getParentHash());
-					if (pBlockEntity != null) {
-						log.debug("find in local cache number::" + pBlockEntity.getHeader().getBlockHash());
-						applyBlock = pBlockEntity.toBuilder();
-						oBlockStoreSummary = blockChainHelper.addBlock(applyBlock.build());
-					} else {
-						// long rollBackNumber =
-						// applyBlock.getHeader().getNumber() > blockChainConfig
-						// .getDefaultRollBackCount()
-						// ? applyBlock.getHeader().getNumber()
-						// - (blockChainConfig.getDefaultRollBackCount() + 1)
-						// : applyBlock.getHeader().getNumber() - 2;
+					// BlockEntity pBlockEntity =
+					// blockChainHelper.getBlockByHash(applyBlock.getHeader().getParentHash());
+					// if (pBlockEntity != null) {
+					// log.debug("find in local cache number::" +
+					// pBlockEntity.getHeader().getBlockHash());
+					// applyBlock = pBlockEntity.toBuilder();
+					// oBlockStoreSummary =
+					// blockChainHelper.addBlock(applyBlock.build());
+					// } else {
+					// long rollBackNumber =
+					// applyBlock.getHeader().getNumber() > blockChainConfig
+					// .getDefaultRollBackCount()
+					// ? applyBlock.getHeader().getNumber()
+					// - (blockChainConfig.getDefaultRollBackCount() + 1)
+					// : applyBlock.getHeader().getNumber() - 2;
 
-						long rollBackNumber = applyBlock.getHeader().getNumber() - 2;
-						log.debug("need prev block number::" + rollBackNumber);
-						oAddBlockResponse.setRetCode(-9);
-						oAddBlockResponse.setCurrentNumber(rollBackNumber);
-						oAddBlockResponse.setWantNumber(rollBackNumber + 1);
-						blockChainHelper.rollbackTo(rollBackNumber, null);
-						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
-					}
+					long rollBackNumber = applyBlock.getHeader().getNumber() - 2;
+					log.debug("need prev block number::" + rollBackNumber);
+					oAddBlockResponse.setRetCode(-9);
+					oAddBlockResponse.setCurrentNumber(rollBackNumber);
+					oAddBlockResponse.setWantNumber(rollBackNumber + 1);
+					blockChainHelper.rollbackTo(rollBackNumber, null);
+					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
+					// }
 				} catch (Exception e1) {
 					log.error("exception ", e1);
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.ERROR);
