@@ -117,6 +117,7 @@ public class BlockUnStableStore implements ActorService {
 					this.storage.put(hash, number, oNode);
 					log.debug("add block into cache number::" + oNode.getNumber() + " hash::" + oNode.getBlockHash());
 				} else if (!oNode.isConnect()) {
+					oNode.setBlockEntity(block); 
 					this.storage.put(hash, number, oNode);
 					log.debug("update block in cache number::" + oNode.getNumber() + " hash::" + oNode.getBlockHash());
 				} else {
