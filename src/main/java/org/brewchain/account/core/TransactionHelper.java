@@ -15,6 +15,7 @@ import org.apache.felix.ipojo.annotations.Provides;
 import org.brewchain.account.core.actuator.ActuatorCallContract;
 import org.brewchain.account.core.actuator.ActuatorCallInternalFunction;
 import org.brewchain.account.core.actuator.ActuatorCreateContract;
+import org.brewchain.account.core.actuator.ActuatorCreateCryptoToken;
 import org.brewchain.account.core.actuator.ActuatorCreateToken;
 import org.brewchain.account.core.actuator.ActuatorCreateUnionAccount;
 import org.brewchain.account.core.actuator.ActuatorCryptoTokenTransaction;
@@ -162,8 +163,9 @@ public class TransactionHelper implements ActorService {
 	}
 
 	public void syncTransaction(MultiTransaction.Builder oMultiTransaction, boolean isBroadCast) {
-//		log.debug(
-//				"receive sync txhash::" + oMultiTransaction.getTxHash() + " status::" + oMultiTransaction.getStatus());
+		// log.debug(
+		// "receive sync txhash::" + oMultiTransaction.getTxHash() + " status::"
+		// + oMultiTransaction.getStatus());
 		try {
 			OValue oValue = dao.getTxsDao()
 					.get(oEntityHelper.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash()))).get();
@@ -178,11 +180,12 @@ public class TransactionHelper implements ActorService {
 
 				if (isBroadCast) {
 					// 保存交易到缓存中，用于打包
-//					log.debug("add to wait block txhash::" + oMultiTransaction.getTxHash());
+					// log.debug("add to wait block txhash::" +
+					// oMultiTransaction.getTxHash());
 					oPendingHashMapDB.put(oMultiTransaction.getTxHash(), oMultiTransaction.build());
 				}
 			}
-			
+
 			KeyConstant.counter += 1;
 		} catch (Exception e) {
 			log.error("fail to sync transaction::" + oMultiTransaction.getTxHash() + " error::" + e);
@@ -205,7 +208,7 @@ public class TransactionHelper implements ActorService {
 			Map.Entry<String, MultiTransaction> item = it.next();
 			list.add(item.getValue());
 			it.remove();
-//			log.debug("get and remove sycn txhash::" + item.getKey());
+			// log.debug("get and remove sycn txhash::" + item.getKey());
 			total += 1;
 			if (count == total) {
 				break;
@@ -248,8 +251,9 @@ public class TransactionHelper implements ActorService {
 			Map.Entry<String, MultiTransaction> item = it.next();
 			list.add(item.getValue());
 			it.remove();
-//			log.debug("get need blocked tx and remove from cache, txhash::" + item.getKey() + " size::"
-//					+ oPendingHashMapDB.getStorage().size());
+			// log.debug("get need blocked tx and remove from cache, txhash::" +
+			// item.getKey() + " size::"
+			// + oPendingHashMapDB.getStorage().size());
 			total += 1;
 			if (count == total) {
 				break;
@@ -271,7 +275,7 @@ public class TransactionHelper implements ActorService {
 	 */
 	public MultiTransaction GetTransaction(String txHash) throws Exception {
 		OValue oValue = dao.getTxsDao().get(oEntityHelper.byteKey2OKey(encApi.hexDec(txHash))).get();
-		
+
 		if (oValue == null || oValue.getExtdata() == null) {
 			throw new Exception(String.format("没有找到hash %s 的交易数据", txHash));
 		}
@@ -637,6 +641,10 @@ public class TransactionHelper implements ActorService {
 			oiTransactionActuator = new ActuatorCallContract(oAccountHelper, this, oCurrentBlock, encApi, dao,
 					this.stateTrie);
 			break;
+		case TYPE_CreateCryptoToken:
+			oiTransactionActuator = new ActuatorCreateCryptoToken(oAccountHelper, this, oCurrentBlock, encApi, dao,
+					this.stateTrie);
+			break;
 		default:
 			oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, this, oCurrentBlock, encApi, dao,
 					this.stateTrie);
@@ -665,7 +673,8 @@ public class TransactionHelper implements ActorService {
 		if (StringUtils.isNotBlank(blockChainConfig.getLock_account_address())) {
 			accounts.put(blockChainConfig.getLock_account_address(),
 					oAccountHelper
-							.GetAccountOrCreate(ByteString.copyFrom(encApi.hexDec(blockChainConfig.getLock_account_address())))
+							.GetAccountOrCreate(
+									ByteString.copyFrom(encApi.hexDec(blockChainConfig.getLock_account_address())))
 							.toBuilder());
 		}
 		return accounts;

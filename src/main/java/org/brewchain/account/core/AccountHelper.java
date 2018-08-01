@@ -29,6 +29,7 @@ import org.brewchain.evmapi.gens.Act.Account;
 import org.brewchain.evmapi.gens.Act.AccountContract;
 import org.brewchain.evmapi.gens.Act.AccountContractValue;
 import org.brewchain.evmapi.gens.Act.AccountCryptoToken;
+import org.brewchain.evmapi.gens.Act.AccountCryptoToken.Builder;
 import org.brewchain.evmapi.gens.Act.AccountCryptoValue;
 import org.brewchain.evmapi.gens.Act.AccountTokenValue;
 import org.brewchain.evmapi.gens.Act.AccountValue;
@@ -161,7 +162,7 @@ public class AccountHelper implements ActorService {
 
 					return oAccount.build();
 				}
-			} 
+			}
 		} catch (Exception e) {
 			log.error("account not found::" + encApi.hexEnc(addr.toByteArray()));
 		}
@@ -594,6 +595,11 @@ public class AccountHelper implements ActorService {
 				oEntityHelper.byteValue2OValue(oERC20Token.build().toByteArray()));
 	}
 
+	public void createCryptoToken(Builder oAccountCryptoToken, String symbol) {
+		dao.getCryptoTokenDao().put(oEntityHelper.byteKey2OKey(oAccountCryptoToken.getHash()),
+				oEntityHelper.byteValue2OValue(oAccountCryptoToken.build().toByteArray(), symbol));
+	}
+
 	public void createContract(ByteString addr, ByteString contract) throws Exception {
 		OValue oValue = dao.getAccountDao().get(oEntityHelper.byteKey2OKey(KeyConstant.DB_EXISTS_CONTRACT)).get();
 		AccountContract.Builder oAccountContract;
@@ -658,6 +664,14 @@ public class AccountHelper implements ActorService {
 			}
 		}
 		return false;
+	}
+
+	public boolean isExistsCryptoToken(byte[] hash) throws Exception {
+		OValue oValue = dao.getAccountDao().get(oEntityHelper.byteKey2OKey(hash)).get();
+		if (oValue == null) {
+			return false;
+		}
+		return true;
 	}
 
 	public void putAccountValue(ByteString addr, AccountValue oAccountValue, boolean stateable) {

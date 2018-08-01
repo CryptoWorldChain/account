@@ -33,6 +33,9 @@ public class DefDaos extends SessionModules<Message> {
 	@StoreDAO(target = "bc_bdb", daoClass = TxBlockDomain.class)
 	ODBSupport txblockDao;
 
+	@StoreDAO(target = "bc_bdb", daoClass = CryptoTokenDomain.class)
+	ODBSupport cryptoTokenDao;
+
 	@Override
 	public void onDaoServiceAllReady() {
 		// log.debug("EncAPI==" + enc);
@@ -44,6 +47,14 @@ public class DefDaos extends SessionModules<Message> {
 	public void onDaoServiceReady(DomainDaoSupport arg0) {
 	}
 
+	public void setCryptoTokenDao(DomainDaoSupport cryptoTokenDao) {
+		this.cryptoTokenDao = (ODBSupport) cryptoTokenDao;
+	}
+
+	public ODBSupport getCryptoTokenDao() {
+		return cryptoTokenDao;
+	}
+
 	public void setAccountDao(DomainDaoSupport accountDao) {
 		this.accountDao = (ODBSupport) accountDao;
 	}
@@ -51,14 +62,6 @@ public class DefDaos extends SessionModules<Message> {
 	public ODBSupport getAccountDao() {
 		return accountDao;
 	}
-
-	// public void setTxDao(DomainDaoSupport txDao) {
-	// this.txDao = (ODBSupport) txDao;
-	// }
-
-	// public ODBSupport getTxDao() {
-	// return txDao;
-	// }
 
 	public void setBlockDao(DomainDaoSupport blockDao) {
 		this.blockDao = (ODBSupport) blockDao;
@@ -95,18 +98,12 @@ public class DefDaos extends SessionModules<Message> {
 	}
 
 	public boolean isReady() {
-		if (blockDao != null 
-				&& BlockDomain.class.isInstance(blockDao)
-				&& blockDao.getDaosupport() != null
-				&& txblockDao != null 
-				&& TxBlockDomain.class.isInstance(txblockDao)
-				&& txblockDao.getDaosupport() != null
-				&& txsDao != null 
-				&& TxSecondaryDomain.class.isInstance(txsDao)
-				&& txsDao.getDaosupport() != null
-				&& accountDao != null
-				&& AccoutDomain.class.isInstance(accountDao)
-				&& accountDao.getDaosupport() != null) {
+		if (blockDao != null && BlockDomain.class.isInstance(blockDao) && blockDao.getDaosupport() != null
+				&& txblockDao != null && TxBlockDomain.class.isInstance(txblockDao)
+				&& txblockDao.getDaosupport() != null && txsDao != null && TxSecondaryDomain.class.isInstance(txsDao)
+				&& txsDao.getDaosupport() != null && accountDao != null && AccoutDomain.class.isInstance(accountDao)
+				&& accountDao.getDaosupport() != null && CryptoTokenDomain.class.isInstance(cryptoTokenDao)
+				&& cryptoTokenDao.getDaosupport() != null) {
 			return true;
 		}
 		return false;

@@ -102,8 +102,8 @@ public class V1Processor implements IProcessor, ActorService {
 				results.put(oTransaction.getTxHash(),
 						ByteString.copyFromUtf8(e.getMessage() == null ? "unknown exception" : e.getMessage()));
 				// throw e;
-				log.debug("block " + currentBlock.getHeader().getBlockHash() + " exec transaction hash::"
-						+ oTransaction.getTxHash() + " error", e);
+				log.error("block " + currentBlock.getHeader().getBlockHash() + " exec transaction hash::"
+						+ oTransaction.getTxHash() + " error::" + e.getMessage());
 				// log.error("error on exec tx::" + oTransaction.getTxHash(),
 				// e);
 			}
@@ -371,7 +371,7 @@ public class V1Processor implements IProcessor, ActorService {
 					applyBlock = blockEntity.toBuilder();
 					log.info("ready to apply child block::" + applyBlock.getHeader().getBlockHash() + " number::"
 							+ applyBlock.getHeader().getNumber());
-					return ApplyBlock(blockEntity);
+					ApplyBlock(blockEntity);
 					// oBlockStoreSummary =
 					// blockChainHelper.addBlock(applyBlock.build());
 				}

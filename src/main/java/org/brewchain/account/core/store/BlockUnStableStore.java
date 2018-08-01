@@ -12,6 +12,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
+import org.brewchain.account.block.GetBlockByHashImpl;
 import org.brewchain.account.core.BlockChainConfig;
 import org.brewchain.account.core.KeyConstant;
 import org.brewchain.account.core.store.BlockStore.BlockNotFoundInStoreException;
@@ -61,8 +62,15 @@ public class BlockUnStableStore implements ActorService {
 
 	public boolean containKey(String hash) {
 		try (ALock l = writeLock.lock()) {
-			return this.storage.containsRow(hash);
+			if (this.storage.containsRow(hash)) {
+				BlockStoreNodeValue oBlockStoreNodeValue = (BlockStoreNodeValue) this.storage.row(hash).values()
+						.toArray()[0];
+				if (oBlockStoreNodeValue.isConnect()) {
+					return true;
+				}
+			}
 		}
+		return false;
 	}
 
 	public BlockEntity get(String hash) {
