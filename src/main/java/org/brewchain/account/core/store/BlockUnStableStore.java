@@ -60,7 +60,7 @@ public class BlockUnStableStore implements ActorService {
 		storage = HashBasedTable.create();
 	}
 
-	public boolean containKey(String hash) {
+	public boolean containConnectKey(String hash) {
 		try (ALock l = writeLock.lock()) {
 			if (this.storage.containsRow(hash)) {
 				BlockStoreNodeValue oBlockStoreNodeValue = (BlockStoreNodeValue) this.storage.row(hash).values()
@@ -71,6 +71,12 @@ public class BlockUnStableStore implements ActorService {
 			}
 		}
 		return false;
+	}
+	
+	public boolean containKey(String hash) {
+		try (ALock l = writeLock.lock()) {
+			return this.storage.containsRow(hash);
+		}
 	}
 
 	public BlockEntity get(String hash) {
