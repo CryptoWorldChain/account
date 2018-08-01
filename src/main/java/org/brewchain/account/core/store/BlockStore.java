@@ -199,7 +199,13 @@ public class BlockStore implements ActorService {
 				} else if (oParentNode != null && !oParentNode.isConnect()) {
 					log.warn("parent node not connect hash::" + oParentNode.getBlockHash() + " number::"
 							+ oParentNode.getNumber());
-					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.CACHE);
+					List<BlockEntity> existsParent = unStableStore.getConnectBlocksByNumber(block.getHeader().getNumber() - 1);
+					if (existsParent.size() > 0) {
+						log.warn("forks, number::" + (block.getHeader().getNumber() - 1));
+						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_PREV);
+					} else {
+						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.CACHE);
+					}
 				} else {
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
 				}
