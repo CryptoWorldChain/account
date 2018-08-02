@@ -98,15 +98,23 @@ public class ActuatorCreateCryptoToken extends AbstractTransactionActuator imple
 		senderAccountValue.setBalance(ByteString.copyFrom(ByteUtil
 				.bytesSubToBytes(senderAccountValue.getBalance().toByteArray(), input.getAmount().toByteArray())));
 
+		boolean isAdd = false;
 		for (int j = 0; j < senderAccountValue.getCryptosCount(); j++) {
 			if (senderAccountValue.getCryptos(j).getSymbol().equals(input.getSymbol())) {
 				AccountCryptoValue.Builder oAccountCryptoValue = senderAccountValue.getCryptos(j).toBuilder();
 				oAccountCryptoValue.addTokens(oAccountCryptoToken);
-				
+
 				senderAccountValue.setCryptos(j, oAccountCryptoValue);
+				isAdd = true;
 				break;
 			}
 		}
+		if (!isAdd) {
+			AccountCryptoValue.Builder oAccountCryptoValue = AccountCryptoValue.newBuilder();
+			oAccountCryptoValue.addTokens(oAccountCryptoToken);
+			senderAccountValue.addCryptos(oAccountCryptoValue);
+		}
+
 		sender.setValue(senderAccountValue);
 		accounts.put(encApi.hexEnc(sender.getAddress().toByteArray()), sender);
 
