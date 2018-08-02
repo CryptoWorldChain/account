@@ -72,7 +72,7 @@ public class BlockUnStableStore implements ActorService {
 		}
 		return false;
 	}
-	
+
 	public boolean containKey(String hash) {
 		try (ALock l = writeLock.lock()) {
 			return this.storage.containsRow(hash);
@@ -117,7 +117,7 @@ public class BlockUnStableStore implements ActorService {
 					this.storage.put(hash, number, oNode);
 					log.debug("add block into cache number::" + oNode.getNumber() + " hash::" + oNode.getBlockHash());
 				} else if (!oNode.isConnect()) {
-					oNode.setBlockEntity(block); 
+					oNode.setBlockEntity(block);
 					this.storage.put(hash, number, oNode);
 					log.debug("update block in cache number::" + oNode.getNumber() + " hash::" + oNode.getBlockHash());
 				} else {
@@ -289,12 +289,10 @@ public class BlockUnStableStore implements ActorService {
 	}
 
 	public BlockEntity getBlockByNumber(long number) {
-		try (ALock l = writeLock.lock()) {
-			if (storage.containsColumn(number)) {
-				return ((BlockStoreNodeValue) storage.column(number).values().toArray()[0]).getBlockEntity();
-			}
-			return null;
+		if (storage.containsColumn(number)) {
+			return ((BlockStoreNodeValue) storage.column(number).values().toArray()[0]).getBlockEntity();
 		}
+		return null;
 	}
 
 	public BlockEntity getBlockByNumberAndHash(String hash, long number) {
@@ -320,6 +318,18 @@ public class BlockUnStableStore implements ActorService {
 		}
 	}
 
+	public List<BlockEntity> getBlocksByNumber(long number) {
+		try (ALock l = writeLock.lock()) {
+			List<BlockEntity> list = new ArrayList<>();
+			for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.column(number).entrySet().iterator(); it
+					.hasNext();) {
+				Map.Entry<String, BlockStoreNodeValue> item = it.next();
+				list.add(item.getValue().getBlockEntity());
+			}
+			return list;
+		}
+	}
+
 	public void put(String hash, BlockEntity block) {
 		try (ALock l = writeLock.lock()) {
 			BlockStoreNodeValue oBlockStoreNodeValue = this.storage.get(hash, block.getHeader().getNumber());
@@ -338,50 +348,39 @@ public class BlockUnStableStore implements ActorService {
 		}
 	}
 
-	public BlockEntity rollBackTo(long number, BlockEntity maxConnectBlock) {
-		if (maxConnectBlock != null) {
-			try (ALock l = writeLock.lock()) {
-				String fHash = maxConnectBlock.getHeader().getParentHash();
-				long fNumber = maxConnectBlock.getHeader().getNumber() - 1;
-				BlockStoreNodeValue oNode = null;
-				log.debug("roll back from hash::" + maxConnectBlock.getHeader().getBlockHash() + " parent::"
-						+ maxConnectBlock.getHeader().getParentHash() + " number::"
-						+ maxConnectBlock.getHeader().getNumber());
-				while (fHash != null && this.storage.contains(fHash, fNumber) && fNumber >= number) {
-					boolean isExistsChild = false;
-					log.debug("roll back to::" + fHash + " number::" + fNumber);
-					BlockStoreNodeValue currentNode = this.storage.get(fHash, fNumber);
+	public BlockEntity rollBackTo(long number, long maxNumber) {
+		try (ALock l = writeLock.lock()) {
+			BlockStoreNodeValue oNode = null;
+			boolean isContinue = false;
+			for (long i = maxNumber; i >= number; i--) {
+				log.debug("roll back to number::" + i);
+				List<BlockEntity> blocks = getBlocksByNumber(i);
+				for (BlockEntity blockEntity : blocks) {
+					BlockStoreNodeValue currentNode = this.storage.get(blockEntity.getHeader().getBlockHash(),
+							blockEntity.getHeader().getNumber());
 					if (currentNode != null && currentNode.isConnect()) {
-						if (fNumber != number) {
+						if (currentNode.getNumber() != number) {
 							currentNode.disConnect();
 							this.storage.put(currentNode.getBlockHash(), currentNode.getNumber(), currentNode);
 							log.debug("disconnect unstable cache number::" + currentNode.getNumber() + " hash::"
 									+ currentNode.getBlockHash());
 						}
-						fHash = currentNode.getBlockEntity().getHeader().getParentHash();
-						fNumber = currentNode.getBlockEntity().getHeader().getNumber() - 1;
-						isExistsChild = true;
-
+						
 						oNode = currentNode;
 					}
-
-					if (!isExistsChild) {
-						fHash = null;
-					}
-				}
-
-				if (oNode != null) {
-					log.debug(" dump node::" + oNode.getBlockHash() + " number::" + oNode.getNumber() + " connect::"
-							+ oNode.isConnect());
-					dao.getBlockDao().put(oEntityHelper.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK),
-							oEntityHelper.byteValue2OValue(encApi.hexDec(oNode.getBlockHash())));
-					return oNode.getBlockEntity();
-				} else {
-					return null;
 				}
 			}
+
+			if (oNode != null) {
+				log.debug(" dump node::" + oNode.getBlockHash() + " number::" + oNode.getNumber() + " connect::"
+						+ oNode.isConnect());
+				dao.getBlockDao().put(oEntityHelper.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK),
+						oEntityHelper.byteValue2OValue(encApi.hexDec(oNode.getBlockHash())));
+				return oNode.getBlockEntity();
+			} else {
+				return null;
+			}
 		}
-		return null;
 	}
 
 	public void disconnectAll(BlockEntity block) {

@@ -307,7 +307,7 @@ public class V1Processor implements IProcessor, ActorService {
 					oAddBlockResponse.setRetCode(-9);
 					oAddBlockResponse.setCurrentNumber(rollBackNumber);
 					oAddBlockResponse.setWantNumber(rollBackNumber + 1);
-					blockChainHelper.rollbackTo(rollBackNumber, null);
+					blockChainHelper.rollbackTo(rollBackNumber);
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 					// }
 				} catch (Exception e1) {
@@ -354,7 +354,7 @@ public class V1Processor implements IProcessor, ActorService {
 						log.error("begin to roll back, stateRoot::" + oBlockEntity.getHeader().getStateRoot()
 								+ " blockStateRoot::" + applyBlock.getHeader().getStateRoot());
 
-						blockChainHelper.rollbackTo(applyBlock.getHeader().getNumber() - 2, applyBlock.build());
+						blockChainHelper.rollbackTo(applyBlock.getHeader().getNumber() - 2);
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.ERROR);
 					} else {
 						oBlockStoreSummary = blockChainHelper.connectBlock(applyBlock.build());

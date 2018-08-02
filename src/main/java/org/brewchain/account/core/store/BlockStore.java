@@ -199,7 +199,8 @@ public class BlockStore implements ActorService {
 				} else if (oParentNode != null && !oParentNode.isConnect()) {
 					log.warn("parent node not connect hash::" + oParentNode.getBlockHash() + " number::"
 							+ oParentNode.getNumber());
-					List<BlockEntity> existsParent = unStableStore.getConnectBlocksByNumber(block.getHeader().getNumber() - 1);
+					List<BlockEntity> existsParent = unStableStore
+							.getConnectBlocksByNumber(block.getHeader().getNumber() - 1);
 					if (existsParent.size() > 0) {
 						log.warn("forks, number::" + (block.getHeader().getNumber() - 1));
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_PREV);
@@ -440,38 +441,14 @@ public class BlockStore implements ActorService {
 		return stableStore.containKey(hash);
 	}
 
-	public synchronized BlockEntity rollBackTo(long number, BlockEntity fromBlock) {
+	public synchronized BlockEntity rollBackTo(long number) {
 		log.info("blockstore try to rollback to number::" + number + " maxconnect::" + this.getMaxConnectNumber()
 				+ " maxstable::" + this.getMaxStableNumber());
 
 		if (this.getMaxConnectNumber() > number) {
-			BlockEntity oBlockEntity = unStableStore.rollBackTo(number,
-					fromBlock == null ? maxConnectBlock : fromBlock);
+			BlockEntity oBlockEntity = unStableStore.rollBackTo(number, this.getMaxConnectNumber());
 			if (oBlockEntity == null) {
-				// put all block into unstable store which height large than
-				// number
-				long t = maxStableNumber;
-				while (number <= t) {
-					log.debug("put into unstable number::" + number + " from::" + t);
-					BlockEntity oBlock = stableStore.getBlockByNumber(t);
-					unStableStore.add(oBlock);
-					try {
-						unStableStore.connect(oBlock.getHeader().getBlockHash(), t);
-					} catch (BlockNotFoundInStoreException e) {
-						log.error("block not found::", e);
-					}
-					t -= 1;
-				}
-
-				log.warn("roll back stable store!!");
-				oBlockEntity = stableStore.rollBackTo(number);
-
-				unStableStore.disconnectAll(oBlockEntity);
-
-				maxConnectNumber = oBlockEntity.getHeader().getNumber();
-				maxConnectBlock = oBlockEntity;
-				maxStableNumber = oBlockEntity.getHeader().getNumber();
-				maxStableBlock = oBlockEntity;
+				log.error("cannot roll back to stable block number::" + number + " max::" + this.getMaxStableNumber());
 			} else {
 				maxConnectNumber = oBlockEntity.getHeader().getNumber();
 				maxConnectBlock = oBlockEntity;
