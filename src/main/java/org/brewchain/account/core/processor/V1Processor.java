@@ -116,7 +116,7 @@ public class V1Processor implements IProcessor, ActorService {
 	@Override
 	public void applyReward(BlockEntity oCurrentBlock) throws Exception {
 		accountHelper.addTokenBalance(ByteString.copyFrom(encApi.hexDec(oCurrentBlock.getMiner().getAddress())), "CWS",
-				new BigInteger(String.valueOf(oCurrentBlock.getMiner().getReward())));
+				ByteUtil.bytesToBigInteger(oCurrentBlock.getMiner().getReward().toByteArray()));
 	}
 
 	@Override
