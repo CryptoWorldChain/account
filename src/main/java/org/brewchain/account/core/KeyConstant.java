@@ -23,7 +23,7 @@ public class KeyConstant {
 	public static final byte[] DB_EXISTS_TOKEN = "DB_EXISTS_TOKEN_7513d2287ce94891ba227ba83aa6fe51".getBytes();
 	public static final byte[] DB_EXISTS_CONTRACT = "DB_EXISTS_CONTRACT_7513d2287ce94891ba227ba83aa6fe51".getBytes();
 
-	public static final int CACHE_SIZE = 100;
+	public static final int CACHE_SIZE = 1500;
 
 	public static boolean isStart = false;
 	public static NodeDef node;

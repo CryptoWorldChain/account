@@ -146,6 +146,8 @@ public class BlockStore implements ActorService {
 			// }
 
 		}
+		
+		log.info("max connect::" + maxConnectNumber + " max stable::" + maxStableNumber);
 	}
 
 	public synchronized BlockStoreSummary addBlock(BlockEntity block) {
