@@ -78,7 +78,7 @@ public class ActuatorCreateContract extends AbstractTransactionActuator implemen
 			Account.Builder contract = oAccountHelper.CreateAccount(newContractAddress).toBuilder();
 			accounts.put(encApi.hexEnc(newContractAddress.toByteArray()), contract);
 
-			oAccountHelper.putAccountValue(newContractAddress, contract.getValue(), false);
+			oAccountHelper.putAccountValue(newContractAddress, contract.getValue(), true);
 
 			MultiTransactionInput oInput = oMultiTransaction.getTxBody().getInputs(0);
 			Account.Builder sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
@@ -113,7 +113,7 @@ public class ActuatorCreateContract extends AbstractTransactionActuator implemen
 			createVM.play(createProgram);
 			ProgramResult createResult = createProgram.getResult();
 			if (createResult.getException() != null) {
-				throw createResult.getException();
+				return ByteString.copyFromUtf8(createResult.getException().getMessage());
 			} else {
 				createResult = createProgram.getResult();
 

@@ -766,8 +766,8 @@ public class AccountHelper implements ActorService {
 		if (oStorage == null) {
 			oStorage = new StorageTrie(this.dao, this.encApi, this.oEntityHelper);
 			Account contract = GetAccount(address);
-			log.debug("contract address::" + address);
-			if (contract.getValue() == null || contract.getValue().getStorage() == null) {
+			log.debug("contract address::" + encApi.hexEnc(address.toByteArray()));
+			if (contract == null || contract.getValue() == null || contract.getValue().getStorage() == null) {
 				oStorage.setRoot(ByteUtil.EMPTY_BYTE_ARRAY);
 			} else {
 				oStorage.setRoot(contract.getValue().getStorage().toByteArray());
