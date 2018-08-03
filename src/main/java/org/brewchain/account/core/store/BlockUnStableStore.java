@@ -354,6 +354,10 @@ public class BlockUnStableStore implements ActorService {
 			boolean isContinue = false;
 			for (long i = maxNumber; i >= number; i--) {
 				log.debug("roll back to number::" + i);
+				if (i == 0) {
+					// genesis block
+					
+				}
 				List<BlockEntity> blocks = getBlocksByNumber(i);
 				for (BlockEntity blockEntity : blocks) {
 					BlockStoreNodeValue currentNode = this.storage.get(blockEntity.getHeader().getBlockHash(),

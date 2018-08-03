@@ -13,7 +13,13 @@ enum PBCTCommand {
 	GLB = 4; 
 	GBH = 5; 
 	GBN = 6; // 根据高度获取block
+	GBS = 7; // 根据高度获取blocks
 }
+
+message RespGetBlocksByNumber {
+	repeated BlockHeaderImpl blocks = 1;
+}
+
 message ReqGetBlockByHash {
 	string hash = 1;
 }

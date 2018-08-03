@@ -267,9 +267,11 @@ public class BlockChainHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public BlockEntity getBlockByNumber(long number) {
-		// 判断从前遍历还是从后遍历
 		BlockEntity oBlockEntity = blockStore.getBlockByNumber(number);
 		return oBlockEntity;
+	}
+	public List<BlockEntity> getBlocksByNumber(long number) {
+		return blockStore.getBlocksByNumber(number);
 	}
 
 	/**
