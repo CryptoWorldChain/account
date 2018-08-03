@@ -165,7 +165,7 @@ public class BlockStore implements ActorService {
 			oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_DROP);
 			return oBlockStoreSummary;
 		} else {
-			if (maxStableNumber >= (block.getHeader().getNumber() + blockChainConfig.getStableBlocks())) {
+			if (maxStableNumber >= block.getHeader().getNumber()) {
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
 				return oBlockStoreSummary;
 			}
