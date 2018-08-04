@@ -146,7 +146,7 @@ public class BlockStore implements ActorService {
 			// }
 
 		}
-		
+
 		log.info("max connect::" + maxConnectNumber + " max stable::" + maxStableNumber);
 	}
 
@@ -342,8 +342,10 @@ public class BlockStore implements ActorService {
 		try {
 			List<OPair> oPairs = dao.getBlockDao().listBySecondKey(String.valueOf(number)).get();
 			if (oPairs.size() > 0) {
-				BlockEntity block = BlockEntity.parseFrom(oPairs.get(0).getValue().getExtdata());
-				ret.add(block);
+				for (int i = 0; i < oPairs.size(); i++) {
+					BlockEntity block = BlockEntity.parseFrom(oPairs.get(i).getValue().getExtdata());
+					ret.add(block);
+				}
 			}
 		} catch (ODBException | InterruptedException | ExecutionException | InvalidProtocolBufferException e) {
 			log.error("get block from db error :: " + e.getMessage());
@@ -447,7 +449,18 @@ public class BlockStore implements ActorService {
 		log.info("blockstore try to rollback to number::" + number + " maxconnect::" + this.getMaxConnectNumber()
 				+ " maxstable::" + this.getMaxStableNumber());
 
-		if (this.getMaxConnectNumber() > number) {
+		if (number == 0) {
+			BlockEntity block = stableStore.getBlockByNumber(0);
+			unStableStore.disconnectAll(block);
+			stableStore.add(block);
+			if (maxStableNumber < block.getHeader().getNumber()) {
+				maxStableNumber = block.getHeader().getNumber();
+				maxStableBlock = block;
+			}
+			maxConnectNumber = block.getHeader().getNumber();
+			maxConnectBlock = block;
+			return block;
+		} else if (this.getMaxConnectNumber() > number) {
 			BlockEntity oBlockEntity = unStableStore.rollBackTo(number, this.getMaxConnectNumber());
 			if (oBlockEntity == null) {
 				log.error("cannot roll back to stable block number::" + number + " max::" + this.getMaxStableNumber());

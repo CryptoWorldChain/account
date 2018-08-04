@@ -14,6 +14,18 @@ enum PBCTCommand {
 	GBH = 5; 
 	GBN = 6; // 根据高度获取block
 	GBS = 7; // 根据高度获取blocks
+	GBT = 8; // 获取block connect 状态
+}
+
+message RespGetBlocksStoreByNumber {
+	repeated BlocksStore blocks = 1;
+}
+
+message BlocksStore {
+	string hash = 1;
+	string parentHash = 2;
+	string number = 3;
+	string connect = 4;
 }
 
 message RespGetBlocksByNumber {
