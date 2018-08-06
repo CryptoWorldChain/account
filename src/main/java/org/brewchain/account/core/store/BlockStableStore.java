@@ -46,8 +46,6 @@ public class BlockStableStore implements IBlockStore, ActorService {
 	@ActorRequire(name = "Def_Daos", scope = "global")
 	DefDaos dao;
 
-	// protected final TreeMap<Long, String> storage;
-	// protected final LRUCache<String, BlockEntity> blocks;
 	protected final LoadingCache<String, BlockEntity> blocks = CacheBuilder.newBuilder().maximumSize(KeyConstant.CACHE_SIZE)
 			.build(new CacheLoader<String, BlockEntity>() {
 				public BlockEntity load(String key) {
@@ -62,8 +60,6 @@ public class BlockStableStore implements IBlockStore, ActorService {
 	protected ALock writeLock = new ALock(rwLock.writeLock());
 
 	public BlockStableStore() {
-		// this.storage = new TreeMap<Long, String>();
-		// this.blocks = new LRUCache<String, BlockEntity>(KeyConstant.CACHE_SIZE);
 	}
 
 	@Override

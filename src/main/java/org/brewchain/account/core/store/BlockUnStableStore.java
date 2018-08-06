@@ -53,7 +53,6 @@ public class BlockUnStableStore implements ActorService {
 	protected final Table<String, Long, BlockStoreNodeValue> storage;
 
 	protected ReadWriteLock rwLock = new ReentrantReadWriteLock();
-	// protected ALock readLock = new ALock(rwLock.readLock());
 	protected ALock writeLock = new ALock(rwLock.writeLock());
 
 	public BlockUnStableStore() {
@@ -190,11 +189,8 @@ public class BlockUnStableStore implements ActorService {
 				oNode.connect();
 				this.storage.put(hash, number, oNode);
 
-				// log.debug("====put connect block::" + hash);
 				dao.getBlockDao().put(oEntityHelper.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK),
 						oEntityHelper.byteValue2OValue(encApi.hexDec(oNode.getBlockHash())));
-				// dao.getBlockDao().put(OEntityBuilder.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK),
-				// OEntityBuilder.byteValue2OValue(encApi.hexDec(oNode.getBlockHash())));
 				log.debug("success connect block number::" + oNode.getNumber() + " hash::" + oNode.getBlockHash()
 						+ " stateroot::" + oNode.getBlockEntity().getHeader().getStateRoot());
 			}
@@ -248,26 +244,6 @@ public class BlockUnStableStore implements ActorService {
 		}
 		return list;
 	}
-
-	// public BlockEntity getUnConnectChild(String paretHash, long number) {
-	//
-	// try (ALock l = readLock.lock()) {
-	//
-	//
-	// return this.storage.get(paretHash, number + 1).getBlockEntity();
-	// //
-	// // for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it =
-	// // storage.entrySet().iterator(); it.hasNext();) {
-	// // Map.Entry<String, BlockStoreNodeValue> item = it.next();
-	// // if (item.getValue().getParentHash().equals(hash) &&
-	// // !item.getValue().isConnect()
-	// // && item.getValue().getNumber() == (oParent.getNumber() + 1)) {
-	// // list.add(item.getValue().getBlockEntity());
-	// // }
-	// // }
-	// }
-	// // return list;
-	// }
 
 	public BlockStoreNodeValue tryPop(String hash, long number) {
 		BlockStoreNodeValue oBlockStoreNodeValue = this.storage.get(hash, number);
@@ -398,8 +374,6 @@ public class BlockUnStableStore implements ActorService {
 				}
 			}
 		}
-		// log.debug("====put disconnect block::" +
-		// block.getHeader().getBlockHash());
 		dao.getBlockDao().put(oEntityHelper.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK),
 				oEntityHelper.byteValue2OValue(encApi.hexDec(block.getHeader().getBlockHash())));
 	}

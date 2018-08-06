@@ -94,7 +94,6 @@ public class BlockStore implements ActorService {
 				log.error(String.format("exists last connect block hash, but last block not exists, start empty node"));
 			} else {
 				long blockNumber = oLastConnectBlockEntity.getHeader().getNumber();
-				long maxBlockNumber = blockNumber;
 
 				int c = 0;
 				boolean isStable = false;
@@ -246,29 +245,6 @@ public class BlockStore implements ActorService {
 		} else {
 			oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
 		}
-
-		// if (oNode != null && oNode.isConnect()) {
-		// log.debug("try add block, find connected node");
-		// oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
-		// } else {
-		// if (oNode == null) {
-		// log.debug("try add block, not find node");
-		// oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
-		// } else {
-		//// log.debug("try add block, find node but not connect number::" +
-		// oNode.getNumber() + " , may be forked");
-		//// List<BlockEntity> existsParent =
-		// unStableStore.getConnectBlocksByNumber(block.getHeader().getNumber()
-		// - 1);
-		//// if (existsParent.size() > 0) {
-		//// log.warn("forks, number::" + (block.getHeader().getNumber() - 1));
-		//// oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_PREV);
-		//// } else {
-		//// oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
-		//// }
-		//
-		// }
-		// }
 		return oBlockStoreSummary;
 	}
 
@@ -293,8 +269,6 @@ public class BlockStore implements ActorService {
 			oBlockStoreNodeValue = unStableStore.tryPop(hash, number);
 			if (oBlockStoreNodeValue != null) {
 				stableBlock(oBlockStoreNodeValue.getBlockEntity());
-				// ?
-				// unStableStore.removeForkBlock(oBlockStoreNodeValue.getNumber());
 			}
 			if (unStableStore.containsUnConnectChild(hash, number + 1)) {
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY_CHILD);
@@ -367,15 +341,6 @@ public class BlockStore implements ActorService {
 
 	public synchronized List<BlockEntity> getReadyConnectBlock(String hash, long number) {
 		return unStableStore.getUnConnectChild(hash, number + 1);
-		// for (Iterator<BlockEntity> iterator = lists.iterator();
-		// iterator.hasNext();)
-		// {
-		// BlockEntity blockEntity = iterator.next();
-		// if (blockEntity.getHeader().getParentHash().equals(hash)) {
-		// return blockEntity;
-		// }
-		// }
-		// return null;
 	}
 
 	public synchronized List<BlockEntity> getChildListBlocksEndWith(String blockHash, String endBlockHash,
