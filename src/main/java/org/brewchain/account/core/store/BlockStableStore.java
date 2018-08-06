@@ -12,7 +12,6 @@ import org.apache.felix.ipojo.annotations.Provides;
 import org.brewchain.account.core.KeyConstant;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.util.ALock;
-import org.brewchain.account.util.LRUCache;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.bcapi.backend.ODBException;
 import org.brewchain.bcapi.gens.Oentity.OKey;
@@ -49,7 +48,7 @@ public class BlockStableStore implements IBlockStore, ActorService {
 
 	// protected final TreeMap<Long, String> storage;
 	// protected final LRUCache<String, BlockEntity> blocks;
-	protected final LoadingCache<String, BlockEntity> blocks = CacheBuilder.newBuilder().maximumSize(100)
+	protected final LoadingCache<String, BlockEntity> blocks = CacheBuilder.newBuilder().maximumSize(KeyConstant.CACHE_SIZE)
 			.build(new CacheLoader<String, BlockEntity>() {
 				public BlockEntity load(String key) {
 					return null;
