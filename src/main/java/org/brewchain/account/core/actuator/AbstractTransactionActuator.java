@@ -178,7 +178,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 				}
 			}
 
-			BigInteger bi = UnitUtil.fromWei(ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray()));
+			BigInteger bi = ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray());
 			if (bi.compareTo(BigInteger.ZERO) < 0) {
 				throw new TransactionExecuteException("parameter invalid, amount must large than 0");
 			}
@@ -195,7 +195,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			}
 			if (ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray()).compareTo(BigInteger.ZERO) == -1) {
 				throw new TransactionExecuteException(String.format("transaction value %s less than 0",
-						UnitUtil.fromWei(ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray()))));
+						ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray())));
 			}
 
 			if (ByteUtil.bytesToBigInteger(balance.toByteArray()).compareTo(inputsTotal) == -1) {
@@ -245,14 +245,16 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 					.bytesSubToBytes(senderAccountValue.getBalance().toByteArray(), oInput.getAmount().toByteArray())));
 
 			senderAccountValue.setNonce(senderAccountValue.getNonce() + 1);
-//			DBTrie oCacheTrie = new DBTrie(this.dao, oTransactionHelper.getOEntityHelper());
-//			if (senderAccountValue.getStorage() == null) {
-//				oCacheTrie.setRoot(null);
-//			} else {
-//				oCacheTrie.setRoot(senderAccountValue.getStorage().toByteArray());
-//			}
-//			oCacheTrie.put(sender.getAddress().toByteArray(), senderAccountValue.build().toByteArray());
-//			senderAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
+			// DBTrie oCacheTrie = new DBTrie(this.dao,
+			// oTransactionHelper.getOEntityHelper());
+			// if (senderAccountValue.getStorage() == null) {
+			// oCacheTrie.setRoot(null);
+			// } else {
+			// oCacheTrie.setRoot(senderAccountValue.getStorage().toByteArray());
+			// }
+			// oCacheTrie.put(sender.getAddress().toByteArray(),
+			// senderAccountValue.build().toByteArray());
+			// senderAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
 			sender.setValue(senderAccountValue);
 			accounts.put(encApi.hexEnc(sender.getAddress().toByteArray()), sender);
 		}
@@ -266,14 +268,16 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			receiverAccountValue.setBalance(ByteString.copyFrom(ByteUtil.bytesAddToBytes(
 					receiverAccountValue.getBalance().toByteArray(), oOutput.getAmount().toByteArray())));
 
-//			DBTrie oCacheTrie = new DBTrie(this.dao, oTransactionHelper.getOEntityHelper());
-//			if (receiverAccountValue.getStorage() == null) {
-//				oCacheTrie.setRoot(null);
-//			} else {
-//				oCacheTrie.setRoot(receiverAccountValue.getStorage().toByteArray());
-//			}
-//			oCacheTrie.put(receiver.getAddress().toByteArray(), receiverAccountValue.build().toByteArray());
-//			receiverAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
+			// DBTrie oCacheTrie = new DBTrie(this.dao,
+			// oTransactionHelper.getOEntityHelper());
+			// if (receiverAccountValue.getStorage() == null) {
+			// oCacheTrie.setRoot(null);
+			// } else {
+			// oCacheTrie.setRoot(receiverAccountValue.getStorage().toByteArray());
+			// }
+			// oCacheTrie.put(receiver.getAddress().toByteArray(),
+			// receiverAccountValue.build().toByteArray());
+			// receiverAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
 			receiver.setValue(receiverAccountValue);
 			accounts.put(encApi.hexEnc(receiver.getAddress().toByteArray()), receiver);
 		}
