@@ -22,6 +22,7 @@ enum PTSTCommand {
 	TEC = 13; // call contract transaction
 	TRO = 14; // crypto token transaction
 	TOO = 15; // token transaction
+	TCO = 16; // create crypto token transaction
 }
 
 message ReqCreateContract {
@@ -110,6 +111,7 @@ message ReqCreateTransactionTest {
 	string contractCallAddress = 9;
 	int32 contractTx = 8;
 	string contractTxAddress = 10;
+	string symbol = 12;
 }
 
 message RespCreateTransactionTest {

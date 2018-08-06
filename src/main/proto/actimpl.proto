@@ -10,14 +10,32 @@ enum PACTCommand {
     GAS = 1; // 批量获取账户
 
     QIC = 2; // 查询已创建的token
+    QII = 3; // 查询已创建的cryptotoken
 }
 
-message ReqQueryIC {
+message ReqQueryCryptoToken {
+	string symbol = 1;
+}
+
+message RespQueryCryptoToken {
+	int32 retCode = 1;
+    string retMsg = 2;
+    MsgCryptoToken token = 3;
+}
+
+message MsgCryptoToken {
+	int64 total = 1;
+	int64 current = 2;
+	int64 timestamp = 3;
+	string address = 4;
+}
+
+message ReqQueryToken {
     string token = 1;
     string address = 2;
 }
 
-message RespQueryIC {
+message RespQueryToken {
     int32 retCode = 1;
     string retMsg = 2;
     repeated MsgToken tokens = 3;
@@ -105,8 +123,8 @@ message AccountCryptoValueImpl {
 message AccountCryptoTokenImpl {
     string hash = 1; // Token的hash，hash(index,total,code,name,timestamp)
     int64 timestamp = 2; // Token创建时间
-    int32 index = 3; // 该Token发行时的索引
-    int32 total = 4; // 该Token的发行总数量
+    int64 index = 3; // 该Token发行时的索引
+    int64 total = 4; // 该Token的发行总数量
     string code = 5; // Token的编号
     string name = 6; // Token的名称
     string owner = 7; // 所有人的账户地址

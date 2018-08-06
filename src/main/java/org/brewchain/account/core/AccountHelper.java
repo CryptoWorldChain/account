@@ -33,6 +33,7 @@ import org.brewchain.evmapi.gens.Act.AccountCryptoToken.Builder;
 import org.brewchain.evmapi.gens.Act.AccountCryptoValue;
 import org.brewchain.evmapi.gens.Act.AccountTokenValue;
 import org.brewchain.evmapi.gens.Act.AccountValue;
+import org.brewchain.evmapi.gens.Act.CryptoTokenValue;
 import org.brewchain.evmapi.gens.Act.ERC20Token;
 import org.brewchain.evmapi.gens.Act.ERC20TokenValue;
 import org.fc.brewchain.bcapi.EncAPI;
@@ -556,8 +557,8 @@ public class AccountHelper implements ActorService {
 
 		for (int i = 0; i < name.length; i++) {
 			AccountCryptoToken.Builder oAccountCryptoToken = AccountCryptoToken.newBuilder();
-			oAccountCryptoToken.setName(ByteString.copyFromUtf8(name[i]));
-			oAccountCryptoToken.setCode(ByteString.copyFromUtf8(code[i]));
+			oAccountCryptoToken.setName(name[i]);
+			oAccountCryptoToken.setCode(code[i]);
 			oAccountCryptoToken.setIndex(i);
 			oAccountCryptoToken.setTotal(total);
 			oAccountCryptoToken.setTimestamp(System.currentTimeMillis());
@@ -594,11 +595,13 @@ public class AccountHelper implements ActorService {
 		dao.getAccountDao().put(oEntityHelper.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN),
 				oEntityHelper.byteValue2OValue(oERC20Token.build().toByteArray()));
 	}
-
-	public void createCryptoToken(Builder oAccountCryptoToken, String symbol) {
-		dao.getCryptoTokenDao().put(oEntityHelper.byteKey2OKey(oAccountCryptoToken.getHash()),
-				oEntityHelper.byteValue2OValue(oAccountCryptoToken.build().toByteArray(), symbol));
-	}
+	//
+	// public void createCryptoToken(Builder oAccountCryptoToken, String symbol)
+	// {
+	// dao.getCryptoTokenDao().put(oEntityHelper.byteKey2OKey(oAccountCryptoToken.getHash()),
+	// oEntityHelper.byteValue2OValue(oAccountCryptoToken.build().toByteArray(),
+	// symbol));
+	// }
 
 	public void createContract(ByteString addr, ByteString contract) throws Exception {
 		OValue oValue = dao.getAccountDao().get(oEntityHelper.byteKey2OKey(KeyConstant.DB_EXISTS_CONTRACT)).get();
@@ -789,5 +792,45 @@ public class AccountHelper implements ActorService {
 	public byte[] getStorage(ByteString address, byte[] key) {
 		StorageTrie oStorage = getStorageTrie(address);
 		return oStorage.get(key);
+	}
+
+	public boolean canCreateCryptoToken(ByteString symbol, ByteString address, long total, int codeCount) {
+		try {
+			OValue cryptoTokenValue = dao.getCryptoTokenDao().get(oEntityHelper.byteKey2OKey(symbol)).get();
+			if (cryptoTokenValue == null || cryptoTokenValue.getExtdata() == null) {
+				return true;
+			} else {
+				CryptoTokenValue oCryptoTokenValue = CryptoTokenValue
+						.parseFrom(cryptoTokenValue.getExtdata().toByteArray());
+				if (oCryptoTokenValue.getTotal() < oCryptoTokenValue.getCurrent() + codeCount) {
+					return false;
+				} else if (!oCryptoTokenValue.getOwner().equals(address)) {
+					return false;
+				}
+				return true;
+			}
+		} catch (Exception e) {
+			log.error("error on canCreateCryptoToken", e);
+		}
+		return false;
+	}
+
+	public CryptoTokenValue getCryptoTokenValue(ByteString symbolBytes) {
+		try {
+			OValue o = dao.getCryptoTokenDao().get(oEntityHelper.byteKey2OKey(symbolBytes)).get();
+			if (o != null && o.getExtdata() != null) {
+				CryptoTokenValue oCryptoTokenValue = CryptoTokenValue.parseFrom(o.getExtdata().toByteArray());
+				return oCryptoTokenValue;
+			}
+			return null;
+		} catch (Exception e) {
+			log.error("error on getCryptoTokenValue", e);
+		}
+		return null;
+	}
+
+	public void updateCryptoTokenValue(ByteString symbol, CryptoTokenValue newCryptoTokenValue) {
+		dao.getCryptoTokenDao().put(oEntityHelper.byteKey2OKey(symbol),
+				oEntityHelper.byteValue2OValue(newCryptoTokenValue.toByteArray()));
 	}
 }

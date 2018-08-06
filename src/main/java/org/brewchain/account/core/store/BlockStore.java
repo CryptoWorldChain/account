@@ -60,20 +60,21 @@ public class BlockStore implements ActorService {
 		String lastConnectBlockHash = null;
 		String lastStableBlockHash = null;
 
-		OValue oUnStableMax = dao.getBlockDao().get(oEntityHelper.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK)).get();
-		if (oUnStableMax == null || oUnStableMax.getExtdata() == null
-				|| oUnStableMax.getExtdata().equals(ByteString.EMPTY)) {
-			log.warn(String.format("not found last connect block, start empty node"));
-			return;
-		}
-		lastConnectBlockHash = encApi.hexEnc(oUnStableMax.getExtdata().toByteArray());
-
 		OValue oStableMax = dao.getBlockDao().get(oEntityHelper.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get();
 		if (oStableMax == null || oStableMax.getExtdata() == null || oStableMax.getExtdata().equals(ByteString.EMPTY)) {
 			log.warn(String.format("not found last stable block, start empty node"));
 			return;
 		}
 		lastStableBlockHash = encApi.hexEnc(oStableMax.getExtdata().toByteArray());
+
+		OValue oUnStableMax = dao.getBlockDao().get(oEntityHelper.byteKey2OKey(KeyConstant.DB_CURRENT_MAX_BLOCK)).get();
+		if (oUnStableMax == null || oUnStableMax.getExtdata() == null
+				|| oUnStableMax.getExtdata().equals(ByteString.EMPTY)) {
+			log.warn(String.format("not found last connect block, use stable block"));
+			lastConnectBlockHash = encApi.hexEnc(oStableMax.getExtdata().toByteArray());
+		} else {
+			lastConnectBlockHash = encApi.hexEnc(oUnStableMax.getExtdata().toByteArray());
+		}
 
 		BlockEntity oLastConnectBlockEntity = getBlockByHash(lastConnectBlockHash);
 		BlockEntity oLastStableBlockEntity = getBlockByHash(lastStableBlockHash);

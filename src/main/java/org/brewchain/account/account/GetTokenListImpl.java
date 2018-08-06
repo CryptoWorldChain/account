@@ -19,7 +19,7 @@ import onight.tfw.otransio.api.beans.FramePacket;
 @NActorProvider
 @Slf4j
 @Data
-public class GetTokenListImpl extends SessionModules<ReqQueryIC> {
+public class GetTokenListImpl extends SessionModules<ReqQueryToken> {
 	@ActorRequire(name = "Account_Helper", scope = "global")
 	AccountHelper oAccountHelper;
 	@ActorRequire(name = "bc_encoder", scope = "global")
@@ -36,8 +36,8 @@ public class GetTokenListImpl extends SessionModules<ReqQueryIC> {
 	}
 
 	@Override
-	public void onPBPacket(final FramePacket pack, final ReqQueryIC pb, final CompleteHandler handler) {
-		RespQueryIC.Builder oRespQueryIC = RespQueryIC.newBuilder();
+	public void onPBPacket(final FramePacket pack, final ReqQueryToken pb, final CompleteHandler handler) {
+		RespQueryToken.Builder oRespQueryIC = RespQueryToken.newBuilder();
 
 		try {
 			List<ERC20TokenValue> tokens = oAccountHelper.getTokens(pb.getAddress(), pb.getToken());

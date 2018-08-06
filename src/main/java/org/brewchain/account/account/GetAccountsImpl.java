@@ -78,10 +78,10 @@ public class GetAccountsImpl extends SessionModules<ReqGetAccounts> {
 						for (AccountCryptoToken oAccountCryptoToken : oAccountTokenValue.getTokensList()) {
 							AccountCryptoTokenImpl.Builder oAccountCryptoTokenImpl = AccountCryptoTokenImpl
 									.newBuilder();
-							oAccountCryptoTokenImpl.setCode(encApi.hexEnc(oAccountCryptoToken.getCode().toByteArray()));
+							oAccountCryptoTokenImpl.setCode(oAccountCryptoToken.getCode());
 							oAccountCryptoTokenImpl.setHash(encApi.hexEnc(oAccountCryptoToken.getHash().toByteArray()));
 							oAccountCryptoTokenImpl.setIndex(oAccountCryptoToken.getIndex());
-							oAccountCryptoTokenImpl.setName(encApi.hexEnc(oAccountCryptoToken.getName().toByteArray()));
+							oAccountCryptoTokenImpl.setName(oAccountCryptoToken.getName());
 							oAccountCryptoTokenImpl.setNonce(oAccountCryptoToken.getNonce());
 							oAccountCryptoTokenImpl
 									.setOwner(encApi.hexEnc(oAccountCryptoToken.getOwner().toByteArray()));
