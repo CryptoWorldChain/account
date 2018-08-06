@@ -211,7 +211,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 		}
 
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
-			BigInteger bi = UnitUtil.fromWei(ByteUtil.bytesToBigInteger(oOutput.getAmount().toByteArray()));
+			BigInteger bi = ByteUtil.bytesToBigInteger(oOutput.getAmount().toByteArray());
 			if (bi.compareTo(BigInteger.ZERO) < 0) {
 				throw new TransactionExecuteException("amount must large than 0");
 			}
