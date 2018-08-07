@@ -77,7 +77,7 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 				}
 			}
 
-			inputsTotal = inputsTotal.add(tokenBalance);
+			inputsTotal = inputsTotal.add(ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray()));
 
 			if (tokenBalance.compareTo(BigInteger.ZERO) == -1) {
 				throw new IllegalArgumentException(String.format("sender balance %s less than 0", tokenBalance));
@@ -110,8 +110,8 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			outputsTotal = ByteUtil.bytesAdd(outputsTotal, oOutput.getAmount().toByteArray());
 		}
 
-		if (inputsTotal.compareTo(outputsTotal) == -1) {
-			throw new Exception(String.format("transaction value %s less than %s", inputsTotal, outputsTotal));
+		if (inputsTotal.compareTo(outputsTotal) != 0) {
+			throw new Exception(String.format("transaction value %s not equal with %s", inputsTotal, outputsTotal));
 		}
 	}
 
@@ -145,15 +145,6 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			}
 
 			senderAccountValue.setNonce(senderAccountValue.getNonce() + 1);
-
-//			DBTrie oCacheTrie = new DBTrie(this.dao, oTransactionHelper.getOEntityHelper());
-//			if (senderAccountValue.getStorage() == null) {
-//				oCacheTrie.setRoot(null);
-//			} else {
-//				oCacheTrie.setRoot(senderAccountValue.getStorage().toByteArray());
-//			}
-//			oCacheTrie.put(sender.getAddress().toByteArray(), senderAccountValue.build().toByteArray());
-//			senderAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
 
 			sender.setValue(senderAccountValue);
 			accounts.put(encApi.hexEnc(sender.getAddress().toByteArray()), sender);

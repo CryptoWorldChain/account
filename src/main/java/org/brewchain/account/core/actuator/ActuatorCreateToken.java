@@ -120,7 +120,5 @@ public class ActuatorCreateToken extends AbstractTransactionActuator implements 
 			throw new TransactionExecuteException(
 					String.format("sender nonce %s is not equal with transaction nonce %s", nonce, oInput.getNonce()));
 		}
-
-		super.onPrepareExecute(oMultiTransaction, accounts);
 	}
 }

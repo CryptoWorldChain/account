@@ -79,7 +79,7 @@ public class CreateTokenTransactionSample extends SessionModules<ReqCreateTransa
 				MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
 				oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(input.getAddress())));
 				oMultiTransactionInput4.setAmount(ByteString
-						.copyFrom(ByteUtil.bigIntegerToBytes(UnitUtil.toWei(input.getAmount()))));
+						.copyFrom(ByteUtil.bigIntegerToBytes(new BigInteger(input.getAmount()))));
 				int nonce = accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(input.getAddress())));
 				oMultiTransactionInput4.setNonce(nonce);
 				oMultiTransactionInput4.setToken(input.getErc20Symbol());
@@ -91,6 +91,7 @@ public class CreateTokenTransactionSample extends SessionModules<ReqCreateTransa
 								+ accountHelper.getBalance(ByteString.copyFrom(encApi.hexDec(input.getAddress()))));
 			}
 
+			oMultiTransactionBody.setType(TransTypeEnum.TYPE_CreateToken.value());
 			oMultiTransactionBody.setData(ByteString.copyFrom(encApi.hexDec(pb.getData())));
 			oMultiTransaction.clearTxHash();
 			oMultiTransactionBody.clearSignatures();

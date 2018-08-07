@@ -106,11 +106,11 @@ public class ByteUtil {
 
 		byte[] data = value.toByteArray();
 
-		if (data.length != 1 && data[0] == 0) {
-			byte[] tmp = new byte[data.length - 1];
-			System.arraycopy(data, 1, tmp, 0, tmp.length);
-			data = tmp;
-		}
+//		if (data.length != 1 && data[0] == 0) {
+//			byte[] tmp = new byte[data.length - 1];
+//			System.arraycopy(data, 1, tmp, 0, tmp.length);
+//			data = tmp;
+//		}
 		return data;
 	}
 
