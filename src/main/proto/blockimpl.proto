@@ -94,19 +94,16 @@ message RespBlockDetail {
 }
 
 message BlockHeaderImpl {
-	string parentHash = 1;
-	// string coinbase = 2;
-	string txTrieRoot = 3;
-	int64 timestamp = 4;
-	int64 number = 5;
-	int32 reward = 6;
-	string extraData = 7;
-	string nonce = 8;
-	string blockHash = 9;
+	string blockHash = 1;
+	string parentHash = 2;
+	int64 number = 3;
+	string state = 4;
+	string receipt = 5;
+	string txTrieRoot = 6;
+	int64 timestamp = 7;
+	int64 sliceId = 8;
+	string extraData = 9;
 	repeated string txHashs = 10;
-	int64 sliceId = 11;
-	string state = 12;
-	string receipt = 13;
 }
 
 message BlockMinerImpl {

@@ -162,23 +162,8 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 				isIncreaseNonce = true;
 			}
 
-			// DBTrie oCacheTrie = new DBTrie(this.dao,
-			// oTransactionHelper.getOEntityHelper());
-			// if (oAccountValue.getStorage() == null) {
-			// oCacheTrie.setRoot(null);
-			// } else {
-			// oCacheTrie.setRoot(oAccountValue.getStorage().toByteArray());
-			// }
-			// oCacheTrie.put(oInput.getAddress().toByteArray(),
-			// oAccountValue.build().toByteArray());
-			// oAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
-
-			// keys.add(OEntityBuilder.byteKey2OKey(oInput.getAddress().toByteArray()));
-			// values.add(oAccountValue.build());
 			sender.setValue(oAccountValue);
 			accounts.put(encApi.hexEnc(sender.getAddress().toByteArray()), sender);
-			// this.accountValues.put(encApi.hexEnc(oInput.getAddress().toByteArray()),
-			// oAccountValue.build());
 		}
 
 		// 接收方增加balance

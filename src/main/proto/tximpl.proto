@@ -78,7 +78,7 @@ message RespSyncTx {
 }
 
 message ReqGetTxByHash {
-	string hexTxHash = 1;
+	string hash = 1;
 }
 
 message RespGetTxByHash {

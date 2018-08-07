@@ -52,14 +52,14 @@ public class GetBlockByHashImpl extends SessionModules<ReqGetBlockByHash> {
 			BlockEntity oBlockEntity = blockChainHelper.getBlockByHash(pb.getHash());
 			BlockHeaderImpl.Builder oBlockHeaderImpl = BlockHeaderImpl.newBuilder();
 			oBlockHeaderImpl.setBlockHash(oBlockEntity.getHeader().getBlockHash());
-			oBlockHeaderImpl.setExtraData(oBlockEntity.getHeader().getExtraData());
-			oBlockHeaderImpl.setNumber(oBlockEntity.getHeader().getNumber());
 			oBlockHeaderImpl.setParentHash(oBlockEntity.getHeader().getParentHash());
-			oBlockHeaderImpl.setSliceId(oBlockEntity.getHeader().getSliceId());
-			oBlockHeaderImpl.setTimestamp(oBlockEntity.getHeader().getTimestamp());
+			oBlockHeaderImpl.setNumber(oBlockEntity.getHeader().getNumber());
 			oBlockHeaderImpl.setState(oBlockEntity.getHeader().getStateRoot());
 			oBlockHeaderImpl.setReceipt(oBlockEntity.getHeader().getReceiptTrieRoot());
-
+			oBlockHeaderImpl.setTxTrieRoot(oBlockEntity.getHeader().getTxTrieRoot());
+			oBlockHeaderImpl.setTimestamp(oBlockEntity.getHeader().getTimestamp());
+			oBlockHeaderImpl.setExtraData(oBlockEntity.getHeader().getExtraData());
+			oBlockHeaderImpl.setSliceId(oBlockEntity.getHeader().getSliceId());
 			for (String oTxhash : oBlockEntity.getHeader().getTxHashsList()) {
 				oBlockHeaderImpl.addTxHashs(oTxhash);
 			}
@@ -68,14 +68,13 @@ public class GetBlockByHashImpl extends SessionModules<ReqGetBlockByHash> {
 			oBlockMinerImpl.setBcuid(oBlockEntity.getMiner().getBcuid());
 			oBlockMinerImpl.setAddress(oBlockEntity.getMiner().getAddress());
 			oBlockMinerImpl.setNode(oBlockEntity.getMiner().getNode());
-			oBlockMinerImpl.setReward(
-					String.valueOf(UnitUtil.fromWei(ByteUtil.bytesToBigInteger(oBlockEntity.getMiner().getReward().toByteArray()))));
+			oBlockMinerImpl.setReward(String.valueOf(ByteUtil.bytesToBigInteger(oBlockEntity.getMiner().getReward().toByteArray())));
 
+			oRespGetBlock.setVersion(String.valueOf(oBlockEntity.getVersion()));
 			oRespGetBlock.setHeader(oBlockHeaderImpl);
 			oRespGetBlock.setMiner(oBlockMinerImpl);
 			oRespGetBlock.setRetCode(1);
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		oRespGetBlock.setRetCode(1);

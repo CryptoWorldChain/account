@@ -44,7 +44,7 @@ public class GetTxByTxHashImpl extends SessionModules<ReqGetTxByHash> {
 
 		try {
 			MultiTransaction oTransaction = transactionHelper
-					.GetTransaction(pb.getHexTxHash());
+					.GetTransaction(pb.getHash());
 			
 			MultiTransactionImpl.Builder oMultiTransactionImpl = transactionHelper.parseToImpl(oTransaction);
 			oRespGetTxByHash.setTransaction(oMultiTransactionImpl);

@@ -77,21 +77,18 @@ public class BlockStore implements ActorService {
 		}
 
 		BlockEntity oLastConnectBlockEntity = getBlockByHash(lastConnectBlockHash);
-		BlockEntity oLastStableBlockEntity = getBlockByHash(lastStableBlockHash);
-		if (oLastStableBlockEntity == null) {
+		if (oLastConnectBlockEntity == null) {
 			log.error(String.format("exists last stable block hash, but last block not exists, start empty node"));
 		} else {
-			if (oLastStableBlockEntity.getHeader().getNumber() == 0) {
-				log.debug("load block into stable cache number::" + oLastStableBlockEntity.getHeader().getNumber()
-						+ " hash::" + oLastStableBlockEntity.getHeader().getBlockHash() + " stateroot::"
-						+ oLastStableBlockEntity.getHeader().getStateRoot());
-				stableStore.add(oLastStableBlockEntity);
-				if (maxStableNumber < oLastStableBlockEntity.getHeader().getNumber()) {
-					maxStableNumber = oLastStableBlockEntity.getHeader().getNumber();
-					maxStableBlock = oLastStableBlockEntity;
+			if (oLastConnectBlockEntity.getHeader().getNumber() == 0) {
+				log.debug("load block into stable cache number::" + oLastConnectBlockEntity.getHeader().getNumber()
+						+ " hash::" + oLastConnectBlockEntity.getHeader().getBlockHash() + " stateroot::"
+						+ oLastConnectBlockEntity.getHeader().getStateRoot());
+				stableStore.add(oLastConnectBlockEntity);
+				if (maxStableNumber < oLastConnectBlockEntity.getHeader().getNumber()) {
+					maxStableNumber = oLastConnectBlockEntity.getHeader().getNumber();
+					maxStableBlock = oLastConnectBlockEntity;
 				}
-			} else if (oLastConnectBlockEntity == null) {
-				log.error(String.format("exists last connect block hash, but last block not exists, start empty node"));
 			} else {
 				long blockNumber = oLastConnectBlockEntity.getHeader().getNumber();
 

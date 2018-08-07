@@ -20,6 +20,7 @@ public class KeyConstant {
 	public static final byte[] DB_CURRENT_BLOCK = "DB_CURRENT_BLOCK_y0yXF4880c".getBytes();
 	public static final byte[] DB_CURRENT_MAX_BLOCK = "DB_CURRENT_MAX_BLOCK_y0yXF4880c".getBytes();
 
+	public static final String DB_EXISTS_CRYPTO_TOKEN_STR = "DB_EXISTS_CRYPTO_TOKEN_7513d2287ce94891ba227ba83aa6fe51";
 	public static final byte[] DB_EXISTS_TOKEN = "DB_EXISTS_TOKEN_7513d2287ce94891ba227ba83aa6fe51".getBytes();
 	public static final byte[] DB_EXISTS_CONTRACT = "DB_EXISTS_CONTRACT_7513d2287ce94891ba227ba83aa6fe51".getBytes();
 

@@ -60,7 +60,7 @@ public class ActuatorCreateToken extends AbstractTransactionActuator implements 
 		accounts.put(encApi.hexEnc(sender.getAddress().toByteArray()), sender);
 		accounts.put(encApi.hexEnc(locker.getAddress().toByteArray()), locker);
 		oAccountHelper.createToken(input.getAddress(), input.getToken(),
-				ByteUtil.bytesToBigInteger(input.getAmount().toByteArray()));
+				UnitUtil.fromWei(ByteUtil.bytesToBigInteger(input.getAmount().toByteArray())));
 
 		return ByteString.EMPTY;
 	}
@@ -96,17 +96,19 @@ public class ActuatorCreateToken extends AbstractTransactionActuator implements 
 				.compareTo(oTransactionHelper.getBlockChainConfig().getMinerReward()) == -1
 				|| ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray())
 						.compareTo(oTransactionHelper.getBlockChainConfig().getMaxTokenTotal()) == 1) {
-			throw new TransactionExecuteException(String.format("parameter invalid, token amount must between %s and %s ",
-					UnitUtil.fromWei(oTransactionHelper.getBlockChainConfig().getMinTokenTotal()),
-					UnitUtil.fromWei(oTransactionHelper.getBlockChainConfig().getMaxTokenTotal())));
+			throw new TransactionExecuteException(
+					String.format("parameter invalid, token amount must between %s and %s ",
+							UnitUtil.fromWei(oTransactionHelper.getBlockChainConfig().getMinTokenTotal()),
+							UnitUtil.fromWei(oTransactionHelper.getBlockChainConfig().getMaxTokenTotal())));
 		}
 
 		Account.Builder sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 		AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 		if (ByteUtil.bytesToBigInteger(senderAccountValue.getBalance().toByteArray())
 				.compareTo(this.oTransactionHelper.getBlockChainConfig().getToken_lock_balance()) == -1) {
-			throw new TransactionExecuteException(String.format("parameter invalid, not enough deposit %s to create token",
-					this.oTransactionHelper.getBlockChainConfig().getToken_lock_balance()));
+			throw new TransactionExecuteException(
+					String.format("parameter invalid, not enough deposit %s to create token",
+							this.oTransactionHelper.getBlockChainConfig().getToken_lock_balance()));
 		}
 
 		if (oAccountHelper.isExistsToken(token)) {

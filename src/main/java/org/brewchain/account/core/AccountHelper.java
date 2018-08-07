@@ -830,7 +830,7 @@ public class AccountHelper implements ActorService {
 	}
 
 	public void updateCryptoTokenValue(ByteString symbol, CryptoTokenValue newCryptoTokenValue) {
-		dao.getCryptoTokenDao().put(oEntityHelper.byteKey2OKey(symbol),
-				oEntityHelper.byteValue2OValue(newCryptoTokenValue.toByteArray()));
+		dao.getCryptoTokenDao().put(oEntityHelper.byteKey2OKey(symbol), oEntityHelper
+				.byteValue2OValue(newCryptoTokenValue.toByteArray(), KeyConstant.DB_EXISTS_CRYPTO_TOKEN_STR));
 	}
 }
