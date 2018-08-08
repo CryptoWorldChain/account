@@ -327,27 +327,38 @@ public class BlockUnStableStore implements ActorService {
 	public BlockEntity rollBackTo(long number, long maxNumber) {
 		try (ALock l = writeLock.lock()) {
 			BlockStoreNodeValue oNode = null;
-			boolean isContinue = false;
+			boolean isContinue = true;
 			for (long i = maxNumber; i >= number; i--) {
-				log.debug("roll back to number::" + i);
-				if (i == 0) {
-					// genesis block
-					
-				}
-				List<BlockEntity> blocks = getBlocksByNumber(i);
-				for (BlockEntity blockEntity : blocks) {
-					BlockStoreNodeValue currentNode = this.storage.get(blockEntity.getHeader().getBlockHash(),
-							blockEntity.getHeader().getNumber());
-					if (currentNode != null && currentNode.isConnect()) {
-						if (currentNode.getNumber() != number) {
-							currentNode.disConnect();
-							this.storage.put(currentNode.getBlockHash(), currentNode.getNumber(), currentNode);
-							log.debug("disconnect unstable cache number::" + currentNode.getNumber() + " hash::"
-									+ currentNode.getBlockHash());
-						}
-						
-						oNode = currentNode;
+				if (isContinue) {
+					log.debug("roll back to number::" + i);
+					if (i == 0) {
+						// genesis block
+
 					}
+					List<BlockEntity> blocks = getBlocksByNumber(i);
+					for (BlockEntity blockEntity : blocks) {
+						BlockStoreNodeValue currentNode = this.storage.get(blockEntity.getHeader().getBlockHash(),
+								blockEntity.getHeader().getNumber());
+						if (currentNode != null && currentNode.isConnect()) {
+							if (currentNode.getNumber() != number) {
+								currentNode.disConnect();
+								this.storage.put(currentNode.getBlockHash(), currentNode.getNumber(), currentNode);
+								log.debug("disconnect unstable cache number::" + currentNode.getNumber() + " hash::"
+										+ currentNode.getBlockHash());
+							}
+
+							oNode = currentNode;
+						} else if (currentNode != null) {
+							isContinue = false;
+							oNode.connect();
+							this.storage.put(oNode.getBlockHash(), oNode.getNumber(), oNode);
+
+							log.debug("unable disconnect unstable cache number, reconnect::" + oNode.getNumber()
+									+ " hash::" + oNode.getBlockHash());
+						}
+					}
+				} else {
+					break;
 				}
 			}
 
