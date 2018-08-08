@@ -26,6 +26,7 @@ import org.brewchain.account.core.actuator.ActuatorUnionAccountTransaction;
 import org.brewchain.account.core.actuator.iTransactionActuator;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.enums.TransTypeEnum;
+import org.brewchain.account.exception.TransactionException;
 import org.brewchain.account.gens.Tximpl.MultiTransactionBodyImpl;
 import org.brewchain.account.gens.Tximpl.MultiTransactionImpl;
 import org.brewchain.account.gens.Tximpl.MultiTransactionInputImpl;
@@ -483,7 +484,7 @@ public class TransactionHelper implements ActorService {
 		return oMultiTransactionImpl;
 	}
 
-	public MultiTransaction.Builder parse(MultiTransactionImpl oTransaction) {
+	public MultiTransaction.Builder parse(MultiTransactionImpl oTransaction) throws Exception{
 		MultiTransactionBodyImpl oMultiTransactionBodyImpl = oTransaction.getTxBody();
 
 		MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
@@ -499,6 +500,9 @@ public class TransactionHelper implements ActorService {
 		for (MultiTransactionInputImpl input : oMultiTransactionBodyImpl.getInputsList()) {
 			MultiTransactionInput.Builder oMultiTransactionInput = MultiTransactionInput.newBuilder();
 			oMultiTransactionInput.setAddress(ByteString.copyFrom(encApi.hexDec(input.getAddress())));
+			if (new BigInteger(input.getAmount()).compareTo(BigInteger.ZERO)<0) {
+				throw new TransactionException("amount must large than 0");
+			}
 			oMultiTransactionInput
 					.setAmount(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(new BigInteger(input.getAmount()))));
 			oMultiTransactionInput.setCryptoToken(ByteString.copyFrom(encApi.hexDec(input.getCryptoToken())));
@@ -510,16 +514,17 @@ public class TransactionHelper implements ActorService {
 		for (MultiTransactionOutputImpl output : oMultiTransactionBodyImpl.getOutputsList()) {
 			MultiTransactionOutput.Builder oMultiTransactionOutput = MultiTransactionOutput.newBuilder();
 			oMultiTransactionOutput.setAddress(ByteString.copyFrom(encApi.hexDec(output.getAddress())));
+			if (new BigInteger(output.getAmount()).compareTo(BigInteger.ZERO)<0) {
+				throw new TransactionException("amount must large than 0");
+			}
 			oMultiTransactionOutput
 					.setAmount(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(new BigInteger(output.getAmount()))));
 			oMultiTransactionOutput.setCryptoToken(ByteString.copyFrom(encApi.hexDec(output.getCryptoToken())));
 			oMultiTransactionOutput.setSymbol(output.getSymbol());
 			oMultiTransactionBody.addOutputs(oMultiTransactionOutput);
 		}
-		// oMultiTransactionBodyImpl.setSignatures(index, value)
 		for (MultiTransactionSignatureImpl signature : oMultiTransactionBodyImpl.getSignaturesList()) {
 			MultiTransactionSignature.Builder oMultiTransactionSignature = MultiTransactionSignature.newBuilder();
-			// oMultiTransactionSignature.setPubKey(ByteString.copyFrom(encApi.hexDec(signature.getPubKey())));
 			oMultiTransactionSignature.setSignature(ByteString.copyFrom(encApi.hexDec(signature.getSignature())));
 			oMultiTransactionBody.addSignatures(oMultiTransactionSignature);
 		}
@@ -527,37 +532,6 @@ public class TransactionHelper implements ActorService {
 		oMultiTransaction.setTxBody(oMultiTransactionBody);
 		return oMultiTransaction;
 	}
-	// private void verifyAndSaveTransaction(SingleTransaction.Builder
-	// oTransaction) throws Exception {
-	// // 校验交易签名
-	//
-	// // 判断发送方余额是否足够
-	// int balance =
-	// oAccountHelper.getBalance(oTransaction.getSenderAddress().toByteArray());
-	// if (balance - oTransaction.getAmount() - oTransaction.getFeeLimit() > 0)
-	// {
-	// // 余额足够
-	// } else {
-	// throw new Exception(String.format("用户的账户余额 %s 不满足交易的最高限额 %s", balance,
-	// oTransaction.getAmount() + oTransaction.getFeeLimit()));
-	// }
-	//
-	// // 判断nonce是否一致
-	// int nonce =
-	// oAccountHelper.getNonce(oTransaction.getSenderAddress().toByteArray());
-	// if (nonce != oTransaction.getNonce()) {
-	// throw new Exception(String.format("用户的交易索引 %s 与交易的索引不一致 %s", nonce,
-	// oTransaction.getNonce()));
-	// }
-	//
-	// // 生成交易Hash
-	// getTransactionHash(oTransaction);
-	//
-	// // 保存交易到db中
-	// dao.getTxsDao().put(OEntityBuilder.byteKey2OKey(oTransaction.getTxHash().toByteArray()),
-	// OEntityBuilder.byteValue2OValue(oTransaction.build().toByteArray()));
-	// }
-
 	/**
 	 * 校验并保存交易。该方法不会执行交易，用户的账户余额不会发生变化。
 	 * 
