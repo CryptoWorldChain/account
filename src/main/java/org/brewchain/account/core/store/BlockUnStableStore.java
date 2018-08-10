@@ -349,12 +349,12 @@ public class BlockUnStableStore implements ActorService {
 
 							oNode = currentNode;
 						} else if (currentNode != null) {
-							isContinue = false;
-							oNode.connect();
-							this.storage.put(oNode.getBlockHash(), oNode.getNumber(), oNode);
-
-							log.debug("unable disconnect unstable cache number, reconnect::" + oNode.getNumber()
-									+ " hash::" + oNode.getBlockHash());
+							// isContinue = false;
+							// oNode.connect();
+							// this.storage.put(oNode.getBlockHash(),
+							// oNode.getNumber(), oNode);
+							log.debug("unable disconnect unstable cache number, reconnect::" + currentNode.getNumber()
+									+ " hash::" + currentNode.getBlockHash());
 						}
 					}
 				} else {

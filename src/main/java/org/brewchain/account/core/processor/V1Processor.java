@@ -115,15 +115,17 @@ public class V1Processor implements IProcessor, ActorService {
 
 	@Override
 	public void applyReward(BlockEntity oCurrentBlock) throws Exception {
-		accountHelper.addTokenBalance(ByteString.copyFrom(encApi.hexDec(oCurrentBlock.getMiner().getAddress())), "CWS",
+		// accountHelper.addTokenBalance(ByteString.copyFrom(encApi.hexDec(oCurrentBlock.getMiner().getAddress())),
+		// "CWS",
+		// ByteUtil.bytesToBigInteger(oCurrentBlock.getMiner().getReward().toByteArray()));
+		accountHelper.addBalance(ByteString.copyFrom(encApi.hexDec(oCurrentBlock.getMiner().getAddress())),
 				ByteUtil.bytesToBigInteger(oCurrentBlock.getMiner().getReward().toByteArray()));
 	}
 
 	@Override
 	public BlockEntity.Builder CreateNewBlock(LinkedList<MultiTransaction> txs, String extraData) throws Exception {
 
-		log.error("call create new block");
-		log.info("call create new block");
+		log.debug("call create new block miner::" + KeyConstant.node.getAddress());
 
 		BlockEntity.Builder oBlockEntity = BlockEntity.newBuilder();
 		BlockHeader.Builder oBlockHeader = BlockHeader.newBuilder();
@@ -261,7 +263,7 @@ public class V1Processor implements IProcessor, ActorService {
 		AddBlockResponse.Builder oAddBlockResponse = AddBlockResponse.newBuilder();
 		log.debug("receive block number::" + applyBlock.getHeader().getNumber() + " hash::"
 				+ oBlockEntity.getHeader().getBlockHash() + " parent::" + applyBlock.getHeader().getParentHash()
-				+ " stateroot::" + applyBlock.getHeader().getStateRoot());
+				+ " stateroot::" + applyBlock.getHeader().getStateRoot() + " miner::" + applyBlock.getMiner().getAddress());
 
 		BlockStoreSummary oBlockStoreSummary = blockChainHelper.addBlock(applyBlock.build());
 		while (oBlockStoreSummary.getBehavior() != BLOCK_BEHAVIOR.DONE) {
