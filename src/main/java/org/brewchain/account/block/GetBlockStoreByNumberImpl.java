@@ -72,6 +72,8 @@ public class GetBlockStoreByNumberImpl extends SessionModules<ReqGetBlockByNumbe
 				oBlocksStore.setHash(item.getKey());
 				oBlocksStore.setParentHash(item.getValue().getParentHash());
 				oBlocksStore.setNumber(String.valueOf(item.getValue().getNumber()));
+				oBlocksStore.setMiner(item.getValue().getBlockEntity().getMiner().getAddress());
+
 				oRespGetBlock.addBlocks(oBlocksStore);
 			}
 			

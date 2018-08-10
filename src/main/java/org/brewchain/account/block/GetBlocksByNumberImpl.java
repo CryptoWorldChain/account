@@ -9,6 +9,7 @@ import org.brewchain.account.core.WaitBlockHashMapDB;
 import org.brewchain.account.core.WaitSendHashMapDB;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.gens.Blockimpl.BlockHeaderImpl;
+import org.brewchain.account.gens.Blockimpl.BlockHeaderxImpl;
 import org.brewchain.account.gens.Blockimpl.BlockMinerImpl;
 import org.brewchain.account.gens.Blockimpl.PBCTCommand;
 import org.brewchain.account.gens.Blockimpl.PBCTModule;
@@ -59,21 +60,16 @@ public class GetBlocksByNumberImpl extends SessionModules<ReqGetBlockByNumber> {
 			List<BlockEntity> list = blockChainHelper.getBlocksByNumber(pb.getNumber());
 			for (BlockEntity oBlockEntity : list) {
 				
-				BlockHeaderImpl.Builder oBlockHeaderImpl = BlockHeaderImpl.newBuilder();
+				BlockHeaderxImpl.Builder oBlockHeaderImpl = BlockHeaderxImpl.newBuilder();
 				oBlockHeaderImpl.setBlockHash(oBlockEntity.getHeader().getBlockHash());
-				oBlockHeaderImpl.setExtraData(oBlockEntity.getHeader().getExtraData());
 				oBlockHeaderImpl.setNumber(oBlockEntity.getHeader().getNumber());
 				oBlockHeaderImpl.setParentHash(oBlockEntity.getHeader().getParentHash());
-				oBlockHeaderImpl.setSliceId(oBlockEntity.getHeader().getSliceId());
 				oBlockHeaderImpl.setTimestamp(oBlockEntity.getHeader().getTimestamp());
 				oBlockHeaderImpl.setState(oBlockEntity.getHeader().getStateRoot());
 				oBlockHeaderImpl.setReceipt(oBlockEntity.getHeader().getReceiptTrieRoot());
 				oBlockHeaderImpl.setTxTrieRoot(oBlockEntity.getHeader().getTxTrieRoot());
-
-				for (String oTxhash : oBlockEntity.getHeader().getTxHashsList()) {
-					oBlockHeaderImpl.addTxHashs(oTxhash);
-				}
-
+				oBlockHeaderImpl.setMiner(oBlockEntity.getMiner().getAddress());
+				
 				oRespGetBlock.addBlocks(oBlockHeaderImpl);
 			}
 			

@@ -26,10 +26,11 @@ message BlocksStore {
 	string parentHash = 2;
 	string number = 3;
 	string connect = 4;
+	string miner = 5;
 }
 
 message RespGetBlocksByNumber {
-	repeated BlockHeaderImpl blocks = 1;
+	repeated BlockHeaderxImpl blocks = 1;
 }
 
 message ReqGetBlockByHash {
@@ -104,6 +105,17 @@ message BlockHeaderImpl {
 	int64 sliceId = 8;
 	string extraData = 9;
 	repeated string txHashs = 10;
+}
+
+message BlockHeaderxImpl {
+	string blockHash = 1;
+	string parentHash = 2;
+	int64 number = 3;
+	string state = 4;
+	string receipt = 5;
+	string txTrieRoot = 6;
+	int64 timestamp = 7;
+	string miner = 8;
 }
 
 message BlockMinerImpl {
