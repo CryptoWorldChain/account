@@ -32,6 +32,13 @@ public class ByteUtil {
 		result[result.length - 1] = b;
 		return result;
 	}
+	
+	public static byte[] appendBytes(byte[] bt1, byte[] bt2){  
+        byte[] bt3 = new byte[bt1.length+bt2.length];  
+        System.arraycopy(bt1, 0, bt3, 0, bt1.length);  
+        System.arraycopy(bt2, 0, bt3, bt1.length, bt2.length);  
+        return bt3;  
+    } 
 
 	public static BigInteger bytesAdd(byte[] bytes1, byte[] bytes2) {
 		return bytesToBigInteger(bytes1).add(bytesToBigInteger(bytes2));
