@@ -183,6 +183,10 @@ public class BlockStore implements ActorService {
 					if (existsParent.size() > 0) {
 						log.warn("forks, number::" + (block.getHeader().getNumber() - 1));
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_PREV);
+					} else if (maxStableBlock.getHeader().getBlockHash().equals(block.getHeader().getParentHash())
+							&& maxStableBlock.getHeader().getNumber() == block.getHeader().getNumber() - 1) {
+						log.warn("try apply block");
+						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
 					} else {
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.CACHE);
 					}
