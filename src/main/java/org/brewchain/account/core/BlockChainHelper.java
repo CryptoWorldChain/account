@@ -9,6 +9,8 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
+import org.brewchain.account.core.store.AccountStore;
+import org.brewchain.account.core.store.AccountStoreListener;
 import org.brewchain.account.core.store.BlockStore;
 import org.brewchain.account.core.store.BlockStore.BlockNotFoundInStoreException;
 import org.brewchain.account.core.store.BlockStoreSummary;
@@ -18,6 +20,7 @@ import org.brewchain.account.util.NodeDef.NodeAccount;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.bcapi.gens.Oentity.KeyStoreValue;
 import org.brewchain.bcapi.gens.Oentity.OValue;
+import org.brewchain.evmapi.gens.Act.Account;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.brewchain.evmapi.gens.Block.BlockEntity.Builder;
 import org.fc.brewchain.bcapi.EncAPI;
@@ -270,6 +273,7 @@ public class BlockChainHelper implements ActorService {
 		BlockEntity oBlockEntity = blockStore.getBlockByNumber(number);
 		return oBlockEntity;
 	}
+
 	public List<BlockEntity> getBlocksByNumber(long number) {
 		return blockStore.getBlocksByNumber(number);
 	}
@@ -368,6 +372,14 @@ public class BlockChainHelper implements ActorService {
 			reloadBlockCache();
 			// reloadBlockCacheByNumber();
 			log.debug("block load complete");
+
+			AccountStore as = new AccountStore();
+			as.setDao(dao);
+			as.setOEntityHelper(oEntityHelper);
+			AccountStoreListener listener = new AccountStoreListener();
+			as.addObserver(listener);
+			new Thread(as).start();
+
 		} catch (Exception e) {
 			log.error("error on start node account::", e);
 		}

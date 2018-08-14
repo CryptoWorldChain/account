@@ -61,41 +61,70 @@ public class GetAccountImpl extends SessionModules<ReqGetAccount> {
 				AccountValue oAccountValue = oAccount.getValue();
 
 				oAccountValueImpl.setAcceptLimit(oAccountValue.getAcceptLimit());
-				oAccountValueImpl.setAcceptMax(String.valueOf(ByteUtil.bytesToBigInteger(oAccountValue.getAcceptMax().toByteArray())));
+				oAccountValueImpl.setAcceptMax(
+						String.valueOf(ByteUtil.bytesToBigInteger(oAccountValue.getAcceptMax().toByteArray())));
 				for (ByteString relAddress : oAccountValue.getAddressList()) {
 					oAccountValueImpl.addAddress(encApi.hexEnc(relAddress.toByteArray()));
 				}
 
-				oAccountValueImpl.setBalance(String.valueOf(ByteUtil.bytesToBigInteger(oAccountValue.getBalance().toByteArray())));
+				oAccountValueImpl.setBalance(
+						String.valueOf(ByteUtil.bytesToBigInteger(oAccountValue.getBalance().toByteArray())));
 				// oAccountValueImpl.setCryptos(index, value)
+				int size = pb.getS();
+				int page = pb.getP();
+				if (size == 0) {
+					size = 20;
+				}
+				int start = page * size;
+				int end = start + size;
+
 				for (AccountCryptoValue oAccountTokenValue : oAccountValue.getCryptosList()) {
 					AccountCryptoValueImpl.Builder oAccountCryptoValueImpl = AccountCryptoValueImpl.newBuilder();
 					oAccountCryptoValueImpl.setSymbol(oAccountTokenValue.getSymbol());
-
+					int index = 0;
 					for (AccountCryptoToken oAccountCryptoToken : oAccountTokenValue.getTokensList()) {
-						AccountCryptoTokenImpl.Builder oAccountCryptoTokenImpl = AccountCryptoTokenImpl.newBuilder();
-						oAccountCryptoTokenImpl.setCode(oAccountCryptoToken.getCode());
-						oAccountCryptoTokenImpl.setHash(encApi.hexEnc(oAccountCryptoToken.getHash().toByteArray()));
-						oAccountCryptoTokenImpl.setIndex(oAccountCryptoToken.getIndex());
-						oAccountCryptoTokenImpl.setName(oAccountCryptoToken.getName());
-						oAccountCryptoTokenImpl.setNonce(oAccountCryptoToken.getNonce());
-						oAccountCryptoTokenImpl.setOwner(encApi.hexEnc(oAccountCryptoToken.getOwner().toByteArray()));
-						oAccountCryptoTokenImpl.setOwnertime(oAccountCryptoToken.getOwnertime());
-						oAccountCryptoTokenImpl.setTimestamp(oAccountCryptoToken.getTimestamp());
-						oAccountCryptoTokenImpl.setTotal(oAccountCryptoToken.getTotal());
+						if (index < start) {
+							continue;
+						} else if (index >= start && index < end) {
+							AccountCryptoTokenImpl.Builder oAccountCryptoTokenImpl = AccountCryptoTokenImpl
+									.newBuilder();
+							oAccountCryptoTokenImpl.setCode(oAccountCryptoToken.getCode());
+							oAccountCryptoTokenImpl.setHash(encApi.hexEnc(oAccountCryptoToken.getHash().toByteArray()));
+							oAccountCryptoTokenImpl.setIndex(oAccountCryptoToken.getIndex());
+							oAccountCryptoTokenImpl.setName(oAccountCryptoToken.getName());
+							oAccountCryptoTokenImpl.setNonce(oAccountCryptoToken.getNonce());
+							oAccountCryptoTokenImpl
+									.setOwner(encApi.hexEnc(oAccountCryptoToken.getOwner().toByteArray()));
+							oAccountCryptoTokenImpl.setOwnertime(oAccountCryptoToken.getOwnertime());
+							oAccountCryptoTokenImpl.setTimestamp(oAccountCryptoToken.getTimestamp());
+							oAccountCryptoTokenImpl.setTotal(oAccountCryptoToken.getTotal());
 
-						oAccountCryptoValueImpl.addTokens(oAccountCryptoTokenImpl);
+							oAccountCryptoValueImpl.addTokens(oAccountCryptoTokenImpl);
+						} else {
+							break;
+						}
+						index += 1;
 					}
 					oAccountValueImpl.addCryptos(oAccountCryptoValueImpl);
 				}
-				oAccountValueImpl.setMax(String.valueOf(ByteUtil.bytesToBigInteger(oAccountValue.getMax().toByteArray())));
+				oAccountValueImpl
+						.setMax(String.valueOf(ByteUtil.bytesToBigInteger(oAccountValue.getMax().toByteArray())));
 				oAccountValueImpl.setNonce(oAccountValue.getNonce());
+				int index = 0;
 				for (AccountTokenValue oAccountTokenValue : oAccountValue.getTokensList()) {
-					AccountTokenValueImpl.Builder oAccountTokenValueImpl = AccountTokenValueImpl.newBuilder();
-					oAccountTokenValueImpl.setBalance(String.valueOf(ByteUtil.bytesToBigInteger(oAccountTokenValue.getBalance().toByteArray())));
-					oAccountTokenValueImpl.setToken(oAccountTokenValue.getToken());
-					oAccountTokenValueImpl.setLocked(String.valueOf(ByteUtil.bytesToBigInteger(oAccountTokenValue.getLocked().toByteArray())));
-					oAccountValueImpl.addTokens(oAccountTokenValueImpl);
+					if (index < start) {
+						continue;
+					} else if (index >= start && index < end) {
+						AccountTokenValueImpl.Builder oAccountTokenValueImpl = AccountTokenValueImpl.newBuilder();
+						oAccountTokenValueImpl.setBalance(String
+								.valueOf(ByteUtil.bytesToBigInteger(oAccountTokenValue.getBalance().toByteArray())));
+						oAccountTokenValueImpl.setToken(oAccountTokenValue.getToken());
+						oAccountTokenValueImpl.setLocked(String
+								.valueOf(ByteUtil.bytesToBigInteger(oAccountTokenValue.getLocked().toByteArray())));
+						oAccountValueImpl.addTokens(oAccountTokenValueImpl);
+					} else {
+						break;
+					}
 				}
 				oAccountValueImpl.setStorage(encApi.hexEnc(oAccountValue.getStorage().toByteArray()));
 				oAccountValueImpl.setCode(encApi.hexEnc(oAccountValue.getCode().toByteArray()));

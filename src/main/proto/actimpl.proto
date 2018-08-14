@@ -80,6 +80,8 @@ message RespCreateUnionAccount {
 
 message ReqGetAccount {
     string address = 1;
+    int32 s = 2;
+    int32 p = 3;
 }
 
 message RespGetAccount {

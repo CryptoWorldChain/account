@@ -169,6 +169,22 @@ public class AccountHelper implements ActorService {
 		}
 		return null;
 	}
+	
+	public Account GetAccountFromDB(ByteString addr) {
+		try {
+			Account.Builder oAccount = Account.newBuilder();
+			oAccount.setAddress(addr);
+			byte[] valueHash = null;
+			
+			OValue o = dao.getAccountDao().get(oEntityHelper.byteKey2OKey(addr.toByteArray())).get();
+			AccountValue oAccountValue = AccountValue.parseFrom(o.getExtdata().toByteArray());
+			oAccount.setValue(oAccountValue);
+			return oAccount.build();
+		} catch (Exception e) {
+			log.error("account not found::" + encApi.hexEnc(addr.toByteArray()));
+		}
+		return null;
+	}
 
 	public List<AccountContractValue> getContractByCreator(ByteString addr) {
 		List<AccountContractValue> contracts = new ArrayList<>();
@@ -692,41 +708,25 @@ public class AccountHelper implements ActorService {
 		putAccountValue(addr, oAccountValue, true);
 	}
 
-	public void BatchPutAccounts(LinkedList<OKey> keys, LinkedList<AccountValue> values) {
-		OKey[] keysArray = new OKey[keys.size()];
-		OValue[] valuesArray = new OValue[values.size()];
-
-		LinkedList<OValue> list = new LinkedList<>();
-		for (int i = 0; i < values.size(); i++) {
-			list.add(oEntityHelper.byteValue2OValue(values.get(i).toByteArray()));
-			if (this.stateTrie != null) {
-				log.debug("put state trie::" + encApi.hexEnc(keys.get(i).getData().toByteArray()) + " "
-						+ encApi.hexEnc(values.get(i).toByteArray()));
-				this.stateTrie.put(keys.get(i).getData().toByteArray(), values.get(i).toByteArray());
-			}
-		}
-
-		dao.getAccountDao().batchPuts(keys.toArray(keysArray), list.toArray(valuesArray));
-	}
-
 	public void BatchPutAccounts(Map<String, Account.Builder> accountValues) {
-		OKey[] keysArray = new OKey[accountValues.size()];
-		OValue[] valuesArray = new OValue[accountValues.size()];
+//		OKey[] keysArray = new OKey[accountValues.size()];
+//		OValue[] valuesArray = new OValue[accountValues.size()];
 		Set<String> keySets = accountValues.keySet();
 		Iterator<String> iterator = keySets.iterator();
-		int i = 0;
+		//int i = 0;
 		while (iterator.hasNext()) {
 			String key = iterator.next();
 			AccountValue value = accountValues.get(key).getValue();
-			keysArray[i] = oEntityHelper.byteKey2OKey(encApi.hexDec(key));
-			valuesArray[i] = oEntityHelper.byteValue2OValue(value.toByteArray());
+//			keysArray[i] = oEntityHelper.byteKey2OKey(encApi.hexDec(key));
+//			valuesArray[i] = oEntityHelper.byteValue2OValue(value.toByteArray());
 			if (this.stateTrie != null) {
 				log.debug("put state trie::" + key + " " + encApi.hexEnc(value.toByteArray()));
 				this.stateTrie.put(encApi.hexDec(key), value.toByteArray());
 			}
-			i = i + 1;
+			//i = i + 1;
 		}
-		dao.getAccountDao().batchPuts(keysArray, valuesArray);
+		KeyConstant.QUEUE.add(accountValues);
+		//dao.getAccountDao().batchPuts(keysArray, valuesArray);
 	}
 
 	public void tokenMappingAccount(AccountCryptoToken.Builder acBuilder) {

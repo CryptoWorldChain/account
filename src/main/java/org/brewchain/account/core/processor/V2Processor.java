@@ -44,11 +44,11 @@ import onight.tfw.ntrans.api.ActorService;
 import onight.tfw.ntrans.api.annotation.ActorRequire;
 
 @NActorProvider
-@Instantiate(name = "V1_Processor")
+@Instantiate(name = "V2_Processor")
 @Provides(specifications = { ActorService.class }, strategy = "SINGLETON")
 @Slf4j
 @Data
-public class V1Processor implements IProcessor, ActorService {
+public class V2Processor implements IProcessor, ActorService {
 	@ActorRequire(name = "Account_Helper", scope = "global")
 	AccountHelper accountHelper;
 	@ActorRequire(name = "Transaction_Helper", scope = "global")
@@ -240,9 +240,7 @@ public class V1Processor implements IProcessor, ActorService {
 			i++;
 		}
 
-		//applyReward(oBlockEntity.build());
-		accountHelper.addTokenBalance(ByteString.copyFrom(encApi.hexDec(oBlockEntity.getMiner().getAddress())), "CWS",
-				ByteUtil.bytesToBigInteger(oBlockEntity.getMiner().getReward().toByteArray()));
+		applyReward(oBlockEntity.build());
 
 		header.setReceiptTrieRoot(encApi
 				.hexEnc(oReceiptTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY : oReceiptTrie.getRootHash()));
@@ -307,8 +305,6 @@ public class V1Processor implements IProcessor, ActorService {
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 						break;
 					case APPLY:
-						log.info("begin to apply block number::" + applyBlock.getHeader().getNumber());
-
 						for (String txHash : applyBlock.getHeader().getTxHashsList()) {
 							if (!transactionHelper.isExistsTransaction(txHash)) {
 								oAddBlockResponse.addTxHashs(txHash);
