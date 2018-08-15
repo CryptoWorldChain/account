@@ -3,16 +3,13 @@ package org.brewchain.account.dao;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.brewchain.account.gens.Actimpl.PACTModule;
 import org.brewchain.bcapi.backend.ODBSupport;
-import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.Message;
 
 import lombok.Data;
-import lombok.experimental.var;
 import lombok.extern.slf4j.Slf4j;
 import onight.oapi.scala.commons.SessionModules;
 import onight.osgi.annotation.NActorProvider;
-import onight.tfw.ntrans.api.annotation.ActorRequire;
 import onight.tfw.ojpa.api.DomainDaoSupport;
 import onight.tfw.ojpa.api.annotations.StoreDAO;
 
@@ -21,13 +18,15 @@ import onight.tfw.ojpa.api.annotations.StoreDAO;
 @Slf4j
 @Instantiate(name = "Def_Daos")
 public class DefDaos extends SessionModules<Message> {
-	@StoreDAO(target = "bc_bdb", daoClass = AccoutDomain.class)
+	@StoreDAO(target = "bc_bdb", daoClass = SliceAccoutDomain.class)
+//	@StoreDAO(target = "bc_bdb", daoClass = AccoutDomain.class)
 	ODBSupport accountDao;
+	
 
 	@StoreDAO(target = "bc_bdb", daoClass = TxSecondaryDomain.class)
 	ODBSupport txsDao;
 
-	@StoreDAO(target = "bc_bdb", daoClass = BlockDomain.class)
+	@StoreDAO(target = "bc_bdb", daoClass = SliceBlockDomain.class)
 	ODBSupport blockDao;
 
 	@StoreDAO(target = "bc_bdb", daoClass = TxBlockDomain.class)
