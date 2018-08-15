@@ -7,12 +7,15 @@ import static org.brewchain.account.util.RLP.encodeElement;
 import static org.brewchain.account.util.RLP.encodeList;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+
 import org.apache.commons.lang3.text.StrBuilder;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
@@ -22,6 +25,7 @@ import org.brewchain.account.util.ByteUtil;
 import org.brewchain.account.util.FastByteComparisons;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.account.util.RLP;
+import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.fc.brewchain.bcapi.EncAPI;
 
@@ -33,6 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 import onight.osgi.annotation.NActorProvider;
 import onight.tfw.ntrans.api.ActorService;
 import onight.tfw.ntrans.api.annotation.ActorRequire;
+import onight.tfw.outils.pool.ReusefulLoopPool;
 
 @NActorProvider
 @Provides(specifications = { ActorService.class }, strategy = "SINGLETON")
@@ -49,7 +54,8 @@ public class StateTrie implements ActorService {
 
 	private final static Object NULL_NODE = new Object();
 	private final static int MIN_BRANCHES_CONCURRENTLY = 3;
-	private static ExecutorService executor = Executors.newFixedThreadPool(4,
+	private static ExecutorService executor = Executors.newFixedThreadPool(
+			Runtime.getRuntime().availableProcessors() * 2,
 			new ThreadFactoryBuilder().setNameFormat("trie-calc-thread-%d").build());;
 
 	public static ExecutorService getExecutor() {
@@ -59,6 +65,17 @@ public class StateTrie implements ActorService {
 	public enum NodeType {
 		BranchNode, KVNodeValue, KVNodeNode
 	}
+
+	class BatchStorage {
+		Map<OKey, OValue> kvs = new HashMap<>();
+
+		public void add(byte[] key, byte[] v) {
+			kvs.put(oEntityHelper.byteKey2OKey(key), oEntityHelper.byteValue2OValue(v));
+		}
+	}
+
+	ThreadLocal<BatchStorage> batchStorage = new ThreadLocal<>();
+	ReusefulLoopPool<BatchStorage> bsPool = new ReusefulLoopPool<>();
 
 	public final class Node {
 		private byte[] hash = null;
@@ -112,7 +129,38 @@ public class StateTrie implements ActorService {
 		}
 
 		public byte[] encode() {
-			return encode(1, true);
+			BatchStorage bs = bsPool.borrow();
+			if (bs == null) {
+				bs = new BatchStorage();
+			}
+			try {
+				batchStorage.set(bs);
+				byte[] ret = encode(1, true);
+				int size = bs.kvs.size();
+				if (size > 0) {
+					OKey[] oks = new OKey[size];
+					OValue[] ovs = new OValue[size];
+					int i = 0;
+					for (Map.Entry<OKey, OValue> pair : bs.kvs.entrySet()) {
+						oks[i] = pair.getKey();
+						ovs[i] = pair.getValue();
+						i++;
+					}
+					dao.getAccountDao().batchPuts(oks, ovs);
+
+				}
+				// dao.getAccountDao().put(oEntityHelper.byteKey2OKey(hash),
+				// oEntityHelsper.byteValue2OValue(ret));
+				return ret;
+			} finally {
+				if (bs != null) {
+					bs.kvs.clear();
+					if (bsPool.size() < 1000) {
+						bsPool.retobj(bs);
+					}
+				}
+				batchStorage.set(null);
+			}
 		}
 
 		private byte[] encode(final int depth, boolean forceHash) {
@@ -480,9 +528,16 @@ public class StateTrie implements ActorService {
 	}
 
 	private byte[] getHash(byte[] hash) {
-		OValue v;
+		OKey key = oEntityHelper.byteKey2OKey(hash);
+		OValue v = null;
+		BatchStorage bs = batchStorage.get();
+		if (bs != null) {
+			v = bs.kvs.get(key);
+		}
 		try {
-			v = dao.getAccountDao().get(oEntityHelper.byteKey2OKey(hash)).get();
+			if (v == null) {
+				v = dao.getAccountDao().get(key).get();
+			}
 			if (v != null && v.getExtdata() != null && !v.getExtdata().equals(ByteString.EMPTY)) {
 				return v.getExtdata().toByteArray();
 			}
@@ -494,7 +549,12 @@ public class StateTrie implements ActorService {
 	}
 
 	private void addHash(byte[] hash, byte[] ret) {
-		dao.getAccountDao().put(oEntityHelper.byteKey2OKey(hash), oEntityHelper.byteValue2OValue(ret));
+		BatchStorage bs = batchStorage.get();
+		if (bs != null) {
+			bs.add(hash, ret);
+		} else {
+			dao.getAccountDao().put(oEntityHelper.byteKey2OKey(hash), oEntityHelper.byteValue2OValue(ret));
+		}
 	}
 
 	private void deleteHash(byte[] hash) {
