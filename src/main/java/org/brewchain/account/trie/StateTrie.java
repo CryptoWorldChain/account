@@ -76,7 +76,6 @@ public class StateTrie implements ActorService {
 
 	ThreadLocal<BatchStorage> batchStorage = new ThreadLocal<>();
 	ReusefulLoopPool<BatchStorage> bsPool = new ReusefulLoopPool<>();
-
 	public final class Node {
 		private byte[] hash = null;
 		private byte[] rlp = null;
@@ -154,8 +153,8 @@ public class StateTrie implements ActorService {
 				return ret;
 			} finally {
 				if (bs != null) {
-					bs.kvs.clear();
-					if (bsPool.size() < 1000) {
+					if (bsPool.size() < 100) {
+						bs.kvs.clear();
 						bsPool.retobj(bs);
 					}
 				}
