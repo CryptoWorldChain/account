@@ -114,8 +114,6 @@ public class TransactionLoadTestPerImpl extends SessionModules<ReqCreateTransact
 
 			oMultiTransaction.setTxBody(oMultiTransactionBody);
 			transactionLoadTestStore.getLoads().add(oMultiTransaction);
-			log.debug("gen per contract send tx::" + oMultiTransaction.getTxHash() + " sender::" + oFrom.getAddress()
-					+ " receiver::" + contract);
 		} catch (Exception e) {
 		}
 	}
@@ -148,8 +146,6 @@ public class TransactionLoadTestPerImpl extends SessionModules<ReqCreateTransact
 
 			oMultiTransaction.setTxBody(oMultiTransactionBody);
 			transactionLoadTestStore.getLoads().add(oMultiTransaction);
-			log.debug("gen per contract call tx::" + oMultiTransaction.getTxHash() + " sender::" + oFrom.getAddress()
-					+ " receiver::" + contract);
 		} catch (Exception e) {
 		}
 	}
@@ -186,8 +182,6 @@ public class TransactionLoadTestPerImpl extends SessionModules<ReqCreateTransact
 			oMultiTransactionBody.addSignatures(oMultiTransactionSignature21);
 			oMultiTransaction.setTxBody(oMultiTransactionBody);
 			transactionLoadTestStore.getLoads().add(oMultiTransaction);
-			log.debug("gen per token tx::" + oMultiTransaction.getTxHash() + " sender::" + oFrom.getAddress()
-					+ " receiver::" + oTo.getAddress());
 		} catch (Exception e) {
 		}
 	}
@@ -222,8 +216,6 @@ public class TransactionLoadTestPerImpl extends SessionModules<ReqCreateTransact
 
 			oMultiTransaction.setTxBody(oMultiTransactionBody);
 			transactionLoadTestStore.getLoads().add(oMultiTransaction);
-			log.debug("gen per default tx::" + oMultiTransaction.getTxHash() + " sender::" + oFrom.getAddress()
-					+ " receiver::" + oTo.getAddress());
 		} catch (Exception e) {
 		}
 	}

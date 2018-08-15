@@ -19,7 +19,7 @@ public class ProcessorManager implements ActorService {
 	V1Processor v1Processor;
 	
 	@ActorRequire(name = "V2_Processor", scope = "global")
-	V1Processor v2Processor;
+	V2Processor v2Processor;
 
 	public IProcessor getProcessor(int version) {
 		if (version == 1) {

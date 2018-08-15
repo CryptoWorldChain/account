@@ -164,9 +164,6 @@ public class TransactionHelper implements ActorService {
 	}
 
 	public void syncTransaction(MultiTransaction.Builder oMultiTransaction, boolean isBroadCast) {
-		// log.debug(
-		// "receive sync txhash::" + oMultiTransaction.getTxHash() + " status::"
-		// + oMultiTransaction.getStatus());
 		try {
 			OValue oValue = dao.getTxsDao()
 					.get(oEntityHelper.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash()))).get();
@@ -180,9 +177,6 @@ public class TransactionHelper implements ActorService {
 						oEntityHelper.byteValue2OValue(oMultiTransaction.build().toByteArray()));
 
 				if (isBroadCast) {
-					// 保存交易到缓存中，用于打包
-					// log.debug("add to wait block txhash::" +
-					// oMultiTransaction.getTxHash());
 					oPendingHashMapDB.put(oMultiTransaction.getTxHash(), oMultiTransaction.build());
 				}
 			}
@@ -209,7 +203,6 @@ public class TransactionHelper implements ActorService {
 			Map.Entry<String, MultiTransaction> item = it.next();
 			list.add(item.getValue());
 			it.remove();
-			// log.debug("get and remove sycn txhash::" + item.getKey());
 			total += 1;
 			if (count == total) {
 				break;
@@ -252,9 +245,6 @@ public class TransactionHelper implements ActorService {
 			Map.Entry<String, MultiTransaction> item = it.next();
 			list.add(item.getValue());
 			it.remove();
-			// log.debug("get need blocked tx and remove from cache, txhash::" +
-			// item.getKey() + " size::"
-			// + oPendingHashMapDB.getStorage().size());
 			total += 1;
 			if (count == total) {
 				break;
@@ -263,8 +253,12 @@ public class TransactionHelper implements ActorService {
 		return list;
 	}
 
-	public void removeWaitBlockTx(String txHash) throws InvalidProtocolBufferException {
-		oPendingHashMapDB.getStorage().remove(txHash);
+	public MultiTransaction removeWaitBlockTx(String txHash) throws InvalidProtocolBufferException {
+		return oPendingHashMapDB.getStorage().remove(txHash);
+	}
+	
+	public boolean isExistsWaitBlockTx(String txHash)  throws InvalidProtocolBufferException {
+		return oPendingHashMapDB.getStorage().containsKey(txHash);
 	}
 
 	/**
@@ -282,42 +276,6 @@ public class TransactionHelper implements ActorService {
 		}
 		MultiTransaction oTransaction = MultiTransaction.parseFrom(oValue.getExtdata().toByteArray());
 		return oTransaction;
-	}
-
-	/**
-	 * 交易签名方法。该方法未实现
-	 * 
-	 * @param privKey
-	 * @param oTransaction
-	 * @throws Exception
-	 */
-	public void Signature(List<String> privKeys, MultiTransaction.Builder oTransaction) throws Exception {
-		throw new RuntimeException("未实现该方法");
-		// oTransaction.clearSignatures();
-		// oTransaction.setTxHash(ByteString.EMPTY);
-		//
-		// // if (privKeys.size() != oTransaction.getInputsCount()) {
-		// // throw new Exception(
-		// // String.format("签名用的私钥个数 %s 与待签名的交易个数 %s 不一致", privKeys.size(),
-		// // oTransaction.getInputsCount()));
-		// // }
-		// if (privKeys == null || privKeys.size() == 0) {
-		// throw new Exception(String.format("签名用的私钥不能为空"));
-		// }
-		//
-		// LinkedList<MultiTransactionSignature> signatures = new
-		// LinkedList<MultiTransactionSignature>();
-		// for (int i = 0; i < privKeys.size(); i++) {
-		// MultiTransactionSignature.Builder oMultiTransactionSignature =
-		// MultiTransactionSignature.newBuilder();
-		// oMultiTransactionSignature.setSignature(encApi.base64Enc(encApi.ecSign(privKeys.get(i),
-		// oTransaction.build().toByteArray())));
-		//
-		// signatures.add(encApi.base64Enc(encApi.ecSign(privKeys.get(i),
-		// oTransaction.build().toByteArray())));
-		// }
-		//
-		// oTransaction.addAllSignature(signatures);
 	}
 
 	/**
@@ -484,7 +442,7 @@ public class TransactionHelper implements ActorService {
 		return oMultiTransactionImpl;
 	}
 
-	public MultiTransaction.Builder parse(MultiTransactionImpl oTransaction) throws Exception{
+	public MultiTransaction.Builder parse(MultiTransactionImpl oTransaction) throws Exception {
 		MultiTransactionBodyImpl oMultiTransactionBodyImpl = oTransaction.getTxBody();
 
 		MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
@@ -500,7 +458,7 @@ public class TransactionHelper implements ActorService {
 		for (MultiTransactionInputImpl input : oMultiTransactionBodyImpl.getInputsList()) {
 			MultiTransactionInput.Builder oMultiTransactionInput = MultiTransactionInput.newBuilder();
 			oMultiTransactionInput.setAddress(ByteString.copyFrom(encApi.hexDec(input.getAddress())));
-			if (new BigInteger(input.getAmount()).compareTo(BigInteger.ZERO)<0) {
+			if (new BigInteger(input.getAmount()).compareTo(BigInteger.ZERO) < 0) {
 				throw new TransactionException("amount must large than 0");
 			}
 			oMultiTransactionInput
@@ -514,7 +472,7 @@ public class TransactionHelper implements ActorService {
 		for (MultiTransactionOutputImpl output : oMultiTransactionBodyImpl.getOutputsList()) {
 			MultiTransactionOutput.Builder oMultiTransactionOutput = MultiTransactionOutput.newBuilder();
 			oMultiTransactionOutput.setAddress(ByteString.copyFrom(encApi.hexDec(output.getAddress())));
-			if (new BigInteger(output.getAmount()).compareTo(BigInteger.ZERO)<0) {
+			if (new BigInteger(output.getAmount()).compareTo(BigInteger.ZERO) < 0) {
 				throw new TransactionException("amount must large than 0");
 			}
 			oMultiTransactionOutput
@@ -532,6 +490,7 @@ public class TransactionHelper implements ActorService {
 		oMultiTransaction.setTxBody(oMultiTransactionBody);
 		return oMultiTransaction;
 	}
+
 	/**
 	 * 校验并保存交易。该方法不会执行交易，用户的账户余额不会发生变化。
 	 * 

@@ -21,9 +21,8 @@ public class AccountStoreListener implements Observer {
 		AccountStore run = new AccountStore();
 		run.setDao(dao);
 		run.setOEntityHelper(oEntityHelper);
-		run.addObserver(this);
+		// run.addObserver(this);
 		new Thread(run).start();
 		log.warn("AccountStore restart");
 	}
-
 }

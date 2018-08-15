@@ -70,8 +70,6 @@ public class V2Processor implements IProcessor, ActorService {
 
 		Map<String, ByteString> results = new LinkedHashMap<>();
 		for (MultiTransaction oTransaction : oMultiTransactions) {
-			log.debug("block " + currentBlock.getHeader().getBlockHash() + " exec transaction hash::"
-					+ oTransaction.getTxHash());
 			iTransactionActuator oiTransactionActuator = transactionHelper
 					.getActuator(oTransaction.getTxBody().getType(), currentBlock);
 
@@ -85,80 +83,52 @@ public class V2Processor implements IProcessor, ActorService {
 				while (iterator.hasNext()) {
 					String key = iterator.next();
 					AccountValue value = accounts.get(key).getValue();
-					log.debug("block " + currentBlock.getHeader().getBlockHash() + " exec transaction hash::"
-							+ oTransaction.getTxHash() + " put key::" + key + " value::"
-							+ encApi.hexEnc(value.toByteArray()));
 					this.stateTrie.put(encApi.hexDec(key), value.toByteArray());
 				}
 				oAccountHelper.BatchPutAccounts(accounts);
 				oiTransactionActuator.onExecuteDone(oTransaction, result);
 				results.put(oTransaction.getTxHash(), result);
-
-				log.debug("block " + currentBlock.getHeader().getBlockHash() + " exec transaction hash::"
-						+ oTransaction.getTxHash() + " done");
-
 			} catch (Exception e) {
 				oiTransactionActuator.onExecuteError(oTransaction,
 						ByteString.copyFromUtf8(e.getMessage() == null ? "unknown exception" : e.getMessage()));
 
 				results.put(oTransaction.getTxHash(),
 						ByteString.copyFromUtf8(e.getMessage() == null ? "unknown exception" : e.getMessage()));
-				// throw e;
 				log.error("block " + currentBlock.getHeader().getBlockHash() + " exec transaction hash::"
 						+ oTransaction.getTxHash() + " error::" + e.getMessage());
-				// log.error("error on exec tx::" + oTransaction.getTxHash(),
-				// e);
 			}
 		}
 		return results;
-		// oStateTrie.flush();
-		// return oStateTrie.getRootHash();
 	}
 
 	@Override
 	public void applyReward(BlockEntity oCurrentBlock) throws Exception {
-		// accountHelper.addTokenBalance(ByteString.copyFrom(encApi.hexDec(oCurrentBlock.getMiner().getAddress())),
-		// "CWS",
-		// ByteUtil.bytesToBigInteger(oCurrentBlock.getMiner().getReward().toByteArray()));
 		accountHelper.addBalance(ByteString.copyFrom(encApi.hexDec(oCurrentBlock.getMiner().getAddress())),
 				ByteUtil.bytesToBigInteger(oCurrentBlock.getMiner().getReward().toByteArray()));
 	}
 
 	@Override
 	public BlockEntity.Builder CreateNewBlock(LinkedList<MultiTransaction> txs, String extraData) throws Exception {
-
 		log.debug("call create new block miner::" + KeyConstant.node.getAddress());
-
 		BlockEntity.Builder oBlockEntity = BlockEntity.newBuilder();
 		BlockHeader.Builder oBlockHeader = BlockHeader.newBuilder();
 		BlockBody.Builder oBlockBody = BlockBody.newBuilder();
 		BlockMiner.Builder oBlockMiner = BlockMiner.newBuilder();
-
-		// 获取本节点的最后一块Block
 		BlockEntity oBestBlockEntity = blockChainHelper.GetConnectBestBlock();
 		if (oBestBlockEntity == null) {
 			oBestBlockEntity = blockChainHelper.GetStableBestBlock();
 		}
 		BlockHeader oBestBlockHeader = oBestBlockEntity.getHeader();
-
-		// 构造Block Header
-		// oBlockHeader.setCoinbase(ByteString.copyFrom(coinBase));
 		oBlockHeader.setParentHash(oBestBlockHeader.getBlockHash());
 
-		// 确保时间戳不重复
 		long currentTimestamp = System.currentTimeMillis();
 		oBlockHeader.setTimestamp(System.currentTimeMillis() == oBestBlockHeader.getTimestamp()
 				? oBestBlockHeader.getTimestamp() + 1 : currentTimestamp);
 		oBlockHeader.setNumber(oBestBlockHeader.getNumber() + 1);
-		// oBlockHeader.setReward(bloc);
 		oBlockHeader.setExtraData(extraData);
-		// // 构造MPT Trie
-		// this.transactionTrie.setRoot(encApi.hexDec(oBestBlockHeader.getTxTrieRoot()));
 		for (int i = 0; i < txs.size(); i++) {
 			oBlockHeader.addTxHashs(txs.get(i).getTxHash());
 			oBlockBody.addTxs(txs.get(i));
-			// this.transactionTrie.put(RLP.encodeInt(i),
-			// transactionHelper.getTransactionContent(txs.get(i)));
 		}
 		oBlockMiner.setAddress(encApi.hexEnc(KeyConstant.node.getoAccount().getAddress().toByteArray()));
 		oBlockMiner.setNode(KeyConstant.node.getNode());
@@ -168,10 +138,6 @@ public class V2Processor implements IProcessor, ActorService {
 		oBlockMiner.setReward(ByteString.copyFrom(
 				ByteUtil.bigIntegerToBytes(blockChainConfig.getMinerReward().multiply(new BigInteger(String.valueOf(
 						Math.max(blockChainConfig.getBlockEpochSecond(), blockChainConfig.getBlockEpochMSecond())))))));
-		// oBlockMiner.setReward(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(blockChainConfig.getMinerReward())));
-
-		// oBlockHeader.setTxTrieRoot(encApi.hexEnc(this.transactionTrie.getRootHash()));
-		// oBlockHeader.setBlockHash(encApi.hexEnc(encApi.sha256Encode(oBlockHeader.build().toByteArray())));
 		oBlockEntity.setHeader(oBlockHeader);
 		oBlockEntity.setBody(oBlockBody);
 		oBlockEntity.setMiner(oBlockMiner);
@@ -180,18 +146,15 @@ public class V2Processor implements IProcessor, ActorService {
 		this.stateTrie.setRoot(encApi.hexDec(oBestBlockHeader.getStateRoot()));
 		processBlock(oBlockEntity);
 
-		byte[] blockContent = org.brewchain.account.util.ByteUtil.appendBytes(oBlockEntity.getHeaderBuilder().clearBlockHash().build().toByteArray(),oBlockMiner.build().toByteArray() ); 
-		oBlockEntity.setHeader(oBlockEntity.getHeaderBuilder().setBlockHash(encApi.hexEnc(encApi.sha256Encode(blockContent))));
-		
+		byte[] blockContent = org.brewchain.account.util.ByteUtil.appendBytes(
+				oBlockEntity.getHeaderBuilder().clearBlockHash().build().toByteArray(),
+				oBlockMiner.build().toByteArray());
+		oBlockEntity.setHeader(
+				oBlockEntity.getHeaderBuilder().setBlockHash(encApi.hexEnc(encApi.sha256Encode(blockContent))));
+
 		BlockStoreSummary oSummary = blockChainHelper.addBlock(oBlockEntity.build());
 		switch (oSummary.getBehavior()) {
 		case APPLY:
-//			this.stateTrie.setRoot(encApi.hexDec(oBestBlockHeader.getStateRoot()));
-//			processBlock(oBlockEntity);
-//			
-//			oBlockHeader.setBlockHash(encApi.hexEnc(encApi.sha256Encode(oBlockHeader.build().toByteArray())));
-//			oBlockEntity.setHeader(oBlockHeader);
-
 			blockChainHelper.connectBlock(oBlockEntity.build());
 
 			log.info(String.format("LOGFILTER %s %s %s %s 执行区块[%s]",
@@ -220,9 +183,10 @@ public class V2Processor implements IProcessor, ActorService {
 		BlockBody.Builder bb = oBlockEntity.getBody().toBuilder();
 		int i = 0;
 		for (String txHash : oBlockHeader.getTxHashsList()) {
-			transactionHelper.removeWaitBlockTx(txHash);
-			MultiTransaction oMultiTransaction = transactionHelper.GetTransaction(txHash);
-
+			MultiTransaction oMultiTransaction = transactionHelper.removeWaitBlockTx(txHash);
+			if (oMultiTransaction == null) {
+				oMultiTransaction = transactionHelper.GetTransaction(txHash);
+			}
 			oTransactionTrie.put(RLP.encodeInt(i), transactionHelper.getTransactionContent(oMultiTransaction));
 			bb.addTxs(oMultiTransaction);
 			txs.add(oMultiTransaction);
@@ -253,7 +217,7 @@ public class V2Processor implements IProcessor, ActorService {
 	@Override
 	public synchronized AddBlockResponse ApplyBlock(BlockEntity oBlockEntity) {
 		BlockEntity.Builder applyBlock = oBlockEntity.toBuilder();
-
+		log.error("start apply block stamp::" + System.currentTimeMillis());
 		AddBlockResponse.Builder oAddBlockResponse = AddBlockResponse.newBuilder();
 		log.debug("receive block number::" + applyBlock.getHeader().getNumber() + " hash::"
 				+ oBlockEntity.getHeader().getBlockHash() + " parent::" + applyBlock.getHeader().getParentHash()
@@ -264,11 +228,11 @@ public class V2Processor implements IProcessor, ActorService {
 			BlockHeader.Builder oBlockHeader = BlockHeader.parseFrom(oBlockEntity.getHeader().toByteArray())
 					.toBuilder();
 			oBlockHeader.clearBlockHash();
-			
-			byte[] blockContent = org.brewchain.account.util.ByteUtil.appendBytes(oBlockHeader.build().toByteArray(),oBlockEntity.getMiner().toByteArray() ); 
-			
-			if (!oBlockEntity.getHeader().getBlockHash()
-					.equals(encApi.hexEnc(encApi.sha256Encode(blockContent)))) {
+
+			byte[] blockContent = org.brewchain.account.util.ByteUtil.appendBytes(oBlockHeader.build().toByteArray(),
+					oBlockEntity.getMiner().toByteArray());
+
+			if (!oBlockEntity.getHeader().getBlockHash().equals(encApi.hexEnc(encApi.sha256Encode(blockContent)))) {
 				log.warn("wrong block hash::" + oBlockEntity.getHeader().getBlockHash() + " need::"
 						+ encApi.hexEnc(encApi.sha256Encode(blockContent)));
 			} else {
@@ -306,7 +270,8 @@ public class V2Processor implements IProcessor, ActorService {
 						break;
 					case APPLY:
 						for (String txHash : applyBlock.getHeader().getTxHashsList()) {
-							if (!transactionHelper.isExistsTransaction(txHash)) {
+							if (!transactionHelper.isExistsWaitBlockTx(txHash)
+									&& !transactionHelper.isExistsTransaction(txHash)) {
 								oAddBlockResponse.addTxHashs(txHash);
 							}
 						}
@@ -355,8 +320,6 @@ public class V2Processor implements IProcessor, ActorService {
 							log.info("ready to apply child block::" + applyBlock.getHeader().getBlockHash()
 									+ " number::" + applyBlock.getHeader().getNumber());
 							ApplyBlock(blockEntity);
-							// oBlockStoreSummary =
-							// blockChainHelper.addBlock(applyBlock.build());
 						}
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 						break;
@@ -367,7 +330,6 @@ public class V2Processor implements IProcessor, ActorService {
 						break;
 					case ERROR:
 						log.error("fail to apply block number::" + applyBlock.getHeader().getNumber());
-						//
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 						break;
 					}
@@ -385,6 +347,7 @@ public class V2Processor implements IProcessor, ActorService {
 			oAddBlockResponse.setWantNumber(oAddBlockResponse.getCurrentNumber());
 		}
 
+		log.error("end apply block stamp::" + System.currentTimeMillis());
 		return oAddBlockResponse.build();
 	}
 }

@@ -725,7 +725,7 @@ public class AccountHelper implements ActorService {
 			}
 			//i = i + 1;
 		}
-		KeyConstant.QUEUE.add(accountValues);
+		//KeyConstant.QUEUE.add(accountValues);
 		//dao.getAccountDao().batchPuts(keysArray, valuesArray);
 	}
 

@@ -151,55 +151,7 @@ public class BlockHelper implements ActorService {
 	public synchronized AddBlockResponse ApplyBlock(BlockEntity block) throws Exception {
 		return oProcessorManager.getProcessor(block.getVersion()).ApplyBlock(block);
 	}
-	//
-	// private synchronized void processBlock(BlockEntity.Builder oBlockEntity)
-	// throws Exception {
-	// BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
-	// LinkedList<MultiTransaction> txs = new LinkedList<MultiTransaction>();
-	// CacheTrie oTrieImpl = new CacheTrie();
-	//
-	// BlockBody.Builder bb = oBlockEntity.getBody().toBuilder();
-	// for (String txHash : oBlockHeader.getTxHashsList()) {
-	// transactionHelper.removeWaitBlockTx(txHash);
-	// MultiTransaction oMultiTransaction =
-	// transactionHelper.GetTransaction(txHash);
-	// oTrieImpl.put(encApi.hexDec(oMultiTransaction.getTxHash()),
-	// transactionHelper.getTransactionContent(oMultiTransaction));
-	// bb.addTxs(oMultiTransaction);
-	// if (oMultiTransaction.getStatus() == null ||
-	// oMultiTransaction.getStatus().isEmpty()) {
-	// txs.add(oMultiTransaction);
-	// }
-	// }
-	// if
-	// (!oBlockEntity.getHeader().getTxTrieRoot().equals(encApi.hexEnc(oTrieImpl.getRootHash())))
-	// {
-	// throw new Exception(String.format("transaction trie root hash %s not equal
-	// %s",
-	// oBlockEntity.getHeader().getTxTrieRoot(),
-	// encApi.hexEnc(oTrieImpl.getRootHash())));
-	// }
-	// oBlockEntity.setBody(bb);
-	// Map<String, ByteString> results = transactionHelper.ExecuteTransaction(txs,
-	// oBlockEntity.build());
-	// BlockHeader.Builder header = oBlockEntity.getHeaderBuilder();
-	//
-	// CacheTrie receiptTrie = new CacheTrie();
-	// Iterator<String> iter = results.keySet().iterator();
-	// while (iter.hasNext()) {
-	// String key = iter.next();
-	// receiptTrie.put(encApi.hexDec(key), results.get(key).toByteArray());
-	// }
-	// if (results.size() > 0) {
-	// header.setReceiptTrieRoot(encApi.hexEnc(receiptTrie.getRootHash()));
-	// }
-	//
-	// header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
-	// oBlockEntity.setHeader(header);
-	// // reward
-	// applyReward(oBlockEntity.build());
-	// }
-
+	
 	/**
 	 * 根据区块Hash获取区块信息
 	 * 

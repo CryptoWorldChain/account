@@ -10,7 +10,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.brewchain.account.core.store.AccountStore;
-import org.brewchain.account.core.store.AccountStoreListener;
 import org.brewchain.account.core.store.BlockStore;
 import org.brewchain.account.core.store.BlockStore.BlockNotFoundInStoreException;
 import org.brewchain.account.core.store.BlockStoreSummary;
@@ -20,12 +19,11 @@ import org.brewchain.account.util.NodeDef.NodeAccount;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.bcapi.gens.Oentity.KeyStoreValue;
 import org.brewchain.bcapi.gens.Oentity.OValue;
-import org.brewchain.evmapi.gens.Act.Account;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
-import org.brewchain.evmapi.gens.Block.BlockEntity.Builder;
 import org.fc.brewchain.bcapi.EncAPI;
 import org.fc.brewchain.bcapi.KeyStoreHelper;
 
+import com.google.common.util.concurrent.AbstractScheduledService.Scheduler;
 import com.google.protobuf.ByteString;
 
 import lombok.Data;
@@ -370,14 +368,11 @@ public class BlockChainHelper implements ActorService {
 
 			KeyConstant.node = oNodeDef;
 			reloadBlockCache();
-			// reloadBlockCacheByNumber();
 			log.debug("block load complete");
 
 			AccountStore as = new AccountStore();
 			as.setDao(dao);
 			as.setOEntityHelper(oEntityHelper);
-			AccountStoreListener listener = new AccountStoreListener();
-			as.addObserver(listener);
 			new Thread(as).start();
 
 		} catch (Exception e) {
