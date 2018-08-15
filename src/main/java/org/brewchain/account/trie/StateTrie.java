@@ -164,6 +164,7 @@ public class StateTrie implements ActorService {
 		}
 
 		private byte[] encode(final int depth, boolean forceHash) {
+			final BatchStorage bs = batchStorage.get();
 			if (!dirty) {
 				return hash != null ? encodeElement(hash) : rlp;
 			} else {
@@ -193,7 +194,16 @@ public class StateTrie implements ActorService {
 									encoded[i] = getExecutor().submit(new Callable<byte[]>() {
 										@Override
 										public byte[] call() throws Exception {
-											return child.encode(depth + 1, false);
+											try {
+												if (bs != null) {
+													batchStorage.set(bs);
+												}
+												return child.encode(depth + 1, false);
+											} finally {
+												if (bs != null) {
+													batchStorage.remove();
+												}
+											}
 										}
 									});
 								} else {
