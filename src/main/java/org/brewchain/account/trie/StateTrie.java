@@ -67,15 +67,14 @@ public class StateTrie implements ActorService {
 	}
 
 	class BatchStorage {
-		// Map<OKey, OValue> kvs = new HashMap<>();
-		List<OKey> keys = new ArrayList<>();
-		List<OValue> values = new ArrayList<>();
+		HashMap<OKey, OValue> kvs = new HashMap<>();
+		// List<OKey> keys = new ArrayList<>();
+		// List<OValue> values = new ArrayList<>();
 
 		public void add(byte[] key, byte[] v) {
-			keys.add(oEntityHelper.byteKey2OKey(key));
-			values.add(oEntityHelper.byteValue2OValue(v));
-			// kvs.put(oEntityHelper.byteKey2OKey(key),
-			// oEntityHelper.byteValue2OValue(v));
+			// keys.add(oEntityHelper.byteKey2OKey(key));
+			// values.add(oEntityHelper.byteValue2OValue(v));
+			kvs.put(oEntityHelper.byteKey2OKey(key), oEntityHelper.byteValue2OValue(v));
 		}
 	}
 
@@ -134,21 +133,23 @@ public class StateTrie implements ActorService {
 		}
 
 		public void flushBS(BatchStorage bs) {
-			int size = bs.keys.size();
+			int size = bs.kvs.size();
 			if (size > 0) {
 				OKey[] oks = new OKey[size];
 				OValue[] ovs = new OValue[size];
-				for (int i = 0; i < size; i++) {
-					oks[i] = bs.keys.get(i);
-					ovs[i] = bs.values.get(i);
-
-					log.debug("put into state trie key::" + encApi.hexEnc(bs.keys.get(i).getData().toByteArray()));
+				int i = 0;
+				for (Map.Entry<OKey, OValue> kvs : bs.kvs.entrySet()) {
+					oks[i] = kvs.getKey();
+					ovs[i] = kvs.getValue();
+					i++;
+					// log.debug("put into state trie key::" +
+					// encApi.hexEnc(bs.keys.get(i).getData().toByteArray()));
 				}
 
 				dao.getAccountDao().batchPuts(oks, ovs);
 
-				bs.keys.clear();
-				bs.values.clear();
+				bs.kvs.clear();
+				// bs.values.clear();
 			}
 		}
 
@@ -167,8 +168,8 @@ public class StateTrie implements ActorService {
 			} finally {
 				if (bs != null) {
 					if (bsPool.size() < 100) {
-						bs.keys.clear();
-						bs.values.clear();
+						bs.kvs.clear();
+//						bs.values.clear();
 						bsPool.retobj(bs);
 					}
 				}
@@ -223,8 +224,8 @@ public class StateTrie implements ActorService {
 												if (bs != null) {
 													batchStorage.remove();
 													if (bsPool.size() < 100) {
-														bs.keys.clear();
-														bs.values.clear();
+														bs.kvs.clear();
+//														bs.values.clear();
 														bsPool.retobj(bs);
 													}
 												}
@@ -568,10 +569,7 @@ public class StateTrie implements ActorService {
 		OValue v = null;
 		BatchStorage bs = batchStorage.get();
 		if (bs != null) {
-			int index = bs.keys.indexOf(key);
-			if (index != -1) {
-				v = bs.values.get(index);
-			}
+			v = bs.kvs.get(key);
 		}
 		try {
 			if (v == null) {
