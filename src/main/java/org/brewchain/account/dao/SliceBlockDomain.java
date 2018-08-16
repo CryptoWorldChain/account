@@ -12,6 +12,7 @@ public class SliceBlockDomain extends ODBDao {
 
 	@Override
 	public String getDomainName() {
-		return "block.number."+new PropHelper(null).get("org.brewchain.block.slicecount", 8);
+		//return "block.number."+new PropHelper(null).get("org.brewchain.block.slicecount", 8);
+		return "block.number";
 	}
 }

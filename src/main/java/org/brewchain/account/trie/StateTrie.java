@@ -67,15 +67,21 @@ public class StateTrie implements ActorService {
 	}
 
 	class BatchStorage {
-		Map<OKey, OValue> kvs = new HashMap<>();
+		// Map<OKey, OValue> kvs = new HashMap<>();
+		List<OKey> keys = new ArrayList<>();
+		List<OValue> values = new ArrayList<>();
 
 		public void add(byte[] key, byte[] v) {
-			kvs.put(oEntityHelper.byteKey2OKey(key), oEntityHelper.byteValue2OValue(v));
+			keys.add(oEntityHelper.byteKey2OKey(key));
+			values.add(oEntityHelper.byteValue2OValue(v));
+			// kvs.put(oEntityHelper.byteKey2OKey(key),
+			// oEntityHelper.byteValue2OValue(v));
 		}
 	}
 
 	ThreadLocal<BatchStorage> batchStorage = new ThreadLocal<>();
 	ReusefulLoopPool<BatchStorage> bsPool = new ReusefulLoopPool<>();
+
 	public final class Node {
 		private byte[] hash = null;
 		private byte[] rlp = null;
@@ -127,6 +133,25 @@ public class StateTrie implements ActorService {
 			}
 		}
 
+		public void flushBS(BatchStorage bs) {
+			int size = bs.keys.size();
+			if (size > 0) {
+				OKey[] oks = new OKey[size];
+				OValue[] ovs = new OValue[size];
+				for (int i = 0; i < size; i++) {
+					oks[i] = bs.keys.get(i);
+					ovs[i] = bs.values.get(i);
+
+					log.debug("put into state trie key::" + encApi.hexEnc(bs.keys.get(i).getData().toByteArray()));
+				}
+
+				dao.getAccountDao().batchPuts(oks, ovs);
+
+				bs.keys.clear();
+				bs.values.clear();
+			}
+		}
+
 		public byte[] encode() {
 			BatchStorage bs = bsPool.borrow();
 			if (bs == null) {
@@ -135,35 +160,24 @@ public class StateTrie implements ActorService {
 			try {
 				batchStorage.set(bs);
 				byte[] ret = encode(1, true);
-				int size = bs.kvs.size();
-				if (size > 0) {
-					OKey[] oks = new OKey[size];
-					OValue[] ovs = new OValue[size];
-					int i = 0;
-					for (Map.Entry<OKey, OValue> pair : bs.kvs.entrySet()) {
-						oks[i] = pair.getKey();
-						ovs[i] = pair.getValue();
-						i++;
-					}
-					dao.getAccountDao().batchPuts(oks, ovs);
-
-				}
+				flushBS(bs);
 				// dao.getAccountDao().put(oEntityHelper.byteKey2OKey(hash),
 				// oEntityHelsper.byteValue2OValue(ret));
 				return ret;
 			} finally {
 				if (bs != null) {
 					if (bsPool.size() < 100) {
-						bs.kvs.clear();
+						bs.keys.clear();
+						bs.values.clear();
 						bsPool.retobj(bs);
 					}
 				}
-				batchStorage.set(null);
+				batchStorage.remove();
 			}
 		}
 
 		private byte[] encode(final int depth, boolean forceHash) {
-			final BatchStorage bs = batchStorage.get();
+			BatchStorage bs = batchStorage.get();
 			if (!dirty) {
 				return hash != null ? encodeElement(hash) : rlp;
 			} else {
@@ -193,14 +207,26 @@ public class StateTrie implements ActorService {
 									encoded[i] = getExecutor().submit(new Callable<byte[]>() {
 										@Override
 										public byte[] call() throws Exception {
+											BatchStorage bs = bsPool.borrow();
+											if (bs == null) {
+												bs = new BatchStorage();
+											}
 											try {
 												if (bs != null) {
 													batchStorage.set(bs);
 												}
-												return child.encode(depth + 1, false);
+												byte[] ret = child.encode(depth + 1, false);
+												// flush
+												flushBS(bs);
+												return ret;
 											} finally {
 												if (bs != null) {
 													batchStorage.remove();
+													if (bsPool.size() < 100) {
+														bs.keys.clear();
+														bs.values.clear();
+														bsPool.retobj(bs);
+													}
 												}
 											}
 										}
@@ -239,6 +265,7 @@ public class StateTrie implements ActorService {
 					// deleteHash(hash);
 				}
 				dirty = false;
+
 				if (ret.length < 32 && !forceHash) {
 					rlp = ret;
 					return ret;
@@ -541,7 +568,10 @@ public class StateTrie implements ActorService {
 		OValue v = null;
 		BatchStorage bs = batchStorage.get();
 		if (bs != null) {
-			v = bs.kvs.get(key);
+			int index = bs.keys.indexOf(key);
+			if (index != -1) {
+				v = bs.values.get(index);
+			}
 		}
 		try {
 			if (v == null) {
@@ -560,6 +590,7 @@ public class StateTrie implements ActorService {
 	private void addHash(byte[] hash, byte[] ret) {
 		BatchStorage bs = batchStorage.get();
 		if (bs != null) {
+			log.debug("add into state trie key::" + encApi.hexEnc(hash));
 			bs.add(hash, ret);
 		} else {
 			dao.getAccountDao().put(oEntityHelper.byteKey2OKey(hash), oEntityHelper.byteValue2OValue(ret));
