@@ -23,13 +23,13 @@ public class DefDaos extends SessionModules<Message> {
 	ODBSupport accountDao;
 	
 
-	@StoreDAO(target = "bc_bdb", daoClass = TxSecondaryDomain.class)
+	@StoreDAO(target = "bc_bdb", daoClass = SliceTxSecondaryDomain.class)
 	ODBSupport txsDao;
 
 	@StoreDAO(target = "bc_bdb", daoClass = SliceBlockDomain.class)
 	ODBSupport blockDao;
 
-	@StoreDAO(target = "bc_bdb", daoClass = TxBlockDomain.class)
+	@StoreDAO(target = "bc_bdb", daoClass = SliceTxBlockDomain.class)
 	ODBSupport txblockDao;
 
 	@StoreDAO(target = "bc_bdb", daoClass = CryptoTokenDomain.class)

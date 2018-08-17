@@ -1,13 +1,12 @@
 package org.brewchain.account.core;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -36,9 +35,9 @@ import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.util.ByteUtil;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.account.util.RLP;
+import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.brewchain.evmapi.gens.Act.Account;
-import org.brewchain.evmapi.gens.Act.AccountValue;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.brewchain.evmapi.gens.Tx.BroadcastTransactionMsg;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
@@ -49,7 +48,6 @@ import org.brewchain.evmapi.gens.Tx.MultiTransactionOutput;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionSignature;
 import org.brewchain.evmapi.gens.Tx.SingleTransaction;
 import org.fc.brewchain.bcapi.EncAPI;
-import org.fc.brewchain.bcapi.KeyPairs;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -165,25 +163,84 @@ public class TransactionHelper implements ActorService {
 
 	public void syncTransaction(MultiTransaction.Builder oMultiTransaction, boolean isBroadCast) {
 		try {
-			OValue oValue = dao.getTxsDao()
-					.get(oEntityHelper.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash()))).get();
-			if (oValue != null) {
-				log.warn("transaction " + oMultiTransaction.getTxHash() + " exists, drop it");
-			} else {
-				oMultiTransaction.clearStatus();
-				oMultiTransaction.clearResult();
-
-				dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash())),
-						oEntityHelper.byteValue2OValue(oMultiTransaction.build().toByteArray()));
-
-				if (isBroadCast) {
-					oPendingHashMapDB.put(oMultiTransaction.getTxHash(), oMultiTransaction.build());
-				}
+			// 没想明白为什么要cleanstatus,clean result
+			// oMultiTransaction.clearStatus();
+			// oMultiTransaction.clearResult();
+			Future<OValue> f = dao.getTxsDao().putIfNotExist(
+					oEntityHelper.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash())),
+					oEntityHelper.byteValue2OValue(oMultiTransaction.build().toByteArray()));
+			if (f != null && f.get() != null && isBroadCast) {
+				oPendingHashMapDB.put(oMultiTransaction.getTxHash(), oMultiTransaction.build());
 			}
+			// OValue oValue = dao.getTxsDao()
+			// .get(oEntityHelper.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash()))).get();
+			// if (oValue != null) {
+			// log.warn("transaction " + oMultiTransaction.getTxHash() + "
+			// exists, drop it");
+			// } else {
+			// oMultiTransaction.clearStatus();
+			// oMultiTransaction.clearResult();
+			//
+			// dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash())),
+			// oEntityHelper.byteValue2OValue(oMultiTransaction.build().toByteArray()));
+			//
+			// if (isBroadCast) {
+			// oPendingHashMapDB.put(oMultiTransaction.getTxHash(),
+			// oMultiTransaction.build());
+			// }
+			// }
 
 			KeyConstant.counter += 1;
 		} catch (Exception e) {
 			log.error("fail to sync transaction::" + oMultiTransaction.getTxHash() + " error::" + e);
+		}
+	}
+
+	public void syncTransaction(List<MultiTransaction.Builder> oMultiTransaction) throws Exception {
+		syncTransaction(oMultiTransaction, true);
+	}
+
+	public void syncTransaction(List<MultiTransaction.Builder> oMultiTransaction, boolean isBroadCast) {
+		try {
+			// 没想明白为什么要cleanstatus,clean result
+			// oMultiTransaction.clearStatus();
+			// oMultiTransaction.clearResult();
+			OKey[] keys = new OKey[oMultiTransaction.size()];
+			OValue[] values = new OValue[oMultiTransaction.size()];
+			int i = 0;
+			for (MultiTransaction.Builder mtb : oMultiTransaction) {
+				keys[i] = oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash()));
+				values[i] = oEntityHelper.byteValue2OValue(mtb.build().toByteArray());
+				i++;
+			}
+			Future<OValue[]> f = dao.getTxsDao().putIfNotExist(keys, values);
+			if (f != null && f.get() != null && isBroadCast) {
+				for(OValue ov:f.get()){
+					MultiTransaction.Builder mtb = MultiTransaction.newBuilder().mergeFrom(ov.getExtdata());
+					oPendingHashMapDB.put(mtb.getTxHash(), mtb.build());
+				}
+			}
+			// OValue oValue = dao.getTxsDao()
+			// .get(oEntityHelper.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash()))).get();
+			// if (oValue != null) {
+			// log.warn("transaction " + oMultiTransaction.getTxHash() + "
+			// exists, drop it");
+			// } else {
+			// oMultiTransaction.clearStatus();
+			// oMultiTransaction.clearResult();
+			//
+			// dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash())),
+			// oEntityHelper.byteValue2OValue(oMultiTransaction.build().toByteArray()));
+			//
+			// if (isBroadCast) {
+			// oPendingHashMapDB.put(oMultiTransaction.getTxHash(),
+			// oMultiTransaction.build());
+			// }
+			// }
+
+			KeyConstant.counter += 1;
+		} catch (Exception e) {
+			log.error("fail to sync transaction::" + oMultiTransaction.size() + " error::" + e);
 		}
 	}
 
@@ -256,8 +313,8 @@ public class TransactionHelper implements ActorService {
 	public MultiTransaction removeWaitBlockTx(String txHash) throws InvalidProtocolBufferException {
 		return oPendingHashMapDB.getStorage().remove(txHash);
 	}
-	
-	public boolean isExistsWaitBlockTx(String txHash)  throws InvalidProtocolBufferException {
+
+	public boolean isExistsWaitBlockTx(String txHash) throws InvalidProtocolBufferException {
 		return oPendingHashMapDB.getStorage().containsKey(txHash);
 	}
 
