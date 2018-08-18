@@ -210,14 +210,17 @@ public class V2Processor implements IProcessor, ActorService {
 				.hexEnc(oReceiptTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY : oReceiptTrie.getRootHash()));
 		header.setTxTrieRoot(encApi.hexEnc(
 				oTransactionTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY : oTransactionTrie.getRootHash()));
+		log.error(" start get root::" + System.currentTimeMillis());
 		header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
+		log.error(" end get root::" + System.currentTimeMillis());
 		oBlockEntity.setHeader(header);
 	}
 
 	@Override
 	public synchronized AddBlockResponse ApplyBlock(BlockEntity oBlockEntity) {
 		BlockEntity.Builder applyBlock = oBlockEntity.toBuilder();
-		log.error("start apply block stamp::" + System.currentTimeMillis());
+		log.error("start apply block number:: " + oBlockEntity.getHeader().getNumber() + " stamp::"
+				+ System.currentTimeMillis());
 		AddBlockResponse.Builder oAddBlockResponse = AddBlockResponse.newBuilder();
 		log.debug("receive block number::" + applyBlock.getHeader().getNumber() + " hash::"
 				+ oBlockEntity.getHeader().getBlockHash() + " parent::" + applyBlock.getHeader().getParentHash()
@@ -341,7 +344,8 @@ public class V2Processor implements IProcessor, ActorService {
 			oAddBlockResponse.setWantNumber(oAddBlockResponse.getCurrentNumber());
 		}
 
-		log.error("end apply block stamp::" + System.currentTimeMillis());
+		log.error("end apply block number::" + oBlockEntity.getHeader().getNumber() + "  stamp::"
+				+ System.currentTimeMillis());
 		return oAddBlockResponse.build();
 	}
 }

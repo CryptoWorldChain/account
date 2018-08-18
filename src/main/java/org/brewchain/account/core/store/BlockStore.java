@@ -153,7 +153,7 @@ public class BlockStore implements ActorService {
 		}
 
 		if (unStableStore.containConnectKey(hash)) {
-			oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_DROP);
+			oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
 			return oBlockStoreSummary;
 		} else {
 			if (maxStableNumber >= block.getHeader().getNumber()) {

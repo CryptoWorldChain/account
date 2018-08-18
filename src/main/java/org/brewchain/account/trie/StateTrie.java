@@ -582,6 +582,7 @@ public class StateTrie implements ActorService {
 		}
 		try {
 			if (v == null) {
+				log.debug("statetrie getHash from db::" + encApi.hexEnc(hash));
 				v = dao.getAccountDao().get(key).get();
 			}
 			if (v != null && v.getExtdata() != null && !v.getExtdata().equals(ByteString.EMPTY)) {
@@ -590,7 +591,7 @@ public class StateTrie implements ActorService {
 		} catch (Exception e) {
 			log.warn("getHash Erro:" + e.getMessage(), e);
 		}
-
+		log.debug("statetrie getHash not found::" + encApi.hexEnc(hash));
 		return null;
 	}
 
