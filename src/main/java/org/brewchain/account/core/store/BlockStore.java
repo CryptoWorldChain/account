@@ -181,25 +181,25 @@ public class BlockStore implements ActorService {
 				if (oParentNode == null) {
 					List<BlockEntity> existsParent = unStableStore.getConnectBlocksByNumber(number - 1);
 					if (existsParent.size() > 0) {
-						log.warn("forks, number::" + (block.getHeader().getNumber() - 1));
+//						log.warn("forks, number::" + (block.getHeader().getNumber() - 1));
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_PREV);
 					} else if (maxStableBlock.getHeader().getBlockHash().equals(block.getHeader().getParentHash())
 							&& maxStableBlock.getHeader().getNumber() == block.getHeader().getNumber() - 1) {
-						log.warn("try apply block");
+//						log.warn("try apply block");
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
 					} else {
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.CACHE);
 					}
 				} else if (oParentNode != null && (oParentNode.getNumber() + 1) != block.getHeader().getNumber()) {
-					log.warn("parent node number is wrong::" + oParentNode.getNumber());
+//					log.warn("parent node number is wrong::" + oParentNode.getNumber());
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.CACHE);
 				} else if (oParentNode != null && !oParentNode.isConnect()) {
-					log.warn("parent node not connect hash::" + oParentNode.getBlockHash() + " number::"
-							+ oParentNode.getNumber());
+//					log.warn("parent node not connect hash::" + oParentNode.getBlockHash() + " number::"
+//							+ oParentNode.getNumber());
 					List<BlockEntity> existsParent = unStableStore
 							.getConnectBlocksByNumber(block.getHeader().getNumber() - 1);
 					if (existsParent.size() > 0) {
-						log.warn("forks, number::" + (block.getHeader().getNumber() - 1));
+//						log.warn("forks, number::" + (block.getHeader().getNumber() - 1));
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_PREV);
 					} else {
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.CACHE);
@@ -219,26 +219,26 @@ public class BlockStore implements ActorService {
 		BlockStoreNodeValue oParentNode = unStableStore.getNode(block.getHeader().getParentHash(),
 				block.getHeader().getNumber() - 1);
 
-		log.debug("try to find hash::" + block.getHeader().getParentHash() + " number::"
-				+ (block.getHeader().getNumber() - 1));
+//		log.debug("try to find hash::" + block.getHeader().getParentHash() + " number::"
+//				+ (block.getHeader().getNumber() - 1));
 
 		if (oParentNode == null) {
 			List<BlockEntity> existsParent = unStableStore.getConnectBlocksByNumber(block.getHeader().getNumber() - 1);
 			if (existsParent.size() > 0) {
-				log.warn("forks, number::" + (block.getHeader().getNumber() - 1));
+//				log.warn("forks, number::" + (block.getHeader().getNumber() - 1));
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_PREV);
 			} else {
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
 			}
 		} else if (oParentNode != null && (oParentNode.getNumber() + 1) != block.getHeader().getNumber()) {
-			log.warn("parent node number is wrong::" + oParentNode.getNumber());
+//			log.warn("parent node number is wrong::" + oParentNode.getNumber());
 			oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
 		} else if (oParentNode != null && !oParentNode.isConnect()) {
-			log.warn("parent node not connect hash::" + oParentNode.getBlockHash() + " number::"
-					+ oParentNode.getNumber() + ", may be forked");
+//			log.warn("parent node not connect hash::" + oParentNode.getBlockHash() + " number::"
+//					+ oParentNode.getNumber() + ", may be forked");
 			List<BlockEntity> existsParent = unStableStore.getConnectBlocksByNumber(block.getHeader().getNumber() - 1);
 			if (existsParent.size() > 0) {
-				log.warn("forks, number::" + (block.getHeader().getNumber() - 1));
+//				log.warn("forks, number::" + (block.getHeader().getNumber() - 1));
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.EXISTS_PREV);
 			} else {
 				oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DROP);
@@ -254,8 +254,8 @@ public class BlockStore implements ActorService {
 
 		String hash = block.getHeader().getBlockHash();
 		long number = block.getHeader().getNumber();
-		log.debug("connect block number::" + block.getHeader().getNumber() + " hash::" + hash + " stateroot::"
-				+ block.getHeader().getStateRoot());
+//		log.debug("connect block number::" + block.getHeader().getNumber() + " hash::" + hash + " stateroot::"
+//				+ block.getHeader().getStateRoot());
 
 		if (unStableStore.containKey(hash) || block.getHeader().getNumber() == 1) {
 			unStableStore.put(hash, block);
@@ -407,8 +407,8 @@ public class BlockStore implements ActorService {
 	}
 
 	public synchronized BlockEntity rollBackTo(long number) {
-		log.info("blockstore try to rollback to number::" + number + " maxconnect::" + this.getMaxConnectNumber()
-				+ " maxstable::" + this.getMaxStableNumber());
+//		log.info("blockstore try to rollback to number::" + number + " maxconnect::" + this.getMaxConnectNumber()
+//				+ " maxstable::" + this.getMaxStableNumber());
 
 		if (number == 0) {
 			BlockEntity block = stableStore.getBlockByNumber(0);

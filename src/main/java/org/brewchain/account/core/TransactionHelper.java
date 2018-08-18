@@ -163,31 +163,31 @@ public class TransactionHelper implements ActorService {
 
 	public void syncTransaction(MultiTransaction.Builder oMultiTransaction, boolean isBroadCast) {
 		try {
-			oMultiTransaction.clearStatus();
-			oMultiTransaction.clearTxHash();
-			Future<OValue> f = dao.getTxsDao().put(
-					oEntityHelper.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash())),
-					oEntityHelper.byteValue2OValue(oMultiTransaction.build().toByteArray()));
-			if (f != null && f.get() != null && isBroadCast) {
-				oPendingHashMapDB.put(oMultiTransaction.getTxHash(), oMultiTransaction.build());
-			}
-			// OValue oValue = dao.getTxsDao()
-			// .get(oEntityHelper.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash()))).get();
-			// if (oValue != null) {
-			// log.warn("transaction " + oMultiTransaction.getTxHash() + "
-			// exists, drop it");
-			// } else {
 			// oMultiTransaction.clearStatus();
-			// oMultiTransaction.clearResult();
-			//
-			// dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash())),
+			// oMultiTransaction.clearTxHash();
+			// Future<OValue> f = dao.getTxsDao().put(
+			// oEntityHelper.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash())),
 			// oEntityHelper.byteValue2OValue(oMultiTransaction.build().toByteArray()));
-			//
-			// if (isBroadCast) {
+			// if (f != null && f.get() != null && isBroadCast) {
 			// oPendingHashMapDB.put(oMultiTransaction.getTxHash(),
 			// oMultiTransaction.build());
 			// }
-			// }
+			
+			OValue oValue = dao.getTxsDao()
+					.get(oEntityHelper.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash()))).get();
+			if (oValue != null) {
+				log.warn("transaction " + oMultiTransaction.getTxHash() + "exists, drop it");
+			} else {
+				oMultiTransaction.clearStatus();
+				oMultiTransaction.clearResult();
+
+				dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash())),
+						oEntityHelper.byteValue2OValue(oMultiTransaction.build().toByteArray()));
+
+				if (isBroadCast) {
+					oPendingHashMapDB.put(oMultiTransaction.getTxHash(), oMultiTransaction.build());
+				}
+			}
 
 			KeyConstant.counter += 1;
 		} catch (Exception e) {
@@ -201,20 +201,22 @@ public class TransactionHelper implements ActorService {
 
 	public void syncTransaction(List<MultiTransaction.Builder> oMultiTransaction, boolean isBroadCast) {
 		try {
-			if (oMultiTransaction.size() > 0) {
-				OKey[] keys = new OKey[oMultiTransaction.size()];
-				OValue[] values = new OValue[oMultiTransaction.size()];
-				int i = 0;
-				for (MultiTransaction.Builder mtb : oMultiTransaction) {
-					keys[i] = oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash()));
-					mtb.clearStatus().clearResult();
-					values[i] = oEntityHelper.byteValue2OValue(mtb.build().toByteString());
-					i++;
-
-					oPendingHashMapDB.put(mtb.getTxHash(), mtb.build());
-				}
-				dao.getTxsDao().batchPuts(keys, values);
-			}
+			// if (oMultiTransaction.size() > 0) {
+			// OKey[] keys = new OKey[oMultiTransaction.size()];
+			// OValue[] values = new OValue[oMultiTransaction.size()];
+			// int i = 0;
+			// for (MultiTransaction.Builder mtb : oMultiTransaction) {
+			// keys[i] =
+			// oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash()));
+			// mtb.clearStatus().clearResult();
+			// values[i] =
+			// oEntityHelper.byteValue2OValue(mtb.build().toByteString());
+			// i++;
+			//
+			// oPendingHashMapDB.put(mtb.getTxHash(), mtb.build());
+			// }
+			// dao.getTxsDao().batchPuts(keys, values);
+			// }
 
 			// Future<OValue[]> f = dao.getTxsDao().putIfNotExist(keys, values);
 			// if (f != null && f.get() != null && isBroadCast) {
@@ -224,25 +226,26 @@ public class TransactionHelper implements ActorService {
 			// oPendingHashMapDB.put(mtb.getTxHash(), mtb.build());
 			// }
 			// }
-			// OValue oValue = dao.getTxsDao()
-			// .get(oEntityHelper.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash()))).get();
-			// if (oValue != null) {
-			// log.warn("transaction " + oMultiTransaction.getTxHash() + "
-			// exists, drop it");
-			// } else {
-			// oMultiTransaction.clearStatus();
-			// oMultiTransaction.clearResult();
-			//
-			// dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash())),
-			// oEntityHelper.byteValue2OValue(oMultiTransaction.build().toByteArray()));
-			//
-			// if (isBroadCast) {
-			// oPendingHashMapDB.put(oMultiTransaction.getTxHash(),
-			// oMultiTransaction.build());
-			// }
-			// }
 
-			KeyConstant.counter += 1;
+			for (MultiTransaction.Builder mtb : oMultiTransaction) {
+				OValue oValue = dao.getTxsDao().get(oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash()))).get();
+				if (oValue != null) {
+					// log.warn("transaction " + mtb.getTxHash() + "exists, drop it");
+				} else {
+					mtb.clearStatus();
+					mtb.clearResult();
+
+					dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash())),
+							oEntityHelper.byteValue2OValue(mtb.build().toByteArray()));
+
+					if (isBroadCast) {
+						oPendingHashMapDB.put(mtb.getTxHash(), mtb.build());
+					}
+					
+					KeyConstant.counter += 1;
+				}
+			}
+
 		} catch (Exception e) {
 			log.error("fail to sync transaction::" + oMultiTransaction.size() + " error::" + e);
 		}

@@ -109,7 +109,6 @@ public class V2Processor implements IProcessor, ActorService {
 
 	@Override
 	public BlockEntity.Builder CreateNewBlock(LinkedList<MultiTransaction> txs, String extraData) throws Exception {
-		log.debug("call create new block miner::" + KeyConstant.node.getAddress());
 		BlockEntity.Builder oBlockEntity = BlockEntity.newBuilder();
 		BlockHeader.Builder oBlockHeader = BlockHeader.newBuilder();
 		BlockBody.Builder oBlockBody = BlockBody.newBuilder();
@@ -214,24 +213,19 @@ public class V2Processor implements IProcessor, ActorService {
 				.hexEnc(oReceiptTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY : oReceiptTrie.getRootHash()));
 		header.setTxTrieRoot(encApi.hexEnc(
 				oTransactionTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY : oTransactionTrie.getRootHash()));
-		log.error("====>  start number::" + oBlockEntity.getHeader().getNumber() + "get root::"
-				+ System.currentTimeMillis());
 		header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
-		log.error("====>  end number::" + oBlockEntity.getHeader().getNumber() + "get root::"
-				+ System.currentTimeMillis());
 		oBlockEntity.setHeader(header);
 	}
 
 	@Override
 	public synchronized AddBlockResponse ApplyBlock(BlockEntity oBlockEntity) {
 		BlockEntity.Builder applyBlock = oBlockEntity.toBuilder();
-		log.error("====> start apply block number:: " + oBlockEntity.getHeader().getNumber() + " stamp::"
-				+ System.currentTimeMillis());
+
 		AddBlockResponse.Builder oAddBlockResponse = AddBlockResponse.newBuilder();
-		log.debug("receive block number::" + applyBlock.getHeader().getNumber() + " hash::"
-				+ oBlockEntity.getHeader().getBlockHash() + " parent::" + applyBlock.getHeader().getParentHash()
-				+ " stateroot::" + applyBlock.getHeader().getStateRoot() + " miner::"
-				+ applyBlock.getMiner().getAddress());
+//		log.debug("receive block number::" + applyBlock.getHeader().getNumber() + " hash::"
+//				+ oBlockEntity.getHeader().getBlockHash() + " parent::" + applyBlock.getHeader().getParentHash()
+//				+ " stateroot::" + applyBlock.getHeader().getStateRoot() + " miner::"
+//				+ applyBlock.getMiner().getAddress());
 
 		try {
 			BlockHeader.Builder oBlockHeader = BlockHeader.parseFrom(oBlockEntity.getHeader().toByteArray())
@@ -242,26 +236,26 @@ public class V2Processor implements IProcessor, ActorService {
 					oBlockEntity.getMiner().toByteArray());
 
 			if (!oBlockEntity.getHeader().getBlockHash().equals(encApi.hexEnc(encApi.sha256Encode(blockContent)))) {
-				log.warn("wrong block hash::" + oBlockEntity.getHeader().getBlockHash() + " need::"
-						+ encApi.hexEnc(encApi.sha256Encode(blockContent)));
+//				log.warn("wrong block hash::" + oBlockEntity.getHeader().getBlockHash() + " need::"
+//						+ encApi.hexEnc(encApi.sha256Encode(blockContent)));
 			} else {
 				BlockStoreSummary oBlockStoreSummary = blockChainHelper.addBlock(applyBlock.build());
 				while (oBlockStoreSummary.getBehavior() != BLOCK_BEHAVIOR.DONE) {
 					switch (oBlockStoreSummary.getBehavior()) {
 					case DROP:
-						log.info("drop block number::" + applyBlock.getHeader().getNumber());
+//						log.info("drop block number::" + applyBlock.getHeader().getNumber());
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 						break;
 					case EXISTS_DROP:
-						log.info("already exists, try to apply::" + applyBlock.getHeader().getNumber());
+//						log.info("already exists, try to apply::" + applyBlock.getHeader().getNumber());
 						oBlockStoreSummary.setBehavior(blockChainHelper.tryAddBlock(applyBlock.build()).getBehavior());
 						break;
 					case EXISTS_PREV:
-						log.info("block exists, but cannot find parent block number::"
-								+ applyBlock.getHeader().getNumber());
+//						log.info("block exists, but cannot find parent block number::"
+//								+ applyBlock.getHeader().getNumber());
 						try {
 							long rollBackNumber = applyBlock.getHeader().getNumber() - 2;
-							log.debug("need prev block number::" + rollBackNumber);
+//							log.debug("need prev block number::" + rollBackNumber);
 							oAddBlockResponse.setRetCode(-9);
 							oAddBlockResponse.setCurrentNumber(rollBackNumber);
 							oAddBlockResponse.setWantNumber(rollBackNumber + 1);
@@ -273,7 +267,7 @@ public class V2Processor implements IProcessor, ActorService {
 						}
 						break;
 					case CACHE:
-						log.info("cache block number::" + applyBlock.getHeader().getNumber());
+//						log.info("cache block number::" + applyBlock.getHeader().getNumber());
 						oAddBlockResponse.setWantNumber(applyBlock.getHeader().getNumber());
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 						break;
@@ -296,10 +290,10 @@ public class V2Processor implements IProcessor, ActorService {
 						this.stateTrie.setRoot(encApi.hexDec(parentBlock.getHeader().getStateRoot()));
 						processBlock(applyBlock);
 
-						log.debug("=====sync-> " + applyBlock.getHeader().getNumber() + " parent::"
-								+ parentBlock.getHeader().getStateRoot() + " current::"
-								+ oBlockEntity.getHeader().getStateRoot() + " exec::"
-								+ applyBlock.getHeader().getStateRoot());
+//						log.debug("=====sync-> " + applyBlock.getHeader().getNumber() + " parent::"
+//								+ parentBlock.getHeader().getStateRoot() + " current::"
+//								+ oBlockEntity.getHeader().getStateRoot() + " exec::"
+//								+ applyBlock.getHeader().getStateRoot());
 
 						if (!oBlockEntity.getHeader().getStateRoot().equals(applyBlock.getHeader().getStateRoot())
 								|| !oBlockEntity.getHeader().getTxTrieRoot()
@@ -317,17 +311,17 @@ public class V2Processor implements IProcessor, ActorService {
 						break;
 					case APPLY_CHILD:
 						List<BlockEntity> childs = blockChainHelper.getChildBlock(applyBlock.build());
-						log.debug("find childs count::" + childs.size());
+//						log.debug("find childs count::" + childs.size());
 						for (BlockEntity blockEntity : childs) {
 							applyBlock = blockEntity.toBuilder();
-							log.info("ready to apply child block::" + applyBlock.getHeader().getBlockHash()
-									+ " number::" + applyBlock.getHeader().getNumber());
+//							log.info("ready to apply child block::" + applyBlock.getHeader().getBlockHash()
+//									+ " number::" + applyBlock.getHeader().getNumber());
 							ApplyBlock(blockEntity);
 						}
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 						break;
 					case STORE:
-						log.info("apply done number::" + blockChainHelper.getLastBlockNumber());
+//						log.info("apply done number::" + blockChainHelper.getLastBlockNumber());
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 						break;
 					case ERROR:
@@ -350,8 +344,8 @@ public class V2Processor implements IProcessor, ActorService {
 			oAddBlockResponse.setWantNumber(oAddBlockResponse.getCurrentNumber());
 		}
 
-		log.error("====> end apply block number::" + oBlockEntity.getHeader().getNumber() + "  stamp::"
-				+ System.currentTimeMillis());
+//		log.error("====> end apply block number::" + oBlockEntity.getHeader().getNumber() + "  stamp::"
+//				+ System.currentTimeMillis());
 		return oAddBlockResponse.build();
 	}
 }
