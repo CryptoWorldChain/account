@@ -207,9 +207,10 @@ public class TransactionHelper implements ActorService {
 			for (MultiTransaction.Builder mtb : oMultiTransaction) {
 				keys[i] = oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash()));
 				mtb.clearStatus().clearResult();
-				values[i] = oEntityHelper.byteValue2OValue(mtb.build().toByteArray());
+				values[i] = oEntityHelper.byteValue2OValue(mtb.build().toByteString());
 				i++;
 			}
+			
 			Future<OValue[]> f = dao.getTxsDao().putIfNotExist(keys, values);
 			if (f != null && f.get() != null && isBroadCast) {
 				for(OValue ov:f.get()){
