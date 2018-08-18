@@ -143,7 +143,6 @@ public class StateTrie implements ActorService {
 						oks[i] = kvs.getKey();
 						ovs[i] = kvs.getValue();
 						i++;
-						log.debug("put into state trie key::" + encApi.hexEnc(kvs.getKey().getData().toByteArray()));
 					}
 
 					dao.getAccountDao().batchPuts(oks, ovs);

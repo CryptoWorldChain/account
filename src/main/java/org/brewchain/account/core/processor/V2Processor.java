@@ -193,7 +193,11 @@ public class V2Processor implements IProcessor, ActorService {
 			i++;
 		}
 		oBlockEntity.setBody(bb);
+		log.error("====>  start number::" + oBlockEntity.getHeader().getNumber() + " exec tx::"
+				+ System.currentTimeMillis());
 		Map<String, ByteString> results = ExecuteTransaction(txs, oBlockEntity.build());
+		log.error("====>  end number::" + oBlockEntity.getHeader().getNumber() + " exec tx::"
+				+ System.currentTimeMillis());
 		BlockHeader.Builder header = oBlockEntity.getHeaderBuilder();
 
 		Iterator<String> iter = results.keySet().iterator();
@@ -210,16 +214,18 @@ public class V2Processor implements IProcessor, ActorService {
 				.hexEnc(oReceiptTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY : oReceiptTrie.getRootHash()));
 		header.setTxTrieRoot(encApi.hexEnc(
 				oTransactionTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY : oTransactionTrie.getRootHash()));
-		log.error(" start get root::" + System.currentTimeMillis());
+		log.error("====>  start number::" + oBlockEntity.getHeader().getNumber() + "get root::"
+				+ System.currentTimeMillis());
 		header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
-		log.error(" end get root::" + System.currentTimeMillis());
+		log.error("====>  end number::" + oBlockEntity.getHeader().getNumber() + "get root::"
+				+ System.currentTimeMillis());
 		oBlockEntity.setHeader(header);
 	}
 
 	@Override
 	public synchronized AddBlockResponse ApplyBlock(BlockEntity oBlockEntity) {
 		BlockEntity.Builder applyBlock = oBlockEntity.toBuilder();
-		log.error("start apply block number:: " + oBlockEntity.getHeader().getNumber() + " stamp::"
+		log.error("====> start apply block number:: " + oBlockEntity.getHeader().getNumber() + " stamp::"
 				+ System.currentTimeMillis());
 		AddBlockResponse.Builder oAddBlockResponse = AddBlockResponse.newBuilder();
 		log.debug("receive block number::" + applyBlock.getHeader().getNumber() + " hash::"
@@ -332,7 +338,7 @@ public class V2Processor implements IProcessor, ActorService {
 				}
 			}
 		} catch (Exception e2) {
-			log.error("error on validate block header::" + e2,e2);
+			log.error("error on validate block header::" + e2, e2);
 
 		}
 
@@ -344,7 +350,7 @@ public class V2Processor implements IProcessor, ActorService {
 			oAddBlockResponse.setWantNumber(oAddBlockResponse.getCurrentNumber());
 		}
 
-		log.error("end apply block number::" + oBlockEntity.getHeader().getNumber() + "  stamp::"
+		log.error("====> end apply block number::" + oBlockEntity.getHeader().getNumber() + "  stamp::"
 				+ System.currentTimeMillis());
 		return oAddBlockResponse.build();
 	}
