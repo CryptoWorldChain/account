@@ -210,7 +210,9 @@ public class V2Processor implements IProcessor, ActorService {
 				.hexEnc(oReceiptTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY : oReceiptTrie.getRootHash()));
 		header.setTxTrieRoot(encApi.hexEnc(
 				oTransactionTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY : oTransactionTrie.getRootHash()));
+		log.error(" start get root::" + System.currentTimeMillis());
 		header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
+		log.error(" end get root::" + System.currentTimeMillis());
 		oBlockEntity.setHeader(header);
 	}
 
