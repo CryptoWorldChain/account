@@ -34,7 +34,7 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.+'
     
     compile ("com.sleepycat:je:5.0.73")
-	compile ("org.fc.zippo:org.fc.zippo.oapi:3.3.0")
+	compile ("org.fc.zippo:org.fc.zippo.oapi:3.3.2")
 	compile ("org.brewchain:org.brewchain.bcapi:3.3.4")
 	compile ("org.brewchain:org.brewchain.bc_bdb:3.0.7")
 	compile group: 'com.google.guava', name: 'guava', version: '18.0'
