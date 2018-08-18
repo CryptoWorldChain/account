@@ -135,19 +135,23 @@ public class StateTrie implements ActorService {
 		public void flushBS(BatchStorage bs) {
 			int size = bs.kvs.size();
 			if (size > 0) {
-				OKey[] oks = new OKey[size];
-				OValue[] ovs = new OValue[size];
-				int i = 0;
-				for (Map.Entry<OKey, OValue> kvs : bs.kvs.entrySet()) {
-					oks[i] = kvs.getKey();
-					ovs[i] = kvs.getValue();
-					i++;
-					log.debug("put into state trie key::" + encApi.hexEnc(kvs.getKey().getData().toByteArray()));
+				try {
+					OKey[] oks = new OKey[size];
+					OValue[] ovs = new OValue[size];
+					int i = 0;
+					for (Map.Entry<OKey, OValue> kvs : bs.kvs.entrySet()) {
+						oks[i] = kvs.getKey();
+						ovs[i] = kvs.getValue();
+						i++;
+						log.debug("put into state trie key::" + encApi.hexEnc(kvs.getKey().getData().toByteArray()));
+					}
+
+					dao.getAccountDao().batchPuts(oks, ovs);
+
+					bs.kvs.clear();
+				} catch (Exception e) {
+					log.warn("error in flushBS"+e.getMessage(),e);
 				}
-
-				dao.getAccountDao().batchPuts(oks, ovs);
-
-				bs.kvs.clear();
 				// bs.values.clear();
 			}
 		}
@@ -164,6 +168,9 @@ public class StateTrie implements ActorService {
 				// dao.getAccountDao().put(oEntityHelper.byteKey2OKey(hash),
 				// oEntityHelsper.byteValue2OValue(ret));
 				return ret;
+			} catch (Exception e) {
+				log.warn("error encode:" + e.getMessage(), e);
+				throw e;
 			} finally {
 				if (bs != null) {
 					if (bsPool.size() < 100) {
@@ -177,7 +184,7 @@ public class StateTrie implements ActorService {
 		}
 
 		private byte[] encode(final int depth, boolean forceHash) {
-			BatchStorage bs = batchStorage.get();
+			// BatchStorage bs = batchStorage.get();
 			if (!dirty) {
 				return hash != null ? encodeElement(hash) : rlp;
 			} else {
@@ -219,6 +226,9 @@ public class StateTrie implements ActorService {
 												// flush
 												flushBS(bs);
 												return ret;
+											}catch(Exception e){
+												log.debug("error in exec bs:"+e.getMessage(),e);
+												throw e;
 											} finally {
 												if (bs != null) {
 													batchStorage.remove();
@@ -579,7 +589,7 @@ public class StateTrie implements ActorService {
 				return v.getExtdata().toByteArray();
 			}
 		} catch (Exception e) {
-			log.error("statetrie getHash ex::" + e);
+			log.warn("getHash Erro:" + e.getMessage(), e);
 		}
 		log.debug("statetrie getHash not found::" + encApi.hexEnc(hash));
 		return null;
