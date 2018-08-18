@@ -282,34 +282,28 @@ public class V2Processor implements IProcessor, ActorService {
 						}
 
 						BlockEntity parentBlock;
-						try {
-							parentBlock = blockChainHelper.getBlockByHash(applyBlock.getHeader().getParentHash());
+						parentBlock = blockChainHelper.getBlockByHash(applyBlock.getHeader().getParentHash());
 
-							this.stateTrie.setRoot(encApi.hexDec(parentBlock.getHeader().getStateRoot()));
-							// processBlock(applyBlock);
-							processBlock(applyBlock);
+						this.stateTrie.setRoot(encApi.hexDec(parentBlock.getHeader().getStateRoot()));
+						processBlock(applyBlock);
 
-							log.debug("=====sync-> " + applyBlock.getHeader().getNumber() + " parent::"
-									+ parentBlock.getHeader().getStateRoot() + " current::"
-									+ oBlockEntity.getHeader().getStateRoot() + " exec::"
-									+ applyBlock.getHeader().getStateRoot());
+						log.debug("=====sync-> " + applyBlock.getHeader().getNumber() + " parent::"
+								+ parentBlock.getHeader().getStateRoot() + " current::"
+								+ oBlockEntity.getHeader().getStateRoot() + " exec::"
+								+ applyBlock.getHeader().getStateRoot());
 
-							if (!oBlockEntity.getHeader().getStateRoot().equals(applyBlock.getHeader().getStateRoot())
-									|| !oBlockEntity.getHeader().getTxTrieRoot()
-											.equals(applyBlock.getHeader().getTxTrieRoot())
-									|| !oBlockEntity.getHeader().getReceiptTrieRoot()
-											.equals(applyBlock.getHeader().getReceiptTrieRoot())) {
-								log.error("begin to roll back, stateRoot::" + oBlockEntity.getHeader().getStateRoot()
-										+ " blockStateRoot::" + applyBlock.getHeader().getStateRoot());
+						if (!oBlockEntity.getHeader().getStateRoot().equals(applyBlock.getHeader().getStateRoot())
+								|| !oBlockEntity.getHeader().getTxTrieRoot()
+										.equals(applyBlock.getHeader().getTxTrieRoot())
+								|| !oBlockEntity.getHeader().getReceiptTrieRoot()
+										.equals(applyBlock.getHeader().getReceiptTrieRoot())) {
+							log.error("begin to roll back, stateRoot::" + oBlockEntity.getHeader().getStateRoot()
+									+ " blockStateRoot::" + applyBlock.getHeader().getStateRoot());
 
-								blockChainHelper.rollbackTo(applyBlock.getHeader().getNumber() - 1);
-								oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.ERROR);
-							} else {
-								oBlockStoreSummary = blockChainHelper.connectBlock(applyBlock.build());
-							}
-						} catch (Exception e) {
-							log.error(e.getMessage());
+							blockChainHelper.rollbackTo(applyBlock.getHeader().getNumber() - 1);
 							oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.ERROR);
+						} else {
+							oBlockStoreSummary = blockChainHelper.connectBlock(applyBlock.build());
 						}
 						break;
 					case APPLY_CHILD:
@@ -324,7 +318,6 @@ public class V2Processor implements IProcessor, ActorService {
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 						break;
 					case STORE:
-					case DONE:
 						log.info("apply done number::" + blockChainHelper.getLastBlockNumber());
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 						break;
@@ -335,8 +328,9 @@ public class V2Processor implements IProcessor, ActorService {
 					}
 				}
 			}
-		} catch (InvalidProtocolBufferException e2) {
+		} catch (Exception e2) {
 			log.error("error on validate block header::" + e2);
+
 		}
 
 		if (oAddBlockResponse.getCurrentNumber() == 0) {

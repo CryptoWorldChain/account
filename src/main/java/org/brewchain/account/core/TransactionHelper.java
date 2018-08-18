@@ -163,9 +163,8 @@ public class TransactionHelper implements ActorService {
 
 	public void syncTransaction(MultiTransaction.Builder oMultiTransaction, boolean isBroadCast) {
 		try {
-			// 没想明白为什么要cleanstatus,clean result
-			// oMultiTransaction.clearStatus();
-			// oMultiTransaction.clearResult();
+			oMultiTransaction.clearStatus();
+			oMultiTransaction.clearTxHash();
 			Future<OValue> f = dao.getTxsDao().putIfNotExist(
 					oEntityHelper.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash())),
 					oEntityHelper.byteValue2OValue(oMultiTransaction.build().toByteArray()));
@@ -202,14 +201,12 @@ public class TransactionHelper implements ActorService {
 
 	public void syncTransaction(List<MultiTransaction.Builder> oMultiTransaction, boolean isBroadCast) {
 		try {
-			// 没想明白为什么要cleanstatus,clean result
-			// oMultiTransaction.clearStatus();
-			// oMultiTransaction.clearResult();
 			OKey[] keys = new OKey[oMultiTransaction.size()];
 			OValue[] values = new OValue[oMultiTransaction.size()];
 			int i = 0;
 			for (MultiTransaction.Builder mtb : oMultiTransaction) {
 				keys[i] = oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash()));
+				mtb.clearStatus().clearResult();
 				values[i] = oEntityHelper.byteValue2OValue(mtb.build().toByteArray());
 				i++;
 			}
@@ -329,7 +326,8 @@ public class TransactionHelper implements ActorService {
 		OValue oValue = dao.getTxsDao().get(oEntityHelper.byteKey2OKey(encApi.hexDec(txHash))).get();
 
 		if (oValue == null || oValue.getExtdata() == null) {
-			throw new Exception(String.format("没有找到hash %s 的交易数据", txHash));
+			//throw new Exception(String.format("没有找到hash %s 的交易数据", txHash));
+			return null;
 		}
 		MultiTransaction oTransaction = MultiTransaction.parseFrom(oValue.getExtdata().toByteArray());
 		return oTransaction;

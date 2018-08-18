@@ -697,8 +697,8 @@ public class AccountHelper implements ActorService {
 		dao.getAccountDao().put(oEntityHelper.byteKey2OKey(addr),
 				oEntityHelper.byteValue2OValue(oAccountValue.toByteArray()));
 		if (this.stateTrie != null && stateable) {
-			log.warn("put state trie::" + encApi.hexEnc(addr.toByteArray()) + " "
-					+ encApi.hexEnc(oAccountValue.toByteArray()));
+//			log.warn("put state trie::" + encApi.hexEnc(addr.toByteArray()) + " "
+//					+ encApi.hexEnc(oAccountValue.toByteArray()));
 
 			this.stateTrie.put(addr.toByteArray(), oAccountValue.toByteArray());
 		}
@@ -720,7 +720,7 @@ public class AccountHelper implements ActorService {
 //			keysArray[i] = oEntityHelper.byteKey2OKey(encApi.hexDec(key));
 //			valuesArray[i] = oEntityHelper.byteValue2OValue(value.toByteArray());
 			if (this.stateTrie != null) {
-				log.debug("put state trie::" + key + " " + encApi.hexEnc(value.toByteArray()));
+				// log.debug("put state trie::" + key + " " + encApi.hexEnc(value.toByteArray()));
 				this.stateTrie.put(encApi.hexDec(key), value.toByteArray());
 			}
 			//i = i + 1;
