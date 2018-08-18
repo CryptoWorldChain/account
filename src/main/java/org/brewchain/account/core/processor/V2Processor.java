@@ -217,7 +217,8 @@ public class V2Processor implements IProcessor, ActorService {
 	@Override
 	public synchronized AddBlockResponse ApplyBlock(BlockEntity oBlockEntity) {
 		BlockEntity.Builder applyBlock = oBlockEntity.toBuilder();
-		log.error("start apply block stamp::" + System.currentTimeMillis());
+		log.error("start apply block number:: " + oBlockEntity.getHeader().getNumber() + " stamp::"
+				+ System.currentTimeMillis());
 		AddBlockResponse.Builder oAddBlockResponse = AddBlockResponse.newBuilder();
 		log.debug("receive block number::" + applyBlock.getHeader().getNumber() + " hash::"
 				+ oBlockEntity.getHeader().getBlockHash() + " parent::" + applyBlock.getHeader().getParentHash()
@@ -341,7 +342,8 @@ public class V2Processor implements IProcessor, ActorService {
 			oAddBlockResponse.setWantNumber(oAddBlockResponse.getCurrentNumber());
 		}
 
-		log.error("end apply block stamp::" + System.currentTimeMillis());
+		log.error("end apply block number::" + oBlockEntity.getHeader().getNumber() + "  stamp::"
+				+ System.currentTimeMillis());
 		return oAddBlockResponse.build();
 	}
 }

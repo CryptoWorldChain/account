@@ -168,7 +168,7 @@ public class StateTrie implements ActorService {
 				if (bs != null) {
 					if (bsPool.size() < 100) {
 						bs.kvs.clear();
-//						bs.values.clear();
+						// bs.values.clear();
 						bsPool.retobj(bs);
 					}
 				}
@@ -224,7 +224,7 @@ public class StateTrie implements ActorService {
 													batchStorage.remove();
 													if (bsPool.size() < 100) {
 														bs.kvs.clear();
-//														bs.values.clear();
+														// bs.values.clear();
 														bsPool.retobj(bs);
 													}
 												}
@@ -572,22 +572,23 @@ public class StateTrie implements ActorService {
 		}
 		try {
 			if (v == null) {
+				log.debug("statetrie getHash from db::" + encApi.hexEnc(hash));
 				v = dao.getAccountDao().get(key).get();
 			}
 			if (v != null && v.getExtdata() != null && !v.getExtdata().equals(ByteString.EMPTY)) {
 				return v.getExtdata().toByteArray();
 			}
 		} catch (Exception e) {
-
+			log.error("statetrie getHash ex::" + e);
 		}
-
+		log.debug("statetrie getHash not found::" + encApi.hexEnc(hash));
 		return null;
 	}
 
 	private void addHash(byte[] hash, byte[] ret) {
 		BatchStorage bs = batchStorage.get();
 		if (bs != null) {
-//			log.debug("add into state trie key::" + encApi.hexEnc(hash));
+			// log.debug("add into state trie key::" + encApi.hexEnc(hash));
 			bs.add(hash, ret);
 		} else {
 			dao.getAccountDao().put(oEntityHelper.byteKey2OKey(hash), oEntityHelper.byteValue2OValue(ret));
@@ -773,17 +774,17 @@ public class StateTrie implements ActorService {
 
 	}
 
-//	public boolean flush() {
-//		if (root != null && root.dirty) {
-//			// persist all dirty nodes to underlying Source
-//			encode();
-//			// release all Trie Node instances for GC
-//			root = new Node(root.hash);
-//			return true;
-//		} else {
-//			return false;
-//		}
-//	}
+	// public boolean flush() {
+	// if (root != null && root.dirty) {
+	// // persist all dirty nodes to underlying Source
+	// encode();
+	// // release all Trie Node instances for GC
+	// root = new Node(root.hash);
+	// return true;
+	// } else {
+	// return false;
+	// }
+	// }
 
 	@Override
 	public boolean equals(Object o) {
@@ -802,22 +803,22 @@ public class StateTrie implements ActorService {
 		return root == null ? "<empty>" : root.dumpStruct("", "");
 	}
 
-//	public String dumpTrie() {
-//		return dumpTrie(true);
-//	}
+	// public String dumpTrie() {
+	// return dumpTrie(true);
+	// }
 
-//	public String dumpTrie(boolean compact) {
-//		if (root == null)
-//			return "<empty>";
-//		encode();
-//		StrBuilder ret = new StrBuilder();
-//		List<String> strings = root.dumpTrieNode(compact);
-//		ret.append("Root: " + hash2str(getRootHash(), compact) + "\n");
-//		for (String s : strings) {
-//			ret.append(s).append('\n');
-//		}
-//		return ret.toString();
-//	}
+	// public String dumpTrie(boolean compact) {
+	// if (root == null)
+	// return "<empty>";
+	// encode();
+	// StrBuilder ret = new StrBuilder();
+	// List<String> strings = root.dumpTrieNode(compact);
+	// ret.append("Root: " + hash2str(getRootHash(), compact) + "\n");
+	// for (String s : strings) {
+	// ret.append(s).append('\n');
+	// }
+	// return ret.toString();
+	// }
 
 	public void scanTree(ScanAction scanAction) {
 		scanTree(root, TrieKey.empty(false), scanAction);
