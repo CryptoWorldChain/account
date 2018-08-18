@@ -209,14 +209,19 @@ public class TransactionHelper implements ActorService {
 				mtb.clearStatus().clearResult();
 				values[i] = oEntityHelper.byteValue2OValue(mtb.build().toByteArray());
 				i++;
+				
+				oPendingHashMapDB.put(mtb.getTxHash(), mtb.build());
 			}
-			Future<OValue[]> f = dao.getTxsDao().putIfNotExist(keys, values);
-			if (f != null && f.get() != null && isBroadCast) {
-				for(OValue ov:f.get()){
-					MultiTransaction.Builder mtb = MultiTransaction.newBuilder().mergeFrom(ov.getExtdata());
-					oPendingHashMapDB.put(mtb.getTxHash(), mtb.build());
-				}
-			}
+			dao.getTxsDao().batchPuts(keys, values);
+
+//			Future<OValue[]> f = dao.getTxsDao().putIfNotExist(keys, values);
+//			if (f != null && f.get() != null && isBroadCast) {
+//				for(OValue ov:f.get()){
+//					MultiTransaction.Builder mtb = MultiTransaction.newBuilder().mergeFrom(ov.getExtdata());
+//					oPendingHashMapDB.put(mtb.getTxHash(), mtb.build());
+//				}
+//			}
+			
 			// OValue oValue = dao.getTxsDao()
 			// .get(oEntityHelper.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash()))).get();
 			// if (oValue != null) {
