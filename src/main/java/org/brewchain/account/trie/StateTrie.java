@@ -76,6 +76,11 @@ public class StateTrie implements ActorService {
 			// values.add(oEntityHelper.byteValue2OValue(v));
 			kvs.put(oEntityHelper.byteKey2OKey(key), oEntityHelper.byteValue2OValue(v));
 		}
+		public void remove(byte[] key) {
+			// keys.add(oEntityHelper.byteKey2OKey(key));
+			// values.add(oEntityHelper.byteValue2OValue(v));
+			kvs.remove(oEntityHelper.byteKey2OKey(key));
+		}
 	}
 
 	ThreadLocal<BatchStorage> batchStorage = new ThreadLocal<>();
@@ -149,7 +154,7 @@ public class StateTrie implements ActorService {
 
 					bs.kvs.clear();
 				} catch (Exception e) {
-					log.warn("error in flushBS"+e.getMessage(),e);
+					log.warn("error in flushBS" + e.getMessage(), e);
 				}
 				// bs.values.clear();
 			}
@@ -225,8 +230,8 @@ public class StateTrie implements ActorService {
 												// flush
 												flushBS(bs);
 												return ret;
-											}catch(Exception e){
-												log.debug("error in exec bs:"+e.getMessage(),e);
+											} catch (Exception e) {
+												log.debug("error in exec bs:" + e.getMessage(), e);
 												throw e;
 											} finally {
 												if (bs != null) {
@@ -605,7 +610,12 @@ public class StateTrie implements ActorService {
 	}
 
 	private void deleteHash(byte[] hash) {
-		log.debug("trie delete key::" + Hex.toHexString(hash) + " root::" + Hex.toHexString(this.root.hash));
+//		log.debug("trie delete key::" + Hex.toHexString(hash) + " root::" + Hex.toHexString(this.root.hash));
+		BatchStorage bs = batchStorage.get();
+		if (bs != null) {
+			// log.debug("add into state trie key::" + encApi.hexEnc(hash));
+			bs.remove(hash);
+		}
 		// dao.getAccountDao().delete(OEntityBuilder.byteKey2OKey(hash));
 	}
 
