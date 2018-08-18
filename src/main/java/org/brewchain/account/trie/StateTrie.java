@@ -53,7 +53,7 @@ public class StateTrie implements ActorService {
 	OEntityBuilder oEntityHelper;
 
 	private final static Object NULL_NODE = new Object();
-	private final static int MIN_BRANCHES_CONCURRENTLY = 3;
+	private final static int MIN_BRANCHES_CONCURRENTLY = 1000;
 	private static ExecutorService executor = Executors.newFixedThreadPool(
 			Runtime.getRuntime().availableProcessors() * 2,
 			new ThreadFactoryBuilder().setNameFormat("trie-calc-thread-%d").build());;
