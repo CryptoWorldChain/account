@@ -143,14 +143,13 @@ public class StateTrie implements ActorService {
 						oks[i] = kvs.getKey();
 						ovs[i] = kvs.getValue();
 						i++;
-//						log.debug("put into state trie key::" + encApi.hexEnc(kvs.getKey().getData().toByteArray()));
 					}
 
 					dao.getAccountDao().batchPuts(oks, ovs);
 
 					bs.kvs.clear();
 				} catch (Exception e) {
-					log.warn("error in flushBS"+e.getMessage(),e);
+					log.warn("error in flushBS" + e.getMessage(), e);
 				}
 				// bs.values.clear();
 			}
@@ -226,8 +225,8 @@ public class StateTrie implements ActorService {
 												// flush
 												flushBS(bs);
 												return ret;
-											}catch(Exception e){
-												log.debug("error in exec bs:"+e.getMessage(),e);
+											} catch (Exception e) {
+												log.debug("error in exec bs:" + e.getMessage(), e);
 												throw e;
 											} finally {
 												if (bs != null) {
