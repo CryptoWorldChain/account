@@ -329,7 +329,7 @@ public class V2Processor implements IProcessor, ActorService {
 				}
 			}
 		} catch (Exception e2) {
-			log.error("error on validate block header::" + e2);
+			log.error("error on validate block header::" + e2,e2);
 
 		}
 

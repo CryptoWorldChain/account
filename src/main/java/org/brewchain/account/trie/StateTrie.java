@@ -135,19 +135,23 @@ public class StateTrie implements ActorService {
 		public void flushBS(BatchStorage bs) {
 			int size = bs.kvs.size();
 			if (size > 0) {
-				OKey[] oks = new OKey[size];
-				OValue[] ovs = new OValue[size];
-				int i = 0;
-				for (Map.Entry<OKey, OValue> kvs : bs.kvs.entrySet()) {
-					oks[i] = kvs.getKey();
-					ovs[i] = kvs.getValue();
-					i++;
-					log.debug("put into state trie key::" + encApi.hexEnc(kvs.getKey().getData().toByteArray()));
+				try {
+					OKey[] oks = new OKey[size];
+					OValue[] ovs = new OValue[size];
+					int i = 0;
+					for (Map.Entry<OKey, OValue> kvs : bs.kvs.entrySet()) {
+						oks[i] = kvs.getKey();
+						ovs[i] = kvs.getValue();
+						i++;
+						log.debug("put into state trie key::" + encApi.hexEnc(kvs.getKey().getData().toByteArray()));
+					}
+
+					dao.getAccountDao().batchPuts(oks, ovs);
+
+					bs.kvs.clear();
+				} catch (Exception e) {
+					log.warn("error in flushBS"+e.getMessage(),e);
 				}
-
-				dao.getAccountDao().batchPuts(oks, ovs);
-
-				bs.kvs.clear();
 				// bs.values.clear();
 			}
 		}
@@ -164,11 +168,14 @@ public class StateTrie implements ActorService {
 				// dao.getAccountDao().put(oEntityHelper.byteKey2OKey(hash),
 				// oEntityHelsper.byteValue2OValue(ret));
 				return ret;
+			} catch (Exception e) {
+				log.warn("error encode:" + e.getMessage(), e);
+				throw e;
 			} finally {
 				if (bs != null) {
 					if (bsPool.size() < 100) {
 						bs.kvs.clear();
-//						bs.values.clear();
+						// bs.values.clear();
 						bsPool.retobj(bs);
 					}
 				}
@@ -177,7 +184,7 @@ public class StateTrie implements ActorService {
 		}
 
 		private byte[] encode(final int depth, boolean forceHash) {
-			BatchStorage bs = batchStorage.get();
+			// BatchStorage bs = batchStorage.get();
 			if (!dirty) {
 				return hash != null ? encodeElement(hash) : rlp;
 			} else {
@@ -219,12 +226,15 @@ public class StateTrie implements ActorService {
 												// flush
 												flushBS(bs);
 												return ret;
+											}catch(Exception e){
+												log.debug("error in exec bs:"+e.getMessage(),e);
+												throw e;
 											} finally {
 												if (bs != null) {
 													batchStorage.remove();
 													if (bsPool.size() < 100) {
 														bs.kvs.clear();
-//														bs.values.clear();
+														// bs.values.clear();
 														bsPool.retobj(bs);
 													}
 												}
@@ -578,7 +588,7 @@ public class StateTrie implements ActorService {
 				return v.getExtdata().toByteArray();
 			}
 		} catch (Exception e) {
-
+			log.warn("getHash Erro:" + e.getMessage(), e);
 		}
 
 		return null;
@@ -587,7 +597,7 @@ public class StateTrie implements ActorService {
 	private void addHash(byte[] hash, byte[] ret) {
 		BatchStorage bs = batchStorage.get();
 		if (bs != null) {
-//			log.debug("add into state trie key::" + encApi.hexEnc(hash));
+			// log.debug("add into state trie key::" + encApi.hexEnc(hash));
 			bs.add(hash, ret);
 		} else {
 			dao.getAccountDao().put(oEntityHelper.byteKey2OKey(hash), oEntityHelper.byteValue2OValue(ret));
@@ -773,17 +783,17 @@ public class StateTrie implements ActorService {
 
 	}
 
-//	public boolean flush() {
-//		if (root != null && root.dirty) {
-//			// persist all dirty nodes to underlying Source
-//			encode();
-//			// release all Trie Node instances for GC
-//			root = new Node(root.hash);
-//			return true;
-//		} else {
-//			return false;
-//		}
-//	}
+	// public boolean flush() {
+	// if (root != null && root.dirty) {
+	// // persist all dirty nodes to underlying Source
+	// encode();
+	// // release all Trie Node instances for GC
+	// root = new Node(root.hash);
+	// return true;
+	// } else {
+	// return false;
+	// }
+	// }
 
 	@Override
 	public boolean equals(Object o) {
@@ -802,22 +812,22 @@ public class StateTrie implements ActorService {
 		return root == null ? "<empty>" : root.dumpStruct("", "");
 	}
 
-//	public String dumpTrie() {
-//		return dumpTrie(true);
-//	}
+	// public String dumpTrie() {
+	// return dumpTrie(true);
+	// }
 
-//	public String dumpTrie(boolean compact) {
-//		if (root == null)
-//			return "<empty>";
-//		encode();
-//		StrBuilder ret = new StrBuilder();
-//		List<String> strings = root.dumpTrieNode(compact);
-//		ret.append("Root: " + hash2str(getRootHash(), compact) + "\n");
-//		for (String s : strings) {
-//			ret.append(s).append('\n');
-//		}
-//		return ret.toString();
-//	}
+	// public String dumpTrie(boolean compact) {
+	// if (root == null)
+	// return "<empty>";
+	// encode();
+	// StrBuilder ret = new StrBuilder();
+	// List<String> strings = root.dumpTrieNode(compact);
+	// ret.append("Root: " + hash2str(getRootHash(), compact) + "\n");
+	// for (String s : strings) {
+	// ret.append(s).append('\n');
+	// }
+	// return ret.toString();
+	// }
 
 	public void scanTree(ScanAction scanAction) {
 		scanTree(root, TrieKey.empty(false), scanAction);
