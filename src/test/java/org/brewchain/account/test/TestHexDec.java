@@ -25,7 +25,6 @@ total=11582
  *
  */
 public class TestHexDec {
-
 	DefDaos daos = new DefDaos();
 	StateTrie st=new StateTrie();
 	EncInstance encAPI = new EncInstance();
@@ -68,6 +67,7 @@ public class TestHexDec {
 
 	public static void main(String[] args) {
 		try {
+			System.out.println("cpucount="+Runtime.getRuntime().availableProcessors());
 			TestHexDec test = new TestHexDec();
 			test.init();
 			test.batchPuts();

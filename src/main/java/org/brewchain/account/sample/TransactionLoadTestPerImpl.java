@@ -70,66 +70,51 @@ public class TransactionLoadTestPerImpl extends SessionModules<ReqCreateTransact
 		// int total = Math.max(Math.max(Math.max(pb.getContractCall(),
 		// pb.getContractTx()), pb.getDefaultTx()),
 		// pb.getErc20Tx());
-		if(pb.getDefaultTx()<=0){
+		if (pb.getDefaultTx() <= 0) {
 			transactionLoadTestStore.clear();
 		}
-		new Thread(new Runnable() {
+		parallRun(pb.getDefaultTx(), new Runnable() {
 			@Override
 			public void run() {
-				KeyPairs[] froms=parallGenKeys(pb.getDefaultTx());
-				KeyPairs[] tos=parallGenKeys(pb.getDefaultTx());
-				for (int i = 0; i < pb.getDefaultTx(); i++) {
-					addDefaultTx(froms[i],tos[i]);
-				}
+				KeyPairs from = encApi.genKeys();
+				KeyPairs to = encApi.genKeys();
+				addDefaultTx(from, to);
 			}
-		}).start();
-
-		new Thread(new Runnable() {
+		});
+		parallRun(pb.getErc20Tx(), new Runnable() {
 			@Override
 			public void run() {
-				KeyPairs[] froms=parallGenKeys(pb.getDefaultTx());
-				KeyPairs[] tos=parallGenKeys(pb.getDefaultTx());
-
-				for (int i = 0; i < pb.getErc20Tx(); i++) {
-					addErc20Tx(pb.getErc20TxToken(),froms[i],tos[i]);
-				}
+				KeyPairs from = encApi.genKeys();
+				KeyPairs to = encApi.genKeys();
+				addErc20Tx(pb.getErc20TxToken(),from, to);
 			}
-		}).start();
-
-		new Thread(new Runnable() {
+		});
+		
+		parallRun(pb.getContractCall(), new Runnable() {
 			@Override
 			public void run() {
-				KeyPairs[] froms=parallGenKeys(pb.getDefaultTx());
-
-				for (int i = 0; i < pb.getContractCall(); i++) {
-					addCallContractTx(pb.getContractCallAddress(),froms[i]);
-				}
+				KeyPairs from = encApi.genKeys();
+				addCallContractTx(pb.getContractCallAddress(),from);
 			}
-		}).start();
-		new Thread(new Runnable() {
+		});
+		
+		parallRun(pb.getContractTx(), new Runnable() {
 			@Override
 			public void run() {
-				KeyPairs[] froms=parallGenKeys(pb.getDefaultTx());
-				for (int i = 0; i < pb.getContractTx(); i++) {
-					addContractTx(pb.getContractTxAddress(),froms[i]);
-				}
+				KeyPairs from = encApi.genKeys();
+				addContractTx(pb.getContractCallAddress(),from);
 			}
-		}).start();
-		try {
-			Thread.sleep(3000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+		});
 
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespCreateTransactionTest.build()));
 		return;
 	}
 
-	private void addContractTx(String contract,KeyPairs oFrom ) {
+	private void addContractTx(String contract, KeyPairs oFrom) {
 		MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 		MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
 		try {
-//			KeyPairs oFrom = encApi.genKeys();
+			// KeyPairs oFrom = encApi.genKeys();
 			MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
 			oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
 			int nonce = accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
@@ -153,16 +138,16 @@ public class TransactionLoadTestPerImpl extends SessionModules<ReqCreateTransact
 			oMultiTransactionBody.addSignatures(oMultiTransactionSignature21);
 
 			oMultiTransaction.setTxBody(oMultiTransactionBody);
-			transactionLoadTestStore.getLoads().add(oMultiTransaction);
+			transactionLoadTestStore.addTx(oMultiTransaction);
 		} catch (Exception e) {
 		}
 	}
 
-	private void addCallContractTx(String contract,KeyPairs oFrom) {
+	private void addCallContractTx(String contract, KeyPairs oFrom) {
 		MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 		MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
 		try {
-//			KeyPairs oFrom = encApi.genKeys();
+			// KeyPairs oFrom = encApi.genKeys();
 			MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
 			oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
 			int nonce = accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
@@ -185,18 +170,18 @@ public class TransactionLoadTestPerImpl extends SessionModules<ReqCreateTransact
 			oMultiTransactionBody.addSignatures(oMultiTransactionSignature21);
 
 			oMultiTransaction.setTxBody(oMultiTransactionBody);
-			transactionLoadTestStore.getLoads().add(oMultiTransaction);
+			transactionLoadTestStore.addTx(oMultiTransaction);
 		} catch (Exception e) {
 		}
 	}
 
-	private void addErc20Tx(String token,KeyPairs oFrom,KeyPairs oTo) {
+	private void addErc20Tx(String token, KeyPairs oFrom, KeyPairs oTo) {
 		MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 		MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
 		try {
 
-//			KeyPairs oFrom = encApi.genKeys();
-//			KeyPairs oTo = encApi.genKeys();
+			// KeyPairs oFrom = encApi.genKeys();
+			// KeyPairs oTo = encApi.genKeys();
 			MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
 			oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
 			oMultiTransactionInput4.setAmount(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(BigInteger.ZERO)));
@@ -221,24 +206,26 @@ public class TransactionLoadTestPerImpl extends SessionModules<ReqCreateTransact
 					ByteString.copyFrom(encApi.ecSign(oFrom.getPrikey(), oMultiTransactionBody.build().toByteArray())));
 			oMultiTransactionBody.addSignatures(oMultiTransactionSignature21);
 			oMultiTransaction.setTxBody(oMultiTransactionBody);
-			transactionLoadTestStore.getLoads().add(oMultiTransaction);
+			transactionLoadTestStore.addTx(oMultiTransaction);
 		} catch (Exception e) {
 		}
 	}
 
-	ForkJoinPool pool = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
+	ForkJoinPool pool = new ForkJoinPool(Runtime.getRuntime().availableProcessors() * 2);
 
 	public KeyPairs[] parallGenKeys(int size) {
-		final AtomicInteger i = new AtomicInteger(-1);
+		final AtomicInteger counter = new AtomicInteger(-1);
 		final KeyPairs[] ret = new KeyPairs[size];
 		final CountDownLatch cdl = new CountDownLatch(size);
-		pool.execute(new Runnable() {
-			@Override
-			public void run() {
-				ret[i.incrementAndGet()] = encApi.genKeys();
-				cdl.countDown();
-			}
-		});
+		for (int i = 0; i < size; i++) {
+			pool.execute(new Runnable() {
+				@Override
+				public void run() {
+					ret[counter.incrementAndGet()] = encApi.genKeys();
+					cdl.countDown();
+				}
+			});
+		}
 		try {
 			cdl.await(24, TimeUnit.HOURS);
 		} catch (InterruptedException e) {
@@ -246,13 +233,28 @@ public class TransactionLoadTestPerImpl extends SessionModules<ReqCreateTransact
 		return ret;
 	}
 
-	private void addDefaultTx(KeyPairs oFrom,KeyPairs oTo) {
+	public void parallRun(int size, final Runnable runer) {
+		for (int i = 0; i < size; i++) {
+			pool.execute(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						runer.run();
+					} catch (Throwable e) {
+						e.printStackTrace();
+					}
+				}
+			});
+		}
+	}
+
+	private void addDefaultTx(KeyPairs oFrom, KeyPairs oTo) {
 		MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 		MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
 		try {
 
-//			KeyPairs oFrom = encApi.genKeys();
-//			KeyPairs oTo = encApi.genKeys();
+			// KeyPairs oFrom = encApi.genKeys();
+			// KeyPairs oTo = encApi.genKeys();
 			MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
 			oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
 			oMultiTransactionInput4.setAmount(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(BigInteger.ZERO)));
@@ -275,7 +277,7 @@ public class TransactionLoadTestPerImpl extends SessionModules<ReqCreateTransact
 			oMultiTransactionBody.addSignatures(oMultiTransactionSignature21);
 
 			oMultiTransaction.setTxBody(oMultiTransactionBody);
-			transactionLoadTestStore.getLoads().add(oMultiTransaction);
+			transactionLoadTestStore.addTx(oMultiTransaction);
 		} catch (Exception e) {
 		}
 	}

@@ -45,4 +45,7 @@ public class TransactionLoadTestStore implements ActorService {
 	public int remain() {
 		return loads.size() - (used_idx.get() + 1);
 	}
+	public synchronized void addTx(MultiTransaction.Builder mb){
+		loads.add(mb);
+	}
 }
