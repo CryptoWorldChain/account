@@ -1,5 +1,6 @@
 package org.brewchain.account.sample;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -22,7 +23,7 @@ import onight.tfw.ntrans.api.ActorService;
 @Slf4j
 @Data
 public class TransactionLoadTestStore implements ActorService {
-	private List<MultiTransaction.Builder> loads = new FastArrayList();
+	private List<MultiTransaction.Builder> loads = new ArrayList<>();
 	private AtomicInteger used_idx = new AtomicInteger(-1);
 	private int loopCount = 0;
 	protected ReadWriteLock rwLock = new ReentrantReadWriteLock();
