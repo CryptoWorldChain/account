@@ -111,9 +111,10 @@ public class TransactionHelper implements ActorService {
 		oPendingHashMapDB.put(hp.getKey(), hp);
 
 		// {node} {component} {opt} {type} {msg}
-//		log.info("LOGFILTER {} {} {} {} CreateTX[%s]",
-//				encApi.hexEnc(KeyConstant.node.getoAccount().getAddress().toByteArray()), "account", "create",
-//				"transaction", encApi.hexEnc(hp.getKey()));
+		// log.info("LOGFILTER {} {} {} {} CreateTX[%s]",
+		// encApi.hexEnc(KeyConstant.node.getoAccount().getAddress().toByteArray()),
+		// "account", "create",
+		// "transaction", encApi.hexEnc(hp.getKey()));
 
 		return hp;
 	}
@@ -204,22 +205,21 @@ public class TransactionHelper implements ActorService {
 			OKey[] keys = new OKey[oMultiTransaction.size()];
 			OValue[] values = new OValue[oMultiTransaction.size()];
 			int i = 0;
-			HashMap<byte[],HashPair> buffer = new HashMap<>();
+			HashMap<String, HashPair> buffer = new HashMap<>();
 			for (MultiTransaction.Builder mtb : oMultiTransaction) {
 				MultiTransaction mt = mtb.build();
 				ByteString mts = mt.toByteString();
 				HashPair hp = new HashPair(mt.getTxHashBytes().toByteArray(), mts.toByteArray(), mt);
 				keys[i] = oEntityHelper.byteKey2OKey(mtb.getTxHashBytes());
-				values[i] = OValue.newBuilder().setExtdata(mts).setInfoBytes(mtb.getTxHashBytes()).build();
-				buffer.put(hp.getKey(), hp);
+				values[i] = OValue.newBuilder().setExtdata(mts).setInfo(mtb.getTxHash()).build();
+				buffer.put(mtb.getTxHash(), hp);
 				i++;
 			}
 
 			Future<OValue[]> f = dao.getTxsDao().putIfNotExist(keys, values);
 			if (f != null && f.get() != null && isBroadCast) {
 				for (OValue ov : f.get()) {
-					byte key[]=ov.getInfoBytes().toByteArray();
-					oPendingHashMapDB.put(key, buffer.get(key));
+					oPendingHashMapDB.put(ov.getInfoBytes().toByteArray(), buffer.get(ov.getInfo()));
 					KeyConstant.counter += 1;
 				}
 			}
