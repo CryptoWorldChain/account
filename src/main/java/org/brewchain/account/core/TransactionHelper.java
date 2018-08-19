@@ -201,50 +201,43 @@ public class TransactionHelper implements ActorService {
 
 	public void syncTransaction(List<MultiTransaction.Builder> oMultiTransaction, boolean isBroadCast) {
 		try {
-			// if (oMultiTransaction.size() > 0) {
-			// OKey[] keys = new OKey[oMultiTransaction.size()];
-			// OValue[] values = new OValue[oMultiTransaction.size()];
-			// int i = 0;
-			// for (MultiTransaction.Builder mtb : oMultiTransaction) {
-			// keys[i] =
-			// oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash()));
-			// mtb.clearStatus().clearResult();
-			// values[i] =
-			// oEntityHelper.byteValue2OValue(mtb.build().toByteString());
-			// i++;
-			//
-			// oPendingHashMapDB.put(mtb.getTxHash(), mtb.build());
-			// }
-			// dao.getTxsDao().batchPuts(keys, values);
-			// }
-
-			// Future<OValue[]> f = dao.getTxsDao().putIfNotExist(keys, values);
-			// if (f != null && f.get() != null && isBroadCast) {
-			// for(OValue ov:f.get()){
-			// MultiTransaction.Builder mtb =
-			// MultiTransaction.newBuilder().mergeFrom(ov.getExtdata());
-			// oPendingHashMapDB.put(mtb.getTxHash(), mtb.build());
-			// }
-			// }
-
+			OKey[] keys = new OKey[oMultiTransaction.size()];
+			OValue[] values = new OValue[oMultiTransaction.size()];
+			int i = 0;
 			for (MultiTransaction.Builder mtb : oMultiTransaction) {
-				OValue oValue = dao.getTxsDao().get(oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash()))).get();
-				if (oValue != null) {
-					// log.warn("transaction " + mtb.getTxHash() + "exists, drop it");
-				} else {
-					mtb.clearStatus();
-					mtb.clearResult();
-
-					dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash())),
-							oEntityHelper.byteValue2OValue(mtb.build().toByteArray()));
-
-					if (isBroadCast) {
-						oPendingHashMapDB.put(mtb.getTxHash(), mtb.build());
-					}
-					
-					KeyConstant.counter += 1;
+				keys[i] = oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash()));
+				mtb.clearStatus().clearResult();
+				values[i] = oEntityHelper.byteValue2OValue(mtb.build().toByteString());
+				i++;
+			}
+			
+			Future<OValue[]> f = dao.getTxsDao().putIfNotExist(keys, values);
+			if (f != null && f.get() != null && isBroadCast) {
+				for(OValue ov:f.get()){
+					MultiTransaction.Builder mtb = MultiTransaction.newBuilder().mergeFrom(ov.getExtdata());
+					oPendingHashMapDB.put(mtb.getTxHash(), mtb.build());
 				}
 			}
+
+
+//			for (MultiTransaction.Builder mtb : oMultiTransaction) {
+//				OValue oValue = dao.getTxsDao().get(oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash()))).get();
+//				if (oValue != null) {
+//					// log.warn("transaction " + mtb.getTxHash() + "exists, drop it");
+//				} else {
+//					mtb.clearStatus();
+//					mtb.clearResult();
+//
+//					dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash())),
+//							oEntityHelper.byteValue2OValue(mtb.build().toByteArray()));
+//
+//					if (isBroadCast) {
+//						oPendingHashMapDB.put(mtb.getTxHash(), mtb.build());
+//					}
+//					
+//					KeyConstant.counter += 1;
+//				}
+//			}
 
 		} catch (Exception e) {
 			log.error("fail to sync transaction::" + oMultiTransaction.size() + " error::" + e);
