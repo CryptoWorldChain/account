@@ -69,7 +69,7 @@ public class SaveColdTransactionImpl extends SessionModules<ReqCreateTxColdPurse
 			MultiTransaction.Builder oTransaction = parseToImpl(pb);
 //			req.setTransaction(oTransaction);
 //			MultiTransaction.Builder oTransaction = transactionHelper.parse(req.getTransaction());
-			oRespCreateTx.setTxHash(transactionHelper.CreateMultiTransaction(oTransaction));
+			oRespCreateTx.setTxHash(transactionHelper.CreateMultiTransaction(oTransaction).getHexKey());
 			oRespCreateTx.setRetCode(1);
 		} catch (Throwable e) {
 			oRespCreateTx.setRetCode(-1);

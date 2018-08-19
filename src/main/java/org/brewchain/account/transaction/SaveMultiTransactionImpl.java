@@ -47,7 +47,7 @@ public class SaveMultiTransactionImpl extends SessionModules<ReqCreateMultiTrans
 				oRespCreateTx.setContractHash(encApi
 						.hexEnc(transactionHelper.getContractAddressByTransaction(oTransaction.build()).toByteArray()));
 			}
-			oRespCreateTx.setTxHash(transactionHelper.CreateMultiTransaction(oTransaction));
+			oRespCreateTx.setTxHash(transactionHelper.CreateMultiTransaction(oTransaction).getHexKey());
 			oRespCreateTx.setRetCode(1);
 		} catch (Throwable e) {
 			log.error("error on create tx::" + e);

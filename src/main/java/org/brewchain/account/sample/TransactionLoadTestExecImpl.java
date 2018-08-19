@@ -56,7 +56,7 @@ public class TransactionLoadTestExecImpl extends SessionModules<ReqCommonTest> {
 		try {
 			MultiTransaction.Builder tx = transactionLoadTestStore.getOne();
 			if (tx != null) {
-				txHash = transactionHelper.CreateMultiTransaction(tx);
+				txHash = transactionHelper.CreateMultiTransaction(tx).getHexKey();
 				oRespCreateTransactionTest.setRetmsg("success");
 				oRespCreateTransactionTest.setTxhash(txHash);
 				oRespCreateTransactionTest

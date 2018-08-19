@@ -100,7 +100,7 @@ public class TokenTransactionSample extends SessionModules<ReqCreateTransactionT
 			}
 			oMultiTransaction.setTxBody(oMultiTransactionBody);
 
-			String txHash = transactionHelper.CreateMultiTransaction(oMultiTransaction);
+			String txHash = transactionHelper.CreateMultiTransaction(oMultiTransaction).getHexKey();
 			oRespCreateTransactionTest.setTxhash(txHash);
 		} catch (Exception e) {
 			e.printStackTrace();

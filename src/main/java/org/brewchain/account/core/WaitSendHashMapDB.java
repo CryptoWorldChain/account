@@ -1,15 +1,11 @@
 package org.brewchain.account.core;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
-import org.brewchain.account.util.ALock;
-import org.brewchain.evmapi.gens.Tx.MultiTransaction;
+import org.brewchain.account.bean.HashPair;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -22,56 +18,42 @@ import onight.tfw.ntrans.api.ActorService;
 @Slf4j
 @Data
 public class WaitSendHashMapDB implements ActorService {
-	protected ConcurrentHashMap<String, MultiTransaction> storage;
-	protected ReadWriteLock rwLock = new ReentrantReadWriteLock();
-	protected ALock readLock = new ALock(rwLock.readLock());
-	protected ALock writeLock = new ALock(rwLock.writeLock());
+	protected ConcurrentHashMap<byte[], HashPair> storage;
 
 	public WaitSendHashMapDB() {
-		this(new ConcurrentHashMap<String, MultiTransaction>());
+		this(new ConcurrentHashMap<byte[], HashPair>());
 	}
 
-	public WaitSendHashMapDB(ConcurrentHashMap<String, MultiTransaction> storage) {
+	public WaitSendHashMapDB(ConcurrentHashMap<byte[],HashPair> storage) {
 		this.storage = storage;
 	}
 
-	public void put(String key, MultiTransaction val) {
+
+	public void put(byte[] key, HashPair val) {
 		if (val == null) {
 			delete(key);
 		} else {
-			try (ALock l = writeLock.lock()) {
-				storage.put(key, val);
-			}
+			storage.put(key, val);
 		}
 	}
 
-	public MultiTransaction get(String key) {
-		try (ALock l = readLock.lock()) {
-			return storage.get(key);
-		}
+	public HashPair get(byte[] key) {
+		return storage.get(key);
 	}
 
-	public void delete(String key) {
-		try (ALock l = writeLock.lock()) {
-			storage.remove(key);
-		}
+	public void delete(byte[] key) {
+		storage.remove(key);
 	}
 
-	public Set<String> keys() {
-		try (ALock l = readLock.lock()) {
-			return getStorage().keySet();
-		}
+	public int size() {
+		return storage.size();
 	}
 
-	public void updateBatch(Map<String, MultiTransaction> rows) {
-		try (ALock l = writeLock.lock()) {
-			for (Map.Entry<String, MultiTransaction> entry : rows.entrySet()) {
-				put(entry.getKey(), entry.getValue());
-			}
-		}
+	public void updateBatch(Map<byte[], HashPair> rows) {
+		storage.putAll(rows);
 	}
 
-	public Map<String, MultiTransaction> getStorage() {
+	public Map<byte[], HashPair> getStorage() {
 		return storage;
 	}
 }

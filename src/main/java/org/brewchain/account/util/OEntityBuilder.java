@@ -53,10 +53,10 @@ public class OEntityBuilder implements ActorService {
 		oOValue.setSecondKey(secKey);
 		return oOValue.build();
 	}
-	public OValue byteValue2OValue(ByteString value) {
+	public OValue.Builder byteValue2OValue(ByteString value) {
 		OValue.Builder oOValue = OValue.newBuilder();
 		oOValue.setExtdata(value);
-		return oOValue.build();
+		return oOValue;
 	}
 
 	public byte[] oValue2byteValue(OValue value) {

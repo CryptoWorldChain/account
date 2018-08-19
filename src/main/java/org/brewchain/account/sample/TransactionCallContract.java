@@ -90,7 +90,7 @@ public class TransactionCallContract extends SessionModules<ReqCallContract> {
 			oMultiTransactionBody.addSignatures(oMultiTransactionSignature21);
 
 			oMultiTransaction.setTxBody(oMultiTransactionBody);
-			String txHash = transactionHelper.CreateMultiTransaction(oMultiTransaction);
+			String txHash = transactionHelper.CreateMultiTransaction(oMultiTransaction).getHexKey();
 			oRespContract.setTxHash(txHash);
 		} catch (Exception e) {
 		}
