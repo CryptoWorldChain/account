@@ -265,12 +265,12 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 
 	@Override
 	public void onExecuteDone(MultiTransaction oMultiTransaction, ByteString result) throws Exception {
-		oTransactionHelper.setTransactionDone(oMultiTransaction.getTxHash(), result);
+		oTransactionHelper.setTransactionDone(oMultiTransaction, result);
 	}
 
 	@Override
 	public void onExecuteError(MultiTransaction oMultiTransaction, ByteString result) throws Exception {
-		oTransactionHelper.setTransactionError(oMultiTransaction.getTxHash(), result);
+		oTransactionHelper.setTransactionError(oMultiTransaction, result);
 	}
 
 	public static class TransactionExecuteException extends Exception {
