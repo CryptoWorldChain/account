@@ -67,10 +67,12 @@ public class TransactionLoadTestPerImpl extends SessionModules<ReqCreateTransact
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqCreateTransactionTest pb, final CompleteHandler handler) {
 		RespCreateTransactionTest.Builder oRespCreateTransactionTest = RespCreateTransactionTest.newBuilder();
-
 		// int total = Math.max(Math.max(Math.max(pb.getContractCall(),
 		// pb.getContractTx()), pb.getDefaultTx()),
 		// pb.getErc20Tx());
+		if(pb.getDefaultTx()<=0){
+			transactionLoadTestStore.clear();
+		}
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
