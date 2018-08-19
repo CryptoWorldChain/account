@@ -108,7 +108,7 @@ public class TransactionHelper implements ActorService {
 
 		// 保存交易到缓存中，用于打包
 		// 如果指定了委托，并且委托是本节点
-		oPendingHashMapDB.put(hp.getKey(), hp);
+		oPendingHashMapDB.put(hp.getTx().getTxHash(), hp);
 
 		// {node} {component} {opt} {type} {msg}
 		// log.info("LOGFILTER {} {} {} {} CreateTX[%s]",
@@ -187,7 +187,7 @@ public class TransactionHelper implements ActorService {
 						oEntityHelper.byteValue2OValue(oMultiTransaction.build().toByteArray()));
 
 				if (isBroadCast) {
-					oPendingHashMapDB.put(hp.getKey(), hp);
+					oPendingHashMapDB.put(oMultiTransaction.getTxHash(), hp);
 				}
 				KeyConstant.counter += 1;
 			}
@@ -219,7 +219,7 @@ public class TransactionHelper implements ActorService {
 			Future<OValue[]> f = dao.getTxsDao().putIfNotExist(keys, values);
 			if (f != null && f.get() != null && isBroadCast) {
 				for (OValue ov : f.get()) {
-					oPendingHashMapDB.put(ov.getInfoBytes().toByteArray(), buffer.get(ov.getInfo()));
+					oPendingHashMapDB.put(ov.getInfo(), buffer.get(ov.getInfo()));
 					KeyConstant.counter += 1;
 				}
 			}
@@ -306,9 +306,9 @@ public class TransactionHelper implements ActorService {
 		LinkedList<MultiTransaction> list = new LinkedList<MultiTransaction>();
 		int total = 0;
 
-		for (Iterator<Map.Entry<byte[], HashPair>> it = oPendingHashMapDB.getStorage().entrySet().iterator(); it
+		for (Iterator<Map.Entry<String, HashPair>> it = oPendingHashMapDB.getStorage().entrySet().iterator(); it
 				.hasNext();) {
-			Map.Entry<byte[], HashPair> item = it.next();
+			Map.Entry<String, HashPair> item = it.next();
 			list.add(item.getValue().getTx());
 			it.remove();
 			total += 1;
@@ -320,7 +320,7 @@ public class TransactionHelper implements ActorService {
 	}
 
 	public HashPair removeWaitBlockTx(String txHash) throws InvalidProtocolBufferException {
-		return oPendingHashMapDB.getStorage().remove(encApi.hexDec(txHash));
+		return oPendingHashMapDB.getStorage().remove(txHash);
 	}
 
 	public boolean isExistsWaitBlockTx(String txHash) throws InvalidProtocolBufferException {
