@@ -15,6 +15,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.text.StrBuilder;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -29,6 +30,8 @@ import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.fc.brewchain.bcapi.EncAPI;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.protobuf.ByteString;
 
@@ -76,6 +79,7 @@ public class StateTrie implements ActorService {
 			// values.add(oEntityHelper.byteValue2OValue(v));
 			kvs.put(oEntityHelper.byteKey2OKey(key), oEntityHelper.byteValue2OValue(v));
 		}
+
 		public void remove(byte[] key) {
 			// keys.add(oEntityHelper.byteKey2OKey(key));
 			// values.add(oEntityHelper.byteValue2OValue(v));
@@ -577,6 +581,10 @@ public class StateTrie implements ActorService {
 		return root != null && root.resolveCheck();
 	}
 
+	Cache<byte[], byte[]> cacheByHash = CacheBuilder.newBuilder().initialCapacity(10000)
+			.expireAfterWrite(3600, TimeUnit.SECONDS).maximumSize(1000000)
+			.concurrencyLevel(Runtime.getRuntime().availableProcessors()).build();
+
 	private byte[] getHash(byte[] hash) {
 		OKey key = oEntityHelper.byteKey2OKey(hash);
 		OValue v = null;
@@ -586,14 +594,22 @@ public class StateTrie implements ActorService {
 		}
 		try {
 			if (v == null) {
-				log.debug("statetrie getHash from db::" + encApi.hexEnc(hash));
+				// log.debug("statetrie getHash from db::" +
+				// encApi.hexEnc(hash));
+				byte[] body = cacheByHash.getIfPresent(hash);
+				if (body != null) {
+					return body;
+				}
 				v = dao.getAccountDao().get(key).get();
+
 			}
 			if (v != null && v.getExtdata() != null && !v.getExtdata().equals(ByteString.EMPTY)) {
-				return v.getExtdata().toByteArray();
+				byte[] body = v.getExtdata().toByteArray();
+				cacheByHash.put(hash, body);
+				return body;
 			}
 		} catch (Exception e) {
-			log.warn("getHash Erro:" + e.getMessage(), e);
+			log.warn("getHash Error:" + e.getMessage() + ",key=" + encApi.hexEnc(hash), e);
 		}
 		log.debug("statetrie getHash not found::" + encApi.hexEnc(hash));
 		return null;
@@ -610,12 +626,14 @@ public class StateTrie implements ActorService {
 	}
 
 	private void deleteHash(byte[] hash) {
-//		log.debug("trie delete key::" + Hex.toHexString(hash) + " root::" + Hex.toHexString(this.root.hash));
+		// log.debug("trie delete key::" + Hex.toHexString(hash) + " root::" +
+		// Hex.toHexString(this.root.hash));
 		BatchStorage bs = batchStorage.get();
 		if (bs != null) {
 			// log.debug("add into state trie key::" + encApi.hexEnc(hash));
 			bs.remove(hash);
 		}
+		cacheByHash.invalidate(hash);
 		// dao.getAccountDao().delete(OEntityBuilder.byteKey2OKey(hash));
 	}
 
@@ -712,6 +730,7 @@ public class StateTrie implements ActorService {
 		if (root != null) {
 			root = delete(root, k);
 		}
+		cacheByHash.invalidate(key);
 	}
 
 	private Node delete(Node n, TrieKey k) {

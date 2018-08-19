@@ -195,10 +195,10 @@ public class V2Processor implements IProcessor, ActorService {
 			i++;
 		}
 		oBlockEntity.setBody(bb);
-		log.error("====>  start number::" + oBlockEntity.getHeader().getNumber() + " exec tx::"
+		log.error("====>  start number::" + oBlockEntity.getHeader().getNumber() + ":exec tx::"
 				+ System.currentTimeMillis()+",count="+i);
 		Map<String, ByteString> results = ExecuteTransaction(txs, oBlockEntity.build());
-		log.error("====>  end number::" + oBlockEntity.getHeader().getNumber() + " exec tx::"
+		log.error("====>  end number::" + oBlockEntity.getHeader().getNumber() + ":exec tx::"
 				+ System.currentTimeMillis()+",count="+i);
 		BlockHeader.Builder header = oBlockEntity.getHeaderBuilder();
 
@@ -216,11 +216,11 @@ public class V2Processor implements IProcessor, ActorService {
 				.hexEnc(oReceiptTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY : oReceiptTrie.getRootHash()));
 		header.setTxTrieRoot(encApi.hexEnc(
 				oTransactionTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY : oTransactionTrie.getRootHash()));
-		log.error("====>  start number::" + oBlockEntity.getHeader().getNumber() + "get root::"
-				+ System.currentTimeMillis());
+		log.error("====>  start number::" + oBlockEntity.getHeader().getNumber() + ",root::"
+				+ System.currentTimeMillis()+",count="+i);
 		header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
-		log.error("====>  end number::" + oBlockEntity.getHeader().getNumber() + "get root::"
-				+ System.currentTimeMillis());
+		log.error("====>  end number::" + oBlockEntity.getHeader().getNumber() + ",root::"
+				+ System.currentTimeMillis()+",count="+i);
 		oBlockEntity.setHeader(header);
 	}
 
