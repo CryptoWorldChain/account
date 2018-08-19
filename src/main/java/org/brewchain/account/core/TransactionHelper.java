@@ -187,9 +187,8 @@ public class TransactionHelper implements ActorService {
 				if (isBroadCast) {
 					oPendingHashMapDB.put(oMultiTransaction.getTxHash(), oMultiTransaction.build());
 				}
+				KeyConstant.counter += 1;
 			}
-
-			KeyConstant.counter += 1;
 		} catch (Exception e) {
 			log.error("fail to sync transaction::" + oMultiTransaction.getTxHash() + " error::" + e);
 		}
@@ -216,6 +215,7 @@ public class TransactionHelper implements ActorService {
 				for(OValue ov:f.get()){
 					MultiTransaction.Builder mtb = MultiTransaction.newBuilder().mergeFrom(ov.getExtdata());
 					oPendingHashMapDB.put(mtb.getTxHash(), mtb.build());
+					KeyConstant.counter += 1;
 				}
 			}
 
