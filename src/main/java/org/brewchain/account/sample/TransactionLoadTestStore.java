@@ -40,4 +40,8 @@ public class TransactionLoadTestStore implements ActorService {
 		loads.clear();
 		used_idx.set(-1);
 	}
+
+	public int remain() {
+		return loads.size() - (used_idx.get() + 1);
+	}
 }

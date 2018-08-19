@@ -40,7 +40,7 @@ public class TransactionLoadTestPerResultImpl extends SessionModules<ReqCommonTe
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqCommonTest pb, final CompleteHandler handler) {
 		RespCommonTest.Builder oRespCommonTest = RespCommonTest.newBuilder();
-		oRespCommonTest.setRetmsg("total::" + transactionLoadTestStore.getLoads().size());
+		oRespCommonTest.setRetmsg("total::" + transactionLoadTestStore.remain());
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespCommonTest.build()));
 		return;
 	}
