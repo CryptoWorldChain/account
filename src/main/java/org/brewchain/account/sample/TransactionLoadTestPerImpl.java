@@ -2,6 +2,10 @@ package org.brewchain.account.sample;
 
 import java.math.BigInteger;
 import java.util.Date;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockChainHelper;
@@ -64,43 +68,77 @@ public class TransactionLoadTestPerImpl extends SessionModules<ReqCreateTransact
 	public void onPBPacket(final FramePacket pack, final ReqCreateTransactionTest pb, final CompleteHandler handler) {
 		RespCreateTransactionTest.Builder oRespCreateTransactionTest = RespCreateTransactionTest.newBuilder();
 
-		int total = Math.max(Math.max(Math.max(pb.getContractCall(), pb.getContractTx()), pb.getDefaultTx()),
-				pb.getErc20Tx());
+		// int total = Math.max(Math.max(Math.max(pb.getContractCall(),
+		// pb.getContractTx()), pb.getDefaultTx()),
+		// pb.getErc20Tx());
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				KeyPairs[] froms=parallGenKeys(pb.getDefaultTx());
+				KeyPairs[] tos=parallGenKeys(pb.getDefaultTx());
+				for (int i = 0; i < pb.getDefaultTx(); i++) {
+					addDefaultTx(froms[i],tos[i]);
+				}
+			}
+		}).start();
 
-		for (int i = 0; i < total; i++) {
-			if (i < pb.getDefaultTx()) {
-				addDefaultTx();
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				KeyPairs[] froms=parallGenKeys(pb.getDefaultTx());
+				KeyPairs[] tos=parallGenKeys(pb.getDefaultTx());
+
+				for (int i = 0; i < pb.getErc20Tx(); i++) {
+					addErc20Tx(pb.getErc20TxToken(),froms[i],tos[i]);
+				}
 			}
-			if (i < pb.getErc20Tx()) {
-				addErc20Tx(pb.getErc20TxToken());
+		}).start();
+
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				KeyPairs[] froms=parallGenKeys(pb.getDefaultTx());
+
+				for (int i = 0; i < pb.getContractCall(); i++) {
+					addCallContractTx(pb.getContractCallAddress(),froms[i]);
+				}
 			}
-			if (i < pb.getContractCall()) {
-				addCallContractTx(pb.getContractCallAddress());
+		}).start();
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				KeyPairs[] froms=parallGenKeys(pb.getDefaultTx());
+				for (int i = 0; i < pb.getContractTx(); i++) {
+					addContractTx(pb.getContractTxAddress(),froms[i]);
+				}
 			}
-			if (i < pb.getContractTx()) {
-				addContractTx(pb.getContractTxAddress());
-			}
+		}).start();
+		try {
+			Thread.sleep(3000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
 
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespCreateTransactionTest.build()));
 		return;
 	}
-	
-	private void addContractTx(String contract) {
+
+	private void addContractTx(String contract,KeyPairs oFrom ) {
 		MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 		MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
 		try {
-			KeyPairs oFrom = encApi.genKeys();
+//			KeyPairs oFrom = encApi.genKeys();
 			MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
 			oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
 			int nonce = accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
 			// nonce = nonce + i - 1;
 			oMultiTransactionInput4.setNonce(nonce);
 			oMultiTransactionBody.addInputs(oMultiTransactionInput4);
-			oMultiTransactionBody.setData(ByteString.copyFrom(encApi.hexDec("040821fc0000000000000000000000000000000000000000000000000000000000000000")));
+			oMultiTransactionBody.setData(ByteString.copyFrom(
+					encApi.hexDec("040821fc0000000000000000000000000000000000000000000000000000000000000000")));
 			MultiTransactionOutput.Builder oMultiTransactionOutput1 = MultiTransactionOutput.newBuilder();
 			oMultiTransactionOutput1.setAddress(ByteString.copyFrom(encApi.hexDec(contract)));
-			
+
 			oMultiTransactionBody.addOutputs(oMultiTransactionOutput1);
 			oMultiTransaction.clearTxHash();
 			oMultiTransactionBody.clearSignatures();
@@ -118,11 +156,11 @@ public class TransactionLoadTestPerImpl extends SessionModules<ReqCreateTransact
 		}
 	}
 
-	private void addCallContractTx(String contract) {
+	private void addCallContractTx(String contract,KeyPairs oFrom) {
 		MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 		MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
 		try {
-			KeyPairs oFrom = encApi.genKeys();
+//			KeyPairs oFrom = encApi.genKeys();
 			MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
 			oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
 			int nonce = accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
@@ -132,7 +170,7 @@ public class TransactionLoadTestPerImpl extends SessionModules<ReqCreateTransact
 			oMultiTransactionBody.setData(ByteString.copyFrom(encApi.hexDec("67e0badb")));
 			MultiTransactionOutput.Builder oMultiTransactionOutput1 = MultiTransactionOutput.newBuilder();
 			oMultiTransactionOutput1.setAddress(ByteString.copyFrom(encApi.hexDec(contract)));
-			
+
 			oMultiTransactionBody.addOutputs(oMultiTransactionOutput1);
 			oMultiTransaction.clearTxHash();
 			oMultiTransactionBody.clearSignatures();
@@ -149,14 +187,14 @@ public class TransactionLoadTestPerImpl extends SessionModules<ReqCreateTransact
 		} catch (Exception e) {
 		}
 	}
-	
-	private void addErc20Tx(String token) {
+
+	private void addErc20Tx(String token,KeyPairs oFrom,KeyPairs oTo) {
 		MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 		MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
 		try {
 
-			KeyPairs oFrom = encApi.genKeys();
-			KeyPairs oTo = encApi.genKeys();
+//			KeyPairs oFrom = encApi.genKeys();
+//			KeyPairs oTo = encApi.genKeys();
 			MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
 			oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
 			oMultiTransactionInput4.setAmount(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(BigInteger.ZERO)));
@@ -186,13 +224,33 @@ public class TransactionLoadTestPerImpl extends SessionModules<ReqCreateTransact
 		}
 	}
 
-	private void addDefaultTx() {
+	ForkJoinPool pool = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
+
+	public KeyPairs[] parallGenKeys(int size) {
+		final AtomicInteger i = new AtomicInteger(-1);
+		final KeyPairs[] ret = new KeyPairs[size];
+		final CountDownLatch cdl = new CountDownLatch(size);
+		pool.execute(new Runnable() {
+			@Override
+			public void run() {
+				ret[i.incrementAndGet()] = encApi.genKeys();
+				cdl.countDown();
+			}
+		});
+		try {
+			cdl.await(24, TimeUnit.HOURS);
+		} catch (InterruptedException e) {
+		}
+		return ret;
+	}
+
+	private void addDefaultTx(KeyPairs oFrom,KeyPairs oTo) {
 		MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 		MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
 		try {
 
-			KeyPairs oFrom = encApi.genKeys();
-			KeyPairs oTo = encApi.genKeys();
+//			KeyPairs oFrom = encApi.genKeys();
+//			KeyPairs oTo = encApi.genKeys();
 			MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
 			oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
 			oMultiTransactionInput4.setAmount(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(BigInteger.ZERO)));
