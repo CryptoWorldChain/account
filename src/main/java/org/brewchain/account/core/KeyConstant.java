@@ -2,8 +2,8 @@ package org.brewchain.account.core;
 
 import java.math.BigInteger;
 import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.brewchain.account.util.NodeDef;
 import org.brewchain.evmapi.gens.Act.Account;
@@ -34,7 +34,7 @@ public class KeyConstant {
 	public static NodeDef node;
 	public static String PWD;
 	
-	public static int counter = 0;
+	public static AtomicInteger counter = new AtomicInteger(0);
 	public static LinkedBlockingQueue<Map<String, Account.Builder>> QUEUE = new LinkedBlockingQueue<>();
 
 }

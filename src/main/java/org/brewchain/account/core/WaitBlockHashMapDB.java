@@ -18,17 +18,17 @@ import onight.tfw.ntrans.api.ActorService;
 @Slf4j
 @Data
 public class WaitBlockHashMapDB implements ActorService {
-	protected ConcurrentHashMap<byte[], HashPair> storage;
+	protected ConcurrentHashMap<String, HashPair> storage;
 
 	public WaitBlockHashMapDB() {
-		this(new ConcurrentHashMap<byte[], HashPair>());
+		this(new ConcurrentHashMap<String, HashPair>());
 	}
 
-	public WaitBlockHashMapDB(ConcurrentHashMap<byte[], HashPair> storage) {
+	public WaitBlockHashMapDB(ConcurrentHashMap<String, HashPair> storage) {
 		this.storage = storage;
 	}
 
-	public void put(byte[] key, HashPair val) {
+	public void put(String key, HashPair val) {
 		if (val == null) {
 			delete(key);
 		} else {
@@ -36,11 +36,11 @@ public class WaitBlockHashMapDB implements ActorService {
 		}
 	}
 
-	public HashPair get(byte[] key) {
+	public HashPair get(String key) {
 		return storage.get(key);
 	}
 
-	public void delete(byte[] key) {
+	public void delete(String key) {
 		storage.remove(key);
 	}
 
@@ -48,11 +48,11 @@ public class WaitBlockHashMapDB implements ActorService {
 		return storage.size();
 	}
 
-	public void updateBatch(Map<byte[], HashPair> rows) {
+	public void updateBatch(Map<String, HashPair> rows) {
 		storage.putAll(rows);
 	}
 
-	public Map<byte[], HashPair> getStorage() {
+	public Map<String, HashPair> getStorage() {
 		return storage;
 	}
 }

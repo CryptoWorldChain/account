@@ -471,67 +471,67 @@ public class StateTrie implements ActorService {
 
 		/*********** Dump methods ************/
 
-		public String dumpStruct(String indent, String prefix) {
-			String ret = indent + prefix + getType() + (dirty ? " *" : "")
-					+ (hash == null ? "" : "(hash: " + Hex.toHexString(hash).substring(0, 6) + ")");
-			if (getType() == NodeType.BranchNode) {
-				byte[] value = branchNodeGetValue();
-				ret += (value == null ? "" : " [T] = " + Hex.toHexString(value)) + "\n";
-				for (int i = 0; i < 16; i++) {
-					Node child = branchNodeGetChild(i);
-					if (child != null) {
-						ret += child.dumpStruct(indent + "  ", "[" + i + "] ");
-					}
-				}
+//		public String dumpStruct(String indent, String prefix) {
+//			String ret = indent + prefix + getType() + (dirty ? " *" : "")
+//					+ (hash == null ? "" : "(hash: " + Hex.toHexString(hash).substring(0, 6) + ")");
+//			if (getType() == NodeType.BranchNode) {
+//				byte[] value = branchNodeGetValue();
+//				ret += (value == null ? "" : " [T] = " + Hex.toHexString(value)) + "\n";
+//				for (int i = 0; i < 16; i++) {
+//					Node child = branchNodeGetChild(i);
+//					if (child != null) {
+//						ret += child.dumpStruct(indent + "  ", "[" + i + "] ");
+//					}
+//				}
+//
+//			} else if (getType() == NodeType.KVNodeNode) {
+//				ret += " [" + kvNodeGetKey() + "]\n";
+//				ret += kvNodeGetChildNode().dumpStruct(indent + "  ", "");
+//			} else {
+//				ret += " [" + kvNodeGetKey() + "] = " + Hex.toHexString(kvNodeGetValue()) + "\n";
+//			}
+//			return ret;
+//		}
 
-			} else if (getType() == NodeType.KVNodeNode) {
-				ret += " [" + kvNodeGetKey() + "]\n";
-				ret += kvNodeGetChildNode().dumpStruct(indent + "  ", "");
-			} else {
-				ret += " [" + kvNodeGetKey() + "] = " + Hex.toHexString(kvNodeGetValue()) + "\n";
-			}
-			return ret;
-		}
-
-		public List<String> dumpTrieNode(boolean compact) {
-			List<String> ret = new ArrayList<>();
-			if (hash != null) {
-				ret.add(hash2str(hash, compact) + " ==> " + dumpContent(false, compact));
-			}
-
-			if (getType() == NodeType.BranchNode) {
-				for (int i = 0; i < 16; i++) {
-					Node child = branchNodeGetChild(i);
-					if (child != null)
-						ret.addAll(child.dumpTrieNode(compact));
-				}
-			} else if (getType() == NodeType.KVNodeNode) {
-				ret.addAll(kvNodeGetChildNode().dumpTrieNode(compact));
-			}
-			return ret;
-		}
-
-		private String dumpContent(boolean recursion, boolean compact) {
-			if (recursion && hash != null)
-				return hash2str(hash, compact);
-			String ret;
-			if (getType() == NodeType.BranchNode) {
-				ret = "[";
-				for (int i = 0; i < 16; i++) {
-					Node child = branchNodeGetChild(i);
-					ret += i == 0 ? "" : ",";
-					ret += child == null ? "" : child.dumpContent(true, compact);
-				}
-				byte[] value = branchNodeGetValue();
-				ret += value == null ? "" : ", " + val2str(value, compact);
-				ret += "]";
-			} else if (getType() == NodeType.KVNodeNode) {
-				ret = "[<" + kvNodeGetKey() + ">, " + kvNodeGetChildNode().dumpContent(true, compact) + "]";
-			} else {
-				ret = "[<" + kvNodeGetKey() + ">, " + val2str(kvNodeGetValue(), compact) + "]";
-			}
-			return ret;
-		}
+//		public List<String> dumpTrieNode(boolean compact) {
+//			List<String> ret = new ArrayList<>();
+//			if (hash != null) {
+//				ret.add(hash2str(hash, compact) + " ==> " + dumpContent(false, compact));
+//			}
+//
+//			if (getType() == NodeType.BranchNode) {
+//				for (int i = 0; i < 16; i++) {
+//					Node child = branchNodeGetChild(i);
+//					if (child != null)
+//						ret.addAll(child.dumpTrieNode(compact));
+//				}
+//			} else if (getType() == NodeType.KVNodeNode) {
+//				ret.addAll(kvNodeGetChildNode().dumpTrieNode(compact));
+//			}
+//			return ret;
+//		}
+//
+//		private String dumpContent(boolean recursion, boolean compact) {
+//			if (recursion && hash != null)
+//				return hash2str(hash, compact);
+//			String ret;
+//			if (getType() == NodeType.BranchNode) {
+//				ret = "[";
+//				for (int i = 0; i < 16; i++) {
+//					Node child = branchNodeGetChild(i);
+//					ret += i == 0 ? "" : ",";
+//					ret += child == null ? "" : child.dumpContent(true, compact);
+//				}
+//				byte[] value = branchNodeGetValue();
+//				ret += value == null ? "" : ", " + val2str(value, compact);
+//				ret += "]";
+//			} else if (getType() == NodeType.KVNodeNode) {
+//				ret = "[<" + kvNodeGetKey() + ">, " + kvNodeGetChildNode().dumpContent(true, compact) + "]";
+//			} else {
+//				ret = "[<" + kvNodeGetKey() + ">, " + val2str(kvNodeGetValue(), compact) + "]";
+//			}
+//			return ret;
+//		}
 
 		@Override
 		public String toString() {
@@ -581,12 +581,13 @@ public class StateTrie implements ActorService {
 		return root != null && root.resolveCheck();
 	}
 
-	Cache<byte[], byte[]> cacheByHash = CacheBuilder.newBuilder().initialCapacity(10000)
+	Cache<String, byte[]> cacheByHash = CacheBuilder.newBuilder().initialCapacity(10000)
 			.expireAfterWrite(3600, TimeUnit.SECONDS).maximumSize(1000000)
 			.concurrencyLevel(Runtime.getRuntime().availableProcessors()).build();
 
 	private byte[] getHash(byte[] hash) {
 		OKey key = oEntityHelper.byteKey2OKey(hash);
+		String hexHash = encApi.hexEnc(hash);
 		OValue v = null;
 		BatchStorage bs = batchStorage.get();
 		if (bs != null) {
@@ -596,7 +597,7 @@ public class StateTrie implements ActorService {
 			if (v == null) {
 				// log.debug("statetrie getHash from db::" +
 				// encApi.hexEnc(hash));
-				byte[] body = cacheByHash.getIfPresent(hash);
+				byte[] body = cacheByHash.getIfPresent(hexHash);
 				if (body != null) {
 					return body;
 				}
@@ -605,13 +606,13 @@ public class StateTrie implements ActorService {
 			}
 			if (v != null && v.getExtdata() != null && !v.getExtdata().equals(ByteString.EMPTY)) {
 				byte[] body = v.getExtdata().toByteArray();
-				cacheByHash.put(hash, body);
+				cacheByHash.put(hexHash, body);
 				return body;
 			}
 		} catch (Exception e) {
-			log.warn("getHash Error:" + e.getMessage() + ",key=" + encApi.hexEnc(hash), e);
+			log.warn("getHash Error:" + e.getMessage() + ",key=" + hexHash, e);
 		}
-		log.debug("statetrie getHash not found::" + encApi.hexEnc(hash));
+		log.debug("statetrie getHash not found::" + hexHash);
 		return null;
 	}
 
@@ -633,7 +634,7 @@ public class StateTrie implements ActorService {
 			// log.debug("add into state trie key::" + encApi.hexEnc(hash));
 			bs.remove(hash);
 		}
-		cacheByHash.invalidate(hash);
+		cacheByHash.invalidate(encApi.hexEnc(hash));
 		// dao.getAccountDao().delete(OEntityBuilder.byteKey2OKey(hash));
 	}
 
@@ -837,9 +838,9 @@ public class StateTrie implements ActorService {
 
 	}
 
-	public String dumpStructure() {
-		return root == null ? "<empty>" : root.dumpStruct("", "");
-	}
+//	public String dumpStructure() {
+//		return root == null ? "<empty>" : root.dumpStruct("", "");
+//	}
 
 	// public String dumpTrie() {
 	// return dumpTrie(true);
@@ -881,16 +882,16 @@ public class StateTrie implements ActorService {
 		}
 	}
 
-	private static String hash2str(byte[] hash, boolean shortHash) {
-		String ret = Hex.toHexString(hash);
-		return "0x" + (shortHash ? ret.substring(0, 8) : ret);
-	}
-
-	private static String val2str(byte[] val, boolean shortHash) {
-		String ret = Hex.toHexString(val);
-		if (val.length > 16) {
-			ret = ret.substring(0, 10) + "... len " + val.length;
-		}
-		return "\"" + ret + "\"";
-	}
+//	private static String hash2str(byte[] hash, boolean shortHash) {
+//		String ret = Hex.toHexString(hash);
+//		return "0x" + (shortHash ? ret.substring(0, 8) : ret);
+//	}
+//
+//	private static String val2str(byte[] val, boolean shortHash) {
+//		String ret = Hex.toHexString(val);
+//		if (val.length > 16) {
+//			ret = ret.substring(0, 10) + "... len " + val.length;
+//		}
+//		return "\"" + ret + "\"";
+//	}
 }

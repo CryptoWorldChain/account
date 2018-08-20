@@ -24,7 +24,13 @@ public class HashPair {
 	public void reset() {
 		hexKey = null;
 	}
-
+	public HashPair(byte[] key,String keyStrHex, MultiTransaction tx) {
+		super();
+		this.key = key;
+		this.hexKey = keyStrHex;
+		this.tx = tx;
+		this.data = tx.toByteArray();
+	}
 	public HashPair(byte[] key, MultiTransaction tx) {
 		super();
 		this.key = key;
