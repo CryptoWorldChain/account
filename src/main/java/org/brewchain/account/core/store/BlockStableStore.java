@@ -52,7 +52,13 @@ public class BlockStableStore implements IBlockStore, ActorService {
 					return null;
 				}
 			});
-
+	
+	protected final LoadingCache<Long, BlockEntity> blocksByNumber = CacheBuilder.newBuilder().maximumSize(KeyConstant.CACHE_SIZE)
+			.build(new CacheLoader<Long, BlockEntity>() {
+				public BlockEntity load(Long key) {
+					return null;
+				}
+			});
 	private long maxNumber = -1;
 
 	protected ReadWriteLock rwLock = new ReentrantReadWriteLock();
@@ -97,6 +103,7 @@ public class BlockStableStore implements IBlockStore, ActorService {
 		long number = block.getHeader().getNumber();
 		try (ALock l = writeLock.lock()) {
 			this.blocks.put(block.getHeader().getBlockHash(), block);
+			this.blocksByNumber.put(block.getHeader().getNumber(), block);
 		}
 
 		if (block.getBody() != null) {
@@ -134,11 +141,15 @@ public class BlockStableStore implements IBlockStore, ActorService {
 	public BlockEntity getBlockByNumber(long number) {
 		BlockEntity block = null;
 		try {
-			List<OPair> oPairs = dao.getBlockDao().listBySecondKey(String.valueOf(number)).get();
-			if (oPairs.size() > 0) {
-				block = BlockEntity.parseFrom(oPairs.get(0).getValue().getExtdata());
-				this.blocks.put(block.getHeader().getBlockHash(), block);
-				return block;
+			block = this.blocksByNumber.get(number);
+			if (block == null) {
+				List<OPair> oPairs = dao.getBlockDao().listBySecondKey(String.valueOf(number)).get();
+				if (oPairs.size() > 0) {
+					block = BlockEntity.parseFrom(oPairs.get(0).getValue().getExtdata());
+					this.blocks.put(block.getHeader().getBlockHash(), block);
+					this.blocksByNumber.put(number, block);
+					return block;
+				}
 			}
 		} catch (ODBException | InterruptedException | ExecutionException | InvalidProtocolBufferException e) {
 			log.error("get block from db error :: " + e.getMessage());
@@ -174,6 +185,7 @@ public class BlockStableStore implements IBlockStore, ActorService {
 				block = BlockEntity.parseFrom(v.getExtdata());
 				try (ALock l = writeLock.lock()) {
 					this.blocks.put(block.getHeader().getBlockHash(), block);
+					this.blocksByNumber.put(block.getHeader().getNumber(), block);
 				}
 			}
 		} catch (ODBException | InterruptedException | ExecutionException | InvalidProtocolBufferException e) {
@@ -188,5 +200,4 @@ public class BlockStableStore implements IBlockStore, ActorService {
 		// TODO Auto-generated method stub
 
 	}
-
 }

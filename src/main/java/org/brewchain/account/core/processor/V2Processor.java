@@ -77,12 +77,12 @@ public class V2Processor implements IProcessor, ActorService {
 				oiTransactionActuator.onPrepareExecute(oTransaction, accounts);
 				ByteString result = oiTransactionActuator.onExecute(oTransaction, accounts);
 
-//				Iterator<String> iterator = accounts.keySet().iterator();
-//				while (iterator.hasNext()) {
-//					String key = iterator.next();
-//					AccountValue value = accounts.get(key).getValue();
-//					this.stateTrie.put(encApi.hexDec(key), value.toByteArray());
-//				}
+				// Iterator<String> iterator = accounts.keySet().iterator();
+				// while (iterator.hasNext()) {
+				// String key = iterator.next();
+				// AccountValue value = accounts.get(key).getValue();
+				// this.stateTrie.put(encApi.hexDec(key), value.toByteArray());
+				// }
 				oAccountHelper.BatchPutAccounts(accounts);
 				oiTransactionActuator.onExecuteDone(oTransaction, result);
 				KeyConstant.txCounter.incrementAndGet();
@@ -173,16 +173,16 @@ public class V2Processor implements IProcessor, ActorService {
 		}
 	}
 
-	public synchronized boolean preCheckBlockTx(BlockEntity.Builder oBlockEntity) throws Exception {
-		for (String txHash : oBlockEntity.getHeader().getTxHashsList()) {
-			MultiTransaction oMultiTransaction = transactionHelper.GetTransaction(txHash);
-			if (TXStatus.isProccessed(oMultiTransaction)) {
-				// 区块有些交易已经处理过的，要报错
-				return false;
-			}
-		}
-		return true;
-	}
+//	public synchronized boolean preCheckBlockTx(BlockEntity.Builder oBlockEntity) throws Exception {
+//		for (String txHash : oBlockEntity.getHeader().getTxHashsList()) {
+//			MultiTransaction oMultiTransaction = transactionHelper.GetTransaction(txHash);
+//			if (TXStatus.isProccessed(oMultiTransaction)) {
+//				// 区块有些交易已经处理过的，要报错
+//				return false;
+//			}
+//		}
+//		return true;
+//	}
 
 	private synchronized boolean processBlock(BlockEntity.Builder oBlockEntity) throws Exception {
 		BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
@@ -234,10 +234,12 @@ public class V2Processor implements IProcessor, ActorService {
 		header.setTxTrieRoot(encApi.hexEnc(
 				oTransactionTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY : oTransactionTrie.getRootHash()));
 		start = System.currentTimeMillis();
-//		log.error("====>  start number::" + oBlockEntity.getHeader().getNumber() + ",getroothash count=" + i);
+		// log.error("====> start number::" +
+		// oBlockEntity.getHeader().getNumber() + ",getroothash count=" + i);
 		header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
-//		log.error("====>  end number::" + oBlockEntity.getHeader().getNumber() + ",getroothash count=" + i + "::cost="
-				+ (System.currentTimeMillis() - start));
+		// log.error("====> end number::" + oBlockEntity.getHeader().getNumber()
+		// + ",getroothash count=" + i + "::cost="
+		// + (System.currentTimeMillis() - start));
 		oBlockEntity.setHeader(header);
 		return true;
 	}
@@ -309,10 +311,11 @@ public class V2Processor implements IProcessor, ActorService {
 							oAddBlockResponse.setWantNumber(applyBlock.getHeader().getNumber());
 							break;
 						}
-						if (!preCheckBlockTx(applyBlock)) {
-							log.warn("error in preCheckBlockTx==>tx already done");
-							break;
-						}
+						// if (!preCheckBlockTx(applyBlock)) {
+						// log.warn("error in preCheckBlockTx==>tx already
+						// done");
+						// break;
+						// }
 
 						BlockEntity parentBlock;
 						parentBlock = blockChainHelper.getBlockByHash(applyBlock.getHeader().getParentHash());
