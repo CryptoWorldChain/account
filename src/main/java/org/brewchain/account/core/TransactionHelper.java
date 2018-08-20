@@ -180,6 +180,13 @@ public class TransactionHelper implements ActorService {
 	public void syncTransaction(MultiTransaction.Builder oMultiTransaction, BigInteger bits) throws Exception {
 		syncTransaction(oMultiTransaction, true, bits);
 	}
+	public void syncTransaction(MultiTransaction.Builder oMultiTransaction) throws Exception {
+		syncTransaction(oMultiTransaction, true, zeroBits);
+	}
+	BigInteger zeroBits = new BigInteger("0"); 
+	public void syncTransaction(MultiTransaction.Builder oMultiTransaction, boolean isBroadCast) {
+		syncTransaction(oMultiTransaction, isBroadCast, zeroBits);
+	}
 
 	public void syncTransaction(MultiTransaction.Builder oMultiTransaction, boolean isBroadCast, BigInteger bits) {
 		try {
