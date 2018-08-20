@@ -4,6 +4,7 @@ import java.util.LinkedList;
 
 import org.brewchain.account.core.BlockChainHelper;
 import org.brewchain.account.core.CacheBlockHashMapDB;
+import org.brewchain.account.core.ConfirmTxHashMapDB;
 import org.brewchain.account.core.KeyConstant;
 import org.brewchain.account.core.WaitBlockHashMapDB;
 import org.brewchain.account.core.WaitSendHashMapDB;
@@ -44,6 +45,9 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 	WaitBlockHashMapDB oPendingHashMapDB; // 保存待打包block的交易
 	@ActorRequire(name = "CacheBlock_HashMapDB", scope = "global")
 	CacheBlockHashMapDB oCacheHashMapDB;
+	@ActorRequire(name = "ConfirmTxHashDB", scope = "global")
+	ConfirmTxHashMapDB oConfirmMapDB; // 保存待打包block的交易
+
 
 	@Override
 	public String[] getCmds() {
@@ -60,11 +64,11 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 		RespBlockInfo.Builder oRespBlockInfo = RespBlockInfo.newBuilder();
 		try {
 			oRespBlockInfo.setBlockCount(blockChainHelper.getLastStableBlockNumber());
-			oRespBlockInfo.setCache(String.valueOf(KeyConstant.counter));
+			oRespBlockInfo.setCache("sync::" + String.valueOf(KeyConstant.counter) + " exec::" + String.valueOf(KeyConstant.txCounter));
 			oRespBlockInfo.setNumber(blockChainHelper.getLastBlockNumber());
 			// oRespBlockInfo.setCache(blockChainHelper.getBlockCacheDump());
 			oRespBlockInfo.setWaitSync(oSendingHashMapDB.size());
-			oRespBlockInfo.setWaitBlock(oPendingHashMapDB.size());
+			oRespBlockInfo.setWaitBlock(oConfirmMapDB.size());
 //			LinkedList<BlockEntity> list = blockChainHelper.getParentsBlocks(encApi.hexEnc(dao.getBlockDao()
 //					.get(oEntityHelper.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get().getExtdata().toByteArray()),
 //					null, 10000);
