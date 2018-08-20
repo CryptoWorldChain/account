@@ -1,6 +1,7 @@
 package org.brewchain.account.core;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -176,11 +177,11 @@ public class TransactionHelper implements ActorService {
 	 * @param oTransaction
 	 * @throws Exception
 	 */
-	public void syncTransaction(MultiTransaction.Builder oMultiTransaction,BigInteger bits) throws Exception {
-		syncTransaction(oMultiTransaction, true,bits);
+	public void syncTransaction(MultiTransaction.Builder oMultiTransaction, BigInteger bits) throws Exception {
+		syncTransaction(oMultiTransaction, true, bits);
 	}
 
-	public void syncTransaction(MultiTransaction.Builder oMultiTransaction, boolean isBroadCast,BigInteger bits) {
+	public void syncTransaction(MultiTransaction.Builder oMultiTransaction, boolean isBroadCast, BigInteger bits) {
 		try {
 			// oMultiTransaction.clearStatus();
 			// oMultiTransaction.clearTxHash();
@@ -210,7 +211,7 @@ public class TransactionHelper implements ActorService {
 				dao.getTxsDao().put(key, oEntityHelper.byteValue2OValue(hp.getTx().toByteArray()));
 				txDBCacheByHash.put(hp.getKey(), hp.getTx());
 				if (isBroadCast) {
-					oConfirmMapDB.confirmTx(hp,bits);
+					oConfirmMapDB.confirmTx(hp, bits);
 					// oPendingHashMapDB.put(hp.getKey(), hp);
 				}
 				KeyConstant.counter.incrementAndGet();
@@ -220,93 +221,50 @@ public class TransactionHelper implements ActorService {
 		}
 	}
 
-	public void syncTransaction(List<MultiTransaction.Builder> oMultiTransaction,BigInteger bits) throws Exception {
-		syncTransaction(oMultiTransaction, true,bits);
+	public void syncTransaction(List<MultiTransaction.Builder> oMultiTransaction, BigInteger bits) throws Exception {
+		syncTransaction(oMultiTransaction, true, bits);
 	}
 
-	public void syncTransaction(List<MultiTransaction.Builder> oMultiTransaction, boolean isBroadCast,BigInteger bits) {
+	public void syncTransaction(List<MultiTransaction.Builder> oMultiTransaction, boolean isBroadCast,
+			BigInteger bits) {
 		try {
-			OKey[] keys = new OKey[oMultiTransaction.size()];
-			OValue[] values = new OValue[oMultiTransaction.size()];
-			int i = 0;
-			HashMap<String, HashPair> buffer = new HashMap<>();
-			for (MultiTransaction.Builder mtb : oMultiTransaction) {// db没有
-				MultiTransaction cacheTx = txDBCacheByHash.getIfPresent(mtb.getTxHash());
-				MultiTransaction mt = mtb.build();
-				ByteString mts = mt.toByteString();
-				HashPair hp = new HashPair(mt.getTxHash(), mts.toByteArray(), mt);
-				if (cacheTx == null) {// 缓存没有的时候再添加进去
-					keys[i] = oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash()));
-					values[i] = OValue.newBuilder().setExtdata(mts).setInfo(mtb.getTxHash()).build();
-					buffer.put(mtb.getTxHash(), hp);
-					i++;
-				} else {
+			if (oMultiTransaction.size() > 0) {
+				List<OKey> keys = new ArrayList<>();
+				List<OValue> values = new ArrayList<>();
+				// OKey[] keys = new OKey[oMultiTransaction.size()];
+				// OValue[] values = new OValue[oMultiTransaction.size()];
+				int i = 0;
+				HashMap<String, HashPair> buffer = new HashMap<>();
+				for (MultiTransaction.Builder mtb : oMultiTransaction) {// db没有
+					MultiTransaction cacheTx = txDBCacheByHash.getIfPresent(mtb.getTxHash());
+					MultiTransaction mt = mtb.build();
+					ByteString mts = mt.toByteString();
+					HashPair hp = new HashPair(mt.getTxHash(), mts.toByteArray(), mt);
+					if (cacheTx == null) {// 缓存没有的时候再添加进去
+						keys.add(oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash())));
+						values.add(OValue.newBuilder().setExtdata(mts).setInfo(mtb.getTxHash()).build());
+						// buffer.put(mtb.getTxHash(), hp);
+						i++;
+					}
 					buffer.put(mtb.getTxHash(), hp);
 				}
-			}
 
-			Future<OValue[]> f = dao.getTxsDao().putIfNotExist(keys, values);// 返回DB里面不存在的,但是数据库已经存进去的
-			if (f != null && f.get() != null && isBroadCast) {
-				for (OValue ov : f.get()) {
-					HashPair hp = buffer.get(ov.getInfo());
-					// oPendingHashMapDB.put(ov.getInfo(), hp);
-					oConfirmMapDB.confirmTx(hp,bits);
-					txDBCacheByHash.put(hp.getKey(), hp.getTx());
-					KeyConstant.counter.incrementAndGet();
+				Future<OValue[]> f = dao.getTxsDao().putIfNotExist(keys.toArray(new OKey[keys.size()]),
+						values.toArray(new OValue[values.size()]));// 返回DB里面不存在的,但是数据库已经存进去的
+				if (f != null && f.get() != null && isBroadCast) {
+					for (OValue ov : f.get()) {
+						HashPair hp = buffer.get(ov.getInfo());
+						// oPendingHashMapDB.put(ov.getInfo(), hp);
+						oConfirmMapDB.confirmTx(hp, bits);
+						txDBCacheByHash.put(hp.getKey(), hp.getTx());
+						KeyConstant.counter.incrementAndGet();
+					}
 				}
 			}
-
-			// for (MultiTransaction.Builder mtb : oMultiTransaction) {
-			// OValue oValue =
-			// dao.getTxsDao().get(oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash()))).get();
-			// if (oValue != null) {
-			// // log.warn("transaction " + mtb.getTxHash() + "exists, drop
-			// it");
-			// } else {
-			// mtb.clearStatus();
-			// mtb.clearResult();
-			//
-			// dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash())),
-			// oEntityHelper.byteValue2OValue(mtb.build().toByteArray()));
-			//
-			// if (isBroadCast) {
-			// oPendingHashMapDB.put(mtb.getTxHash(), mtb.build());
-			// }
-			//
-			// KeyConstant.counter += 1;
-			// }
-			// }
-
 		} catch (Exception e) {
 			log.error("fail to sync transaction::" + oMultiTransaction.size() + " error::" + e, e);
 		}
 	}
-
-	// /**
-	// * 从待广播交易列表中，查询出交易进行广播。广播后，不论是否各节点接收成功，均放入待打包列表
-	// *
-	// * @param count
-	// * @return
-	// * @throws InvalidProtocolBufferException
-	// */
-	// public List<HashPair> getWaitSendTx(int count) throws
-	// InvalidProtocolBufferException {
-	// List<HashPair> list = new LinkedList<HashPair>();
-	// int total = 0;
-	//
-	// for (Iterator<Map.Entry<byte[], byte[]>> it =
-	// oSendingHashMapDB.getStorage().entrySet().iterator(); it
-	// .hasNext();) {
-	// Map.Entry<byte[], byte[]> item = it.next();
-	// list.add(new HashPair(item.getKey(), item.getValue()));
-	// it.remove();
-	// total += 1;
-	// if (count == total) {
-	// break;
-	// }
-	// }
-	// return list;
-	// }
 
 	public BroadcastTransactionMsg getWaitSendTxToSend(int count) throws InvalidProtocolBufferException {
 		BroadcastTransactionMsg.Builder oBroadcastTransactionMsg = BroadcastTransactionMsg.newBuilder();
