@@ -115,11 +115,11 @@ public class TransactionHelper implements ActorService {
 		HashPair hp = verifyAndSaveMultiTransaction(oMultiTransaction);
 
 		// 保存交易到缓存中，用于广播
-		oSendingHashMapDB.put(hp.getHexKey(), hp);
+		oSendingHashMapDB.put(hp.getKey(), hp);
 
 		// 保存交易到缓存中，用于打包
 		// 如果指定了委托，并且委托是本节点
-		oPendingHashMapDB.put(hp.getHexKey(), hp);
+		oPendingHashMapDB.put(hp.getKey(), hp);
 
 		// {node} {component} {opt} {type} {msg}
 		// log.info("LOGFILTER {} {} {} {} CreateTX[%s]",
@@ -200,11 +200,11 @@ public class TransactionHelper implements ActorService {
 			} else {
 				oMultiTransaction.clearStatus();
 				oMultiTransaction.clearResult();
-				HashPair hp = new HashPair(keyByte, oMultiTransaction.getTxHash(), oMultiTransaction.build());
+				HashPair hp = new HashPair(oMultiTransaction.getTxHash(), oMultiTransaction.build());
 				dao.getTxsDao().put(key, oEntityHelper.byteValue2OValue(hp.getTx().toByteArray()));
-				txDBCacheByHash.put(hp.getHexKey(), hp.getTx());
+				txDBCacheByHash.put(hp.getKey(), hp.getTx());
 				if (isBroadCast) {
-					oPendingHashMapDB.put(hp.getHexKey(), hp);
+					oPendingHashMapDB.put(hp.getKey(), hp);
 				}
 				KeyConstant.counter.incrementAndGet();
 			}
@@ -228,22 +228,22 @@ public class TransactionHelper implements ActorService {
 				if (cacheTx == null) {// 缓存没有的时候再添加进去
 					MultiTransaction mt = mtb.build();
 					ByteString mts = mt.toByteString();
-					HashPair hp = new HashPair(mt.getTxHashBytes().toByteArray(), mts.toByteArray(), mt);
-					keys[i] = oEntityHelper.byteKey2OKey(mtb.getTxHashBytes());
+					HashPair hp = new HashPair(mt.getTxHash(), mts.toByteArray(), mt);
+					keys[i] = oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash()));
 					values[i] = OValue.newBuilder().setExtdata(mts).setInfo(mtb.getTxHash()).build();
 					buffer.put(mtb.getTxHash(), hp);
 					i++;
 				} else {
-					//缓存有的，证明之前已经存在了
+					// 缓存有的，证明之前已经存在了
 				}
 			}
 
-			Future<OValue[]> f = dao.getTxsDao().putIfNotExist(keys, values);//返回DB里面不存在的,但是数据库已经存进去的
+			Future<OValue[]> f = dao.getTxsDao().putIfNotExist(keys, values);// 返回DB里面不存在的,但是数据库已经存进去的
 			if (f != null && f.get() != null && isBroadCast) {
 				for (OValue ov : f.get()) {
 					HashPair hp = buffer.get(ov.getInfo());
 					oPendingHashMapDB.put(ov.getInfo(), hp);
-					txDBCacheByHash.put(hp.getHexKey(), hp.getTx());
+					txDBCacheByHash.put(hp.getKey(), hp.getTx());
 					KeyConstant.counter.incrementAndGet();
 				}
 			}
@@ -364,7 +364,7 @@ public class TransactionHelper implements ActorService {
 	 */
 	public MultiTransaction GetTransaction(String txHash) throws Exception {
 		MultiTransaction cacheTx = txDBCacheByHash.getIfPresent(txHash);
-		if(cacheTx!=null){
+		if (cacheTx != null) {
 			return cacheTx;
 		}
 		OValue oValue = dao.getTxsDao().get(oEntityHelper.byteKey2OKey(encApi.hexDec(txHash))).get();
@@ -624,9 +624,9 @@ public class TransactionHelper implements ActorService {
 
 		// log.debug("====put verify and save transaction::"+
 		// multiTransaction.getTxHash());
-		byte hashKey[] = encApi.hexDec(multiTransaction.getTxHash());
-		HashPair ret = new HashPair(hashKey, multiTransaction);
-		dao.getTxsDao().put(oEntityHelper.byteKey2OKey(hashKey), oEntityHelper.byteValue2OValue(ret.getData()));
+		HashPair ret = new HashPair(multiTransaction.getTxHash(), multiTransaction.toByteArray(), multiTransaction);
+		dao.getTxsDao().put(oEntityHelper.byteKey2OKey(ret.getKeyBytes()),
+				oEntityHelper.byteValue2OValue(ret.getData()));
 		return ret;
 	}
 
