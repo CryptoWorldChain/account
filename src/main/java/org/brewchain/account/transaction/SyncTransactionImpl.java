@@ -1,5 +1,7 @@
 package org.brewchain.account.transaction;
 
+import java.math.BigInteger;
+
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.gens.Tximpl.MultiTransactionImpl;
 import org.brewchain.account.gens.Tximpl.PTXTCommand;
@@ -41,7 +43,7 @@ public class SyncTransactionImpl extends SessionModules<ReqSyncTx> {
 		for (MultiTransactionImpl oTransaction : pb.getTxsList()) {
 			try {
 				MultiTransaction.Builder oMultiTransaction = transactionHelper.parse(oTransaction);
-				transactionHelper.syncTransaction(oMultiTransaction);
+				transactionHelper.syncTransaction(oMultiTransaction,new BigInteger("0"));
 			} catch (Exception e) {
 				oRespSyncTx.addErrList(oTransaction.getTxHash());
 				oRespSyncTx.setRetCode(-1);

@@ -65,7 +65,7 @@ public class V1Processor implements IProcessor, ActorService {
 	AccountHelper oAccountHelper;
 
 	@Override
-	public Map<String, ByteString> ExecuteTransaction(LinkedList<MultiTransaction> oMultiTransactions,
+	public Map<String, ByteString> ExecuteTransaction(List<MultiTransaction> oMultiTransactions,
 			BlockEntity currentBlock) throws Exception {
 
 		Map<String, ByteString> results = new LinkedHashMap<>();
@@ -125,7 +125,7 @@ public class V1Processor implements IProcessor, ActorService {
 	}
 
 	@Override
-	public BlockEntity.Builder CreateNewBlock(LinkedList<MultiTransaction> txs, String extraData) throws Exception {
+	public BlockEntity.Builder CreateNewBlock(List<MultiTransaction> txs, String extraData) throws Exception {
 
 		log.debug("call create new block miner::" + KeyConstant.node.getAddress());
 

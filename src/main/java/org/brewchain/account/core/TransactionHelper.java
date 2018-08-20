@@ -83,8 +83,13 @@ public class TransactionHelper implements ActorService {
 	BlockChainConfig blockChainConfig;
 	@ActorRequire(name = "WaitSend_HashMapDB", scope = "global")
 	WaitSendHashMapDB oSendingHashMapDB; // 保存待广播交易
-	@ActorRequire(name = "WaitBlock_HashMapDB", scope = "global")
-	WaitBlockHashMapDB oPendingHashMapDB; // 保存待打包block的交易
+
+	// @ActorRequire(name = "WaitBlock_HashMapDB", scope = "global")
+	// WaitBlockHashMapDB oPendingHashMapDB; // 保存待打包block的交易
+
+	@ActorRequire(name = "ConfirmTxHashDB", scope = "global")
+	ConfirmTxHashMapDB oConfirmMapDB; // 保存待打包block的交易
+
 	@ActorRequire(name = "Block_StateTrie", scope = "global")
 	StateTrie stateTrie;
 	@ActorRequire(name = "OEntity_Helper", scope = "global")
@@ -119,7 +124,8 @@ public class TransactionHelper implements ActorService {
 
 		// 保存交易到缓存中，用于打包
 		// 如果指定了委托，并且委托是本节点
-		oPendingHashMapDB.put(hp.getKey(), hp);
+		oConfirmMapDB.confirmTx(hp);
+		// oPendingHashMapDB.put(hp.getKey(), hp);
 
 		// {node} {component} {opt} {type} {msg}
 		// log.info("LOGFILTER {} {} {} {} CreateTX[%s]",
@@ -170,11 +176,11 @@ public class TransactionHelper implements ActorService {
 	 * @param oTransaction
 	 * @throws Exception
 	 */
-	public void syncTransaction(MultiTransaction.Builder oMultiTransaction) throws Exception {
-		syncTransaction(oMultiTransaction, true);
+	public void syncTransaction(MultiTransaction.Builder oMultiTransaction,BigInteger bits) throws Exception {
+		syncTransaction(oMultiTransaction, true,bits);
 	}
 
-	public void syncTransaction(MultiTransaction.Builder oMultiTransaction, boolean isBroadCast) {
+	public void syncTransaction(MultiTransaction.Builder oMultiTransaction, boolean isBroadCast,BigInteger bits) {
 		try {
 			// oMultiTransaction.clearStatus();
 			// oMultiTransaction.clearTxHash();
@@ -204,7 +210,8 @@ public class TransactionHelper implements ActorService {
 				dao.getTxsDao().put(key, oEntityHelper.byteValue2OValue(hp.getTx().toByteArray()));
 				txDBCacheByHash.put(hp.getKey(), hp.getTx());
 				if (isBroadCast) {
-					oPendingHashMapDB.put(hp.getKey(), hp);
+					oConfirmMapDB.confirmTx(hp,bits);
+					// oPendingHashMapDB.put(hp.getKey(), hp);
 				}
 				KeyConstant.counter.incrementAndGet();
 			}
@@ -213,11 +220,11 @@ public class TransactionHelper implements ActorService {
 		}
 	}
 
-	public void syncTransaction(List<MultiTransaction.Builder> oMultiTransaction) throws Exception {
-		syncTransaction(oMultiTransaction, true);
+	public void syncTransaction(List<MultiTransaction.Builder> oMultiTransaction,BigInteger bits) throws Exception {
+		syncTransaction(oMultiTransaction, true,bits);
 	}
 
-	public void syncTransaction(List<MultiTransaction.Builder> oMultiTransaction, boolean isBroadCast) {
+	public void syncTransaction(List<MultiTransaction.Builder> oMultiTransaction, boolean isBroadCast,BigInteger bits) {
 		try {
 			OKey[] keys = new OKey[oMultiTransaction.size()];
 			OValue[] values = new OValue[oMultiTransaction.size()];
@@ -242,7 +249,8 @@ public class TransactionHelper implements ActorService {
 			if (f != null && f.get() != null && isBroadCast) {
 				for (OValue ov : f.get()) {
 					HashPair hp = buffer.get(ov.getInfo());
-					oPendingHashMapDB.put(ov.getInfo(), hp);
+					// oPendingHashMapDB.put(ov.getInfo(), hp);
+					oConfirmMapDB.confirmTx(hp,bits);
 					txDBCacheByHash.put(hp.getKey(), hp.getTx());
 					KeyConstant.counter.incrementAndGet();
 				}
@@ -270,7 +278,7 @@ public class TransactionHelper implements ActorService {
 			// }
 
 		} catch (Exception e) {
-			log.error("fail to sync transaction::" + oMultiTransaction.size() + " error::" + e,e);
+			log.error("fail to sync transaction::" + oMultiTransaction.size() + " error::" + e, e);
 		}
 	}
 
@@ -326,25 +334,32 @@ public class TransactionHelper implements ActorService {
 	 * @return
 	 * @throws InvalidProtocolBufferException
 	 */
-	public LinkedList<MultiTransaction> getWaitBlockTx(int count) throws InvalidProtocolBufferException {
-		LinkedList<MultiTransaction> list = new LinkedList<MultiTransaction>();
-		int total = 0;
+	public List<MultiTransaction> getWaitBlockTx(int count, int confirmTimes) {
+		// LinkedList<MultiTransaction> list = new
+		// LinkedList<MultiTransaction>();
+		// int total = 0;
+		return oConfirmMapDB.poll(count, confirmTimes);
+		// for (Iterator<Map.Entry<String, HashPair>> it =
+		// oPendingHashMapDB.getStorage().entrySet().iterator(); it
+		// .hasNext();) {
+		// Map.Entry<String, HashPair> item = it.next();
+		// list.add(item.getValue().getTx());
+		// it.remove();
+		// total += 1;
+		// if (count == total) {
+		// break;
+		// }
+		// }
+		// return list;
+	}
 
-		for (Iterator<Map.Entry<String, HashPair>> it = oPendingHashMapDB.getStorage().entrySet().iterator(); it
-				.hasNext();) {
-			Map.Entry<String, HashPair> item = it.next();
-			list.add(item.getValue().getTx());
-			it.remove();
-			total += 1;
-			if (count == total) {
-				break;
-			}
-		}
-		return list;
+	public void confirmRecvTx(String key, BigInteger fromBits) {
+		oConfirmMapDB.confirmTx(key, fromBits);
 	}
 
 	public HashPair removeWaitingSendOrBlockTx(String txHash) throws InvalidProtocolBufferException {
-		HashPair hpBlk = oPendingHashMapDB.getStorage().remove(txHash);
+		// HashPair hpBlk = oPendingHashMapDB.getStorage().remove(txHash);
+		HashPair hpBlk = oConfirmMapDB.invalidate(txHash);
 		HashPair hpSend = oSendingHashMapDB.getStorage().remove(txHash);
 		if (hpBlk != null)
 			return hpBlk;
@@ -352,7 +367,8 @@ public class TransactionHelper implements ActorService {
 	}
 
 	public boolean isExistsWaitBlockTx(String txHash) throws InvalidProtocolBufferException {
-		return oPendingHashMapDB.getStorage().containsKey(txHash);
+		// return oPendingHashMapDB.getStorage().containsKey(txHash);
+		return oConfirmMapDB.containsKey(txHash);
 	}
 
 	/**

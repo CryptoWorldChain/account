@@ -55,7 +55,7 @@ public class GetBlockImpl extends SessionModules<ReqGetBlock> {
 			}
 			BlockEntity.Builder oBlockEntity;
 			try {
-				oBlockEntity = blockHelper.CreateNewBlock(pb.getTxCount(), null);
+				oBlockEntity = blockHelper.CreateNewBlock(pb.getTxCount(),0, null);
 
 				BlockHeaderImpl.Builder oBlockHeaderImpl = BlockHeaderImpl.newBuilder();
 				oBlockHeaderImpl.setBlockHash(oBlockEntity.getHeader().getBlockHash());
