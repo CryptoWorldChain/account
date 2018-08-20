@@ -714,7 +714,7 @@ public class TransactionHelper implements ActorService {
 		MultiTransaction.Builder oTransaction = tx.toBuilder();
 		oTransaction.setStatus("done");
 		oTransaction.setResult(result);
-		// log.debug("====put transaction done::"+ txHash);
+		log.debug("====put transaction done::"+ oTransaction.getTxHash());
 
 		dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(oTransaction.getTxHash())),
 				oEntityHelper.byteValue2OValue(oTransaction.build().toByteArray()));
