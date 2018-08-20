@@ -84,6 +84,7 @@ public class GetAccountImpl extends SessionModules<ReqGetAccount> {
 					int index = 0;
 					for (AccountCryptoToken oAccountCryptoToken : oAccountTokenValue.getTokensList()) {
 						if (index < start) {
+							index += 1;
 							continue;
 						} else if (index >= start && index < end) {
 							AccountCryptoTokenImpl.Builder oAccountCryptoTokenImpl = AccountCryptoTokenImpl
@@ -100,10 +101,10 @@ public class GetAccountImpl extends SessionModules<ReqGetAccount> {
 							oAccountCryptoTokenImpl.setTotal(oAccountCryptoToken.getTotal());
 
 							oAccountCryptoValueImpl.addTokens(oAccountCryptoTokenImpl);
+							index += 1;
 						} else {
 							break;
 						}
-						index += 1;
 					}
 					oAccountValueImpl.addCryptos(oAccountCryptoValueImpl);
 				}
