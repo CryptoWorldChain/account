@@ -220,7 +220,7 @@ public class V1Processor implements IProcessor, ActorService {
 		BlockBody.Builder bb = oBlockEntity.getBody().toBuilder();
 		int i = 0;
 		for (String txHash : oBlockHeader.getTxHashsList()) {
-			transactionHelper.removeWaitBlockTx(txHash);
+			transactionHelper.removeWaitingSendOrBlockTx(txHash);
 			MultiTransaction oMultiTransaction = transactionHelper.GetTransaction(txHash);
 
 			oTransactionTrie.put(RLP.encodeInt(i), transactionHelper.getTransactionContent(oMultiTransaction));

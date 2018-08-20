@@ -192,7 +192,7 @@ public class V2Processor implements IProcessor, ActorService {
 		BlockBody.Builder bb = oBlockEntity.getBody().toBuilder();
 		int i = 0;
 		for (String txHash : oBlockHeader.getTxHashsList()) {
-			HashPair hp = transactionHelper.removeWaitBlockTx(txHash);
+			HashPair hp = transactionHelper.removeWaitingSendOrBlockTx(txHash);
 			MultiTransaction oMultiTransaction = null;
 			if (hp != null) {
 				oMultiTransaction = hp.getTx();

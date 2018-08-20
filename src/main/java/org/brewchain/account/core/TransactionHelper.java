@@ -343,7 +343,7 @@ public class TransactionHelper implements ActorService {
 		return list;
 	}
 
-	public HashPair removeWaitBlockTx(String txHash) throws InvalidProtocolBufferException {
+	public HashPair removeWaitingSendOrBlockTx(String txHash) throws InvalidProtocolBufferException {
 		HashPair hpBlk = oPendingHashMapDB.getStorage().remove(txHash);
 		HashPair hpSend = oSendingHashMapDB.getStorage().remove(txHash);
 		if (hpBlk != null)
