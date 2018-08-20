@@ -270,7 +270,7 @@ public class TransactionHelper implements ActorService {
 			// }
 
 		} catch (Exception e) {
-			log.error("fail to sync transaction::" + oMultiTransaction.size() + " error::" + e);
+			log.error("fail to sync transaction::" + oMultiTransaction.size() + " error::" + e,e);
 		}
 	}
 
