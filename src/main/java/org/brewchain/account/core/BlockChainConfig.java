@@ -36,7 +36,7 @@ public class BlockChainConfig extends SessionModules<Message> {
 	private int accountVersion = props().get("org.brewchain.account.version", 0);
 	private BigInteger maxTokenTotal = new BigInteger(props().get("org.brewchain.token.max.total", "0"));
 	private BigInteger minTokenTotal = new BigInteger(props().get("org.brewchain.token.min.total", "0"));
-	private int blockEpochMSecond = Math.round(props().get("org.bc.dpos.blk.epoch.ms", 1000) * 1.0 / 1000);
+	private long blockEpochMSecond = Math.round(props().get("org.bc.dpos.blk.epoch.ms", 1000) * 1.0 / 1000);
 	private int blockEpochSecond = props().get("org.bc.dpos.blk.epoch.sec", 1);
 
 	@Override
