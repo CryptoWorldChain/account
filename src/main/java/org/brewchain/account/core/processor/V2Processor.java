@@ -200,10 +200,10 @@ public class V2Processor implements IProcessor, ActorService {
 			if (oMultiTransaction == null) {
 				oMultiTransaction = transactionHelper.GetTransaction(txHash);
 			}
-			if (TXStatus.isProccessed(oMultiTransaction)) {
-				// 区块有些交易已经处理过的，要报错
-				return false;
-			}
+//			if (TXStatus.isProccessed(oMultiTransaction)) {
+//				// 区块有些交易已经处理过的，要报错
+//				return false;
+//			}
 			oTransactionTrie.put(RLP.encodeInt(i), transactionHelper.getTransactionContent(oMultiTransaction));
 			bb.addTxs(oMultiTransaction);
 			txs.add(oMultiTransaction);
