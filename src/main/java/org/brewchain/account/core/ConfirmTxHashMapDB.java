@@ -16,6 +16,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import onight.osgi.annotation.NActorProvider;
 import onight.tfw.ntrans.api.ActorService;
+import onight.tfw.ntrans.api.annotation.ActorRequire;
 
 @NActorProvider
 @Provides(specifications = { ActorService.class }, strategy = "SINGLETON")
@@ -26,7 +27,10 @@ public class ConfirmTxHashMapDB implements ActorService {
 	protected ConcurrentHashMap<String, HashPair> storage;
 	protected LinkedBlockingDeque<HashPair> confirmQueue = new LinkedBlockingDeque<>();
 	ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
+	@ActorRequire(name = "WaitSend_HashMapDB", scope = "global")
+	WaitSendHashMapDB oSendingHashMapDB; // 保存待广播交易
 
+	
 	public ConfirmTxHashMapDB() {
 		this(new ConcurrentHashMap<String, HashPair>());
 	}
@@ -41,9 +45,10 @@ public class ConfirmTxHashMapDB implements ActorService {
 		confirmTx(hp, zeroBit);
 	}
 
-	public boolean containsKey(String txhash){
-		return storage.get(txhash)!=null;
+	public boolean containsKey(String txhash) {
+		return storage.get(txhash) != null;
 	}
+
 	public synchronized void confirmTx(HashPair hp, BigInteger bits) {
 		rwLock.readLock().lock();
 		boolean put = false;
@@ -76,8 +81,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 			}
 		}
 	}
-	
-	
+
 	public synchronized void confirmTx(String key, BigInteger bits) {
 		rwLock.readLock().lock();
 		boolean put = false;
@@ -98,8 +102,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 					rwLock.writeLock().unlock();
 				}
 			}
-			if(_hp!=null)
-			{
+			if (_hp != null) {
 				_hp.setBits(bits);
 			}
 		} catch (Exception e) {
@@ -109,7 +112,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 			}
 		}
 	}
-	
+
 	public List<MultiTransaction> poll(int maxsize) {
 		return poll(maxsize, 0);
 	}
@@ -122,7 +125,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 				hp.setRemoved(true);
 				confirmQueue.remove(hp);
 			}
-			
+
 			return hp;
 		} catch (Exception e) {
 			return null;
@@ -135,6 +138,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 		int i = 0;
 		int maxtried = Math.min(maxsize, confirmQueue.size());
 		List<MultiTransaction> ret = new ArrayList<>();
+		long checkTime = System.currentTimeMillis();
 		while (i < maxtried) {
 			HashPair hp = confirmQueue.pollFirst();
 			if (hp == null) {
@@ -147,6 +151,11 @@ public class ConfirmTxHashMapDB implements ActorService {
 							ret.add(hp.getTx());
 							hp.setRemoved(true);
 						} else {
+							//long time no seeee
+							if (checkTime - hp.getLastUpdateTime() > 60000) 							
+							{
+								oSendingHashMapDB.put(hp.getKey(), hp);
+							}
 							confirmQueue.addLast(hp);
 						}
 					}

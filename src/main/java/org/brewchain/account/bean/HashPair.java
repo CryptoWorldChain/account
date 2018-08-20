@@ -15,11 +15,13 @@ public class HashPair {
 	transient MultiTransaction tx;
 	BigInteger bits = new BigInteger("0");
 	boolean isRemoved = false;
+	long lastUpdateTime = System.currentTimeMillis();
 
-	public synchronized void setBits(BigInteger bits){
+	public synchronized void setBits(BigInteger bits) {
 		this.bits = this.bits.or(bits);
+		lastUpdateTime = System.currentTimeMillis();
 	}
-	
+
 	public byte[] getKeyBytes() {
 		try {
 			return Hex.decodeHex(key.toCharArray());
