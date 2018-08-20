@@ -169,13 +169,11 @@ public class AccountHelper implements ActorService {
 		}
 		return null;
 	}
-	
+
 	public Account GetAccountFromDB(ByteString addr) {
 		try {
 			Account.Builder oAccount = Account.newBuilder();
 			oAccount.setAddress(addr);
-			byte[] valueHash = null;
-			
 			OValue o = dao.getAccountDao().get(oEntityHelper.byteKey2OKey(addr.toByteArray())).get();
 			AccountValue oAccountValue = AccountValue.parseFrom(o.getExtdata().toByteArray());
 			oAccount.setValue(oAccountValue);
@@ -234,7 +232,7 @@ public class AccountHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public synchronized int IncreaseNonce(ByteString addr) throws Exception {
+	public int IncreaseNonce(ByteString addr) throws Exception {
 		return setNonce(addr, 1);
 	}
 
@@ -423,7 +421,7 @@ public class AccountHelper implements ActorService {
 
 		int retBalance = 0;
 		for (int i = 0; i < oAccountValue.getCryptosList().size(); i++) {
-			if (oAccountValue.getCryptosList().get(i).getSymbol().equals(symbol)) {
+			if (oAccountValue.getCryptosList().get(i).getSymbolBytes().equals(symbol)) {
 				AccountCryptoValue.Builder value = oAccountValue.getCryptosList().get(i).toBuilder();
 
 				for (int j = 0; j < value.getTokensCount(); j++) {
@@ -441,6 +439,10 @@ public class AccountHelper implements ActorService {
 		return retBalance;
 	}
 
+	public String getSyncStr(ByteString addr){
+		return ("" + addr.byteAt(2) + addr.byteAt(3));
+	}
+
 	/**
 	 * 设置用户账户Nonce
 	 * 
@@ -449,12 +451,14 @@ public class AccountHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public synchronized int setNonce(ByteString addr, int nonce) throws Exception {
-		Account.Builder oAccount = GetAccount(addr).toBuilder();
-		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
-		oAccountValue.setNonce(oAccountValue.getNonce() + nonce);
-		putAccountValue(addr, oAccountValue.build());
-		return oAccountValue.getNonce();
+	public int setNonce(ByteString addr, int nonce) throws Exception {
+//		synchronized (getSyncStr(addr).intern()) {
+			Account.Builder oAccount = GetAccount(addr).toBuilder();
+			AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
+			oAccountValue.setNonce(oAccountValue.getNonce() + nonce);
+			putAccountValue(addr, oAccountValue.build());
+			return oAccountValue.getNonce();
+//		}
 	}
 
 	public boolean isContract(ByteString addr) {
@@ -511,7 +515,7 @@ public class AccountHelper implements ActorService {
 		Account.Builder oAccount = GetAccount(addr).toBuilder();
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 		for (int i = 0; i < oAccountValue.getTokensCount(); i++) {
-			if (oAccountValue.getTokens(i).getToken().equals(token)) {
+			if (oAccountValue.getTokens(i).getTokenBytes().equals(token)) {
 				return ByteUtil.bytesToBigInteger(oAccountValue.getTokens(i).getBalance().toByteArray());
 			}
 		}
@@ -522,7 +526,7 @@ public class AccountHelper implements ActorService {
 		Account.Builder oAccount = GetAccount(addr).toBuilder();
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 		for (int i = 0; i < oAccountValue.getTokensCount(); i++) {
-			if (oAccountValue.getTokens(i).getToken().equals(token)) {
+			if (oAccountValue.getTokens(i).getTokenBytes().equals(token)) {
 				return ByteUtil.bytesToBigInteger(oAccountValue.getTokens(i).getLocked().toByteArray());
 			}
 		}
@@ -542,7 +546,7 @@ public class AccountHelper implements ActorService {
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 
 		for (int i = 0; i < oAccountValue.getCryptosCount(); i++) {
-			if (oAccountValue.getCryptos(i).getSymbol().equals(symbol)) {
+			if (oAccountValue.getCryptos(i).getSymbolBytes().equals(symbol)) {
 				return oAccountValue.getCryptos(i).getTokensList();
 			}
 		}
@@ -697,8 +701,9 @@ public class AccountHelper implements ActorService {
 		dao.getAccountDao().put(oEntityHelper.byteKey2OKey(addr),
 				oEntityHelper.byteValue2OValue(oAccountValue.toByteArray()));
 		if (this.stateTrie != null && stateable) {
-//			log.warn("put state trie::" + encApi.hexEnc(addr.toByteArray()) + " "
-//					+ encApi.hexEnc(oAccountValue.toByteArray()));
+			// log.warn("put state trie::" + encApi.hexEnc(addr.toByteArray()) +
+			// " "
+			// + encApi.hexEnc(oAccountValue.toByteArray()));
 
 			this.stateTrie.put(addr.toByteArray(), oAccountValue.toByteArray());
 		}
@@ -709,24 +714,26 @@ public class AccountHelper implements ActorService {
 	}
 
 	public void BatchPutAccounts(Map<String, Account.Builder> accountValues) {
-//		OKey[] keysArray = new OKey[accountValues.size()];
-//		OValue[] valuesArray = new OValue[accountValues.size()];
+		// OKey[] keysArray = new OKey[accountValues.size()];
+		// OValue[] valuesArray = new OValue[accountValues.size()];
 		Set<String> keySets = accountValues.keySet();
 		Iterator<String> iterator = keySets.iterator();
-		//int i = 0;
+		// int i = 0;
 		while (iterator.hasNext()) {
 			String key = iterator.next();
 			AccountValue value = accountValues.get(key).getValue();
-//			keysArray[i] = oEntityHelper.byteKey2OKey(encApi.hexDec(key));
-//			valuesArray[i] = oEntityHelper.byteValue2OValue(value.toByteArray());
+			// keysArray[i] = oEntityHelper.byteKey2OKey(encApi.hexDec(key));
+			// valuesArray[i] =
+			// oEntityHelper.byteValue2OValue(value.toByteArray());
 			if (this.stateTrie != null) {
-				// log.debug("put state trie::" + key + " " + encApi.hexEnc(value.toByteArray()));
+				// log.debug("put state trie::" + key + " " +
+				// encApi.hexEnc(value.toByteArray()));
 				this.stateTrie.put(encApi.hexDec(key), value.toByteArray());
 			}
-			//i = i + 1;
+			// i = i + 1;
 		}
-		//KeyConstant.QUEUE.add(accountValues);
-		//dao.getAccountDao().batchPuts(keysArray, valuesArray);
+		// KeyConstant.QUEUE.add(accountValues);
+		// dao.getAccountDao().batchPuts(keysArray, valuesArray);
 	}
 
 	public void tokenMappingAccount(AccountCryptoToken.Builder acBuilder) {

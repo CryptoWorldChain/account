@@ -3,6 +3,7 @@ package org.brewchain.account.core;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
 import java.math.BigInteger;
 
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -35,7 +36,7 @@ public class BlockChainConfig extends SessionModules<Message> {
 	private int accountVersion = props().get("org.brewchain.account.version", 0);
 	private BigInteger maxTokenTotal = new BigInteger(props().get("org.brewchain.token.max.total", "0"));
 	private BigInteger minTokenTotal = new BigInteger(props().get("org.brewchain.token.min.total", "0"));
-	private int blockEpochMSecond = Math.round(props().get("org.bc.dpos.blk.epoch.ms", 1000) / 1000);
+	private int blockEpochMSecond = Math.round(props().get("org.bc.dpos.blk.epoch.ms", 1000) * 1.0 / 1000);
 	private int blockEpochSecond = props().get("org.bc.dpos.blk.epoch.sec", 1);
 
 	@Override
@@ -68,6 +69,8 @@ public class BlockChainConfig extends SessionModules<Message> {
 
 	private String readNet() {
 		String network = "";
+		BufferedReader br = null;
+		FileReader fr = null;
 		try {
 			File networkFile = new File(".chainnet");
 			if (!networkFile.exists() || !networkFile.canRead()) {
@@ -80,14 +83,29 @@ public class BlockChainConfig extends SessionModules<Message> {
 					Thread.sleep(1000);
 				}
 
-				FileReader fr = new FileReader(networkFile.getPath());
-				BufferedReader br = new BufferedReader(fr);
-				network = br.readLine().trim().replace("\r", "").replace("\t", "");
-				br.close();
-				fr.close();
+				fr = new FileReader(networkFile.getPath());
+				br = new BufferedReader(fr);
+				String line = br.readLine();
+				if (line != null) {
+					network = line.trim().replace("\r", "").replace("\t", "");
+				}
+
 			}
 		} catch (Exception e) {
 			log.error("fail to read net config");
+		} finally {
+			if (br != null) {
+				try {
+					br.close();
+				} catch (IOException e) {
+				}
+			}
+			if (fr != null) {
+				try {
+					fr.close();
+				} catch (IOException e) {
+				}
+			}
 		}
 		return network;
 	}
