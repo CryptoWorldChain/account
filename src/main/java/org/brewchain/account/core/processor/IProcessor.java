@@ -1,6 +1,6 @@
 package org.brewchain.account.core.processor;
 
-import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import org.brewchain.account.gens.Blockimpl.AddBlockResponse;
@@ -14,8 +14,8 @@ public interface IProcessor {
 
 	AddBlockResponse ApplyBlock(BlockEntity oBlockEntity);
 
-	BlockEntity.Builder CreateNewBlock(LinkedList<MultiTransaction> txs, String extraData) throws Exception;
+	BlockEntity.Builder CreateNewBlock(List<MultiTransaction> txs, String extraData) throws Exception;
 
-	Map<String, ByteString> ExecuteTransaction(LinkedList<MultiTransaction> oMultiTransactions,
+	Map<String, ByteString> ExecuteTransaction(List<MultiTransaction> oMultiTransactions,
 			BlockEntity currentBlock) throws Exception;
 }

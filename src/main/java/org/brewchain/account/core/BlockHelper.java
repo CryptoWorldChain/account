@@ -1,14 +1,15 @@
 package org.brewchain.account.core;
 
 import java.util.LinkedList;
+import java.util.List;
 
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.brewchain.account.core.processor.ProcessorManager;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.gens.Blockimpl.AddBlockResponse;
-import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.trie.CacheTrie;
+import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.util.ByteUtil;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.bcapi.gens.Oentity.OValue;
@@ -64,8 +65,8 @@ public class BlockHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public BlockEntity.Builder CreateNewBlock(String extraData) throws Exception {
-		return CreateNewBlock(KeyConstant.DEFAULT_BLOCK_TX_COUNT, extraData);
+	public BlockEntity.Builder CreateNewBlock(String extraData,int confirmRecvCount) throws Exception {
+		return CreateNewBlock(KeyConstant.DEFAULT_BLOCK_TX_COUNT,confirmRecvCount, extraData);
 	}
 
 	/**
@@ -77,8 +78,8 @@ public class BlockHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public BlockEntity.Builder CreateNewBlock(int txCount, String extraData) throws Exception {
-		return CreateNewBlock(transactionHelper.getWaitBlockTx(txCount), extraData);
+	public BlockEntity.Builder CreateNewBlock(int txCount,int confirmRecvCount, String extraData) throws Exception {
+		return CreateNewBlock(transactionHelper.getWaitBlockTx(txCount,confirmRecvCount), extraData);
 	}
 
 	/**
@@ -90,10 +91,10 @@ public class BlockHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public BlockEntity.Builder CreateNewBlock(LinkedList<MultiTransaction> txs, String extraData) throws Exception {
+	public BlockEntity.Builder CreateNewBlock(List<MultiTransaction> txs, String extraData) throws Exception {
 		return oProcessorManager.getProcessor(blockChainConfig.getAccountVersion()).CreateNewBlock(txs, extraData);
 	}
-
+ 
 	/**
 	 * 创建创世块
 	 * 
