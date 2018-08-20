@@ -365,8 +365,9 @@ public class BlockChainHelper implements ActorService {
 				oNodeAccount.setAddress(ByteString.copyFrom(coinAddress));
 				oNodeDef.setoAccount(oNodeAccount);
 			}
-
-			KeyConstant.node = oNodeDef;
+			synchronized (KeyConstant.class) {
+				KeyConstant.node = oNodeDef;
+			}
 			reloadBlockCache();
 			log.debug("block load complete");
 
@@ -382,7 +383,9 @@ public class BlockChainHelper implements ActorService {
 
 	public void reloadBlockCache() throws Exception {
 		blockStore.init();
-		KeyConstant.isStart = true;
+		synchronized (KeyConstant.class) {
+			KeyConstant.isStart = true;
+		}
 	}
 
 	public BlockEntity getBlockByHash(String blockHash) throws Exception {
