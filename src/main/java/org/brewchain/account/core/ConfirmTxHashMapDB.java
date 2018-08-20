@@ -30,7 +30,6 @@ public class ConfirmTxHashMapDB implements ActorService {
 	@ActorRequire(name = "WaitSend_HashMapDB", scope = "global")
 	WaitSendHashMapDB oSendingHashMapDB; // 保存待广播交易
 
-	
 	public ConfirmTxHashMapDB() {
 		this(new ConcurrentHashMap<String, HashPair>());
 	}
@@ -151,15 +150,15 @@ public class ConfirmTxHashMapDB implements ActorService {
 							ret.add(hp.getTx());
 							hp.setRemoved(true);
 						} else {
-							//long time no seeee
-							if (checkTime - hp.getLastUpdateTime() > 60000) 							
-							{
+							// long time no seeee
+							if (checkTime - hp.getLastUpdateTime() > 60000) {
 								oSendingHashMapDB.put(hp.getKey(), hp);
 							}
 							confirmQueue.addLast(hp);
 						}
 					}
 				} finally {
+					i++;//increase try times
 					rwLock.writeLock().unlock();
 				}
 			}
