@@ -111,7 +111,7 @@ public class CryptoTransactionSample extends SessionModules<ReqCreateTransaction
 			}
 			oMultiTransaction.setTxBody(oMultiTransactionBody);
 
-			String txHash = transactionHelper.CreateMultiTransaction(oMultiTransaction).getHexKey();
+			String txHash = transactionHelper.CreateMultiTransaction(oMultiTransaction).getKey();
 			oRespCreateTransactionTest.setTxhash(txHash);
 		} catch (Exception e) {
 			e.printStackTrace();

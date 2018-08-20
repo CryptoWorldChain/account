@@ -89,7 +89,7 @@ public class TransactionCreateContract extends SessionModules<ReqCreateContract>
 			oRespContract.setContractHash(encApi.hexEnc(
 					transactionHelper.getContractAddressByTransaction(oMultiTransaction.build()).toByteArray()));
 
-			String txHash = transactionHelper.CreateMultiTransaction(oMultiTransaction).getHexKey();
+			String txHash = transactionHelper.CreateMultiTransaction(oMultiTransaction).getKey();
 			oRespContract.setTxHash(txHash);
 		} catch (Exception e) {
 			e.printStackTrace();
