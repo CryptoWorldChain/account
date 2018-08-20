@@ -225,16 +225,16 @@ public class TransactionHelper implements ActorService {
 			HashMap<String, HashPair> buffer = new HashMap<>();
 			for (MultiTransaction.Builder mtb : oMultiTransaction) {// db没有
 				MultiTransaction cacheTx = txDBCacheByHash.getIfPresent(mtb.getTxHash());
+				MultiTransaction mt = mtb.build();
+				ByteString mts = mt.toByteString();
+				HashPair hp = new HashPair(mt.getTxHash(), mts.toByteArray(), mt);
 				if (cacheTx == null) {// 缓存没有的时候再添加进去
-					MultiTransaction mt = mtb.build();
-					ByteString mts = mt.toByteString();
-					HashPair hp = new HashPair(mt.getTxHash(), mts.toByteArray(), mt);
 					keys[i] = oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash()));
 					values[i] = OValue.newBuilder().setExtdata(mts).setInfo(mtb.getTxHash()).build();
 					buffer.put(mtb.getTxHash(), hp);
 					i++;
 				} else {
-					// 缓存有的，证明之前已经存在了
+					buffer.put(mtb.getTxHash(), hp);
 				}
 			}
 
