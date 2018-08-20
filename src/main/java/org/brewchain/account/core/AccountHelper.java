@@ -726,8 +726,7 @@ public class AccountHelper implements ActorService {
 			// valuesArray[i] =
 			// oEntityHelper.byteValue2OValue(value.toByteArray());
 			if (this.stateTrie != null) {
-				// log.debug("put state trie::" + key + " " +
-				// encApi.hexEnc(value.toByteArray()));
+				log.debug("put state trie::" + key + " " + encApi.hexEnc(value.toByteArray()));
 				this.stateTrie.put(encApi.hexDec(key), value.toByteArray());
 			}
 			// i = i + 1;

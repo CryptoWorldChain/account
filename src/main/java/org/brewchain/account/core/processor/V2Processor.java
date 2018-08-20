@@ -77,12 +77,12 @@ public class V2Processor implements IProcessor, ActorService {
 				oiTransactionActuator.onPrepareExecute(oTransaction, accounts);
 				ByteString result = oiTransactionActuator.onExecute(oTransaction, accounts);
 
-				Iterator<String> iterator = accounts.keySet().iterator();
-				while (iterator.hasNext()) {
-					String key = iterator.next();
-					AccountValue value = accounts.get(key).getValue();
-					this.stateTrie.put(encApi.hexDec(key), value.toByteArray());
-				}
+//				Iterator<String> iterator = accounts.keySet().iterator();
+//				while (iterator.hasNext()) {
+//					String key = iterator.next();
+//					AccountValue value = accounts.get(key).getValue();
+//					this.stateTrie.put(encApi.hexDec(key), value.toByteArray());
+//				}
 				oAccountHelper.BatchPutAccounts(accounts);
 				oiTransactionActuator.onExecuteDone(oTransaction, result);
 				results.put(oTransaction.getTxHash(), result);
@@ -200,10 +200,10 @@ public class V2Processor implements IProcessor, ActorService {
 			if (oMultiTransaction == null) {
 				oMultiTransaction = transactionHelper.GetTransaction(txHash);
 			}
-//			if (TXStatus.isProccessed(oMultiTransaction)) {
-//				// 区块有些交易已经处理过的，要报错
-//				return false;
-//			}
+			// if (TXStatus.isProccessed(oMultiTransaction)) {
+			// // 区块有些交易已经处理过的，要报错
+			// return false;
+			// }
 			oTransactionTrie.put(RLP.encodeInt(i), transactionHelper.getTransactionContent(oMultiTransaction));
 			bb.addTxs(oMultiTransaction);
 			txs.add(oMultiTransaction);
@@ -247,12 +247,10 @@ public class V2Processor implements IProcessor, ActorService {
 		log.error("====> start apply block number:: " + oBlockEntity.getHeader().getNumber() + " miner::"
 				+ applyBlock.getMiner().getAddress() + ",txn=" + applyBlock.getBody().getTxsCount());
 		AddBlockResponse.Builder oAddBlockResponse = AddBlockResponse.newBuilder();
-		// log.debug("receive block number::" +
-		// applyBlock.getHeader().getNumber() + " hash::"
-		// + oBlockEntity.getHeader().getBlockHash() + " parent::" +
-		// applyBlock.getHeader().getParentHash()
-		// + " stateroot::" + applyBlock.getHeader().getStateRoot() + " miner::"
-		// + applyBlock.getMiner().getAddress());
+		log.debug("receive block number::" + applyBlock.getHeader().getNumber() + " hash::"
+				+ oBlockEntity.getHeader().getBlockHash() + " parent::" + applyBlock.getHeader().getParentHash()
+				+ " stateroot::" + applyBlock.getHeader().getStateRoot() + " miner::"
+				+ applyBlock.getMiner().getAddress());
 
 		try {
 			BlockHeader.Builder oBlockHeader = BlockHeader.parseFrom(oBlockEntity.getHeader().toByteArray())
