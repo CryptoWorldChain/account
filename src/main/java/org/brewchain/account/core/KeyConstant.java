@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.brewchain.account.util.NodeDef;
 import org.brewchain.evmapi.gens.Act.Account;
@@ -35,6 +36,7 @@ public class KeyConstant {
 	public static String PWD;
 	
 	public static AtomicInteger counter = new AtomicInteger(0);
+	public static AtomicLong txCounter = new AtomicLong(0);
 	public static LinkedBlockingQueue<Map<String, Account.Builder>> QUEUE = new LinkedBlockingQueue<>();
 
 }

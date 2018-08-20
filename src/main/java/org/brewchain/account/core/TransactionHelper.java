@@ -190,15 +190,6 @@ public class TransactionHelper implements ActorService {
 
 	public void syncTransaction(MultiTransaction.Builder oMultiTransaction, boolean isBroadCast, BigInteger bits) {
 		try {
-			// oMultiTransaction.clearStatus();
-			// oMultiTransaction.clearTxHash();
-			// Future<OValue> f = dao.getTxsDao().put(
-			// oEntityHelper.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash())),
-			// oEntityHelper.byteValue2OValue(oMultiTransaction.build().toByteArray()));
-			// if (f != null && f.get() != null && isBroadCast) {
-			// oPendingHashMapDB.put(oMultiTransaction.getTxHash(),
-			// oMultiTransaction.build());
-			// }
 			MultiTransaction cacheTx = txDBCacheByHash.getIfPresent(oMultiTransaction.getTxHash());
 			if (cacheTx != null) {
 				log.warn("transaction " + oMultiTransaction.getTxHash() + "exists in Cached, drop it");
@@ -714,8 +705,9 @@ public class TransactionHelper implements ActorService {
 		MultiTransaction.Builder oTransaction = tx.toBuilder();
 		oTransaction.setStatus("done");
 		oTransaction.setResult(result);
-		log.debug("====put transaction done::"+ oTransaction.getTxHash());
-
+		
+		txDBCacheByHash.put(oTransaction.getTxHash(), oTransaction.build());
+		
 		dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(oTransaction.getTxHash())),
 				oEntityHelper.byteValue2OValue(oTransaction.build().toByteArray()));
 	}
@@ -724,7 +716,8 @@ public class TransactionHelper implements ActorService {
 		MultiTransaction.Builder oTransaction = tx.toBuilder();
 		oTransaction.setStatus("error");
 		oTransaction.setResult(result);
-		// log.debug("====put transaction error::"+ txHash);
+
+		txDBCacheByHash.put(oTransaction.getTxHash(), oTransaction.build());
 
 		dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(oTransaction.getTxHash())),
 				oEntityHelper.byteValue2OValue(oTransaction.build().toByteArray()));

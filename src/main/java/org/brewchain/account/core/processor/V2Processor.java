@@ -85,6 +85,7 @@ public class V2Processor implements IProcessor, ActorService {
 //				}
 				oAccountHelper.BatchPutAccounts(accounts);
 				oiTransactionActuator.onExecuteDone(oTransaction, result);
+				KeyConstant.txCounter.incrementAndGet();
 				results.put(oTransaction.getTxHash(), result);
 			} catch (Exception e) {
 				oiTransactionActuator.onExecuteError(oTransaction,
