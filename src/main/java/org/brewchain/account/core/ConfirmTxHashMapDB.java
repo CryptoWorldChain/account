@@ -122,7 +122,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 			HashPair hp = storage.remove(key);
 			if (hp != null && !hp.isRemoved()) {
 				hp.setRemoved(true);
-				confirmQueue.remove(hp);
+//				confirmQueue.remove(hp);//不主动的remove，等pop的时候再检查
 			}
 
 			return hp;
