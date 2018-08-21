@@ -126,7 +126,6 @@ public class V2Processor implements IProcessor, ActorService {
 		oBlockHeader.setExtraData(extraData);
 		for (int i = 0; i < txs.size(); i++) {
 			oBlockHeader.addTxHashs(txs.get(i).getTxHash());
-			oBlockBody.addTxs(txs.get(i));
 		}
 		oBlockMiner.setAddress(encApi.hexEnc(KeyConstant.node.getoAccount().getAddress().toByteArray()));
 		oBlockMiner.setNode(KeyConstant.node.getNode());

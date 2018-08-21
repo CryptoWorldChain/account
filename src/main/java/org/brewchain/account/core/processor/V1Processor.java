@@ -156,7 +156,6 @@ public class V1Processor implements IProcessor, ActorService {
 		// this.transactionTrie.setRoot(encApi.hexDec(oBestBlockHeader.getTxTrieRoot()));
 		for (int i = 0; i < txs.size(); i++) {
 			oBlockHeader.addTxHashs(txs.get(i).getTxHash());
-			oBlockBody.addTxs(txs.get(i));
 			// this.transactionTrie.put(RLP.encodeInt(i),
 			// transactionHelper.getTransactionContent(txs.get(i)));
 		}
