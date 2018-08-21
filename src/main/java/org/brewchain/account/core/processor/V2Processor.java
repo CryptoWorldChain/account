@@ -108,7 +108,6 @@ public class V2Processor implements IProcessor, ActorService {
 
 	@Override
 	public BlockEntity.Builder CreateNewBlock(List<MultiTransaction> txs, String extraData) throws Exception {
-		log.debug("call create new block miner::" + KeyConstant.node.getAddress());
 		BlockEntity.Builder oBlockEntity = BlockEntity.newBuilder();
 		BlockHeader.Builder oBlockHeader = BlockHeader.newBuilder();
 		BlockBody.Builder oBlockBody = BlockBody.newBuilder();
@@ -165,7 +164,8 @@ public class V2Processor implements IProcessor, ActorService {
 					+ " tx::" + oBlockEntity.getHeader().getTxTrieRoot() + " state::"
 					+ oBlockEntity.getHeader().getStateRoot() + " receipt::"
 					+ oBlockEntity.getHeader().getReceiptTrieRoot() + " bcuid::" + oBlockMiner.getBcuid() + " address::"
-					+ oBlockMiner.getAddress());
+					+ oBlockMiner.getAddress() + " headerTx::" + oBlockEntity.getHeader().getTxHashsCount()
+					+ " bodyTx::" + oBlockEntity.getBody().getTxsCount());
 
 			return oBlockEntity;
 		default:
@@ -173,16 +173,18 @@ public class V2Processor implements IProcessor, ActorService {
 		}
 	}
 
-//	public synchronized boolean preCheckBlockTx(BlockEntity.Builder oBlockEntity) throws Exception {
-//		for (String txHash : oBlockEntity.getHeader().getTxHashsList()) {
-//			MultiTransaction oMultiTransaction = transactionHelper.GetTransaction(txHash);
-//			if (TXStatus.isProccessed(oMultiTransaction)) {
-//				// 区块有些交易已经处理过的，要报错
-//				return false;
-//			}
-//		}
-//		return true;
-//	}
+	// public synchronized boolean preCheckBlockTx(BlockEntity.Builder
+	// oBlockEntity) throws Exception {
+	// for (String txHash : oBlockEntity.getHeader().getTxHashsList()) {
+	// MultiTransaction oMultiTransaction =
+	// transactionHelper.GetTransaction(txHash);
+	// if (TXStatus.isProccessed(oMultiTransaction)) {
+	// // 区块有些交易已经处理过的，要报错
+	// return false;
+	// }
+	// }
+	// return true;
+	// }
 
 	private synchronized boolean processBlock(BlockEntity.Builder oBlockEntity) throws Exception {
 		BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
@@ -201,10 +203,7 @@ public class V2Processor implements IProcessor, ActorService {
 			if (oMultiTransaction == null) {
 				oMultiTransaction = transactionHelper.GetTransaction(txHash);
 			}
-			// if (TXStatus.isProccessed(oMultiTransaction)) {
-			// // 区块有些交易已经处理过的，要报错
-			// return false;
-			// }
+
 			oTransactionTrie.put(RLP.encodeInt(i), transactionHelper.getTransactionContent(oMultiTransaction));
 			bb.addTxs(oMultiTransaction);
 			txs.add(oMultiTransaction);
@@ -248,12 +247,15 @@ public class V2Processor implements IProcessor, ActorService {
 	public synchronized AddBlockResponse ApplyBlock(BlockEntity oBlockEntity) {
 		BlockEntity.Builder applyBlock = oBlockEntity.toBuilder();
 		log.error("====> start apply block number:: " + oBlockEntity.getHeader().getNumber() + " miner::"
-				+ applyBlock.getMiner().getAddress() + ",txn=" + applyBlock.getBody().getTxsCount());
+				+ applyBlock.getMiner().getAddress() + ",headerTx=" + applyBlock.getHeader().getTxHashsCount()
+				+ ",bodyTx=" + applyBlock.getBody().getTxsCount());
 		AddBlockResponse.Builder oAddBlockResponse = AddBlockResponse.newBuilder();
-		log.debug("receive block number::" + applyBlock.getHeader().getNumber() + " hash::"
-				+ oBlockEntity.getHeader().getBlockHash() + " parent::" + applyBlock.getHeader().getParentHash()
-				+ " stateroot::" + applyBlock.getHeader().getStateRoot() + " miner::"
-				+ applyBlock.getMiner().getAddress());
+		// log.debug("receive block number::" +
+		// applyBlock.getHeader().getNumber() + " hash::"
+		// + oBlockEntity.getHeader().getBlockHash() + " parent::" +
+		// applyBlock.getHeader().getParentHash()
+		// + " stateroot::" + applyBlock.getHeader().getStateRoot() + " miner::"
+		// + applyBlock.getMiner().getAddress());
 
 		try {
 			BlockHeader.Builder oBlockHeader = BlockHeader.parseFrom(oBlockEntity.getHeader().toByteArray())
