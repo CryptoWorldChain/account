@@ -180,10 +180,13 @@ public class TransactionHelper implements ActorService {
 	public void syncTransaction(MultiTransaction.Builder oMultiTransaction, BigInteger bits) throws Exception {
 		syncTransaction(oMultiTransaction, true, bits);
 	}
+
 	public void syncTransaction(MultiTransaction.Builder oMultiTransaction) throws Exception {
 		syncTransaction(oMultiTransaction, true, zeroBits);
 	}
-	BigInteger zeroBits = new BigInteger("0"); 
+
+	BigInteger zeroBits = new BigInteger("0");
+
 	public void syncTransaction(MultiTransaction.Builder oMultiTransaction, boolean isBroadCast) {
 		syncTransaction(oMultiTransaction, isBroadCast, zeroBits);
 	}
@@ -205,17 +208,20 @@ public class TransactionHelper implements ActorService {
 			} else {
 				oMultiTransaction.clearStatus();
 				oMultiTransaction.clearResult();
-				HashPair hp = new HashPair(oMultiTransaction.getTxHash(), oMultiTransaction.build());
-				dao.getTxsDao().put(key, oEntityHelper.byteValue2OValue(hp.getTx().toByteArray()));
+
+				MultiTransaction mt = oMultiTransaction.build();
+
+				HashPair hp = new HashPair(mt.getTxHash(), mt.toByteArray(), mt);
+				dao.getTxsDao().put(key, OValue.newBuilder().setExtdata(ByteString.copyFrom(hp.getData()))
+						.setInfo(mt.getTxHash()).build());
 				txDBCacheByHash.put(hp.getKey(), hp.getTx());
 				if (isBroadCast) {
 					oConfirmMapDB.confirmTx(hp, bits);
-					// oPendingHashMapDB.put(hp.getKey(), hp);
 				}
 				KeyConstant.counter.incrementAndGet();
 			}
 		} catch (Exception e) {
-			log.error("fail to sync transaction::" + oMultiTransaction.getTxHash() + " error::" + e);
+			log.error("fail to sync transaction::" + oMultiTransaction.getTxHash() + " error::" + e, e);
 		}
 	}
 
@@ -229,33 +235,29 @@ public class TransactionHelper implements ActorService {
 			if (oMultiTransaction.size() > 0) {
 				List<OKey> keys = new ArrayList<>();
 				List<OValue> values = new ArrayList<>();
-				// OKey[] keys = new OKey[oMultiTransaction.size()];
-				// OValue[] values = new OValue[oMultiTransaction.size()];
-				int i = 0;
 				HashMap<String, HashPair> buffer = new HashMap<>();
 				for (MultiTransaction.Builder mtb : oMultiTransaction) {// db没有
 					MultiTransaction cacheTx = txDBCacheByHash.getIfPresent(mtb.getTxHash());
-					MultiTransaction mt = mtb.build();
+					MultiTransaction mt = mtb.clearStatus().clearResult().build();
 					ByteString mts = mt.toByteString();
 					HashPair hp = new HashPair(mt.getTxHash(), mts.toByteArray(), mt);
 					if (cacheTx == null) {// 缓存没有的时候再添加进去
 						keys.add(oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash())));
 						values.add(OValue.newBuilder().setExtdata(mts).setInfo(mtb.getTxHash()).build());
-						// buffer.put(mtb.getTxHash(), hp);
-						i++;
 					}
 					buffer.put(mtb.getTxHash(), hp);
 				}
 
-				Future<OValue[]> f = dao.getTxsDao().putIfNotExist(keys.toArray(new OKey[keys.size()]),
-						values.toArray(new OValue[values.size()]));// 返回DB里面不存在的,但是数据库已经存进去的
+				Future<OValue[]> f = dao.getTxsDao().putIfNotExist(keys.toArray(new OKey[] {}),
+						values.toArray(new OValue[] {}));// 返回DB里面不存在的,但是数据库已经存进去的
 				if (f != null && f.get() != null && isBroadCast) {
 					for (OValue ov : f.get()) {
-						HashPair hp = buffer.get(ov.getInfo());
-						// oPendingHashMapDB.put(ov.getInfo(), hp);
-						oConfirmMapDB.confirmTx(hp, bits);
-						txDBCacheByHash.put(hp.getKey(), hp.getTx());
-						KeyConstant.counter.incrementAndGet();
+						if (ov != null) {
+							HashPair hp = buffer.get(ov.getInfo());
+							oConfirmMapDB.confirmTx(hp, bits);
+							txDBCacheByHash.put(hp.getKey(), hp.getTx());
+							KeyConstant.counter.incrementAndGet();
+						}
 					}
 				}
 			}
@@ -705,9 +707,9 @@ public class TransactionHelper implements ActorService {
 		MultiTransaction.Builder oTransaction = tx.toBuilder();
 		oTransaction.setStatus("done");
 		oTransaction.setResult(result);
-		
+
 		txDBCacheByHash.put(oTransaction.getTxHash(), oTransaction.build());
-		
+
 		dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(oTransaction.getTxHash())),
 				oEntityHelper.byteValue2OValue(oTransaction.build().toByteArray()));
 	}

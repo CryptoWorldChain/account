@@ -67,7 +67,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 						_hp = hp;
 					}
 				} catch (Exception e) {
-
+					log.error("confirmTx error", e);
 				} finally {
 					rwLock.writeLock().unlock();
 				}
@@ -122,7 +122,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 			HashPair hp = storage.remove(key);
 			if (hp != null && !hp.isRemoved()) {
 				hp.setRemoved(true);
-//				confirmQueue.remove(hp);//不主动的remove，等pop的时候再检查
+				// confirmQueue.remove(hp);//不主动的remove，等pop的时候再检查
 			}
 
 			return hp;
@@ -158,7 +158,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 						}
 					}
 				} finally {
-					i++;//increase try times
+					i++;// increase try times
 					rwLock.writeLock().unlock();
 				}
 			}
