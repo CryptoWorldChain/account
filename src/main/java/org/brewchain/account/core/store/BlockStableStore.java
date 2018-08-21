@@ -141,7 +141,7 @@ public class BlockStableStore implements IBlockStore, ActorService {
 	public BlockEntity getBlockByNumber(long number) {
 		BlockEntity block = null;
 		try {
-			block = this.blocksByNumber.get(number);
+			block = this.blocksByNumber.getUnchecked(number);
 			if (block == null) {
 				List<OPair> oPairs = dao.getBlockDao().listBySecondKey(String.valueOf(number)).get();
 				if (oPairs.size() > 0) {

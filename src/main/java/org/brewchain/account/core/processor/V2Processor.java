@@ -245,9 +245,9 @@ public class V2Processor implements IProcessor, ActorService {
 	@Override
 	public synchronized AddBlockResponse ApplyBlock(BlockEntity oBlockEntity) {
 		BlockEntity.Builder applyBlock = oBlockEntity.toBuilder();
-		log.error("====> start apply block number:: " + oBlockEntity.getHeader().getNumber() + " miner::"
-				+ applyBlock.getMiner().getAddress() + ",headerTx=" + applyBlock.getHeader().getTxHashsCount()
-				+ ",bodyTx=" + applyBlock.getBody().getTxsCount());
+		log.error("====> start apply block hash::" + oBlockEntity.getHeader().getBlockHash() + " number:: "
+				+ oBlockEntity.getHeader().getNumber() + " miner::" + applyBlock.getMiner().getAddress() + ",headerTx="
+				+ applyBlock.getHeader().getTxHashsCount() + ",bodyTx=" + applyBlock.getBody().getTxsCount());
 		AddBlockResponse.Builder oAddBlockResponse = AddBlockResponse.newBuilder();
 		// log.debug("receive block number::" +
 		// applyBlock.getHeader().getNumber() + " hash::"
