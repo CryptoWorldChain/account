@@ -367,7 +367,7 @@ public class V2Processor implements IProcessor, ActorService {
 			}
 		} catch (Exception e2) {
 			log.error("error on validate block header::" + e2, e2);
-
+			blockChainHelper.rollbackTo(applyBlock.getHeader().getNumber() - 2);
 		}
 
 		if (oAddBlockResponse.getCurrentNumber() == 0) {
