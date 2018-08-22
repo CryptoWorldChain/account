@@ -58,10 +58,9 @@ public class BlockStableStore implements IBlockStore, ActorService {
 					} catch (Exception e) {
 						log.error("cannot get block");
 					}
-					return NoneBlock;
+					return null;
 				}
 			});
-	BlockEntity NoneBlock = BlockEntity.newBuilder().setVersion(-1).build();
 	protected final LoadingCache<Long, BlockEntity> blocksByNumber = CacheBuilder.newBuilder()
 			.maximumSize(KeyConstant.CACHE_SIZE).build(new CacheLoader<Long, BlockEntity>() {
 				public BlockEntity load(Long key) {
@@ -74,7 +73,7 @@ public class BlockStableStore implements IBlockStore, ActorService {
 					} catch (Exception e) {
 						log.error("cannot get block");
 					}
-					return NoneBlock;
+					return null;
 				}
 			});
 	private long maxNumber = -1;
@@ -102,9 +101,6 @@ public class BlockStableStore implements IBlockStore, ActorService {
 		return flag;
 	}
 
-	boolean isValidBlock(BlockEntity block) {
-		return (block != null && block != NoneBlock && block.getVersion() >= 0);
-	}
 
 	@Override
 	public BlockEntity get(String hash) {
@@ -114,7 +110,7 @@ public class BlockStableStore implements IBlockStore, ActorService {
 		} catch (Exception e) {
 			block = null;
 		}
-		if (isValidBlock(block)) {
+		if (block==null) {
 			block = getFromDB(hash);
 		}
 		return block;
@@ -165,7 +161,7 @@ public class BlockStableStore implements IBlockStore, ActorService {
 		BlockEntity block = null;
 		try {
 			block = this.blocksByNumber.getIfPresent(number);
-			if (isValidBlock(block)) {
+			if (block==null) {
 				List<OPair> oPairs = dao.getBlockDao().listBySecondKey(String.valueOf(number)).get();
 				if (oPairs.size() > 0) {
 					block = BlockEntity.parseFrom(oPairs.get(0).getValue().getExtdata());
