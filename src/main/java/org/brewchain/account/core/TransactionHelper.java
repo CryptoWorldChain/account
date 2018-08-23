@@ -676,7 +676,10 @@ public class TransactionHelper implements ActorService {
 					oAccountHelper.GetAccountOrCreate(oOutput.getAddress()).toBuilder());
 		}
 
-		if (StringUtils.isNotBlank(blockChainConfig.getLock_account_address())) {
+		if ((oMultiTransaction.getTxBody().getType() == TransTypeEnum.TYPE_CreateContract.value()
+				|| oMultiTransaction.getTxBody().getType() == TransTypeEnum.TYPE_CreateCryptoToken.value()
+				|| oMultiTransaction.getTxBody().getType() == TransTypeEnum.TYPE_CreateToken.value())
+				&& StringUtils.isNotBlank(blockChainConfig.getLock_account_address())) {
 			accounts.put(blockChainConfig.getLock_account_address(),
 					oAccountHelper
 							.GetAccountOrCreate(

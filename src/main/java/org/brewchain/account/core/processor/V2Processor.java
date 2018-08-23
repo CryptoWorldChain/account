@@ -63,7 +63,7 @@ public class V2Processor implements IProcessor, ActorService {
 	AccountHelper oAccountHelper;
 
 	@Override
-	public Map<String, ByteString> ExecuteTransaction(List<MultiTransaction> oMultiTransactions,
+	public synchronized Map<String, ByteString> ExecuteTransaction(List<MultiTransaction> oMultiTransactions,
 			BlockEntity currentBlock) throws Exception {
 
 		Map<String, ByteString> results = new LinkedHashMap<>();
@@ -101,7 +101,7 @@ public class V2Processor implements IProcessor, ActorService {
 	}
 
 	@Override
-	public void applyReward(BlockEntity oCurrentBlock) throws Exception {
+	public synchronized void applyReward(BlockEntity oCurrentBlock) throws Exception {
 		accountHelper.addBalance(ByteString.copyFrom(encApi.hexDec(oCurrentBlock.getMiner().getAddress())),
 				ByteUtil.bytesToBigInteger(oCurrentBlock.getMiner().getReward().toByteArray()));
 	}
@@ -140,8 +140,7 @@ public class V2Processor implements IProcessor, ActorService {
 		oBlockEntity.setMiner(oBlockMiner);
 		oBlockEntity.setVersion(blockChainConfig.getAccountVersion());
 
-		this.stateTrie.setRoot(encApi.hexDec(oBestBlockHeader.getStateRoot()));
-		processBlock(oBlockEntity);
+		processBlock(oBlockEntity, oBestBlockEntity);
 
 		byte[] blockContent = org.brewchain.account.util.ByteUtil.appendBytes(
 				oBlockEntity.getHeaderBuilder().clearBlockHash().build().toByteArray(),
@@ -185,11 +184,13 @@ public class V2Processor implements IProcessor, ActorService {
 	// return true;
 	// }
 
-	private synchronized boolean processBlock(BlockEntity.Builder oBlockEntity) throws Exception {
+	private synchronized boolean processBlock(BlockEntity.Builder oBlockEntity, BlockEntity oParentBlock)
+			throws Exception {
 		BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
-		LinkedList<MultiTransaction> txs = new LinkedList<MultiTransaction>();
+		LinkedList<MultiTransaction> txs = new LinkedList<>();
 		CacheTrie oTransactionTrie = new CacheTrie(this.encApi);
 		CacheTrie oReceiptTrie = new CacheTrie(this.encApi);
+		this.stateTrie.setRoot(encApi.hexDec(oParentBlock.getHeader().getStateRoot()));
 
 		BlockBody.Builder bb = oBlockEntity.getBody().toBuilder();
 		int i = 0;
@@ -232,12 +233,8 @@ public class V2Processor implements IProcessor, ActorService {
 		header.setTxTrieRoot(encApi.hexEnc(
 				oTransactionTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY : oTransactionTrie.getRootHash()));
 		start = System.currentTimeMillis();
-		// log.error("====> start number::" +
-		// oBlockEntity.getHeader().getNumber() + ",getroothash count=" + i);
 		header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
-		// log.error("====> end number::" + oBlockEntity.getHeader().getNumber()
-		// + ",getroothash count=" + i + "::cost="
-		// + (System.currentTimeMillis() - start));
+		
 		oBlockEntity.setHeader(header);
 		return true;
 	}
@@ -321,13 +318,13 @@ public class V2Processor implements IProcessor, ActorService {
 						BlockEntity parentBlock;
 						parentBlock = blockChainHelper.getBlockByHash(applyBlock.getHeader().getParentHash());
 
-						this.stateTrie.setRoot(encApi.hexDec(parentBlock.getHeader().getStateRoot()));
-						processBlock(applyBlock);
+						// this.stateTrie.setRoot(encApi.hexDec(parentBlock.getHeader().getStateRoot()));
+						processBlock(applyBlock, parentBlock);
 
-						log.debug("=====sync-> " + applyBlock.getHeader().getNumber() + " parent::"
-								+ parentBlock.getHeader().getStateRoot() + " current::"
-								+ oBlockEntity.getHeader().getStateRoot() + " exec::"
-								+ applyBlock.getHeader().getStateRoot());
+						log.debug("=====sync-> " + applyBlock.getHeader().getNumber() + " state::"
+								+ applyBlock.getHeader().getStateRoot() + " tx::"
+								+ applyBlock.getHeader().getTxTrieRoot() + " receipt::"
+								+ applyBlock.getHeader().getReceiptTrieRoot());
 
 						if (!oBlockEntity.getHeader().getStateRoot().equals(applyBlock.getHeader().getStateRoot())
 								|| !oBlockEntity.getHeader().getTxTrieRoot()

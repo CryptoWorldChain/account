@@ -12,6 +12,9 @@ import org.brewchain.account.gens.TxTest.MsgBlockView;
 import org.brewchain.account.gens.TxTest.PTSTCommand;
 import org.brewchain.account.gens.TxTest.PTSTModule;
 import org.brewchain.account.gens.TxTest.ReqCommonTest;
+import org.brewchain.account.trie.StateTrie;
+import org.brewchain.account.util.ByteUtil;
+import org.brewchain.account.util.FastByteComparisons;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.fc.brewchain.bcapi.EncAPI;
@@ -43,6 +46,8 @@ public class BlockChainViewSample extends SessionModules<ReqCommonTest> {
 	// BlockUnStableStore unStableStore;
 	@ActorRequire(name = "BlockStore_Helper", scope = "global")
 	BlockStore blockStore;
+	@ActorRequire(name = "Block_StateTrie", scope = "global")
+	StateTrie stateTrie;
 
 	@Override
 	public String[] getCmds() {
@@ -57,81 +62,121 @@ public class BlockChainViewSample extends SessionModules<ReqCommonTest> {
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqCommonTest pb, final CompleteHandler handler) {
 		MsgBlockView.Builder oMsgBlockView = MsgBlockView.newBuilder();
-//
-//		try {
-//			// for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it =
-//			// unStableStore.getStorage().entrySet().iterator(); it.hasNext();) {
-//			// Map.Entry<String, BlockStoreNodeValue> item = it.next();
-//			//
-//			// BlockView oChild = new BlockView();
-//			// DecimalFormat df = new DecimalFormat("0000");
-//			//
-//			// oChild.setHash(be.getHeader().getBlockHash());
-//			// oChild.setName(String.format("%s ~ %s...%s",
-//			// df.format(be.getHeader().getNumber()),
-//			// be.getHeader().getBlockHash().substring(0, 5),
-//			// be.getHeader().getBlockHash().substring(
-//			// be.getHeader().getBlockHash().length() - 5,
-//			// be.getHeader().getBlockHash().length())));
-//			// oChild.setNumber(be.getHeader().getNumber());
-//			// }
-//
-//			long maxNumber = blockStore.getMaxReceiveNumber();
-//			long fixNumber = 0;
-//			if (maxNumber - Integer.valueOf(pb.getArg1()) < 1) {
-//				fixNumber = Integer.valueOf(pb.getArg1()) - maxNumber;
-//			}
-//			BlockView root = new BlockView();
-//			root.setName("Start");
-//			root.setHash(" null ");
-//			root.setNumber(0);
-//			BlockView currentNode = null;
-//			for (int i = 0; i < Integer.valueOf(pb.getArg1()); i++) {
-//				long number = maxNumber + fixNumber - Integer.valueOf(pb.getArg1()) + i;
-//
-//				if (number < 0 || number > maxNumber) {
-//					break;
-//				}
-//				List<BlockEntity> be = blockStore.getUnStableStore().getBlocksByNumber(number);
-//				if (be.size() == 0) {
-//					be.add(blockStore.getStableStore().getBlockByNumber(number));
-//				}
-//				for (BlockEntity blockEntity : be) {
-//					BlockView oChild = new BlockView();
-//					DecimalFormat df = new DecimalFormat("0000");
-//
-//					oChild.setHash(blockEntity.getHeader().getBlockHash());
-//					oChild.setName(String.format("%s ~ %s...%s", df.format(blockEntity.getHeader().getNumber()),
-//							blockEntity.getHeader().getBlockHash().substring(0, 5),
-//							blockEntity.getHeader().getBlockHash().substring(
-//									blockEntity.getHeader().getBlockHash().length() - 5,
-//									blockEntity.getHeader().getBlockHash().length())));
-//					oChild.setNumber(blockEntity.getHeader().getNumber());
-//					if (currentNode == null) {
-//						currentNode = root;
-//					}
-//
-//					BlockView p = getNode(blockEntity.getHeader().getParentHash(), root);
-//					if (p == null) {
-//						root.children.add(oChild);
-//					} else {
-//						p.children.add(oChild);
-//					}
-//				}
-//			}
-//
-//			ObjectMapper mapper = new ObjectMapper();
-//			try {
-//				oMsgBlockView.setJsonStr(mapper.writeValueAsString(root));
-//			} catch (Exception e) {
-//				log.error("format error");
-//			}
-//		} catch (Exception e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
+		String retStr = "";
+		byte[] compare_root_hash = ByteUtil.EMPTY_BYTE_ARRAY;
+
+		for (int j = 0; j < 100; j++) {
+			// init root hash
+			stateTrie.setRoot(ByteUtil.EMPTY_BYTE_ARRAY);
+
+			for (int i = 0; i < 10000; i++) {
+				byte[] kv = (String.valueOf(i) + "aaaaaa").getBytes();
+				stateTrie.put(kv, kv);
+			}
+
+			if (FastByteComparisons.equal(compare_root_hash, ByteUtil.EMPTY_BYTE_ARRAY)) {
+				compare_root_hash = stateTrie.getRootHash();
+			} else {
+				if (!FastByteComparisons.equal(compare_root_hash, stateTrie.getRootHash())) {
+					retStr += System.lineSeparator() + "root hash not equal";
+
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+
+					if (!FastByteComparisons.equal(compare_root_hash, stateTrie.getRootHash())) {
+						retStr += System.lineSeparator() + "root hash not equal again";
+					}
+
+					oMsgBlockView.setJsonStr(retStr);
+					handler.onFinished(PacketHelper.toPBReturn(pack, oMsgBlockView.build()));
+					return;
+				}
+			}
+		}
+		oMsgBlockView.setJsonStr("all done");
 		handler.onFinished(PacketHelper.toPBReturn(pack, oMsgBlockView.build()));
 		return;
+
+		// try {
+		// // for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it =
+		// // unStableStore.getStorage().entrySet().iterator(); it.hasNext();) {
+		// // Map.Entry<String, BlockStoreNodeValue> item = it.next();
+		// //
+		// // BlockView oChild = new BlockView();
+		// // DecimalFormat df = new DecimalFormat("0000");
+		// //
+		// // oChild.setHash(be.getHeader().getBlockHash());
+		// // oChild.setName(String.format("%s ~ %s...%s",
+		// // df.format(be.getHeader().getNumber()),
+		// // be.getHeader().getBlockHash().substring(0, 5),
+		// // be.getHeader().getBlockHash().substring(
+		// // be.getHeader().getBlockHash().length() - 5,
+		// // be.getHeader().getBlockHash().length())));
+		// // oChild.setNumber(be.getHeader().getNumber());
+		// // }
+		//
+		// long maxNumber = blockStore.getMaxReceiveNumber();
+		// long fixNumber = 0;
+		// if (maxNumber - Integer.valueOf(pb.getArg1()) < 1) {
+		// fixNumber = Integer.valueOf(pb.getArg1()) - maxNumber;
+		// }
+		// BlockView root = new BlockView();
+		// root.setName("Start");
+		// root.setHash(" null ");
+		// root.setNumber(0);
+		// BlockView currentNode = null;
+		// for (int i = 0; i < Integer.valueOf(pb.getArg1()); i++) {
+		// long number = maxNumber + fixNumber - Integer.valueOf(pb.getArg1()) +
+		// i;
+		//
+		// if (number < 0 || number > maxNumber) {
+		// break;
+		// }
+		// List<BlockEntity> be =
+		// blockStore.getUnStableStore().getBlocksByNumber(number);
+		// if (be.size() == 0) {
+		// be.add(blockStore.getStableStore().getBlockByNumber(number));
+		// }
+		// for (BlockEntity blockEntity : be) {
+		// BlockView oChild = new BlockView();
+		// DecimalFormat df = new DecimalFormat("0000");
+		//
+		// oChild.setHash(blockEntity.getHeader().getBlockHash());
+		// oChild.setName(String.format("%s ~ %s...%s",
+		// df.format(blockEntity.getHeader().getNumber()),
+		// blockEntity.getHeader().getBlockHash().substring(0, 5),
+		// blockEntity.getHeader().getBlockHash().substring(
+		// blockEntity.getHeader().getBlockHash().length() - 5,
+		// blockEntity.getHeader().getBlockHash().length())));
+		// oChild.setNumber(blockEntity.getHeader().getNumber());
+		// if (currentNode == null) {
+		// currentNode = root;
+		// }
+		//
+		// BlockView p = getNode(blockEntity.getHeader().getParentHash(), root);
+		// if (p == null) {
+		// root.children.add(oChild);
+		// } else {
+		// p.children.add(oChild);
+		// }
+		// }
+		// }
+		//
+		// ObjectMapper mapper = new ObjectMapper();
+		// try {
+		// oMsgBlockView.setJsonStr(mapper.writeValueAsString(root));
+		// } catch (Exception e) {
+		// log.error("format error");
+		// }
+		// } catch (Exception e) {
+		// // TODO Auto-generated catch block
+		// e.printStackTrace();
+		// }
+
 	}
 
 	private BlockView getNode(String hash, BlockView node) {

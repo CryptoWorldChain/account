@@ -98,8 +98,8 @@ public class DefDaos extends SessionModules<Message> {
 
 	public boolean isReady() {
 		if (blockDao != null && SliceBlockDomain.class.isInstance(blockDao) && blockDao.getDaosupport() != null
-				&& txblockDao != null && TxBlockDomain.class.isInstance(txblockDao)
-				&& txblockDao.getDaosupport() != null && txsDao != null && TxSecondaryDomain.class.isInstance(txsDao)
+				&& txblockDao != null && SliceTxBlockDomain.class.isInstance(txblockDao)
+				&& txblockDao.getDaosupport() != null && txsDao != null && SliceTxSecondaryDomain.class.isInstance(txsDao)
 				&& txsDao.getDaosupport() != null && accountDao != null && SliceAccoutDomain.class.isInstance(accountDao)
 				&& accountDao.getDaosupport() != null && CryptoTokenDomain.class.isInstance(cryptoTokenDao)
 				&& cryptoTokenDao.getDaosupport() != null) {
