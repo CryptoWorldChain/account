@@ -125,7 +125,7 @@ public class V1Processor implements IProcessor, ActorService {
 	}
 
 	@Override
-	public BlockEntity.Builder CreateNewBlock(List<MultiTransaction> txs, String extraData) throws Exception {
+	public BlockEntity.Builder CreateNewBlock(List<MultiTransaction> txs, String extraData, String term) throws Exception {
 
 		log.debug("call create new block miner::" + KeyConstant.node.getAddress());
 

@@ -689,15 +689,8 @@ public class AccountHelper implements ActorService {
 		dao.getAccountDao().put(oEntityHelper.byteKey2OKey(addr),
 				oEntityHelper.byteValue2OValue(oAccountValue.toByteArray()));
 		if (this.stateTrie != null && stateable) {
-			log.debug(System.lineSeparator() + "put state trie::" + encApi.hexEnc(addr.toByteArray()) + " "
-					+ encApi.hexEnc(oAccountValue.toByteArray()));
 			this.stateTrie.put(addr.toByteArray(), oAccountValue.toByteArray());
 		}
-		// KeyConstant.QUEUE.add(new HashMap<String, Account>() {
-		// {
-		// put(encApi.hexEnc(addr.toByteArray()), null);
-		// }
-		// });
 	}
 
 	public void putAccountValue(ByteString addr, AccountValue oAccountValue) {
@@ -707,17 +700,14 @@ public class AccountHelper implements ActorService {
 	public void BatchPutAccounts(Map<String, Account.Builder> accountValues) {
 		Set<String> keySets = accountValues.keySet();
 		Iterator<String> iterator = keySets.iterator();
-		String logStr = "";
 		while (iterator.hasNext()) {
 			String key = iterator.next();
 			AccountValue value = accountValues.get(key).getValue();
 			if (this.stateTrie != null) {
 				this.stateTrie.put(encApi.hexDec(key), value.toByteArray());
-				logStr += System.lineSeparator() + "put state trie::" + key + " " + encApi.hexEnc(value.toByteArray());
 			}
 		}
 		KeyConstant.QUEUE.add(accountValues);
-		log.debug(logStr);
 	}
 
 	public void tokenMappingAccount(AccountCryptoToken.Builder acBuilder) {

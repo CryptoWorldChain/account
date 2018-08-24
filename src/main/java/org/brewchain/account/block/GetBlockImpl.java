@@ -55,11 +55,11 @@ public class GetBlockImpl extends SessionModules<ReqGetBlock> {
 			}
 			BlockEntity.Builder oBlockEntity;
 			try {
-				oBlockEntity = blockHelper.CreateNewBlock(pb.getTxCount(),0, null);
+				oBlockEntity = blockHelper.CreateNewBlock(pb.getTxCount(), 0, null, "");
 
 				BlockHeaderImpl.Builder oBlockHeaderImpl = BlockHeaderImpl.newBuilder();
 				oBlockHeaderImpl.setBlockHash(oBlockEntity.getHeader().getBlockHash());
-				//oBlockHeaderImpl.setCoinbase(encApi.hexEnc(oBlockEntity.getHeader().getCoinbase().toByteArray()));
+				// oBlockHeaderImpl.setCoinbase(encApi.hexEnc(oBlockEntity.getHeader().getCoinbase().toByteArray()));
 				oBlockHeaderImpl.setExtraData(oBlockEntity.getHeader().getExtraData());
 				oBlockHeaderImpl.setNumber(oBlockEntity.getHeader().getNumber());
 				oBlockHeaderImpl.setParentHash(oBlockEntity.getHeader().getParentHash());
@@ -69,28 +69,28 @@ public class GetBlockImpl extends SessionModules<ReqGetBlock> {
 				for (String oTxhash : oBlockEntity.getHeader().getTxHashsList()) {
 					oBlockHeaderImpl.addTxHashs(oTxhash);
 				}
-				
+
 				BlockMinerImpl.Builder oBlockMinerImpl = BlockMinerImpl.newBuilder();
 				oBlockMinerImpl.setBcuid(oBlockEntity.getMiner().getBcuid());
 				oBlockMinerImpl.setAddress(oBlockEntity.getMiner().getAddress());
 				oBlockMinerImpl.setNode(oBlockEntity.getMiner().getNode());
-				oBlockMinerImpl.setReward(
-						String.valueOf(UnitUtil.fromWei(ByteUtil.bytesToBigInteger(oBlockEntity.getMiner().getReward().toByteArray()))));
-				
+				oBlockMinerImpl.setReward(String.valueOf(UnitUtil
+						.fromWei(ByteUtil.bytesToBigInteger(oBlockEntity.getMiner().getReward().toByteArray()))));
+
 				oRespGetBlock.setHeader(oBlockHeaderImpl);
 				oRespGetBlock.setMiner(oBlockMinerImpl);
 				oRespGetBlock.setRetCode(1);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
-//				e.printStackTrace();
+				// e.printStackTrace();
 				oRespGetBlock.setRetCode(-1);
-				log.error("GetBlockImpl error",e);
+				log.error("GetBlockImpl error", e);
 			}
 
 		} catch (Exception e) {
 			oRespGetBlock.setRetCode(-1);
-//			e.printStackTrace();
-			log.error("GetBlockImpl error",e);
+			// e.printStackTrace();
+			log.error("GetBlockImpl error", e);
 		}
 
 		oRespGetBlock.setRetCode(1);

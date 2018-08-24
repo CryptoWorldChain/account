@@ -8,6 +8,7 @@ import static org.brewchain.account.util.RLP.encodeList;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -70,7 +71,7 @@ public class StateTrie implements ActorService {
 	}
 
 	class BatchStorage {
-		HashMap<OKey, OValue> kvs = new HashMap<>();
+		LinkedHashMap<OKey, OValue> kvs = new LinkedHashMap<>();
 		// List<OKey> keys = new ArrayList<>();
 		// List<OValue> values = new ArrayList<>();
 
@@ -83,6 +84,7 @@ public class StateTrie implements ActorService {
 		public void remove(byte[] key) {
 			// keys.add(oEntityHelper.byteKey2OKey(key));
 			// values.add(oEntityHelper.byteValue2OValue(v));
+			log.debug("BatchStorage remove::" + encApi.hexEnc(key));
 			kvs.remove(oEntityHelper.byteKey2OKey(key));
 		}
 	}
@@ -148,14 +150,18 @@ public class StateTrie implements ActorService {
 					OKey[] oks = new OKey[size];
 					OValue[] ovs = new OValue[size];
 					int i = 0;
+
+//					String trace = "";
 					for (Map.Entry<OKey, OValue> kvs : bs.kvs.entrySet()) {
 						oks[i] = kvs.getKey();
 						ovs[i] = kvs.getValue();
+
+//						trace += encApi.hexEnc(kvs.getKey().getData().toByteArray()) + System.lineSeparator();
 						i++;
 					}
 
 					dao.getAccountDao().batchPuts(oks, ovs);
-					log.debug("state trie batch puts count" + oks.length);
+//					log.debug("state trie batch puts " + size + " trace::" + trace);
 					bs.kvs.clear();
 				} catch (Exception e) {
 					log.warn("error in flushBS" + e.getMessage(), e);
@@ -182,6 +188,7 @@ public class StateTrie implements ActorService {
 			} finally {
 				if (bs != null) {
 					if (bsPool.size() < 100) {
+						log.debug("bsPool size=" + bsPool.size() + " kvs=" + bs.kvs.size());
 						bs.kvs.clear();
 						// bs.values.clear();
 						bsPool.retobj(bs);
@@ -241,6 +248,7 @@ public class StateTrie implements ActorService {
 												if (bs != null) {
 													batchStorage.remove();
 													if (bsPool.size() < 100) {
+														log.debug("bsPool size=" + bsPool.size() + " kvs=" + bs.kvs.size());
 														bs.kvs.clear();
 														// bs.values.clear();
 														bsPool.retobj(bs);
@@ -588,7 +596,7 @@ public class StateTrie implements ActorService {
 	}
 
 	Cache<String, byte[]> cacheByHash = CacheBuilder.newBuilder().initialCapacity(10000)
-			.expireAfterWrite(3600, TimeUnit.SECONDS).maximumSize(1000000)
+			.expireAfterWrite(120, TimeUnit.SECONDS).maximumSize(1000000)
 			.concurrencyLevel(Runtime.getRuntime().availableProcessors()).build();
 
 	private byte[] getHash(byte[] hash) {
@@ -639,9 +647,9 @@ public class StateTrie implements ActorService {
 		if (bs != null) {
 			// log.debug("add into state trie key::" + encApi.hexEnc(hash));
 			bs.remove(hash);
+			log.debug("state trie batch bs " + encApi.hexEnc(hash));
 		}
-		cacheByHash.invalidate(encApi.hexEnc(hash));
-		// dao.getAccountDao().delete(OEntityBuilder.byteKey2OKey(hash));
+		// cacheByHash.invalidate(encApi.hexEnc(hash));
 	}
 
 	public byte[] get(byte[] key) {

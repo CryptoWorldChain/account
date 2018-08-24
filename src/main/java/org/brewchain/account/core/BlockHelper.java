@@ -56,7 +56,7 @@ public class BlockHelper implements ActorService {
 	StateTrie stateTrie;
 	@ActorRequire(name = "Processor_Manager", scope = "global")
 	ProcessorManager oProcessorManager;
-	
+
 	/**
 	 * 创建新区块
 	 * 
@@ -65,8 +65,8 @@ public class BlockHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public BlockEntity.Builder CreateNewBlock(String extraData,int confirmRecvCount) throws Exception {
-		return CreateNewBlock(KeyConstant.DEFAULT_BLOCK_TX_COUNT,confirmRecvCount, extraData);
+	public BlockEntity.Builder CreateNewBlock(String extraData, int confirmRecvCount, String term) throws Exception {
+		return CreateNewBlock(KeyConstant.DEFAULT_BLOCK_TX_COUNT, confirmRecvCount, extraData, term);
 	}
 
 	/**
@@ -78,8 +78,9 @@ public class BlockHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public BlockEntity.Builder CreateNewBlock(int txCount,int confirmRecvCount, String extraData) throws Exception {
-		return CreateNewBlock(transactionHelper.getWaitBlockTx(txCount,confirmRecvCount), extraData);
+	public BlockEntity.Builder CreateNewBlock(int txCount, int confirmRecvCount, String extraData, String term)
+			throws Exception {
+		return CreateNewBlock(transactionHelper.getWaitBlockTx(txCount, confirmRecvCount), extraData, term);
 	}
 
 	/**
@@ -91,10 +92,12 @@ public class BlockHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public BlockEntity.Builder CreateNewBlock(List<MultiTransaction> txs, String extraData) throws Exception {
-		return oProcessorManager.getProcessor(blockChainConfig.getAccountVersion()).CreateNewBlock(txs, extraData);
+	public BlockEntity.Builder CreateNewBlock(List<MultiTransaction> txs, String extraData, String term)
+			throws Exception {
+		return oProcessorManager.getProcessor(blockChainConfig.getAccountVersion()).CreateNewBlock(txs, extraData,
+				term);
 	}
- 
+
 	/**
 	 * 创建创世块
 	 * 
@@ -120,9 +123,9 @@ public class BlockHelper implements ActorService {
 		oBlockHeader.setTimestamp(currentTimestamp);
 		oBlockHeader.setNumber(KeyConstant.GENESIS_NUMBER);
 		oBlockHeader.setExtraData(extraData);
-		
+
 		CacheTrie oTransactionTrie = new CacheTrie(this.encApi);
-		
+
 		for (int i = 0; i < txs.size(); i++) {
 			oBlockHeader.addTxHashs(txs.get(i).getTxHash());
 			oBlockBody.addTxs(txs.get(i));
@@ -134,7 +137,7 @@ public class BlockHelper implements ActorService {
 		}
 		oBlockHeader.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
 		oBlockHeader.setTxTrieRoot(encApi.hexEnc(oTransactionTrie.getRootHash()));
-		//oBlockHeader.setReceiptTrieRoot(value)
+		// oBlockHeader.setReceiptTrieRoot(value)
 		oBlockHeader.setBlockHash(encApi.hexEnc(encApi.sha256Encode(oBlockHeader.build().toByteArray())));
 		oBlockEntity.setHeader(oBlockHeader);
 		oBlockEntity.setBody(oBlockBody);
@@ -152,7 +155,7 @@ public class BlockHelper implements ActorService {
 	public synchronized AddBlockResponse ApplyBlock(BlockEntity block) throws Exception {
 		return oProcessorManager.getProcessor(block.getVersion()).ApplyBlock(block);
 	}
-	
+
 	/**
 	 * 根据区块Hash获取区块信息
 	 * 

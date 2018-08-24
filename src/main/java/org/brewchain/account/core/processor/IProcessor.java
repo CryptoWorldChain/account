@@ -14,7 +14,7 @@ public interface IProcessor {
 
 	AddBlockResponse ApplyBlock(BlockEntity oBlockEntity);
 
-	BlockEntity.Builder CreateNewBlock(List<MultiTransaction> txs, String extraData) throws Exception;
+	BlockEntity.Builder CreateNewBlock(List<MultiTransaction> txs, String extraData, String term) throws Exception;
 
 	Map<String, ByteString> ExecuteTransaction(List<MultiTransaction> oMultiTransactions,
 			BlockEntity currentBlock) throws Exception;

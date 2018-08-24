@@ -107,7 +107,7 @@ public class V2Processor implements IProcessor, ActorService {
 	}
 
 	@Override
-	public synchronized BlockEntity.Builder CreateNewBlock(List<MultiTransaction> txs, String extraData) throws Exception {
+	public synchronized BlockEntity.Builder CreateNewBlock(List<MultiTransaction> txs, String extraData, String term) throws Exception {
 		BlockEntity.Builder oBlockEntity = BlockEntity.newBuilder();
 		BlockHeader.Builder oBlockHeader = BlockHeader.newBuilder();
 		BlockBody.Builder oBlockBody = BlockBody.newBuilder();
@@ -130,7 +130,8 @@ public class V2Processor implements IProcessor, ActorService {
 		oBlockMiner.setAddress(encApi.hexEnc(KeyConstant.node.getoAccount().getAddress().toByteArray()));
 		oBlockMiner.setNode(KeyConstant.node.getNode());
 		oBlockMiner.setBcuid(KeyConstant.node.getBcuid());
-
+		oBlockMiner.setTermuid(term);
+		
 		// cal reward
 		oBlockMiner.setReward(ByteString.copyFrom(
 				ByteUtil.bigIntegerToBytes(blockChainConfig.getMinerReward().multiply(new BigInteger(String.valueOf(
