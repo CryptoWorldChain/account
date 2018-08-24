@@ -155,7 +155,7 @@ public class StateTrie implements ActorService {
 					}
 
 					dao.getAccountDao().batchPuts(oks, ovs);
-
+					log.debug("state trie batch puts count" + oks.length);
 					bs.kvs.clear();
 				} catch (Exception e) {
 					log.warn("error in flushBS" + e.getMessage(), e);
@@ -471,67 +471,73 @@ public class StateTrie implements ActorService {
 
 		/*********** Dump methods ************/
 
-//		public String dumpStruct(String indent, String prefix) {
-//			String ret = indent + prefix + getType() + (dirty ? " *" : "")
-//					+ (hash == null ? "" : "(hash: " + Hex.toHexString(hash).substring(0, 6) + ")");
-//			if (getType() == NodeType.BranchNode) {
-//				byte[] value = branchNodeGetValue();
-//				ret += (value == null ? "" : " [T] = " + Hex.toHexString(value)) + "\n";
-//				for (int i = 0; i < 16; i++) {
-//					Node child = branchNodeGetChild(i);
-//					if (child != null) {
-//						ret += child.dumpStruct(indent + "  ", "[" + i + "] ");
-//					}
-//				}
-//
-//			} else if (getType() == NodeType.KVNodeNode) {
-//				ret += " [" + kvNodeGetKey() + "]\n";
-//				ret += kvNodeGetChildNode().dumpStruct(indent + "  ", "");
-//			} else {
-//				ret += " [" + kvNodeGetKey() + "] = " + Hex.toHexString(kvNodeGetValue()) + "\n";
-//			}
-//			return ret;
-//		}
+		// public String dumpStruct(String indent, String prefix) {
+		// String ret = indent + prefix + getType() + (dirty ? " *" : "")
+		// + (hash == null ? "" : "(hash: " + Hex.toHexString(hash).substring(0,
+		// 6) + ")");
+		// if (getType() == NodeType.BranchNode) {
+		// byte[] value = branchNodeGetValue();
+		// ret += (value == null ? "" : " [T] = " + Hex.toHexString(value)) +
+		// "\n";
+		// for (int i = 0; i < 16; i++) {
+		// Node child = branchNodeGetChild(i);
+		// if (child != null) {
+		// ret += child.dumpStruct(indent + " ", "[" + i + "] ");
+		// }
+		// }
+		//
+		// } else if (getType() == NodeType.KVNodeNode) {
+		// ret += " [" + kvNodeGetKey() + "]\n";
+		// ret += kvNodeGetChildNode().dumpStruct(indent + " ", "");
+		// } else {
+		// ret += " [" + kvNodeGetKey() + "] = " +
+		// Hex.toHexString(kvNodeGetValue()) + "\n";
+		// }
+		// return ret;
+		// }
 
-//		public List<String> dumpTrieNode(boolean compact) {
-//			List<String> ret = new ArrayList<>();
-//			if (hash != null) {
-//				ret.add(hash2str(hash, compact) + " ==> " + dumpContent(false, compact));
-//			}
-//
-//			if (getType() == NodeType.BranchNode) {
-//				for (int i = 0; i < 16; i++) {
-//					Node child = branchNodeGetChild(i);
-//					if (child != null)
-//						ret.addAll(child.dumpTrieNode(compact));
-//				}
-//			} else if (getType() == NodeType.KVNodeNode) {
-//				ret.addAll(kvNodeGetChildNode().dumpTrieNode(compact));
-//			}
-//			return ret;
-//		}
-//
-//		private String dumpContent(boolean recursion, boolean compact) {
-//			if (recursion && hash != null)
-//				return hash2str(hash, compact);
-//			String ret;
-//			if (getType() == NodeType.BranchNode) {
-//				ret = "[";
-//				for (int i = 0; i < 16; i++) {
-//					Node child = branchNodeGetChild(i);
-//					ret += i == 0 ? "" : ",";
-//					ret += child == null ? "" : child.dumpContent(true, compact);
-//				}
-//				byte[] value = branchNodeGetValue();
-//				ret += value == null ? "" : ", " + val2str(value, compact);
-//				ret += "]";
-//			} else if (getType() == NodeType.KVNodeNode) {
-//				ret = "[<" + kvNodeGetKey() + ">, " + kvNodeGetChildNode().dumpContent(true, compact) + "]";
-//			} else {
-//				ret = "[<" + kvNodeGetKey() + ">, " + val2str(kvNodeGetValue(), compact) + "]";
-//			}
-//			return ret;
-//		}
+		// public List<String> dumpTrieNode(boolean compact) {
+		// List<String> ret = new ArrayList<>();
+		// if (hash != null) {
+		// ret.add(hash2str(hash, compact) + " ==> " + dumpContent(false,
+		// compact));
+		// }
+		//
+		// if (getType() == NodeType.BranchNode) {
+		// for (int i = 0; i < 16; i++) {
+		// Node child = branchNodeGetChild(i);
+		// if (child != null)
+		// ret.addAll(child.dumpTrieNode(compact));
+		// }
+		// } else if (getType() == NodeType.KVNodeNode) {
+		// ret.addAll(kvNodeGetChildNode().dumpTrieNode(compact));
+		// }
+		// return ret;
+		// }
+		//
+		// private String dumpContent(boolean recursion, boolean compact) {
+		// if (recursion && hash != null)
+		// return hash2str(hash, compact);
+		// String ret;
+		// if (getType() == NodeType.BranchNode) {
+		// ret = "[";
+		// for (int i = 0; i < 16; i++) {
+		// Node child = branchNodeGetChild(i);
+		// ret += i == 0 ? "" : ",";
+		// ret += child == null ? "" : child.dumpContent(true, compact);
+		// }
+		// byte[] value = branchNodeGetValue();
+		// ret += value == null ? "" : ", " + val2str(value, compact);
+		// ret += "]";
+		// } else if (getType() == NodeType.KVNodeNode) {
+		// ret = "[<" + kvNodeGetKey() + ">, " +
+		// kvNodeGetChildNode().dumpContent(true, compact) + "]";
+		// } else {
+		// ret = "[<" + kvNodeGetKey() + ">, " + val2str(kvNodeGetValue(),
+		// compact) + "]";
+		// }
+		// return ret;
+		// }
 
 		@Override
 		public String toString() {
@@ -838,9 +844,9 @@ public class StateTrie implements ActorService {
 
 	}
 
-//	public String dumpStructure() {
-//		return root == null ? "<empty>" : root.dumpStruct("", "");
-//	}
+	// public String dumpStructure() {
+	// return root == null ? "<empty>" : root.dumpStruct("", "");
+	// }
 
 	// public String dumpTrie() {
 	// return dumpTrie(true);
@@ -882,16 +888,16 @@ public class StateTrie implements ActorService {
 		}
 	}
 
-//	private static String hash2str(byte[] hash, boolean shortHash) {
-//		String ret = Hex.toHexString(hash);
-//		return "0x" + (shortHash ? ret.substring(0, 8) : ret);
-//	}
-//
-//	private static String val2str(byte[] val, boolean shortHash) {
-//		String ret = Hex.toHexString(val);
-//		if (val.length > 16) {
-//			ret = ret.substring(0, 10) + "... len " + val.length;
-//		}
-//		return "\"" + ret + "\"";
-//	}
+	// private static String hash2str(byte[] hash, boolean shortHash) {
+	// String ret = Hex.toHexString(hash);
+	// return "0x" + (shortHash ? ret.substring(0, 8) : ret);
+	// }
+	//
+	// private static String val2str(byte[] val, boolean shortHash) {
+	// String ret = Hex.toHexString(val);
+	// if (val.length > 16) {
+	// ret = ret.substring(0, 10) + "... len " + val.length;
+	// }
+	// return "\"" + ret + "\"";
+	// }
 }
