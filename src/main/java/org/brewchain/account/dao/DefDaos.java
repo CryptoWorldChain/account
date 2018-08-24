@@ -19,9 +19,10 @@ import onight.tfw.ojpa.api.annotations.StoreDAO;
 @Instantiate(name = "Def_Daos")
 public class DefDaos extends SessionModules<Message> {
 	@StoreDAO(target = "bc_bdb", daoClass = SliceAccoutDomain.class)
-//	@StoreDAO(target = "bc_bdb", daoClass = AccoutDomain.class)
 	ODBSupport accountDao;
-	
+
+	@StoreDAO(target = "bc_bdb", daoClass = CommonDomain.class)
+	ODBSupport commonDao;
 
 	@StoreDAO(target = "bc_bdb", daoClass = SliceTxSecondaryDomain.class)
 	ODBSupport txsDao;
@@ -37,13 +38,19 @@ public class DefDaos extends SessionModules<Message> {
 
 	@Override
 	public void onDaoServiceAllReady() {
-		// log.debug("EncAPI==" + enc);
-		// 校验
 		log.debug("service ready!!!!");
 	}
 
 	@Override
 	public void onDaoServiceReady(DomainDaoSupport arg0) {
+	}
+
+	public void setCommonDao(DomainDaoSupport commonDao) {
+		this.commonDao = (ODBSupport) commonDao;
+	}
+
+	public ODBSupport getCommonDao() {
+		return commonDao;
 	}
 
 	public void setCryptoTokenDao(DomainDaoSupport cryptoTokenDao) {
@@ -99,8 +106,9 @@ public class DefDaos extends SessionModules<Message> {
 	public boolean isReady() {
 		if (blockDao != null && SliceBlockDomain.class.isInstance(blockDao) && blockDao.getDaosupport() != null
 				&& txblockDao != null && SliceTxBlockDomain.class.isInstance(txblockDao)
-				&& txblockDao.getDaosupport() != null && txsDao != null && SliceTxSecondaryDomain.class.isInstance(txsDao)
-				&& txsDao.getDaosupport() != null && accountDao != null && SliceAccoutDomain.class.isInstance(accountDao)
+				&& txblockDao.getDaosupport() != null && txsDao != null
+				&& SliceTxSecondaryDomain.class.isInstance(txsDao) && txsDao.getDaosupport() != null
+				&& accountDao != null && SliceAccoutDomain.class.isInstance(accountDao)
 				&& accountDao.getDaosupport() != null && CryptoTokenDomain.class.isInstance(cryptoTokenDao)
 				&& cryptoTokenDao.getDaosupport() != null) {
 			return true;

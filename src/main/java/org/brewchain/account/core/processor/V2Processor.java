@@ -107,7 +107,7 @@ public class V2Processor implements IProcessor, ActorService {
 	}
 
 	@Override
-	public BlockEntity.Builder CreateNewBlock(List<MultiTransaction> txs, String extraData) throws Exception {
+	public synchronized BlockEntity.Builder CreateNewBlock(List<MultiTransaction> txs, String extraData) throws Exception {
 		BlockEntity.Builder oBlockEntity = BlockEntity.newBuilder();
 		BlockHeader.Builder oBlockHeader = BlockHeader.newBuilder();
 		BlockBody.Builder oBlockBody = BlockBody.newBuilder();
@@ -191,7 +191,8 @@ public class V2Processor implements IProcessor, ActorService {
 		CacheTrie oTransactionTrie = new CacheTrie(this.encApi);
 		CacheTrie oReceiptTrie = new CacheTrie(this.encApi);
 		this.stateTrie.setRoot(encApi.hexDec(oParentBlock.getHeader().getStateRoot()));
-
+		
+		log.debug("set root hash::" + oParentBlock.getHeader().getStateRoot());
 		BlockBody.Builder bb = oBlockEntity.getBody().toBuilder();
 		int i = 0;
 		for (String txHash : oBlockHeader.getTxHashsList()) {
@@ -234,7 +235,6 @@ public class V2Processor implements IProcessor, ActorService {
 				oTransactionTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY : oTransactionTrie.getRootHash()));
 		start = System.currentTimeMillis();
 		header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
-		
 		oBlockEntity.setHeader(header);
 		return true;
 	}
@@ -242,7 +242,8 @@ public class V2Processor implements IProcessor, ActorService {
 	@Override
 	public synchronized AddBlockResponse ApplyBlock(BlockEntity oBlockEntity) {
 		BlockEntity.Builder applyBlock = oBlockEntity.toBuilder();
-		log.error("====> start apply block hash::" + oBlockEntity.getHeader().getBlockHash() + " number:: "
+		long start = System.currentTimeMillis();
+		log.debug("====> start apply block hash::" + oBlockEntity.getHeader().getBlockHash() + " number:: "
 				+ oBlockEntity.getHeader().getNumber() + " miner::" + applyBlock.getMiner().getAddress() + ",headerTx="
 				+ applyBlock.getHeader().getTxHashsCount() + ",bodyTx=" + applyBlock.getBody().getTxsCount());
 		AddBlockResponse.Builder oAddBlockResponse = AddBlockResponse.newBuilder();
@@ -375,8 +376,9 @@ public class V2Processor implements IProcessor, ActorService {
 			oAddBlockResponse.setWantNumber(oAddBlockResponse.getCurrentNumber());
 		}
 
-		log.error("====> end apply block number::" + oBlockEntity.getHeader().getNumber() + "  stamp::"
-				+ System.currentTimeMillis());
+		log.debug("====> end apply block number::" + oBlockEntity.getHeader().getNumber() + "  cost::"
+				+ (System.currentTimeMillis() - start));
+
 		return oAddBlockResponse.build();
 	}
 }

@@ -13,6 +13,8 @@ import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.brewchain.evmapi.gens.Act.Account;
+import org.brewchain.evmapi.gens.Act.AccountValue;
+import org.fc.brewchain.bcapi.EncAPI;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -40,7 +42,6 @@ public class AccountStore implements Runnable {
 				int i = 0;
 				while (iterator.hasNext()) {
 					String key = iterator.next();
-					log.debug("put account address::" + key);
 					keysArray[i] = oEntityHelper.byteKey2OKey(accountValues.get(key).getAddress());
 					valuesArray[i] = oEntityHelper.byteValue2OValue(accountValues.get(key).getValue().toByteArray());
 

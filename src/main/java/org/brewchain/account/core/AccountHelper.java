@@ -188,7 +188,7 @@ public class AccountHelper implements ActorService {
 		List<AccountContractValue> contracts = new ArrayList<>();
 		try {
 			AccountContract oAccountContract = null;
-			OValue oOValue = dao.getAccountDao().get(oEntityHelper.byteKey2OKey(KeyConstant.DB_EXISTS_CONTRACT)).get();
+			OValue oOValue = dao.getCommonDao().get(oEntityHelper.byteKey2OKey(KeyConstant.DB_EXISTS_CONTRACT)).get();
 			if (oOValue != null && oOValue.getExtdata() != null) {
 				oAccountContract = AccountContract.parseFrom(oOValue.getExtdata().toByteArray());
 			}
@@ -306,138 +306,127 @@ public class AccountHelper implements ActorService {
 		putAccountValue(addr, oAccountValue.build());
 		return ByteUtil.bytesToBigInteger(oAccountTokenValue.getBalance().toByteArray());
 	}
-
-	/**
-	 * 增加加密Token账户余额
-	 * 
-	 * @param addr
-	 * @param symbol
-	 * @param token
-	 * @return
-	 * @throws Exception
-	 */
-	public synchronized long addCryptoBalance(ByteString addr, String symbol, AccountCryptoToken.Builder token)
-			throws Exception {
-
-		OValue oValue = dao.getAccountDao().get(oEntityHelper.byteKey2OKey(addr)).get();
-		if (oValue != null && oValue.getExtdata() != null) {
-		} else {
-			return 0;
-		}
-
-		AccountValue.Builder oAccountValue = AccountValue.newBuilder();
-		oAccountValue.mergeFrom(oValue.getExtdata().toByteArray());
-
-		token.setOwner(addr);
-		token.setNonce(token.getNonce() + 1);
-		token.setOwnertime(System.currentTimeMillis());
-
-		for (int i = 0; i < oAccountValue.getCryptosList().size(); i++) {
-			if (oAccountValue.getCryptosList().get(i).getSymbol().equals(symbol)) {
-				AccountCryptoValue.Builder oAccountCryptoValue = oAccountValue.getCryptos(i).toBuilder();
-				// boolean isTokenExists = false;
-				// for (int k = 0; k < oAccountCryptoValue.getTokensCount();
-				// k++) {
-				// if
-				// (oAccountCryptoValue.getTokens(k).getHash().equals(token.getHash()))
-				// {
-				// isTokenExists = true;
-				// break;
-				// }
-				// }
-				// if (!isTokenExists) {
-				oAccountCryptoValue.addTokens(token);
-				oAccountValue.setCryptos(i, oAccountCryptoValue);
-				// }
-				tokenMappingAccount(token);
-				putAccountValue(addr, oAccountValue.build(), false);
-				return oAccountValue.getCryptosList().get(i).getTokensCount();
-			}
-		}
-
-		// 如果是第一个，直接增加一个
-		AccountCryptoValue.Builder oAccountCryptoValue = AccountCryptoValue.newBuilder();
-		oAccountCryptoValue.setSymbol(symbol);
-		oAccountCryptoValue.addTokens(token);
-		oAccountValue.addCryptos(oAccountCryptoValue.build());
-		tokenMappingAccount(token);
-		putAccountValue(addr, oAccountValue.build(), false);
-		return 1;
-	}
-
-	/**
-	 * batch add balance。
-	 * 
-	 * @param addr
-	 * @param symbol
-	 * @param tokens
-	 * @return
-	 * @throws Exception
-	 */
-	public synchronized long newCryptoBalances(ByteString addr, String symbol,
-			ArrayList<AccountCryptoToken.Builder> tokens) throws Exception {
-		Account.Builder oAccount = GetAccount(addr).toBuilder();
-		if (oAccount == null) {
-			throw new Exception("account not founded::" + addr);
-		}
-		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
-
-		int symbolIndex = 0;
-		boolean isExistsSymbol = false;
-		for (int i = 0; i < oAccountValue.getCryptosList().size(); i++) {
-			if (oAccountValue.getCryptosList().get(i).getSymbol().equals(symbol)) {
-				isExistsSymbol = true;
-				symbolIndex = i;
-				break;
-			}
-		}
-
-		AccountCryptoValue.Builder oAccountCryptoValue;
-		if (isExistsSymbol) {
-			oAccountCryptoValue = oAccountValue.getCryptos(symbolIndex).toBuilder();
-		} else {
-			oAccountCryptoValue = AccountCryptoValue.newBuilder();
-			oAccountCryptoValue.setSymbol(symbol);
-		}
-		for (AccountCryptoToken.Builder token : tokens) {
-			oAccountCryptoValue.addTokens(token);
-		}
-		oAccountValue.addCryptos(oAccountCryptoValue.build());
-		putAccountValue(addr, oAccountValue.build());
-		return tokens.size();
-	}
-
-	/**
-	 * 移除加密Token
-	 * 
-	 * @param addr
-	 * @param symbol
-	 * @param hash
-	 * @return
-	 */
-	public synchronized long removeCryptoBalance(ByteString addr, ByteString symbol, ByteString hash) {
-		Account.Builder oAccount = GetAccount(addr).toBuilder();
-		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
-
-		int retBalance = 0;
-		for (int i = 0; i < oAccountValue.getCryptosList().size(); i++) {
-			if (oAccountValue.getCryptosList().get(i).getSymbolBytes().equals(symbol)) {
-				AccountCryptoValue.Builder value = oAccountValue.getCryptosList().get(i).toBuilder();
-
-				for (int j = 0; j < value.getTokensCount(); j++) {
-					if (value.getTokensBuilderList().get(j).getHash().equals(hash)) {
-						value.removeTokens(j);
-						break;
-					}
-				}
-				oAccountValue.setCryptos(i, value);
-				retBalance = value.getTokensCount();
-				break;
-			}
-		}
-		putAccountValue(addr, oAccountValue.build());
-		return retBalance;
-	}
+//
+//	/**
+//	 * 增加加密Token账户余额
+//	 * 
+//	 * @param addr
+//	 * @param symbol
+//	 * @param token
+//	 * @return
+//	 * @throws Exception
+//	 */
+//	public synchronized long addCryptoBalance(ByteString addr, String symbol, AccountCryptoToken.Builder token)
+//			throws Exception {
+//
+//		OValue oValue = dao.getAccountDao().get(oEntityHelper.byteKey2OKey(addr)).get();
+//		if (oValue != null && oValue.getExtdata() != null) {
+//		} else {
+//			return 0;
+//		}
+//
+//		AccountValue.Builder oAccountValue = AccountValue.newBuilder();
+//		oAccountValue.mergeFrom(oValue.getExtdata().toByteArray());
+//
+//		token.setOwner(addr);
+//		token.setNonce(token.getNonce() + 1);
+//		token.setOwnertime(System.currentTimeMillis());
+//
+//		for (int i = 0; i < oAccountValue.getCryptosList().size(); i++) {
+//			if (oAccountValue.getCryptosList().get(i).getSymbol().equals(symbol)) {
+//				AccountCryptoValue.Builder oAccountCryptoValue = oAccountValue.getCryptos(i).toBuilder();
+//				oAccountCryptoValue.addTokens(token);
+//				oAccountValue.setCryptos(i, oAccountCryptoValue);
+//				// }
+//				tokenMappingAccount(token);
+//				putAccountValue(addr, oAccountValue.build(), false);
+//				return oAccountValue.getCryptosList().get(i).getTokensCount();
+//			}
+//		}
+//
+//		// 如果是第一个，直接增加一个
+//		AccountCryptoValue.Builder oAccountCryptoValue = AccountCryptoValue.newBuilder();
+//		oAccountCryptoValue.setSymbol(symbol);
+//		oAccountCryptoValue.addTokens(token);
+//		oAccountValue.addCryptos(oAccountCryptoValue.build());
+//		tokenMappingAccount(token);
+//		putAccountValue(addr, oAccountValue.build(), false);
+//		return 1;
+//	}
+//
+//	/**
+//	 * batch add balance。
+//	 * 
+//	 * @param addr
+//	 * @param symbol
+//	 * @param tokens
+//	 * @return
+//	 * @throws Exception
+//	 */
+//	public synchronized long newCryptoBalances(ByteString addr, String symbol,
+//			ArrayList<AccountCryptoToken.Builder> tokens) throws Exception {
+//		Account.Builder oAccount = GetAccount(addr).toBuilder();
+//		if (oAccount == null) {
+//			throw new Exception("account not founded::" + addr);
+//		}
+//		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
+//
+//		int symbolIndex = 0;
+//		boolean isExistsSymbol = false;
+//		for (int i = 0; i < oAccountValue.getCryptosList().size(); i++) {
+//			if (oAccountValue.getCryptosList().get(i).getSymbol().equals(symbol)) {
+//				isExistsSymbol = true;
+//				symbolIndex = i;
+//				break;
+//			}
+//		}
+//
+//		AccountCryptoValue.Builder oAccountCryptoValue;
+//		if (isExistsSymbol) {
+//			oAccountCryptoValue = oAccountValue.getCryptos(symbolIndex).toBuilder();
+//		} else {
+//			oAccountCryptoValue = AccountCryptoValue.newBuilder();
+//			oAccountCryptoValue.setSymbol(symbol);
+//		}
+//		for (AccountCryptoToken.Builder token : tokens) {
+//			oAccountCryptoValue.addTokens(token);
+//		}
+//		oAccountValue.addCryptos(oAccountCryptoValue.build());
+//		putAccountValue(addr, oAccountValue.build());
+//		return tokens.size();
+//	}
+//
+//	/**
+//	 * 移除加密Token
+//	 * 
+//	 * @param addr
+//	 * @param symbol
+//	 * @param hash
+//	 * @return
+//	 */
+//	public synchronized long removeCryptoBalance(ByteString addr, ByteString symbol, ByteString hash) {
+//		Account.Builder oAccount = GetAccount(addr).toBuilder();
+//		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
+//
+//		int retBalance = 0;
+//		for (int i = 0; i < oAccountValue.getCryptosList().size(); i++) {
+//			if (oAccountValue.getCryptosList().get(i).getSymbolBytes().equals(symbol)) {
+//				AccountCryptoValue.Builder value = oAccountValue.getCryptosList().get(i).toBuilder();
+//
+//				for (int j = 0; j < value.getTokensCount(); j++) {
+//					if (value.getTokensBuilderList().get(j).getHash().equals(hash)) {
+//						value.removeTokens(j);
+//						break;
+//					}
+//				}
+//				oAccountValue.setCryptos(i, value);
+//				retBalance = value.getTokensCount();
+//				break;
+//			}
+//		}
+//		putAccountValue(addr, oAccountValue.build());
+//		return retBalance;
+//	}
 
 	public String getSyncStr(ByteString addr) {
 		return ("" + addr.byteAt(2) + addr.byteAt(3));
@@ -495,7 +484,6 @@ public class AccountHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public BigInteger getBalance(ByteString addr) throws Exception {
-		log.debug("find balance::" + addr);
 		Account oAccount = GetAccount(addr);
 		if (oAccount == null) {
 			throw new Exception("account not found");
@@ -554,50 +542,50 @@ public class AccountHelper implements ActorService {
 		return new ArrayList<AccountCryptoToken>();
 	}
 
-	/**
-	 * 生成加密Token方法。 调用时必须确保symbol不重复。
-	 * 
-	 * @param addr
-	 * @param symbol
-	 * @param name
-	 * @param code
-	 * @throws Exception
-	 */
-	public synchronized void generateCryptoToken(ByteString addr, String symbol, String[] name, String[] code)
-			throws Exception {
-		if (name.length != code.length || name.length == 0) {
-			throw new Exception(String.format("crypto token name %s or code %s invalid", name.length, code.length));
-		}
-
-		int total = name.length;
-		Account.Builder oAccount = GetAccount(addr).toBuilder();
-		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
-		AccountCryptoValue.Builder oAccountCryptoValue = AccountCryptoValue.newBuilder();
-		oAccountCryptoValue.setSymbol(symbol);
-
-		for (int i = 0; i < name.length; i++) {
-			AccountCryptoToken.Builder oAccountCryptoToken = AccountCryptoToken.newBuilder();
-			oAccountCryptoToken.setName(name[i]);
-			oAccountCryptoToken.setCode(code[i]);
-			oAccountCryptoToken.setIndex(i);
-			oAccountCryptoToken.setTotal(total);
-			oAccountCryptoToken.setTimestamp(System.currentTimeMillis());
-			oAccountCryptoToken
-					.setHash(ByteString.copyFrom(encApi.sha256Encode(oAccountCryptoToken.build().toByteArray())));
-
-			oAccountCryptoToken.setOwner(addr);
-			oAccountCryptoToken.setNonce(0);
-			oAccountCryptoToken.setOwnertime(System.currentTimeMillis());
-			oAccountCryptoValue.addTokens(oAccountCryptoToken);
-			tokenMappingAccount(oAccountCryptoToken);
-		}
-
-		oAccountValue.addCryptos(oAccountCryptoValue);
-		putAccountValue(addr, oAccountValue.build());
-	}
+//	/**
+//	 * 生成加密Token方法。 调用时必须确保symbol不重复。
+//	 * 
+//	 * @param addr
+//	 * @param symbol
+//	 * @param name
+//	 * @param code
+//	 * @throws Exception
+//	 */
+//	public synchronized void generateCryptoToken(ByteString addr, String symbol, String[] name, String[] code)
+//			throws Exception {
+//		if (name.length != code.length || name.length == 0) {
+//			throw new Exception(String.format("crypto token name %s or code %s invalid", name.length, code.length));
+//		}
+//
+//		int total = name.length;
+//		Account.Builder oAccount = GetAccount(addr).toBuilder();
+//		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
+//		AccountCryptoValue.Builder oAccountCryptoValue = AccountCryptoValue.newBuilder();
+//		oAccountCryptoValue.setSymbol(symbol);
+//
+//		for (int i = 0; i < name.length; i++) {
+//			AccountCryptoToken.Builder oAccountCryptoToken = AccountCryptoToken.newBuilder();
+//			oAccountCryptoToken.setName(name[i]);
+//			oAccountCryptoToken.setCode(code[i]);
+//			oAccountCryptoToken.setIndex(i);
+//			oAccountCryptoToken.setTotal(total);
+//			oAccountCryptoToken.setTimestamp(System.currentTimeMillis());
+//			oAccountCryptoToken
+//					.setHash(ByteString.copyFrom(encApi.sha256Encode(oAccountCryptoToken.build().toByteArray())));
+//
+//			oAccountCryptoToken.setOwner(addr);
+//			oAccountCryptoToken.setNonce(0);
+//			oAccountCryptoToken.setOwnertime(System.currentTimeMillis());
+//			oAccountCryptoValue.addTokens(oAccountCryptoToken);
+//			tokenMappingAccount(oAccountCryptoToken);
+//		}
+//
+//		oAccountValue.addCryptos(oAccountCryptoValue);
+//		putAccountValue(addr, oAccountValue.build());
+//	}
 
 	public void createToken(ByteString addr, String token, BigInteger total) throws Exception {
-		OValue oValue = dao.getAccountDao().get(oEntityHelper.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN)).get();
+		OValue oValue = dao.getCommonDao().get(oEntityHelper.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN)).get();
 		ERC20Token.Builder oERC20Token;
 		if (oValue == null) {
 			oERC20Token = ERC20Token.newBuilder();
@@ -612,7 +600,7 @@ public class AccountHelper implements ActorService {
 		oICOValue.setTotal(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(total)));
 		oERC20Token.addValue(oICOValue);
 
-		dao.getAccountDao().put(oEntityHelper.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN),
+		dao.getCommonDao().put(oEntityHelper.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN),
 				oEntityHelper.byteValue2OValue(oERC20Token.build().toByteArray()));
 	}
 	//
@@ -624,7 +612,7 @@ public class AccountHelper implements ActorService {
 	// }
 
 	public void createContract(ByteString addr, ByteString contract) throws Exception {
-		OValue oValue = dao.getAccountDao().get(oEntityHelper.byteKey2OKey(KeyConstant.DB_EXISTS_CONTRACT)).get();
+		OValue oValue = dao.getCommonDao().get(oEntityHelper.byteKey2OKey(KeyConstant.DB_EXISTS_CONTRACT)).get();
 		AccountContract.Builder oAccountContract;
 		if (oValue == null || oValue.getExtdata() == null) {
 			oAccountContract = AccountContract.newBuilder();
@@ -638,7 +626,7 @@ public class AccountHelper implements ActorService {
 		oAccountContractValue.setTimestamp(System.currentTimeMillis());
 		oAccountContract.addValue(oAccountContractValue);
 
-		dao.getAccountDao().put(oEntityHelper.byteKey2OKey(KeyConstant.DB_EXISTS_CONTRACT),
+		dao.getCommonDao().put(oEntityHelper.byteKey2OKey(KeyConstant.DB_EXISTS_CONTRACT),
 				oEntityHelper.byteValue2OValue(oAccountContract.build().toByteArray()));
 	}
 
@@ -646,7 +634,7 @@ public class AccountHelper implements ActorService {
 		List<ERC20TokenValue> list = new ArrayList<>();
 		OValue oValue;
 		try {
-			oValue = dao.getAccountDao().get(oEntityHelper.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN)).get();
+			oValue = dao.getCommonDao().get(oEntityHelper.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN)).get();
 			if (oValue == null) {
 				return list;
 			}
@@ -675,7 +663,7 @@ public class AccountHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public boolean isExistsToken(String token) throws Exception {
-		OValue oValue = dao.getAccountDao().get(oEntityHelper.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN)).get();
+		OValue oValue = dao.getCommonDao().get(oEntityHelper.byteKey2OKey(KeyConstant.DB_EXISTS_TOKEN)).get();
 		if (oValue == null) {
 			return false;
 		}
@@ -690,21 +678,26 @@ public class AccountHelper implements ActorService {
 	}
 
 	public boolean isExistsCryptoToken(byte[] hash) throws Exception {
-		OValue oValue = dao.getAccountDao().get(oEntityHelper.byteKey2OKey(hash)).get();
+		OValue oValue = dao.getCommonDao().get(oEntityHelper.byteKey2OKey(hash)).get();
 		if (oValue == null) {
 			return false;
 		}
 		return true;
 	}
 
-	public void putAccountValue(ByteString addr, AccountValue oAccountValue, boolean stateable) {
+	public void putAccountValue(final ByteString addr, final AccountValue oAccountValue, boolean stateable) {
 		dao.getAccountDao().put(oEntityHelper.byteKey2OKey(addr),
 				oEntityHelper.byteValue2OValue(oAccountValue.toByteArray()));
 		if (this.stateTrie != null && stateable) {
-//			log.debug(System.lineSeparator() + "put state trie::" + encApi.hexEnc(addr.toByteArray()) + " "
-//					+ encApi.hexEnc(oAccountValue.toByteArray()));
+			log.debug(System.lineSeparator() + "put state trie::" + encApi.hexEnc(addr.toByteArray()) + " "
+					+ encApi.hexEnc(oAccountValue.toByteArray()));
 			this.stateTrie.put(addr.toByteArray(), oAccountValue.toByteArray());
 		}
+		// KeyConstant.QUEUE.add(new HashMap<String, Account>() {
+		// {
+		// put(encApi.hexEnc(addr.toByteArray()), null);
+		// }
+		// });
 	}
 
 	public void putAccountValue(ByteString addr, AccountValue oAccountValue) {
@@ -714,16 +707,17 @@ public class AccountHelper implements ActorService {
 	public void BatchPutAccounts(Map<String, Account.Builder> accountValues) {
 		Set<String> keySets = accountValues.keySet();
 		Iterator<String> iterator = keySets.iterator();
-//		String logStr = "";
+		String logStr = "";
 		while (iterator.hasNext()) {
 			String key = iterator.next();
 			AccountValue value = accountValues.get(key).getValue();
 			if (this.stateTrie != null) {
 				this.stateTrie.put(encApi.hexDec(key), value.toByteArray());
-//				logStr += System.lineSeparator() + "put state trie::" + key + " " + encApi.hexEnc(value.toByteArray());
+				logStr += System.lineSeparator() + "put state trie::" + key + " " + encApi.hexEnc(value.toByteArray());
 			}
 		}
-//		log.debug(logStr);
+		KeyConstant.QUEUE.add(accountValues);
+		log.debug(logStr);
 	}
 
 	public void tokenMappingAccount(AccountCryptoToken.Builder acBuilder) {
