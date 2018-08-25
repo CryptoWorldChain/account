@@ -49,66 +49,40 @@ public class ConfirmTxHashMapDB implements ActorService {
 	}
 
 	public synchronized void confirmTx(HashPair hp, BigInteger bits) {
-		rwLock.readLock().lock();
-		boolean put = false;
 		try {
+
+			rwLock.writeLock().lock();
 			HashPair _hp = storage.get(hp.getKey());
 			if (_hp == null) {
-				rwLock.readLock().unlock();
-				put = true;
-				rwLock.writeLock().lock();
-				try {// second entry.
-					HashPair _shp = storage.get(hp.getKey());
-					if (_shp != null) {
-						_hp = _shp;
-					} else {
-						storage.put(hp.getKey(), hp);
-						confirmQueue.addLast(hp);
-						_hp = hp;
-					}
-				} catch (Exception e) {
-					log.error("confirmTx error", e);
-				} finally {
-					rwLock.writeLock().unlock();
+				storage.put(hp.getKey(), hp);
+				confirmQueue.addLast(hp);
+				_hp = hp;
+			} else {
+				if (_hp.getTx() == null) {
+					_hp.setData(hp.getData());
+					_hp.setTx(hp.getTx());
+					confirmQueue.addLast(_hp);
 				}
 			}
 			_hp.setBits(bits);
 		} catch (Exception e) {
 		} finally {
-			if (!put) {
-				rwLock.readLock().unlock();
-			}
+			rwLock.writeLock().unlock();
 		}
 	}
 
 	public synchronized void confirmTx(String key, BigInteger bits) {
-		rwLock.readLock().lock();
-		boolean put = false;
 		try {
+			rwLock.writeLock().lock();
 			HashPair _hp = storage.get(key);
 			if (_hp == null) {
-				rwLock.readLock().unlock();
-				put = true;
-				rwLock.writeLock().lock();
-				try {// second entry.
-					HashPair _shp = storage.get(key);
-					if (_shp != null) {
-						_hp = _shp;
-					}
-				} catch (Exception e) {
-
-				} finally {
-					rwLock.writeLock().unlock();
-				}
+				_hp = new HashPair(key, null, null);
+				storage.put(key, _hp);
 			}
-			if (_hp != null) {
-				_hp.setBits(bits);
-			}
+			_hp.setBits(bits);
 		} catch (Exception e) {
 		} finally {
-			if (!put) {
-				rwLock.readLock().unlock();
-			}
+			rwLock.writeLock().unlock();
 		}
 	}
 
@@ -124,7 +98,6 @@ public class ConfirmTxHashMapDB implements ActorService {
 				hp.setRemoved(true);
 				// confirmQueue.remove(hp);//不主动的remove，等pop的时候再检查
 			}
-
 			return hp;
 		} catch (Exception e) {
 			return null;
