@@ -45,7 +45,8 @@ public class ConfirmTxHashMapDB implements ActorService {
 	}
 
 	public boolean containsKey(String txhash) {
-		return storage.get(txhash) != null;
+		HashPair _hp = storage.get(txhash);
+		return _hp != null && _hp.getTx() != null;
 	}
 
 	public synchronized void confirmTx(HashPair hp, BigInteger bits) {
