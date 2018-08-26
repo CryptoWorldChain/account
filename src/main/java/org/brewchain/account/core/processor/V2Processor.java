@@ -225,7 +225,6 @@ public class V2Processor implements IProcessor, ActorService {
 		BlockHeader.Builder header = oBlockEntity.getHeaderBuilder();
 
 		Iterator<String> iter = results.keySet().iterator();
-		i = 0;
 //		while (iter.hasNext()) {
 //		String key = iter.next();
 		List<String> keys = new ArrayList<>();
@@ -236,10 +235,9 @@ public class V2Processor implements IProcessor, ActorService {
 		Collections.sort(keys);
 		for (String key : keys) {
 			oReceiptTrie.put(RLP.encodeInt(i), results.get(key).toByteArray());
-			i++;
 		}
 		//for testremove
-		//applyReward(oBlockEntity);
+		applyReward(oBlockEntity);
 
 		header.setReceiptTrieRoot(encApi
 				.hexEnc(oReceiptTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY : oReceiptTrie.getRootHash()));
@@ -248,10 +246,10 @@ public class V2Processor implements IProcessor, ActorService {
 		start = System.currentTimeMillis();
 		header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
 		
-		log.debug("calc trie at block="+oBlockEntity.getHeader().getNumber()+",hash="+header.getStateRoot()+",rewardAddr="+
+		log.debug("====> calc trie at block="+oBlockEntity.getHeader().getNumber()+",hash="+header.getStateRoot()+",rewardAddr="+
 				oBlockEntity.getMiner().getAddress()+",reward="+
 				ByteUtil.bytesToBigInteger(oBlockEntity.getMiner().getReward().toByteArray())
-				+",cost="+(System.currentTimeMillis()-start)+".");
+				+",cost="+(System.currentTimeMillis()-start)+",txcount="+i);
 		
 		oBlockEntity.setHeader(header);
 		return true;

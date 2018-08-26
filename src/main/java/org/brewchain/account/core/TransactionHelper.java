@@ -244,6 +244,7 @@ public class TransactionHelper implements ActorService {
 				List<OValue> values = new ArrayList<>();
 				HashMap<String, HashPair> buffer = new HashMap<>();
 				for (MultiTransaction.Builder mtb : oMultiTransaction) {// db没有
+					dao.getStats().signalAcceptTx();
 					MultiTransaction cacheTx = txDBCacheByHash.getIfPresent(mtb.getTxHash());
 					MultiTransaction mt = mtb.clearStatus().clearResult().build();
 					ByteString mts = mt.toByteString();
@@ -264,7 +265,6 @@ public class TransactionHelper implements ActorService {
 							oConfirmMapDB.confirmTx(hp, bits);
 							txDBCacheByHash.put(hp.getKey(), hp.getTx());
 						}
-						dao.getStats().signalAcceptTx();
 						KeyConstant.counter.incrementAndGet();
 					}
 				}
