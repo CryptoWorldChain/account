@@ -2,16 +2,12 @@ package org.brewchain.account.core;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -21,18 +17,13 @@ import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.trie.StorageTrie;
 import org.brewchain.account.trie.StorageTrieCache;
 import org.brewchain.account.util.ByteUtil;
-import org.brewchain.account.util.FastByteComparisons;
 import org.brewchain.account.util.OEntityBuilder;
-import org.brewchain.bcapi.backend.ODBException;
 import org.brewchain.bcapi.gens.Oentity.OKey;
-import org.brewchain.bcapi.gens.Oentity.OPair;
 import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.brewchain.evmapi.gens.Act.Account;
 import org.brewchain.evmapi.gens.Act.AccountContract;
 import org.brewchain.evmapi.gens.Act.AccountContractValue;
 import org.brewchain.evmapi.gens.Act.AccountCryptoToken;
-import org.brewchain.evmapi.gens.Act.AccountCryptoToken.Builder;
-import org.brewchain.evmapi.gens.Act.AccountCryptoValue;
 import org.brewchain.evmapi.gens.Act.AccountTokenValue;
 import org.brewchain.evmapi.gens.Act.AccountValue;
 import org.brewchain.evmapi.gens.Act.CryptoTokenValue;
@@ -40,7 +31,6 @@ import org.brewchain.evmapi.gens.Act.ERC20Token;
 import org.brewchain.evmapi.gens.Act.ERC20TokenValue;
 import org.fc.brewchain.bcapi.EncAPI;
 
-import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
 
 import lombok.Data;
@@ -729,7 +719,29 @@ public class AccountHelper implements ActorService {
 				this.stateTrie.put(encApi.hexDec(key), value.toByteArray());
 			}
 		}
-		KeyConstant.QUEUE.add(accountValues);
+		// AccountTask task = new AccountTask(accountValues);
+		doPutAccounts(accountValues);
+		// KeyConstant.QUEUE.add(accountValues);
+	}
+
+	;
+
+	public void doPutAccounts(Map<String, Account.Builder> accountValues) {
+		try {
+			OKey[] keysArray = new OKey[accountValues.size()];
+			OValue[] valuesArray = new OValue[accountValues.size()];
+			Set<String> keySets = accountValues.keySet();
+			Iterator<String> iterator = keySets.iterator();
+			int i = 0;
+			while (iterator.hasNext()) {
+				String key = iterator.next();
+				keysArray[i] = oEntityHelper.byteKey2OKey(accountValues.get(key).getAddress());
+				valuesArray[i] = oEntityHelper.byteValue2OValue(accountValues.get(key).getValue().toByteArray());
+				i = i + 1;
+			}
+			dao.getAccountDao().batchPuts(keysArray, valuesArray);
+		} finally {
+		}
 	}
 
 	public void tokenMappingAccount(AccountCryptoToken.Builder acBuilder) {
