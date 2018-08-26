@@ -247,6 +247,9 @@ public class V2Processor implements IProcessor, ActorService {
 				oTransactionTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY : oTransactionTrie.getRootHash()));
 		start = System.currentTimeMillis();
 		header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
+		
+		log.debug("calc trie at block="+oBlockEntity.getHeader().getNumber()+",hash="+header.getStateRoot());
+		
 		oBlockEntity.setHeader(header);
 		return true;
 	}
@@ -336,7 +339,8 @@ public class V2Processor implements IProcessor, ActorService {
 
 						log.debug("=====sync-> " + applyBlock.getHeader().getNumber() + " state::"
 								+ applyBlock.getHeader().getStateRoot() + " tx::"
-								+ applyBlock.getHeader().getTxTrieRoot() + " receipt::"
+								+ applyBlock.getHeader().getTxTrieRoot()
+								 + " parent::" + applyBlock.getHeader().getParentHash() + " receipt::"
 								+ applyBlock.getHeader().getReceiptTrieRoot());
 
 						if (!oBlockEntity.getHeader().getStateRoot().equals(applyBlock.getHeader().getStateRoot())
