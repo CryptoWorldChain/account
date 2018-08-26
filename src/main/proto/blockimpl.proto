@@ -75,6 +75,13 @@ message RespBlockInfo {
 	string cache = 5;
 	repeated string dump = 7;
 	repeated string temp = 6;
+	
+	int64  	txAcceptCount = 10;
+	int64  	txBlockCount = 11;
+	double  txAcceptTps = 12;
+	double  txBlockTps = 13;
+	double  maxAcceptTps = 14;
+	double  maxBlockTps = 15;
 }
 
 message RespBlockDetail {

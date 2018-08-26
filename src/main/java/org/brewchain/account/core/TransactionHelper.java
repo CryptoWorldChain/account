@@ -126,6 +126,9 @@ public class TransactionHelper implements ActorService {
 		// 保存交易到缓存中，用于打包
 		// 如果指定了委托，并且委托是本节点
 		oConfirmMapDB.confirmTx(hp);
+		
+		// to add status info
+		dao.getStats().getTxAcceptCount().incrementAndGet();
 		// oPendingHashMapDB.put(hp.getKey(), hp);
 
 		// {node} {component} {opt} {type} {msg}
@@ -317,6 +320,7 @@ public class TransactionHelper implements ActorService {
 
 	public HashPair removeWaitingSendOrBlockTx(String txHash) throws InvalidProtocolBufferException {
 		// HashPair hpBlk = oPendingHashMapDB.getStorage().remove(txHash);
+		dao.getStats().getTxBlockCount().incrementAndGet();
 		HashPair hpBlk = oConfirmMapDB.invalidate(txHash);
 		HashPair hpSend = oSendingHashMapDB.getStorage().remove(txHash);
 		if (hpBlk != null)

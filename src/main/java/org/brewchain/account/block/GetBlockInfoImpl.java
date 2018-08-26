@@ -69,6 +69,13 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 			// oRespBlockInfo.setCache(blockChainHelper.getBlockCacheDump());
 			oRespBlockInfo.setWaitSync(oSendingHashMapDB.size());
 			oRespBlockInfo.setWaitBlock(oConfirmMapDB.size());
+			oRespBlockInfo.setTxAcceptCount(dao.getStats().getTxAcceptCount().get());
+			oRespBlockInfo.setTxAcceptTps(dao.getStats().getTxAcceptTps());
+			oRespBlockInfo.setTxBlockCount(dao.getStats().getTxBlockCount().get());
+			oRespBlockInfo.setTxBlockTps(dao.getStats().getTxBlockTps());
+			
+			oRespBlockInfo.setMaxBlockTps(dao.getStats().getMaxBlockTps());
+			oRespBlockInfo.setMaxAcceptTps(dao.getStats().getMaxAcceptTps());
 //			LinkedList<BlockEntity> list = blockChainHelper.getParentsBlocks(encApi.hexEnc(dao.getBlockDao()
 //					.get(oEntityHelper.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get().getExtdata().toByteArray()),
 //					null, 10000);
