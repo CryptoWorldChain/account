@@ -250,7 +250,8 @@ public class V2Processor implements IProcessor, ActorService {
 		
 		log.debug("calc trie at block="+oBlockEntity.getHeader().getNumber()+",hash="+header.getStateRoot()+",rewardAddr="+
 				oBlockEntity.getMiner().getAddress()+",reward="+
-				ByteUtil.bytesToBigInteger(oBlockEntity.getMiner().getReward().toByteArray()));
+				ByteUtil.bytesToBigInteger(oBlockEntity.getMiner().getReward().toByteArray())
+				+",cost="+(System.currentTimeMillis()-start)+".");
 		
 		oBlockEntity.setHeader(header);
 		return true;

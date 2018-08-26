@@ -63,6 +63,14 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 	public void onPBPacket(final FramePacket pack, final ReqBlockInfo pb, final CompleteHandler handler) {
 		RespBlockInfo.Builder oRespBlockInfo = RespBlockInfo.newBuilder();
 		try {
+			if("true".equalsIgnoreCase(pack.getExtStrProp("clear"))){
+				dao.getStats().getAcceptTxCount().set(0);
+				dao.getStats().getBlockTxCount().set(0);
+				dao.getStats().setFirstBlockTxTime(0);
+				dao.getStats().setFirstAcceptTxTime(0);
+				dao.getStats().setLastBlockTxTime(0);
+				dao.getStats().setLastAcceptTxTime(0);
+			}
 			oRespBlockInfo.setBlockCount(blockChainHelper.getLastStableBlockNumber());
 			oRespBlockInfo.setCache("sync::" + String.valueOf(KeyConstant.counter) + " exec::" + String.valueOf(KeyConstant.txCounter));
 			oRespBlockInfo.setNumber(blockChainHelper.getLastBlockNumber());

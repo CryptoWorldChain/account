@@ -221,7 +221,6 @@ public class TransactionHelper implements ActorService {
 				dao.getTxsDao().put(key, OValue.newBuilder().setExtdata(ByteString.copyFrom(hp.getData()))
 						.setInfo(mt.getTxHash()).build());
 				txDBCacheByHash.put(hp.getKey(), hp.getTx());
-				dao.getStats().signalAcceptTx();
 				if (isBroadCast) {
 					oConfirmMapDB.confirmTx(hp, bits);
 				}
