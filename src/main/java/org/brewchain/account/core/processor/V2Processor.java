@@ -238,7 +238,7 @@ public class V2Processor implements IProcessor, ActorService {
 			oReceiptTrie.put(RLP.encodeInt(i), results.get(key).toByteArray());
 			i++;
 		}
-		//for test
+		//for testremove
 		//applyReward(oBlockEntity);
 
 		header.setReceiptTrieRoot(encApi
@@ -250,7 +250,7 @@ public class V2Processor implements IProcessor, ActorService {
 		
 		log.debug("calc trie at block="+oBlockEntity.getHeader().getNumber()+",hash="+header.getStateRoot()+",rewardAddr="+
 				oBlockEntity.getMiner().getAddress()+",reward="+
-				oBlockEntity.getMiner().getReward());
+				ByteUtil.bytesToBigInteger(oBlockEntity.getMiner().getReward().toByteArray()));
 		
 		oBlockEntity.setHeader(header);
 		return true;
@@ -396,7 +396,8 @@ public class V2Processor implements IProcessor, ActorService {
 
 		log.debug("====> end apply block number::" + oBlockEntity.getHeader().getNumber() + "  cost::"
 				+ (System.currentTimeMillis() - start));
-
+		blockChainHelper.getDao().getStats().setCurBlockID(oBlockEntity.getHeader().getNumber());
+		
 		return oAddBlockResponse.build();
 	}
 }

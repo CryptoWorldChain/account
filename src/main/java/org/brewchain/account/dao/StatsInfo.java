@@ -22,7 +22,13 @@ public class StatsInfo implements Runnable {
 	long lastBlockID = 0;
 	long curBlockID = 0;
 	long lastBlockTime = 0;
+	long curBlockTime = 0;
 	boolean running = true;
+
+	public void setCurBlockID(long blockid) {
+		curBlockID = blockid;
+		curBlockTime = System.currentTimeMillis();
+	}
 
 	@Override
 	public void run() {
@@ -31,17 +37,22 @@ public class StatsInfo implements Runnable {
 			try {
 				long curAcceptTxCount = txAcceptCount.get();
 				long curBlockTxCount = txBlockCount.get();
-
-				long timeDistance = System.currentTimeMillis() - lastUpdateTime;
+				long now = System.currentTimeMillis();
+				long timeDistance = now - lastUpdateTime;
 				txAcceptTps = (curAcceptTxCount - lastTxAcceptCount) * 1000.f / (timeDistance + 1);
 				lastTxAcceptCount = curAcceptTxCount;
 				if (maxAcceptTps < txAcceptTps) {
 					maxAcceptTps = txAcceptTps;
 				}
 				if (curBlockID > lastBlockID) {
-					txBlockTps = (curBlockTxCount - lastTxBlockCount) * 1000.f / (timeDistance + 1);
+					txBlockTps = (curBlockTxCount - lastTxBlockCount) * 1000.f
+							/ (Math.abs(curBlockTime - lastBlockTime) + 1);
+					txBlockTps = txBlockTps / (curBlockID - lastBlockID);
+					
+					lastBlockTime = curBlockTime;
+					lastBlockID = curBlockID;
+					lastTxBlockCount = curBlockTxCount;
 				}
-				lastTxBlockCount = curBlockTxCount;
 
 				if (maxBlockTps < txBlockTps) {
 					maxBlockTps = txBlockTps;

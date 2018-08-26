@@ -225,7 +225,7 @@ public class StateTrie implements ActorService {
 						for (int i = 0; i < 16; i++) {
 							if (encoded[i] == null) {
 								final Node child = branchNodeGetChild(i);
-								if (encodeCnt >= MIN_BRANCHES_CONCURRENTLY) {
+								if (false&&encodeCnt >= MIN_BRANCHES_CONCURRENTLY) {
 									encoded[i] = getExecutor().submit(new Callable<byte[]>() {
 										@Override
 										public byte[] call() throws Exception {
