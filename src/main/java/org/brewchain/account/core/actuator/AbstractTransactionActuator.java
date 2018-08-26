@@ -125,6 +125,16 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 		this.dao = dao;
 		this.oStateTrie = oStateTrie;
 	}
+	
+	public void reset(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
+			BlockEntity currentBlock, EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
+		this.oAccountHelper = oAccountHelper;
+		this.oTransactionHelper = oTransactionHelper;
+		this.oBlock = currentBlock;
+		this.encApi = encApi;
+		this.dao = dao;
+		this.oStateTrie = oStateTrie;
+	}
 
 	@Override
 	public boolean needSignature() {
