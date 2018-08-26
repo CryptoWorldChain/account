@@ -167,10 +167,12 @@ public class TransactionHelper implements ActorService {
 		// 保存交易到db中
 		// log.debug("====put genesis transaction::"+
 		// multiTransaction.getTxHash());
+		dao.getStats().getTxAcceptCount().incrementAndGet();
+		KeyConstant.counter.incrementAndGet();
 
 		dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(multiTransaction.getTxHash())),
 				oEntityHelper.byteValue2OValue(multiTransaction.toByteArray()));
-
+		
 		return multiTransaction.getTxHash();
 	}
 
