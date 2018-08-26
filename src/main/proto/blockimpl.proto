@@ -82,6 +82,14 @@ message RespBlockInfo {
 	double  txBlockTps = 13;
 	double  maxAcceptTps = 14;
 	double  maxBlockTps = 15;
+	int64	firstBlockTxTime = 16;
+	int64	lastBlockTxTime = 17;
+	int64	blockTxTimeCostMS = 18;
+
+	int64	firstAcceptTxTime = 19;
+	int64	lastAcceptTxTime = 20;
+	int64	acceptTxTimeCostMS = 21;
+
 }
 
 message RespBlockDetail {

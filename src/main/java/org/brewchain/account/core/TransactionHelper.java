@@ -128,7 +128,7 @@ public class TransactionHelper implements ActorService {
 		oConfirmMapDB.confirmTx(hp);
 
 		// to add status info
-		dao.getStats().getTxAcceptCount().incrementAndGet();
+		dao.getStats().signalAcceptTx();
 		// oPendingHashMapDB.put(hp.getKey(), hp);
 
 		// {node} {component} {opt} {type} {msg}
@@ -167,12 +167,12 @@ public class TransactionHelper implements ActorService {
 		// 保存交易到db中
 		// log.debug("====put genesis transaction::"+
 		// multiTransaction.getTxHash());
-		dao.getStats().getTxAcceptCount().incrementAndGet();
+		dao.getStats().signalAcceptTx();
 		KeyConstant.counter.incrementAndGet();
 
 		dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(multiTransaction.getTxHash())),
 				oEntityHelper.byteValue2OValue(multiTransaction.toByteArray()));
-		
+
 		return multiTransaction.getTxHash();
 	}
 
@@ -211,7 +211,7 @@ public class TransactionHelper implements ActorService {
 			if (oValue != null) {
 				log.warn("transaction " + oMultiTransaction.getTxHash() + "exists in DB, drop it");
 			} else {
-				
+
 				oMultiTransaction.clearStatus();
 				oMultiTransaction.clearResult();
 
@@ -221,11 +221,11 @@ public class TransactionHelper implements ActorService {
 				dao.getTxsDao().put(key, OValue.newBuilder().setExtdata(ByteString.copyFrom(hp.getData()))
 						.setInfo(mt.getTxHash()).build());
 				txDBCacheByHash.put(hp.getKey(), hp.getTx());
-				dao.getStats().getTxAcceptCount().incrementAndGet();
+				dao.getStats().signalAcceptTx();
 				if (isBroadCast) {
 					oConfirmMapDB.confirmTx(hp, bits);
 				}
-				dao.getStats().getTxAcceptCount().incrementAndGet();
+				dao.getStats().signalAcceptTx();
 				KeyConstant.counter.incrementAndGet();
 			}
 		} catch (Exception e) {
@@ -264,7 +264,7 @@ public class TransactionHelper implements ActorService {
 							HashPair hp = buffer.get(ov.getInfo());
 							oConfirmMapDB.confirmTx(hp, bits);
 							txDBCacheByHash.put(hp.getKey(), hp.getTx());
-							dao.getStats().getTxAcceptCount().incrementAndGet();
+							dao.getStats().signalAcceptTx();
 							KeyConstant.counter.incrementAndGet();
 						}
 					}
@@ -329,11 +329,11 @@ public class TransactionHelper implements ActorService {
 		HashPair hpBlk = oConfirmMapDB.invalidate(txHash);
 		HashPair hpSend = oSendingHashMapDB.getStorage().remove(txHash);
 		if (hpBlk != null) {
-			dao.getStats().getTxBlockCount().incrementAndGet();
+			dao.getStats().signalBlockTx();
 			return hpBlk;
 		} else {
 			if (hpSend != null) {
-				dao.getStats().getTxBlockCount().incrementAndGet();
+				dao.getStats().signalBlockTx();
 			}
 			return hpSend;
 		}
@@ -695,11 +695,8 @@ public class TransactionHelper implements ActorService {
 				|| oMultiTransaction.getTxBody().getType() == TransTypeEnum.TYPE_CreateCryptoToken.value()
 				|| oMultiTransaction.getTxBody().getType() == TransTypeEnum.TYPE_CreateToken.value())
 				&& StringUtils.isNotBlank(blockChainConfig.getLock_account_address())) {
-			accounts.put(blockChainConfig.getLock_account_address(),
-					oAccountHelper
-							.GetAccountOrCreate(
-									ByteString.copyFrom(encApi.hexDec(blockChainConfig.getLock_account_address())))
-							);
+			accounts.put(blockChainConfig.getLock_account_address(), oAccountHelper.GetAccountOrCreate(
+					ByteString.copyFrom(encApi.hexDec(blockChainConfig.getLock_account_address()))));
 		}
 		return accounts;
 	}

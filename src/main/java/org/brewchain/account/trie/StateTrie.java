@@ -57,7 +57,7 @@ public class StateTrie implements ActorService {
 	OEntityBuilder oEntityHelper;
 
 	private final static Object NULL_NODE = new Object();
-	private final static int MIN_BRANCHES_CONCURRENTLY = 4;
+	private final static int MIN_BRANCHES_CONCURRENTLY = Math.min(16,Runtime.getRuntime().availableProcessors());
 	private static ExecutorService executor = Executors.newFixedThreadPool(
 			Runtime.getRuntime().availableProcessors() * 2,
 			new ThreadFactoryBuilder().setNameFormat("trie-calc-thread-%d").build());;
@@ -225,7 +225,7 @@ public class StateTrie implements ActorService {
 						for (int i = 0; i < 16; i++) {
 							if (encoded[i] == null) {
 								final Node child = branchNodeGetChild(i);
-								if (false&&encodeCnt >= MIN_BRANCHES_CONCURRENTLY) {
+								if (encodeCnt >= MIN_BRANCHES_CONCURRENTLY) {
 									encoded[i] = getExecutor().submit(new Callable<byte[]>() {
 										@Override
 										public byte[] call() throws Exception {

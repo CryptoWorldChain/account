@@ -9,11 +9,15 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class StatsInfo implements Runnable {
 	// RespBlockInfo.Builder blockInfo = RespBlockInfo.newBuilder();
-	AtomicLong txAcceptCount = new AtomicLong(0);
-	long lastTxAcceptCount = 0;
+	AtomicLong acceptTxCount = new AtomicLong(0);
+	long lastAcceptTxCount = 0;
+	long firstAcceptTxTime = 0;
+	long lastAcceptTxTime = 0;
+
 	long lastUpdateTime = System.currentTimeMillis();
-	AtomicLong txBlockCount = new AtomicLong(0);
-	long lastTxBlockCount = 0;
+	private AtomicLong blockTxCount = new AtomicLong(0);
+	
+
 	double txAcceptTps = 0.0;
 	double txBlockTps = 0.0;
 	double maxAcceptTps = 0.0;
@@ -23,35 +27,58 @@ public class StatsInfo implements Runnable {
 	long curBlockID = 0;
 	long lastBlockTime = 0;
 	long curBlockTime = 0;
+	long firstBlockTxTime = 0;
+	long lastBlockTxTime = 0;
+	long lastBlockTxCount = 0;
 	boolean running = true;
 
 	public void setCurBlockID(long blockid) {
 		curBlockID = blockid;
 		curBlockTime = System.currentTimeMillis();
 	}
+	
+	public void signalBlockTx(){
+		blockTxCount.incrementAndGet();
+		lastBlockTxTime = System.currentTimeMillis();
+		
+		if(firstBlockTxTime==0){
+			firstBlockTxTime = lastBlockTxTime;
+		}
+	}
+	
+	public void signalAcceptTx(){
+		acceptTxCount.incrementAndGet();
+		lastAcceptTxTime = System.currentTimeMillis();
 
+		if(firstAcceptTxTime==0){
+			firstAcceptTxTime = lastAcceptTxTime;
+		}
+	}
 	@Override
 	public void run() {
 
 		while (running) {
 			try {
-				long curAcceptTxCount = txAcceptCount.get();
-				long curBlockTxCount = txBlockCount.get();
+				long curAcceptTxCount = acceptTxCount.get();
+				long curBlockTxCount = blockTxCount.get();
 				long now = System.currentTimeMillis();
 				long timeDistance = now - lastUpdateTime;
-				txAcceptTps = (curAcceptTxCount - lastTxAcceptCount) * 1000.f / (timeDistance + 1);
-				lastTxAcceptCount = curAcceptTxCount;
+				txAcceptTps = (curAcceptTxCount - lastAcceptTxCount) * 1000.f / (timeDistance + 1);
+				lastAcceptTxCount = curAcceptTxCount;
 				if (maxAcceptTps < txAcceptTps) {
 					maxAcceptTps = txAcceptTps;
 				}
+				if (lastBlockTxCount == 0 && curBlockTxCount > 0) {
+					firstBlockTxTime = System.currentTimeMillis();
+				}
 				if (curBlockID > lastBlockID) {
-					txBlockTps = (curBlockTxCount - lastTxBlockCount) * 1000.f
+					txBlockTps = (curBlockTxCount - lastBlockTxCount) * 1000.f
 							/ (Math.abs(curBlockTime - lastBlockTime) + 1);
 					txBlockTps = txBlockTps / (curBlockID - lastBlockID);
-					
+
 					lastBlockTime = curBlockTime;
 					lastBlockID = curBlockID;
-					lastTxBlockCount = curBlockTxCount;
+					lastBlockTxCount = curBlockTxCount;
 				}
 
 				if (maxBlockTps < txBlockTps) {
