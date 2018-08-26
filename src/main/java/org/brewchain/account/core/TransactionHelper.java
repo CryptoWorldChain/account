@@ -262,6 +262,7 @@ public class TransactionHelper implements ActorService {
 							HashPair hp = buffer.get(ov.getInfo());
 							oConfirmMapDB.confirmTx(hp, bits);
 							txDBCacheByHash.put(hp.getKey(), hp.getTx());
+							dao.getStats().getTxAcceptCount().incrementAndGet();
 							KeyConstant.counter.incrementAndGet();
 						}
 					}

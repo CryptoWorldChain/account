@@ -1,6 +1,8 @@
 package org.brewchain.account.core.processor;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -82,8 +84,17 @@ public class V1Processor implements IProcessor, ActorService {
 				ByteString result = oiTransactionActuator.onExecute(oTransaction, accounts);
 
 				Iterator<String> iterator = accounts.keySet().iterator();
+				
+				
+//				while (iterator.hasNext()) {
+//					String key = iterator.next();
+				List<String> keys = new ArrayList<>();
 				while (iterator.hasNext()) {
 					String key = iterator.next();
+					keys.add(key);
+				}
+				Collections.sort(keys);
+				for (String key : keys) {
 					AccountValue value = accounts.get(key).getValue();
 					log.debug("block " + currentBlock.getHeader().getBlockHash() + " exec transaction hash::"
 							+ oTransaction.getTxHash() + " put key::" + key + " value::"
