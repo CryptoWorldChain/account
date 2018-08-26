@@ -30,13 +30,13 @@ public class StatsInfo implements Runnable {
 				long curBlockTxCount = txBlockCount.get();
 
 				long timeDistance = System.currentTimeMillis() - lastUpdateTime;
-				txAcceptTps = (curAcceptTxCount - lastTxAcceptCount) / (timeDistance + 1);
+				txAcceptTps = (curAcceptTxCount - lastTxAcceptCount)*1000.f / (timeDistance + 1);
 				lastTxAcceptCount = curAcceptTxCount;
 				if(maxAcceptTps<txAcceptTps){
 					maxAcceptTps=txAcceptTps;
 				}
 				
-				txBlockTps = (curBlockTxCount - lastTxBlockCount) / (timeDistance + 1);
+				txBlockTps = (curBlockTxCount - lastTxBlockCount)*1000.f / (timeDistance + 1);
 				lastTxBlockCount = curBlockTxCount;
 				
 				if(maxBlockTps<txBlockTps){

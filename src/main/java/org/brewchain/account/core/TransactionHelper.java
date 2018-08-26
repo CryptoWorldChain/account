@@ -126,7 +126,7 @@ public class TransactionHelper implements ActorService {
 		// 保存交易到缓存中，用于打包
 		// 如果指定了委托，并且委托是本节点
 		oConfirmMapDB.confirmTx(hp);
-		
+
 		// to add status info
 		dao.getStats().getTxAcceptCount().incrementAndGet();
 		// oPendingHashMapDB.put(hp.getKey(), hp);
@@ -209,6 +209,7 @@ public class TransactionHelper implements ActorService {
 			if (oValue != null) {
 				log.warn("transaction " + oMultiTransaction.getTxHash() + "exists in DB, drop it");
 			} else {
+				
 				oMultiTransaction.clearStatus();
 				oMultiTransaction.clearResult();
 
@@ -218,9 +219,11 @@ public class TransactionHelper implements ActorService {
 				dao.getTxsDao().put(key, OValue.newBuilder().setExtdata(ByteString.copyFrom(hp.getData()))
 						.setInfo(mt.getTxHash()).build());
 				txDBCacheByHash.put(hp.getKey(), hp.getTx());
+				dao.getStats().getTxAcceptCount().incrementAndGet();
 				if (isBroadCast) {
 					oConfirmMapDB.confirmTx(hp, bits);
 				}
+				dao.getStats().getTxAcceptCount().incrementAndGet();
 				KeyConstant.counter.incrementAndGet();
 			}
 		} catch (Exception e) {
@@ -320,12 +323,17 @@ public class TransactionHelper implements ActorService {
 
 	public HashPair removeWaitingSendOrBlockTx(String txHash) throws InvalidProtocolBufferException {
 		// HashPair hpBlk = oPendingHashMapDB.getStorage().remove(txHash);
-		dao.getStats().getTxBlockCount().incrementAndGet();
 		HashPair hpBlk = oConfirmMapDB.invalidate(txHash);
 		HashPair hpSend = oSendingHashMapDB.getStorage().remove(txHash);
-		if (hpBlk != null)
+		if (hpBlk != null) {
+			dao.getStats().getTxBlockCount().incrementAndGet();
 			return hpBlk;
-		return hpSend;
+		} else {
+			if (hpSend != null) {
+				dao.getStats().getTxBlockCount().incrementAndGet();
+			}
+			return hpSend;
+		}
 	}
 
 	public boolean isExistsWaitBlockTx(String txHash) throws InvalidProtocolBufferException {
