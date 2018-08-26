@@ -240,7 +240,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
 			Account.Builder receiver = accounts.get(encApi.hexEnc(oOutput.getAddress().toByteArray()));
 			if (receiver == null) {
-				receiver = oAccountHelper.CreateAccount(oOutput.getAddress()).toBuilder();
+				receiver = oAccountHelper.CreateAccount(oOutput.getAddress());
 			}
 			AccountValue.Builder receiverAccountValue = receiver.getValue().toBuilder();
 			receiverAccountValue.setBalance(ByteString.copyFrom(ByteUtil.bytesAddToBytes(

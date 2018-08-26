@@ -75,7 +75,7 @@ public class ActuatorCreateContract extends AbstractTransactionActuator implemen
 		if (oAccountHelper.isExist(newContractAddress)) {
 			throw new TransactionExecuteException("contract address already exists");
 		} else {
-			Account.Builder contract = oAccountHelper.CreateAccount(newContractAddress).toBuilder();
+			Account.Builder contract = oAccountHelper.CreateAccount(newContractAddress);
 			accounts.put(encApi.hexEnc(newContractAddress.toByteArray()), contract);
 
 			oAccountHelper.putAccountValue(newContractAddress, contract.getValue(), true);

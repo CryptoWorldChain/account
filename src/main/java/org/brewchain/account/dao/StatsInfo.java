@@ -18,7 +18,10 @@ public class StatsInfo implements Runnable {
 	double txBlockTps = 0.0;
 	double maxAcceptTps = 0.0;
 	double maxBlockTps = 0.0;
-	
+	long lastTxTime = 0;
+	long lastBlockID = 0;
+	long curBlockID = 0;
+	long lastBlockTime = 0;
 	boolean running = true;
 
 	@Override
@@ -30,17 +33,18 @@ public class StatsInfo implements Runnable {
 				long curBlockTxCount = txBlockCount.get();
 
 				long timeDistance = System.currentTimeMillis() - lastUpdateTime;
-				txAcceptTps = (curAcceptTxCount - lastTxAcceptCount)*1000.f / (timeDistance + 1);
+				txAcceptTps = (curAcceptTxCount - lastTxAcceptCount) * 1000.f / (timeDistance + 1);
 				lastTxAcceptCount = curAcceptTxCount;
-				if(maxAcceptTps<txAcceptTps){
-					maxAcceptTps=txAcceptTps;
+				if (maxAcceptTps < txAcceptTps) {
+					maxAcceptTps = txAcceptTps;
 				}
-				
-				txBlockTps = (curBlockTxCount - lastTxBlockCount)*1000.f / (timeDistance + 1);
+				if (curBlockID > lastBlockID) {
+					txBlockTps = (curBlockTxCount - lastTxBlockCount) * 1000.f / (timeDistance + 1);
+				}
 				lastTxBlockCount = curBlockTxCount;
-				
-				if(maxBlockTps<txBlockTps){
-					maxBlockTps=txBlockTps;
+
+				if (maxBlockTps < txBlockTps) {
+					maxBlockTps = txBlockTps;
 				}
 				lastUpdateTime = System.currentTimeMillis();
 				log.info("[STATS] TxAccept[count,tps]=[{},{}] TxBlock[count,tps]=[{},{}]", curAcceptTxCount,

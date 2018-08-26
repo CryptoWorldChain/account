@@ -10,9 +10,9 @@ import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import com.google.protobuf.ByteString;
 
 public interface IProcessor {
-	void applyReward(BlockEntity oCurrentBlock) throws Exception;
+	void applyReward(BlockEntity.Builder oCurrentBlock) throws Exception;
 
-	AddBlockResponse ApplyBlock(BlockEntity oBlockEntity);
+	AddBlockResponse ApplyBlock(BlockEntity.Builder oBlockEntity);
 
 	BlockEntity.Builder CreateNewBlock(List<MultiTransaction> txs, String extraData, String term) throws Exception;
 

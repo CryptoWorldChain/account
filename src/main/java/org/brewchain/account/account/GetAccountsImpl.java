@@ -56,7 +56,7 @@ public class GetAccountsImpl extends SessionModules<ReqGetAccounts> {
 		
 		try {
 			for (String address : pb.getAddressList()) {
-				Account oAccount = oAccountHelper
+				Account.Builder oAccount = oAccountHelper
 						.GetAccount(ByteString.copyFrom(encApi.hexDec(ByteUtil.formatHexAddress(address))));
 				AccountValueImpl.Builder oAccountValueImpl = AccountValueImpl.newBuilder();
 				oAccountValueImpl.setAccountAddress(address);

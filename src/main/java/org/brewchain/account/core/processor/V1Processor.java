@@ -9,7 +9,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.brewchain.account.core.AccountHelper;
@@ -21,9 +20,8 @@ import org.brewchain.account.core.actuator.iTransactionActuator;
 import org.brewchain.account.core.store.BlockStoreSummary;
 import org.brewchain.account.core.store.BlockStoreSummary.BLOCK_BEHAVIOR;
 import org.brewchain.account.gens.Blockimpl.AddBlockResponse;
-import org.brewchain.account.trie.StateTrie;
-import org.brewchain.account.util.FastByteComparisons;
 import org.brewchain.account.trie.CacheTrie;
+import org.brewchain.account.trie.StateTrie;
 import org.brewchain.core.util.ByteUtil;
 import org.brewchain.evmapi.gens.Act.Account;
 import org.brewchain.evmapi.gens.Act.AccountValue;
@@ -32,7 +30,6 @@ import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.brewchain.evmapi.gens.Block.BlockHeader;
 import org.brewchain.evmapi.gens.Block.BlockMiner;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
-import org.brewchain.evmapi.gens.Tx.MultiTransactionBody;
 import org.brewchain.rcvm.utils.RLP;
 import org.fc.brewchain.bcapi.EncAPI;
 
@@ -127,7 +124,7 @@ public class V1Processor implements IProcessor, ActorService {
 	}
 
 	@Override
-	public void applyReward(BlockEntity oCurrentBlock) throws Exception {
+	public void applyReward(BlockEntity.Builder oCurrentBlock) throws Exception {
 		// accountHelper.addTokenBalance(ByteString.copyFrom(encApi.hexDec(oCurrentBlock.getMiner().getAddress())),
 		// "CWS",
 		// ByteUtil.bytesToBigInteger(oCurrentBlock.getMiner().getReward().toByteArray()));
@@ -263,8 +260,8 @@ public class V1Processor implements IProcessor, ActorService {
 	}
 
 	@Override
-	public synchronized AddBlockResponse ApplyBlock(BlockEntity oBlockEntity) {
-		BlockEntity.Builder applyBlock = oBlockEntity.toBuilder();
+	public synchronized AddBlockResponse ApplyBlock(BlockEntity.Builder oBlockEntity) {
+		BlockEntity.Builder applyBlock = oBlockEntity;
 
 		AddBlockResponse.Builder oAddBlockResponse = AddBlockResponse.newBuilder();
 		log.debug("receive block number::" + applyBlock.getHeader().getNumber() + " hash::"
@@ -368,7 +365,7 @@ public class V1Processor implements IProcessor, ActorService {
 							applyBlock = blockEntity.toBuilder();
 							log.info("ready to apply child block::" + applyBlock.getHeader().getBlockHash()
 									+ " number::" + applyBlock.getHeader().getNumber());
-							ApplyBlock(blockEntity);
+							ApplyBlock(applyBlock);
 							// oBlockStoreSummary =
 							// blockChainHelper.addBlock(applyBlock.build());
 						}

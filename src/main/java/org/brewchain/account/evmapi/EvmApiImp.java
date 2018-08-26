@@ -31,7 +31,7 @@ public class EvmApiImp implements EvmApi {
 
 	private Account.Builder getAccount(ByteString addr) {
 		if (!touchAccount.containsKey(encApi.hexEnc(addr.toByteArray()))) {
-			return accountHelper.GetAccount(addr).toBuilder();
+			return accountHelper.GetAccount(addr);
 		} else {
 			return touchAccount.get(encApi.hexEnc(addr.toByteArray())).toBuilder();
 		}

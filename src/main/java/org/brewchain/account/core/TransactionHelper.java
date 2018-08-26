@@ -683,12 +683,12 @@ public class TransactionHelper implements ActorService {
 		Map<String, Account.Builder> accounts = new HashMap<>();
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			accounts.put(encApi.hexEnc(oInput.getAddress().toByteArray()),
-					oAccountHelper.GetAccountOrCreate(oInput.getAddress()).toBuilder());
+					oAccountHelper.GetAccountOrCreate(oInput.getAddress()));
 		}
 
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
 			accounts.put(encApi.hexEnc(oOutput.getAddress().toByteArray()),
-					oAccountHelper.GetAccountOrCreate(oOutput.getAddress()).toBuilder());
+					oAccountHelper.GetAccountOrCreate(oOutput.getAddress()));
 		}
 
 		if ((oMultiTransaction.getTxBody().getType() == TransTypeEnum.TYPE_CreateContract.value()
@@ -699,7 +699,7 @@ public class TransactionHelper implements ActorService {
 					oAccountHelper
 							.GetAccountOrCreate(
 									ByteString.copyFrom(encApi.hexDec(blockChainConfig.getLock_account_address())))
-							.toBuilder());
+							);
 		}
 		return accounts;
 	}

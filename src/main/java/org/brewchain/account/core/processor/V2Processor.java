@@ -103,7 +103,7 @@ public class V2Processor implements IProcessor, ActorService {
 	}
 
 	@Override
-	public synchronized void applyReward(BlockEntity oCurrentBlock) throws Exception {
+	public synchronized void applyReward(BlockEntity.Builder oCurrentBlock) throws Exception {
 		accountHelper.addBalance(ByteString.copyFrom(encApi.hexDec(oCurrentBlock.getMiner().getAddress())),
 				ByteUtil.bytesToBigInteger(oCurrentBlock.getMiner().getReward().toByteArray()));
 	}
@@ -195,7 +195,7 @@ public class V2Processor implements IProcessor, ActorService {
 		CacheTrie oReceiptTrie = new CacheTrie(this.encApi);
 		this.stateTrie.setRoot(encApi.hexDec(oParentBlock.getHeader().getStateRoot()));
 		
-		log.debug("set root hash::" + oParentBlock.getHeader().getStateRoot());
+		log.debug("set root hash::" + oParentBlock.getHeader().getStateRoot()+":blocknumber:"+oBlockEntity.getHeader().getNumber());
 		BlockBody.Builder bb = oBlockEntity.getBody().toBuilder();
 		int i = 0;
 		for (String txHash : oBlockHeader.getTxHashsList()) {
@@ -238,8 +238,8 @@ public class V2Processor implements IProcessor, ActorService {
 			oReceiptTrie.put(RLP.encodeInt(i), results.get(key).toByteArray());
 			i++;
 		}
-
-		applyReward(oBlockEntity.build());
+		//for test
+		//applyReward(oBlockEntity);
 
 		header.setReceiptTrieRoot(encApi
 				.hexEnc(oReceiptTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY : oReceiptTrie.getRootHash()));
@@ -248,15 +248,17 @@ public class V2Processor implements IProcessor, ActorService {
 		start = System.currentTimeMillis();
 		header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
 		
-		log.debug("calc trie at block="+oBlockEntity.getHeader().getNumber()+",hash="+header.getStateRoot());
+		log.debug("calc trie at block="+oBlockEntity.getHeader().getNumber()+",hash="+header.getStateRoot()+",rewardAddr="+
+				oBlockEntity.getMiner().getAddress()+",reward="+
+				oBlockEntity.getMiner().getReward());
 		
 		oBlockEntity.setHeader(header);
 		return true;
 	}
 
 	@Override
-	public synchronized AddBlockResponse ApplyBlock(BlockEntity oBlockEntity) {
-		BlockEntity.Builder applyBlock = oBlockEntity.toBuilder();
+	public synchronized AddBlockResponse ApplyBlock(BlockEntity.Builder oBlockEntity) {
+		BlockEntity.Builder applyBlock = oBlockEntity;
 		long start = System.currentTimeMillis();
 		log.debug("====> start apply block hash::" + oBlockEntity.getHeader().getBlockHash() + " number:: "
 				+ oBlockEntity.getHeader().getNumber() + " miner::" + applyBlock.getMiner().getAddress() + ",headerTx="
@@ -281,7 +283,7 @@ public class V2Processor implements IProcessor, ActorService {
 				log.warn("wrong block hash::" + oBlockEntity.getHeader().getBlockHash() + " need::"
 						+ encApi.hexEnc(encApi.sha256Encode(blockContent)));
 			} else {
-				BlockStoreSummary oBlockStoreSummary = blockChainHelper.addBlock(oBlockEntity);
+				BlockStoreSummary oBlockStoreSummary = blockChainHelper.addBlock(oBlockEntity.build());
 				while (oBlockStoreSummary.getBehavior() != BLOCK_BEHAVIOR.DONE) {
 					switch (oBlockStoreSummary.getBehavior()) {
 					case DROP:
@@ -364,7 +366,7 @@ public class V2Processor implements IProcessor, ActorService {
 							applyBlock = blockEntity.toBuilder();
 							log.info("ready to apply child block::" + applyBlock.getHeader().getBlockHash()
 									+ " number::" + applyBlock.getHeader().getNumber());
-							ApplyBlock(blockEntity);
+							ApplyBlock(applyBlock);
 						}
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 						break;
