@@ -248,7 +248,7 @@ public class StateTrie implements ActorService {
 												if (bs != null) {
 													batchStorage.remove();
 													if (bsPool.size() < 100) {
-														log.debug("bsPool size=" + bsPool.size() + " kvs=" + bs.kvs.size());
+//														log.debug("bsPool size=" + bsPool.size() + " kvs=" + bs.kvs.size());
 														bs.kvs.clear();
 														// bs.values.clear();
 														bsPool.retobj(bs);

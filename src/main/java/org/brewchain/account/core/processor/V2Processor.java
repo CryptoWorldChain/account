@@ -1,6 +1,8 @@
 package org.brewchain.account.core.processor;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -218,12 +220,21 @@ public class V2Processor implements IProcessor, ActorService {
 		Map<String, ByteString> results = ExecuteTransaction(txs, oBlockEntity.build());
 		log.error("====>  end exec number::" + oBlockEntity.getHeader().getNumber() + ":exec tx count=" + i + ",cost="
 				+ (System.currentTimeMillis() - start));
+		
+		
 		BlockHeader.Builder header = oBlockEntity.getHeaderBuilder();
 
 		Iterator<String> iter = results.keySet().iterator();
 		i = 0;
+//		while (iter.hasNext()) {
+//		String key = iter.next();
+		List<String> keys = new ArrayList<>();
 		while (iter.hasNext()) {
 			String key = iter.next();
+			keys.add(key);
+		}
+		Collections.sort(keys);
+		for (String key : keys) {
 			oReceiptTrie.put(RLP.encodeInt(i), results.get(key).toByteArray());
 			i++;
 		}
