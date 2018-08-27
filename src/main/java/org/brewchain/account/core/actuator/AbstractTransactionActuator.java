@@ -134,6 +134,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 		this.encApi = encApi;
 		this.dao = dao;
 		this.oStateTrie = oStateTrie;
+		this.txValues.clear();
 	}
 
 	@Override

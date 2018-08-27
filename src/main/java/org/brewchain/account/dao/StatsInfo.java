@@ -85,8 +85,8 @@ public class StatsInfo implements Runnable {
 					maxBlockTps = txBlockTps;
 				}
 				lastUpdateTime = System.currentTimeMillis();
-				log.info("[STATS] TxAccept[count,tps]=[{},{}] TxBlock[count,tps]=[{},{}]", curAcceptTxCount,
-						txAcceptTps, curBlockTxCount, txBlockTps);
+			//	log.info("[STATS] TxAccept[count,tps]=[{},{}] TxBlock[count,tps]=[{},{}]", curAcceptTxCount,
+			//			txAcceptTps, curBlockTxCount, txBlockTps);
 			} catch (Throwable t) {
 
 			}
