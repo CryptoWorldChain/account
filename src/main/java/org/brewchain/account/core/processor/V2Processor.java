@@ -107,7 +107,8 @@ public class V2Processor implements IProcessor, ActorService {
 	}
 
 	@Override
-	public synchronized BlockEntity.Builder CreateNewBlock(List<MultiTransaction> txs, String extraData, String term) throws Exception {
+	public synchronized BlockEntity.Builder CreateNewBlock(List<MultiTransaction> txs, String extraData, String term)
+			throws Exception {
 		BlockEntity.Builder oBlockEntity = BlockEntity.newBuilder();
 		BlockHeader.Builder oBlockHeader = BlockHeader.newBuilder();
 		BlockBody.Builder oBlockBody = BlockBody.newBuilder();
@@ -131,7 +132,7 @@ public class V2Processor implements IProcessor, ActorService {
 		oBlockMiner.setNode(KeyConstant.node.getNode());
 		oBlockMiner.setBcuid(KeyConstant.node.getBcuid());
 		oBlockMiner.setTermuid(term);
-		
+
 		// cal reward
 		oBlockMiner.setReward(ByteString.copyFrom(
 				ByteUtil.bigIntegerToBytes(blockChainConfig.getMinerReward().multiply(new BigInteger(String.valueOf(
@@ -193,6 +194,8 @@ public class V2Processor implements IProcessor, ActorService {
 		CacheTrie oReceiptTrie = new CacheTrie(this.encApi);
 		this.stateTrie.setRoot(encApi.hexDec(oParentBlock.getHeader().getStateRoot()));
 		
+		long start = System.currentTimeMillis();
+
 		log.debug("set root hash::" + oParentBlock.getHeader().getStateRoot());
 		BlockBody.Builder bb = oBlockEntity.getBody().toBuilder();
 		int i = 0;
@@ -213,10 +216,9 @@ public class V2Processor implements IProcessor, ActorService {
 			i++;
 		}
 		oBlockEntity.setBody(bb);
-		long start = System.currentTimeMillis();
-		log.error("====>  start exec number::" + oBlockEntity.getHeader().getNumber() + ":exec tx count=" + i);
+//		log.error("====>  start exec number::" + oBlockEntity.getHeader().getNumber() + ":exec tx count=" + i);
 		Map<String, ByteString> results = ExecuteTransaction(txs, oBlockEntity.build());
-		log.error("====>  end exec number::" + oBlockEntity.getHeader().getNumber() + ":exec tx count=" + i + ",cost="
+		log.debug("====>  end exec number::" + oBlockEntity.getHeader().getNumber() + ":exec tx count=" + i + ",cost="
 				+ (System.currentTimeMillis() - start));
 		BlockHeader.Builder header = oBlockEntity.getHeaderBuilder();
 
@@ -236,7 +238,10 @@ public class V2Processor implements IProcessor, ActorService {
 				oTransactionTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY : oTransactionTrie.getRootHash()));
 		start = System.currentTimeMillis();
 		header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
+		log.debug("====>  end get root number::" + oBlockEntity.getHeader().getNumber() + ",cost="
+				+ (System.currentTimeMillis() - start));
 		oBlockEntity.setHeader(header);
+
 		return true;
 	}
 

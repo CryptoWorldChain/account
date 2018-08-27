@@ -707,7 +707,7 @@ public class AccountHelper implements ActorService {
 				this.stateTrie.put(encApi.hexDec(key), value.toByteArray());
 			}
 		}
-		KeyConstant.QUEUE.add(accountValues);
+//		KeyConstant.QUEUE.add(accountValues);
 	}
 
 	public void tokenMappingAccount(AccountCryptoToken.Builder acBuilder) {

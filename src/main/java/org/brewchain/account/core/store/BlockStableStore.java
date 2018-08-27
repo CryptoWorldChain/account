@@ -62,7 +62,8 @@ public class BlockStableStore implements IBlockStore, ActorService {
 				}
 			});
 	protected final LoadingCache<Long, BlockEntity> blocksByNumber = CacheBuilder.newBuilder()
-			.maximumSize(KeyConstant.CACHE_SIZE).build(new CacheLoader<Long, BlockEntity>() {
+			.maximumSize(KeyConstant.CACHE_SIZE)
+			.build(new CacheLoader<Long, BlockEntity>() {
 				public BlockEntity load(Long key) {
 					try {
 						List<OPair> oPairs = dao.getBlockDao().listBySecondKey(String.valueOf(key)).get();
