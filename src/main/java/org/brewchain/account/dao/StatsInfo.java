@@ -72,9 +72,12 @@ public class StatsInfo implements Runnable {
 					firstBlockTxTime = System.currentTimeMillis();
 				}
 				if (curBlockID > lastBlockID) {
-					txBlockTps = (curBlockTxCount - lastBlockTxCount) * 1000.f
+					long __curBlockID = curBlockID;
+					long __lastBlockTxCount =   lastBlockTxCount;
+					
+					txBlockTps = (curBlockTxCount - __lastBlockTxCount) * 1000.f
 							/ (Math.abs(curBlockTime - lastBlockTime) + 1);
-					txBlockTps = txBlockTps / (curBlockID - lastBlockID);
+					txBlockTps = txBlockTps / (__curBlockID - lastBlockID);
 
 					lastBlockTime = curBlockTime;
 					lastBlockID = curBlockID;
