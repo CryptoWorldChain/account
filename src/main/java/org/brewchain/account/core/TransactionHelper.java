@@ -36,6 +36,7 @@ import org.brewchain.account.gens.Tximpl.MultiTransactionOutputImpl;
 import org.brewchain.account.gens.Tximpl.MultiTransactionSignatureImpl;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.util.ByteUtil;
+import org.brewchain.account.util.FastByteComparisons;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.account.util.RLP;
 import org.brewchain.bcapi.gens.Oentity.OKey;
@@ -217,17 +218,21 @@ public class TransactionHelper implements ActorService {
 
 				oMultiTransaction.clearStatus();
 				oMultiTransaction.clearResult();
+				byte validKeyByte[] = encApi.sha256Encode(oMultiTransaction.getTxBody().toByteArray());
+				if (!FastByteComparisons.equal(validKeyByte, keyByte)) {
+					log.error("fail to sync transaction::" + oMultiTransaction.getTxHash() + ", content invalid");
+				} else {
+					MultiTransaction mt = oMultiTransaction.build();
 
-				MultiTransaction mt = oMultiTransaction.build();
-
-				HashPair hp = new HashPair(mt.getTxHash(), mt.toByteArray(), mt);
-				dao.getTxsDao().put(key, OValue.newBuilder().setExtdata(ByteString.copyFrom(hp.getData()))
-						.setInfo(mt.getTxHash()).build());
-				txDBCacheByHash.put(hp.getKey(), hp.getTx());
-				if (isBroadCast) {
-					oConfirmMapDB.confirmTx(hp, bits);
+					HashPair hp = new HashPair(mt.getTxHash(), mt.toByteArray(), mt);
+					dao.getTxsDao().put(key, OValue.newBuilder().setExtdata(ByteString.copyFrom(hp.getData()))
+							.setInfo(mt.getTxHash()).build());
+					txDBCacheByHash.put(hp.getKey(), hp.getTx());
+					if (isBroadCast) {
+						oConfirmMapDB.confirmTx(hp, bits);
+					}
+					KeyConstant.counter.incrementAndGet();
 				}
-				KeyConstant.counter.incrementAndGet();
 			}
 		} catch (Exception e) {
 			log.error("fail to sync transaction::" + oMultiTransaction.getTxHash() + " error::" + e, e);
@@ -621,7 +626,8 @@ public class TransactionHelper implements ActorService {
 	}
 
 	public void resetActuator(iTransactionActuator ata, BlockEntity oCurrentBlock) {
-		((AbstractTransactionActuator)ata).reset(this.oAccountHelper, this, oCurrentBlock, encApi, dao, this.stateTrie);
+		((AbstractTransactionActuator) ata).reset(this.oAccountHelper, this, oCurrentBlock, encApi, dao,
+				this.stateTrie);
 	}
 
 	/**
@@ -705,7 +711,7 @@ public class TransactionHelper implements ActorService {
 		}
 		return accounts;
 	}
-	
+
 	public Map<String, Account.Builder> getTransactionAccounts(MultiTransaction oMultiTransaction) {
 		Map<String, Account.Builder> accounts = new HashMap<>();
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
@@ -730,7 +736,7 @@ public class TransactionHelper implements ActorService {
 
 	public Map<String, Account.Builder> merageTransactionAccounts(MultiTransaction.Builder oMultiTransaction,
 			Map<String, Account.Builder> current) {
-//		Map<String, Account.Builder> accounts = new HashMap<>();
+		// Map<String, Account.Builder> accounts = new HashMap<>();
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			String key = encApi.hexEnc(oInput.getAddress().toByteArray());
 			if (!current.containsKey(key)) {
@@ -756,10 +762,10 @@ public class TransactionHelper implements ActorService {
 		}
 		return current;
 	}
-	
+
 	public Map<String, Account.Builder> merageTransactionAccounts(MultiTransaction oMultiTransaction,
 			Map<String, Account.Builder> current) {
-//		Map<String, Account.Builder> accounts = new HashMap<>();
+		// Map<String, Account.Builder> accounts = new HashMap<>();
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			String key = encApi.hexEnc(oInput.getAddress().toByteArray());
 			if (!current.containsKey(key)) {
