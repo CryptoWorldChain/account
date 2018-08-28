@@ -53,7 +53,7 @@ public class GetAccountImpl extends SessionModules<ReqGetAccount> {
 		RespGetAccount.Builder oRespGetAccount = RespGetAccount.newBuilder();
 
 		try {
-			Account oAccount = oAccountHelper
+			Account.Builder oAccount = oAccountHelper
 					.GetAccount(ByteString.copyFrom(encApi.hexDec(ByteUtil.formatHexAddress(pb.getAddress()))));
 			AccountValueImpl.Builder oAccountValueImpl = AccountValueImpl.newBuilder();
 			oAccountValueImpl.setAccountAddress(pb.getAddress());

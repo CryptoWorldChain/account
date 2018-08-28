@@ -125,6 +125,17 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 		this.dao = dao;
 		this.oStateTrie = oStateTrie;
 	}
+	
+	public void reset(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
+			BlockEntity currentBlock, EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
+		this.oAccountHelper = oAccountHelper;
+		this.oTransactionHelper = oTransactionHelper;
+		this.oBlock = currentBlock;
+		this.encApi = encApi;
+		this.dao = dao;
+		this.oStateTrie = oStateTrie;
+		this.txValues.clear();
+	}
 
 	@Override
 	public boolean needSignature() {
@@ -240,7 +251,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
 			Account.Builder receiver = accounts.get(encApi.hexEnc(oOutput.getAddress().toByteArray()));
 			if (receiver == null) {
-				receiver = oAccountHelper.CreateAccount(oOutput.getAddress()).toBuilder();
+				receiver = oAccountHelper.CreateAccount(oOutput.getAddress());
 			}
 			AccountValue.Builder receiverAccountValue = receiver.getValue().toBuilder();
 			receiverAccountValue.setBalance(ByteString.copyFrom(ByteUtil.bytesAddToBytes(

@@ -148,11 +148,11 @@ public class BlockHelper implements ActorService {
 	}
 
 	public synchronized AddBlockResponse ApplyBlock(ByteString bs) throws Exception {
-		BlockEntity block = BlockEntity.newBuilder().mergeFrom(bs).build();
+		BlockEntity.Builder block = BlockEntity.newBuilder().mergeFrom(bs);
 		return ApplyBlock(block);
 	}
 
-	public synchronized AddBlockResponse ApplyBlock(BlockEntity block) throws Exception {
+	public synchronized AddBlockResponse ApplyBlock(BlockEntity.Builder block) throws Exception {
 		return oProcessorManager.getProcessor(block.getVersion()).ApplyBlock(block);
 	}
 

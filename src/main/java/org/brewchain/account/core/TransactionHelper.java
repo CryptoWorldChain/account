@@ -4,7 +4,6 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
@@ -14,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.brewchain.account.bean.HashPair;
+import org.brewchain.account.core.actuator.AbstractTransactionActuator;
 import org.brewchain.account.core.actuator.ActuatorCallContract;
 import org.brewchain.account.core.actuator.ActuatorCallInternalFunction;
 import org.brewchain.account.core.actuator.ActuatorCreateContract;
@@ -126,6 +126,9 @@ public class TransactionHelper implements ActorService {
 		// 保存交易到缓存中，用于打包
 		// 如果指定了委托，并且委托是本节点
 		oConfirmMapDB.confirmTx(hp);
+
+		// to add status info
+		dao.getStats().signalAcceptTx();
 		// oPendingHashMapDB.put(hp.getKey(), hp);
 
 		// {node} {component} {opt} {type} {msg}
@@ -164,6 +167,8 @@ public class TransactionHelper implements ActorService {
 		// 保存交易到db中
 		// log.debug("====put genesis transaction::"+
 		// multiTransaction.getTxHash());
+		dao.getStats().signalAcceptTx();
+		KeyConstant.counter.incrementAndGet();
 
 		dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(multiTransaction.getTxHash())),
 				oEntityHelper.byteValue2OValue(multiTransaction.toByteArray()));
@@ -193,6 +198,9 @@ public class TransactionHelper implements ActorService {
 
 	public void syncTransaction(MultiTransaction.Builder oMultiTransaction, boolean isBroadCast, BigInteger bits) {
 		try {
+
+			dao.getStats().signalAcceptTx();
+
 			MultiTransaction cacheTx = txDBCacheByHash.getIfPresent(oMultiTransaction.getTxHash());
 			if (cacheTx != null) {
 				log.warn("transaction " + oMultiTransaction.getTxHash() + "exists in Cached, drop it");
@@ -206,6 +214,7 @@ public class TransactionHelper implements ActorService {
 			if (oValue != null) {
 				log.warn("transaction " + oMultiTransaction.getTxHash() + "exists in DB, drop it");
 			} else {
+
 				oMultiTransaction.clearStatus();
 				oMultiTransaction.clearResult();
 
@@ -237,6 +246,7 @@ public class TransactionHelper implements ActorService {
 				List<OValue> values = new ArrayList<>();
 				HashMap<String, HashPair> buffer = new HashMap<>();
 				for (MultiTransaction.Builder mtb : oMultiTransaction) {// db没有
+					dao.getStats().signalAcceptTx();
 					MultiTransaction cacheTx = txDBCacheByHash.getIfPresent(mtb.getTxHash());
 					MultiTransaction mt = mtb.clearStatus().clearResult().build();
 					ByteString mts = mt.toByteString();
@@ -256,8 +266,8 @@ public class TransactionHelper implements ActorService {
 							HashPair hp = buffer.get(ov.getInfo());
 							oConfirmMapDB.confirmTx(hp, bits);
 							txDBCacheByHash.put(hp.getKey(), hp.getTx());
-							KeyConstant.counter.incrementAndGet();
 						}
+						KeyConstant.counter.incrementAndGet();
 					}
 				}
 			}
@@ -319,9 +329,15 @@ public class TransactionHelper implements ActorService {
 		// HashPair hpBlk = oPendingHashMapDB.getStorage().remove(txHash);
 		HashPair hpBlk = oConfirmMapDB.invalidate(txHash);
 		HashPair hpSend = oSendingHashMapDB.getStorage().remove(txHash);
-		if (hpBlk != null)
+		if (hpBlk != null) {
+			dao.getStats().signalBlockTx();
 			return hpBlk;
-		return hpSend;
+		} else {
+			if (hpSend != null) {
+				dao.getStats().signalBlockTx();
+			}
+			return hpSend;
+		}
 	}
 
 	public boolean isExistsWaitBlockTx(String txHash) throws InvalidProtocolBufferException {
@@ -604,6 +620,10 @@ public class TransactionHelper implements ActorService {
 		return ret;
 	}
 
+	public void resetActuator(iTransactionActuator ata, BlockEntity oCurrentBlock) {
+		((AbstractTransactionActuator)ata).reset(this.oAccountHelper, this, oCurrentBlock, encApi, dao, this.stateTrie);
+	}
+
 	/**
 	 * @param transactionType
 	 * @return
@@ -668,25 +688,102 @@ public class TransactionHelper implements ActorService {
 		Map<String, Account.Builder> accounts = new HashMap<>();
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			accounts.put(encApi.hexEnc(oInput.getAddress().toByteArray()),
-					oAccountHelper.GetAccountOrCreate(oInput.getAddress()).toBuilder());
+					oAccountHelper.GetAccountOrCreate(oInput.getAddress()));
 		}
 
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
 			accounts.put(encApi.hexEnc(oOutput.getAddress().toByteArray()),
-					oAccountHelper.GetAccountOrCreate(oOutput.getAddress()).toBuilder());
+					oAccountHelper.GetAccountOrCreate(oOutput.getAddress()));
 		}
 
 		if ((oMultiTransaction.getTxBody().getType() == TransTypeEnum.TYPE_CreateContract.value()
 				|| oMultiTransaction.getTxBody().getType() == TransTypeEnum.TYPE_CreateCryptoToken.value()
 				|| oMultiTransaction.getTxBody().getType() == TransTypeEnum.TYPE_CreateToken.value())
 				&& StringUtils.isNotBlank(blockChainConfig.getLock_account_address())) {
-			accounts.put(blockChainConfig.getLock_account_address(),
-					oAccountHelper
-							.GetAccountOrCreate(
-									ByteString.copyFrom(encApi.hexDec(blockChainConfig.getLock_account_address())))
-							.toBuilder());
+			accounts.put(blockChainConfig.getLock_account_address(), oAccountHelper.GetAccountOrCreate(
+					ByteString.copyFrom(encApi.hexDec(blockChainConfig.getLock_account_address()))));
 		}
 		return accounts;
+	}
+	
+	public Map<String, Account.Builder> getTransactionAccounts(MultiTransaction oMultiTransaction) {
+		Map<String, Account.Builder> accounts = new HashMap<>();
+		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
+			accounts.put(encApi.hexEnc(oInput.getAddress().toByteArray()),
+					oAccountHelper.GetAccountOrCreate(oInput.getAddress()));
+		}
+
+		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
+			accounts.put(encApi.hexEnc(oOutput.getAddress().toByteArray()),
+					oAccountHelper.GetAccountOrCreate(oOutput.getAddress()));
+		}
+
+		if ((oMultiTransaction.getTxBody().getType() == TransTypeEnum.TYPE_CreateContract.value()
+				|| oMultiTransaction.getTxBody().getType() == TransTypeEnum.TYPE_CreateCryptoToken.value()
+				|| oMultiTransaction.getTxBody().getType() == TransTypeEnum.TYPE_CreateToken.value())
+				&& StringUtils.isNotBlank(blockChainConfig.getLock_account_address())) {
+			accounts.put(blockChainConfig.getLock_account_address(), oAccountHelper.GetAccountOrCreate(
+					ByteString.copyFrom(encApi.hexDec(blockChainConfig.getLock_account_address()))));
+		}
+		return accounts;
+	}
+
+	public Map<String, Account.Builder> merageTransactionAccounts(MultiTransaction.Builder oMultiTransaction,
+			Map<String, Account.Builder> current) {
+//		Map<String, Account.Builder> accounts = new HashMap<>();
+		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
+			String key = encApi.hexEnc(oInput.getAddress().toByteArray());
+			if (!current.containsKey(key)) {
+				current.put(key, oAccountHelper.GetAccountOrCreate(oInput.getAddress()));
+			}
+		}
+
+		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
+			String key = encApi.hexEnc(oOutput.getAddress().toByteArray());
+			if (!current.containsKey(key)) {
+				current.put(key, oAccountHelper.GetAccountOrCreate(oOutput.getAddress()));
+			}
+		}
+
+		if ((oMultiTransaction.getTxBody().getType() == TransTypeEnum.TYPE_CreateContract.value()
+				|| oMultiTransaction.getTxBody().getType() == TransTypeEnum.TYPE_CreateCryptoToken.value()
+				|| oMultiTransaction.getTxBody().getType() == TransTypeEnum.TYPE_CreateToken.value())
+				&& StringUtils.isNotBlank(blockChainConfig.getLock_account_address())) {
+			if (!current.containsKey(blockChainConfig.getLock_account_address())) {
+				current.put(blockChainConfig.getLock_account_address(), oAccountHelper.GetAccountOrCreate(
+						ByteString.copyFrom(encApi.hexDec(blockChainConfig.getLock_account_address()))));
+			}
+		}
+		return current;
+	}
+	
+	public Map<String, Account.Builder> merageTransactionAccounts(MultiTransaction oMultiTransaction,
+			Map<String, Account.Builder> current) {
+//		Map<String, Account.Builder> accounts = new HashMap<>();
+		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
+			String key = encApi.hexEnc(oInput.getAddress().toByteArray());
+			if (!current.containsKey(key)) {
+				current.put(key, oAccountHelper.GetAccountOrCreate(oInput.getAddress()));
+			}
+		}
+
+		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
+			String key = encApi.hexEnc(oOutput.getAddress().toByteArray());
+			if (!current.containsKey(key)) {
+				current.put(key, oAccountHelper.GetAccountOrCreate(oOutput.getAddress()));
+			}
+		}
+
+		if ((oMultiTransaction.getTxBody().getType() == TransTypeEnum.TYPE_CreateContract.value()
+				|| oMultiTransaction.getTxBody().getType() == TransTypeEnum.TYPE_CreateCryptoToken.value()
+				|| oMultiTransaction.getTxBody().getType() == TransTypeEnum.TYPE_CreateToken.value())
+				&& StringUtils.isNotBlank(blockChainConfig.getLock_account_address())) {
+			if (!current.containsKey(blockChainConfig.getLock_account_address())) {
+				current.put(blockChainConfig.getLock_account_address(), oAccountHelper.GetAccountOrCreate(
+						ByteString.copyFrom(encApi.hexDec(blockChainConfig.getLock_account_address()))));
+			}
+		}
+		return current;
 	}
 
 	public byte[] getTransactionContent(MultiTransaction oTransaction) {

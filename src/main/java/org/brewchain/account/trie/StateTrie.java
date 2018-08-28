@@ -57,7 +57,7 @@ public class StateTrie implements ActorService {
 	OEntityBuilder oEntityHelper;
 
 	private final static Object NULL_NODE = new Object();
-	private final static int MIN_BRANCHES_CONCURRENTLY = 1000;
+	private final static int MIN_BRANCHES_CONCURRENTLY = 4;//Math.min(16,Runtime.getRuntime().availableProcessors());
 	private static ExecutorService executor = Executors.newFixedThreadPool(
 			Runtime.getRuntime().availableProcessors() * 2,
 			new ThreadFactoryBuilder().setNameFormat("trie-calc-thread-%d").build());;
@@ -245,6 +245,10 @@ public class StateTrie implements ActorService {
 												if (bs != null) {
 													batchStorage.remove();
 													if (bsPool.size() < 100) {
+<<<<<<< HEAD
+=======
+//														log.debug("bsPool size=" + bsPool.size() + " kvs=" + bs.kvs.size());
+>>>>>>> 2932b3a34e61e9f89636af830c9f08d0c240f016
 														bs.kvs.clear();
 														// bs.values.clear();
 														bsPool.retobj(bs);

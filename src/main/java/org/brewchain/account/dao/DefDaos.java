@@ -1,12 +1,15 @@
 package org.brewchain.account.dao;
 
 import org.apache.felix.ipojo.annotations.Instantiate;
+import org.apache.felix.ipojo.annotations.Invalidate;
+import org.apache.felix.ipojo.annotations.Validate;
 import org.brewchain.account.gens.Actimpl.PACTModule;
 import org.brewchain.bcapi.backend.ODBSupport;
 
 import com.google.protobuf.Message;
 
 import lombok.Data;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import onight.oapi.scala.commons.SessionModules;
 import onight.osgi.annotation.NActorProvider;
@@ -102,7 +105,19 @@ public class DefDaos extends SessionModules<Message> {
 	public String getModule() {
 		return PACTModule.ACT.name();
 	}
+	
+	@Validate
+	public void init(){
+		new Thread(stats).start();
+	}
+	
+	@Invalidate
+	public void destroy(){
+		stats.running = false;
+	}
 
+	@Getter
+	StatsInfo stats = new StatsInfo();
 	public boolean isReady() {
 		if (blockDao != null && SliceBlockDomain.class.isInstance(blockDao) && blockDao.getDaosupport() != null
 				&& txblockDao != null && SliceTxBlockDomain.class.isInstance(txblockDao)

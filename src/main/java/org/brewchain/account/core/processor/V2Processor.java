@@ -1,12 +1,16 @@
 package org.brewchain.account.core.processor;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.brewchain.account.bean.HashPair;
@@ -14,8 +18,8 @@ import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockChainConfig;
 import org.brewchain.account.core.BlockChainHelper;
 import org.brewchain.account.core.KeyConstant;
-import org.brewchain.account.core.TXStatus;
 import org.brewchain.account.core.TransactionHelper;
+import org.brewchain.account.core.actuator.AbstractTransactionActuator;
 import org.brewchain.account.core.actuator.iTransactionActuator;
 import org.brewchain.account.core.store.BlockStoreSummary;
 import org.brewchain.account.core.store.BlockStoreSummary.BLOCK_BEHAVIOR;
@@ -24,7 +28,6 @@ import org.brewchain.account.trie.CacheTrie;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.core.util.ByteUtil;
 import org.brewchain.evmapi.gens.Act.Account;
-import org.brewchain.evmapi.gens.Act.AccountValue;
 import org.brewchain.evmapi.gens.Block.BlockBody;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.brewchain.evmapi.gens.Block.BlockHeader;
@@ -35,6 +38,7 @@ import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import onight.osgi.annotation.NActorProvider;
@@ -62,18 +66,73 @@ public class V2Processor implements IProcessor, ActorService {
 	@ActorRequire(name = "Account_Helper", scope = "global")
 	AccountHelper oAccountHelper;
 
+	public synchronized Map<String, ByteString> ExecuteTransaction(MultiTransaction[] oMultiTransactions,
+			BlockEntity currentBlock,Map<String, Account.Builder> accounts) throws Exception {
+
+		Map<String, ByteString> results = new HashMap<>();
+
+		Map<Integer, iTransactionActuator> actorByType = new HashMap<>();
+//		Map<String, Account.Builder> accounts = new HashMap<>();
+		for (MultiTransaction oTransaction : oMultiTransactions) {
+			iTransactionActuator oiTransactionActuator = actorByType.get(oTransaction.getTxBody().getType());
+			if (oiTransactionActuator == null) {
+				oiTransactionActuator = transactionHelper.getActuator(oTransaction.getTxBody().getType(), currentBlock);
+				actorByType.put(oTransaction.getTxBody().getType(), oiTransactionActuator);
+			} else {
+				transactionHelper.resetActuator(oiTransactionActuator, currentBlock);
+			}
+
+			try {
+
+				oiTransactionActuator.onPrepareExecute(oTransaction, accounts);
+				ByteString result = oiTransactionActuator.onExecute(oTransaction, accounts);
+
+				oiTransactionActuator.onExecuteDone(oTransaction, result);
+				KeyConstant.txCounter.incrementAndGet();
+
+				results.put(oTransaction.getTxHash(), result);
+				// oAccountHelper.BatchPutAccounts(accounts);
+			} catch (Exception e) {
+				log.error("block " + currentBlock.getHeader().getBlockHash() + " exec transaction hash::"
+						+ oTransaction.getTxHash() + " error::" + e.getMessage());
+
+				try {
+					oiTransactionActuator.onExecuteError(oTransaction,
+							ByteString.copyFromUtf8(e.getMessage() == null ? "unknown exception" : e.getMessage()));
+					results.put(oTransaction.getTxHash(),
+							ByteString.copyFromUtf8(e.getMessage() == null ? "unknown exception" : e.getMessage()));
+				} catch (Exception e1) {
+					log.error("onexec errro:" + e1.getMessage(), e1);
+				}
+			}
+		}
+
+		oAccountHelper.BatchPutAccounts(accounts);
+		return results;
+	}
+
 	@Override
 	public synchronized Map<String, ByteString> ExecuteTransaction(List<MultiTransaction> oMultiTransactions,
 			BlockEntity currentBlock) throws Exception {
 
-		Map<String, ByteString> results = new LinkedHashMap<>();
+		Map<String, ByteString> results = new HashMap<>();
+
+		Map<Integer, iTransactionActuator> actorByType = new HashMap<>();
+		Map<String, Account.Builder> accounts = new HashMap<>();
 		for (MultiTransaction oTransaction : oMultiTransactions) {
-			iTransactionActuator oiTransactionActuator = transactionHelper
-					.getActuator(oTransaction.getTxBody().getType(), currentBlock);
+			iTransactionActuator oiTransactionActuator = actorByType.get(oTransaction.getTxBody().getType());
+			if (oiTransactionActuator == null) {
+				oiTransactionActuator = transactionHelper.getActuator(oTransaction.getTxBody().getType(), currentBlock);
+				actorByType.put(oTransaction.getTxBody().getType(), oiTransactionActuator);
+			} else {
+				transactionHelper.resetActuator(oiTransactionActuator, currentBlock);
+			}
 
 			try {
-				Map<String, Account.Builder> accounts = transactionHelper
-						.getTransactionAccounts(oTransaction.toBuilder());
+
+				// Map<String, Account.Builder> accounts
+				// =transactionHelper.getTransactionAccounts(oTransaction);
+				transactionHelper.merageTransactionAccounts(oTransaction.toBuilder(), accounts);
 				oiTransactionActuator.onPrepareExecute(oTransaction, accounts);
 				ByteString result = oiTransactionActuator.onExecute(oTransaction, accounts);
 
@@ -83,25 +142,32 @@ public class V2Processor implements IProcessor, ActorService {
 				// AccountValue value = accounts.get(key).getValue();
 				// this.stateTrie.put(encApi.hexDec(key), value.toByteArray());
 				// }
-				oAccountHelper.BatchPutAccounts(accounts);
 				oiTransactionActuator.onExecuteDone(oTransaction, result);
 				KeyConstant.txCounter.incrementAndGet();
-				results.put(oTransaction.getTxHash(), result);
-			} catch (Exception e) {
-				oiTransactionActuator.onExecuteError(oTransaction,
-						ByteString.copyFromUtf8(e.getMessage() == null ? "unknown exception" : e.getMessage()));
 
-				results.put(oTransaction.getTxHash(),
-						ByteString.copyFromUtf8(e.getMessage() == null ? "unknown exception" : e.getMessage()));
+				results.put(oTransaction.getTxHash(), result);
+				// oAccountHelper.BatchPutAccounts(accounts);
+			} catch (Exception e) {
 				log.error("block " + currentBlock.getHeader().getBlockHash() + " exec transaction hash::"
 						+ oTransaction.getTxHash() + " error::" + e.getMessage());
+
+				try {
+					oiTransactionActuator.onExecuteError(oTransaction,
+							ByteString.copyFromUtf8(e.getMessage() == null ? "unknown exception" : e.getMessage()));
+					results.put(oTransaction.getTxHash(),
+							ByteString.copyFromUtf8(e.getMessage() == null ? "unknown exception" : e.getMessage()));
+				} catch (Exception e1) {
+					log.error("onexec errro:" + e1.getMessage(), e1);
+				}
 			}
 		}
+
+		oAccountHelper.BatchPutAccounts(accounts);
 		return results;
 	}
 
 	@Override
-	public synchronized void applyReward(BlockEntity oCurrentBlock) throws Exception {
+	public synchronized void applyReward(BlockEntity.Builder oCurrentBlock) throws Exception {
 		accountHelper.addBalance(ByteString.copyFrom(encApi.hexDec(oCurrentBlock.getMiner().getAddress())),
 				ByteUtil.bytesToBigInteger(oCurrentBlock.getMiner().getReward().toByteArray()));
 	}
@@ -186,19 +252,69 @@ public class V2Processor implements IProcessor, ActorService {
 	// return true;
 	// }
 
+	@AllArgsConstructor
+	class ParalTxLoader implements Runnable {
+		String txHash;
+		int dstIndex;
+		CountDownLatch cdl;
+		MultiTransaction[] bb;
+		byte[][] txTrieBB;
+		Map<String, Account.Builder> accounts;
+		@Override
+		public void run() {
+			try {
+				MultiTransaction oMultiTransaction = transactionHelper.GetTransaction(txHash);
+				if (StringUtils.isBlank(oMultiTransaction.getTxHash())
+						|| oMultiTransaction.getTxBody().getInputsCount() <= 0
+						|| oMultiTransaction.getTxBody().getOutputsCount() <= 0) {
+					log.error("cannot load tx :txhash=" + oMultiTransaction.getTxHash() + ",inputs="
+							+ oMultiTransaction.getTxBody().getInputsCount() + ",outputs="
+							+ oMultiTransaction.getTxBody().getOutputsCount());
+				} else {
+					bb[dstIndex] = oMultiTransaction;
+					txTrieBB[dstIndex] = transactionHelper.getTransactionContent(oMultiTransaction);
+					
+					transactionHelper.merageTransactionAccounts(oMultiTransaction, accounts);
+
+				}
+				
+			} catch (Exception e) {
+				log.error("error in loading tx:" + txHash + ",idx=" + dstIndex, e);
+			} finally {
+				cdl.countDown();
+			}
+		}
+
+	}
+
+	MultiTransaction emptytx = MultiTransaction.newBuilder().build();
+	byte[] emptybb = new byte[1];
+
 	private synchronized boolean processBlock(BlockEntity.Builder oBlockEntity, BlockEntity oParentBlock)
 			throws Exception {
 		BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
-		LinkedList<MultiTransaction> txs = new LinkedList<>();
+		// LinkedList<MultiTransaction> txs = new LinkedList<>();
 		CacheTrie oTransactionTrie = new CacheTrie(this.encApi);
 		CacheTrie oReceiptTrie = new CacheTrie(this.encApi);
+		long start = System.currentTimeMillis();
 		this.stateTrie.setRoot(encApi.hexDec(oParentBlock.getHeader().getStateRoot()));
+<<<<<<< HEAD
 		
 		long start = System.currentTimeMillis();
 
 		log.debug("set root hash::" + oParentBlock.getHeader().getStateRoot());
+=======
+
+		log.debug("====> set root hash::" + oParentBlock.getHeader().getStateRoot() + ":blocknumber:"
+				+ oBlockEntity.getHeader().getNumber() + ",txcount=" + oBlockHeader.getTxHashsCount());
+>>>>>>> 2932b3a34e61e9f89636af830c9f08d0c240f016
 		BlockBody.Builder bb = oBlockEntity.getBody().toBuilder();
+
+		byte[][] txTrieBB = new byte[oBlockHeader.getTxHashsCount()][];
+		MultiTransaction[] txs = new MultiTransaction[oBlockHeader.getTxHashsCount()];
 		int i = 0;
+		Map<String, Account.Builder> accounts=new ConcurrentHashMap<>(oBlockHeader.getTxHashsCount());
+		CountDownLatch cdl = new CountDownLatch(oBlockHeader.getTxHashsCount());
 		for (String txHash : oBlockHeader.getTxHashsList()) {
 			HashPair hp = transactionHelper.removeWaitingSendOrBlockTx(txHash);
 			MultiTransaction oMultiTransaction = null;
@@ -206,31 +322,74 @@ public class V2Processor implements IProcessor, ActorService {
 				oMultiTransaction = hp.getTx();
 			}
 			if (oMultiTransaction == null) {
-				oMultiTransaction = transactionHelper.GetTransaction(txHash);
+				this.stateTrie.getExecutor().submit(new ParalTxLoader(txHash, i, cdl, txs, txTrieBB,accounts));
+			}else{
+				txs[i] = oMultiTransaction;
+				txTrieBB[i] = transactionHelper.getTransactionContent(oMultiTransaction);
+				transactionHelper.merageTransactionAccounts(oMultiTransaction, accounts);
+				cdl.countDown();
 			}
-
-			oTransactionTrie.put(RLP.encodeInt(i), transactionHelper.getTransactionContent(oMultiTransaction));
-			bb.addTxs(oMultiTransaction);
-			txs.add(oMultiTransaction);
-
 			i++;
 		}
+
+		cdl.await();
+		log.debug("cdl--waitup..=" + cdl.getCount());
+
+		for (i = 0; i < oBlockHeader.getTxHashsCount(); i++) {
+			bb.addTxs(txs[i]);
+			oTransactionTrie.put(RLP.encodeInt(i), txTrieBB[i]);
+		}
+
+		// int i = 0;
+		// for (String txHash : oBlockHeader.getTxHashsList()) {
+		// HashPair hp = transactionHelper.removeWaitingSendOrBlockTx(txHash);
+		// MultiTransaction oMultiTransaction = null;
+		// if (hp != null) {
+		// oMultiTransaction = hp.getTx();
+		// }
+		// if (oMultiTransaction == null) {
+		// oMultiTransaction = transactionHelper.GetTransaction(txHash);
+		// }
+		//
+		// oTransactionTrie.put(RLP.encodeInt(i),
+		// transactionHelper.getTransactionContent(oMultiTransaction));
+		// bb.addTxs(oMultiTransaction);
+		// txs.add(oMultiTransaction);
+		//
+		// i++;
+		// }
+		//
 		oBlockEntity.setBody(bb);
+<<<<<<< HEAD
 //		log.error("====>  start exec number::" + oBlockEntity.getHeader().getNumber() + ":exec tx count=" + i);
 		Map<String, ByteString> results = ExecuteTransaction(txs, oBlockEntity.build());
 		log.debug("====>  end exec number::" + oBlockEntity.getHeader().getNumber() + ":exec tx count=" + i + ",cost="
+=======
+
+		log.error("====>  start exec number::" + oBlockEntity.getHeader().getNumber() + ":exec tx count=" + i + ",txs="
+				+ bb.getTxsCount() + "," + txs.length + ", load txss cost=" + (System.currentTimeMillis() - start));
+		start = System.currentTimeMillis();
+		Map<String, ByteString> results = ExecuteTransaction(txs, oBlockEntity.build(),accounts);
+		log.error("====>  end exec number::" + oBlockEntity.getHeader().getNumber() + ":exec tx count=" + i + ",cost="
+>>>>>>> 2932b3a34e61e9f89636af830c9f08d0c240f016
 				+ (System.currentTimeMillis() - start));
+
 		BlockHeader.Builder header = oBlockEntity.getHeaderBuilder();
 
 		Iterator<String> iter = results.keySet().iterator();
-		i = 0;
+		// while (iter.hasNext()) {
+		// String key = iter.next();
+		List<String> keys = new ArrayList<>();
 		while (iter.hasNext()) {
 			String key = iter.next();
-			oReceiptTrie.put(RLP.encodeInt(i), results.get(key).toByteArray());
-			i++;
+			keys.add(key);
 		}
-
-		applyReward(oBlockEntity.build());
+		Collections.sort(keys);
+		for (String key : keys) {
+			oReceiptTrie.put(RLP.encodeInt(i), results.get(key).toByteArray());
+		}
+		// for testremove
+		applyReward(oBlockEntity);
 
 		header.setReceiptTrieRoot(encApi
 				.hexEnc(oReceiptTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY : oReceiptTrie.getRootHash()));
@@ -238,16 +397,25 @@ public class V2Processor implements IProcessor, ActorService {
 				oTransactionTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY : oTransactionTrie.getRootHash()));
 		start = System.currentTimeMillis();
 		header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
+<<<<<<< HEAD
 		log.debug("====>  end get root number::" + oBlockEntity.getHeader().getNumber() + ",cost="
 				+ (System.currentTimeMillis() - start));
+=======
+
+		log.debug("====> calc trie at block=" + oBlockEntity.getHeader().getNumber() + ",hash=" + header.getStateRoot()
+				+ ",rewardAddr=" + oBlockEntity.getMiner().getAddress() + ",reward="
+				+ ByteUtil.bytesToBigInteger(oBlockEntity.getMiner().getReward().toByteArray()) + ",cost="
+				+ (System.currentTimeMillis() - start) + ",txcount=" + i);
+
+>>>>>>> 2932b3a34e61e9f89636af830c9f08d0c240f016
 		oBlockEntity.setHeader(header);
 
 		return true;
 	}
 
 	@Override
-	public synchronized AddBlockResponse ApplyBlock(BlockEntity oBlockEntity) {
-		BlockEntity.Builder applyBlock = oBlockEntity.toBuilder();
+	public synchronized AddBlockResponse ApplyBlock(BlockEntity.Builder oBlockEntity) {
+		BlockEntity.Builder applyBlock = oBlockEntity;
 		long start = System.currentTimeMillis();
 		log.debug("====> start apply block hash::" + oBlockEntity.getHeader().getBlockHash() + " number:: "
 				+ oBlockEntity.getHeader().getNumber() + " miner::" + applyBlock.getMiner().getAddress() + ",headerTx="
@@ -272,7 +440,7 @@ public class V2Processor implements IProcessor, ActorService {
 				log.warn("wrong block hash::" + oBlockEntity.getHeader().getBlockHash() + " need::"
 						+ encApi.hexEnc(encApi.sha256Encode(blockContent)));
 			} else {
-				BlockStoreSummary oBlockStoreSummary = blockChainHelper.addBlock(oBlockEntity);
+				BlockStoreSummary oBlockStoreSummary = blockChainHelper.addBlock(oBlockEntity.build());
 				while (oBlockStoreSummary.getBehavior() != BLOCK_BEHAVIOR.DONE) {
 					switch (oBlockStoreSummary.getBehavior()) {
 					case DROP:
@@ -330,7 +498,8 @@ public class V2Processor implements IProcessor, ActorService {
 
 						log.debug("=====sync-> " + applyBlock.getHeader().getNumber() + " state::"
 								+ applyBlock.getHeader().getStateRoot() + " tx::"
-								+ applyBlock.getHeader().getTxTrieRoot() + " receipt::"
+								+ applyBlock.getHeader().getTxTrieRoot() + " parent::"
+								+ applyBlock.getHeader().getParentHash() + " receipt::"
 								+ applyBlock.getHeader().getReceiptTrieRoot());
 
 						if (!oBlockEntity.getHeader().getStateRoot().equals(applyBlock.getHeader().getStateRoot())
@@ -354,7 +523,7 @@ public class V2Processor implements IProcessor, ActorService {
 							applyBlock = blockEntity.toBuilder();
 							log.info("ready to apply child block::" + applyBlock.getHeader().getBlockHash()
 									+ " number::" + applyBlock.getHeader().getNumber());
-							ApplyBlock(blockEntity);
+							ApplyBlock(applyBlock);
 						}
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 						break;
@@ -384,6 +553,7 @@ public class V2Processor implements IProcessor, ActorService {
 
 		log.debug("====> end apply block number::" + oBlockEntity.getHeader().getNumber() + "  cost::"
 				+ (System.currentTimeMillis() - start));
+		blockChainHelper.getDao().getStats().setCurBlockID(oBlockEntity.getHeader().getNumber());
 
 		return oAddBlockResponse.build();
 	}

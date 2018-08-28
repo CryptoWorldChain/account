@@ -172,7 +172,7 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 
 			Account.Builder receiver = accounts.get(encApi.hexEnc(oOutput.getAddress().toByteArray()));
 			if (receiver == null) {
-				receiver = oAccountHelper.CreateAccount(oOutput.getAddress()).toBuilder();
+				receiver = oAccountHelper.CreateAccount(oOutput.getAddress());
 			}
 			AccountValue.Builder receiverAccountValue = receiver.getValue().toBuilder();
 

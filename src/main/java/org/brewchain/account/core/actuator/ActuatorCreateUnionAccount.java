@@ -33,7 +33,7 @@ public class ActuatorCreateUnionAccount extends AbstractTransactionActuator impl
 		Account oUnionAccount = Account.parseFrom(oMultiTransaction.getTxBody().getExdata());
 		if (!oAccountHelper.isExist(oUnionAccount.getAddress())) {
 			// 如果账户不存在
-			oAccountHelper.CreateUnionAccount(oUnionAccount);
+			oAccountHelper.CreateUnionAccount(oUnionAccount.toBuilder());
 			accounts.put(encApi.hexEnc(oUnionAccount.getAddress().toByteArray()), oUnionAccount.toBuilder());
 		} else {
 			// 如果账户存在

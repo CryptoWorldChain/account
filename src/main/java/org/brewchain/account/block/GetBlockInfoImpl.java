@@ -63,12 +63,39 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 	public void onPBPacket(final FramePacket pack, final ReqBlockInfo pb, final CompleteHandler handler) {
 		RespBlockInfo.Builder oRespBlockInfo = RespBlockInfo.newBuilder();
 		try {
+			if("true".equalsIgnoreCase(pack.getExtStrProp("clear"))){
+				dao.getStats().getAcceptTxCount().set(0);
+				dao.getStats().getBlockTxCount().set(0);
+				dao.getStats().setFirstBlockTxTime(0);
+				dao.getStats().setFirstAcceptTxTime(0);
+				dao.getStats().setLastBlockTxTime(0);
+				dao.getStats().setLastAcceptTxTime(0);
+			}
 			oRespBlockInfo.setBlockCount(blockChainHelper.getLastStableBlockNumber());
-			oRespBlockInfo.setCache("sync::" + String.valueOf(KeyConstant.counter) + " exec::" + String.valueOf(KeyConstant.txCounter));
+			oRespBlockInfo.setCache("sync::" + String.valueOf(KeyConstant.counter) 
+			+ " exec::" + String.valueOf(KeyConstant.txCounter)
+			+" bps::"+(dao.getStats().getBlockTxCount().get()*1000.0/(dao.getStats().getLastBlockTxTime()-dao.getStats().getFirstBlockTxTime())));
 			oRespBlockInfo.setNumber(blockChainHelper.getLastBlockNumber());
 			// oRespBlockInfo.setCache(blockChainHelper.getBlockCacheDump());
 			oRespBlockInfo.setWaitSync(oSendingHashMapDB.size());
 			oRespBlockInfo.setWaitBlock(oConfirmMapDB.size());
+			oRespBlockInfo.setTxAcceptCount(dao.getStats().getAcceptTxCount().get());
+			oRespBlockInfo.setTxAcceptTps(dao.getStats().getTxAcceptTps());
+			oRespBlockInfo.setTxBlockCount(dao.getStats().getBlockTxCount().get());
+			oRespBlockInfo.setTxBlockTps(dao.getStats().getTxBlockTps());
+			
+			oRespBlockInfo.setMaxBlockTps(dao.getStats().getMaxBlockTps());
+			oRespBlockInfo.setMaxAcceptTps(dao.getStats().getMaxAcceptTps());
+			
+			oRespBlockInfo.setFirstBlockTxTime(dao.getStats().getFirstBlockTxTime());
+			oRespBlockInfo.setLastBlockTxTime(dao.getStats().getLastBlockTxTime());
+			oRespBlockInfo.setBlockTxTimeCostMS(dao.getStats().getLastBlockTxTime()-dao.getStats().getFirstBlockTxTime());
+
+			
+			oRespBlockInfo.setFirstAcceptTxTime(dao.getStats().getFirstAcceptTxTime());
+			oRespBlockInfo.setLastAcceptTxTime(dao.getStats().getLastAcceptTxTime());
+			oRespBlockInfo.setAcceptTxTimeCostMS(dao.getStats().getLastAcceptTxTime()-dao.getStats().getFirstAcceptTxTime());
+
 //			LinkedList<BlockEntity> list = blockChainHelper.getParentsBlocks(encApi.hexEnc(dao.getBlockDao()
 //					.get(oEntityHelper.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get().getExtdata().toByteArray()),
 //					null, 10000);
