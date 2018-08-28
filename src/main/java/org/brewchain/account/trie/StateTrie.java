@@ -71,19 +71,12 @@ public class StateTrie implements ActorService {
 
 	class BatchStorage {
 		LinkedHashMap<OKey, OValue> kvs = new LinkedHashMap<>();
-		// List<OKey> keys = new ArrayList<>();
-		// List<OValue> values = new ArrayList<>();
 
 		public void add(byte[] key, byte[] v) {
-			// keys.add(oEntityHelper.byteKey2OKey(key));
-			// values.add(oEntityHelper.byteValue2OValue(v));
 			kvs.put(oEntityHelper.byteKey2OKey(key), oEntityHelper.byteValue2OValue(v));
 		}
 
 		public void remove(byte[] key) {
-			// keys.add(oEntityHelper.byteKey2OKey(key));
-			// values.add(oEntityHelper.byteValue2OValue(v));
-			log.debug("BatchStorage remove::" + encApi.hexEnc(key));
 			kvs.remove(oEntityHelper.byteKey2OKey(key));
 		}
 	}
@@ -143,6 +136,8 @@ public class StateTrie implements ActorService {
 		}
 
 		public void flushBS(BatchStorage bs) {
+			long start = System.currentTimeMillis();
+
 			int size = bs.kvs.size();
 			if (size > 0) {
 				try {
@@ -190,7 +185,6 @@ public class StateTrie implements ActorService {
 			} finally {
 				if (bs != null) {
 					if (bsPool.size() < 100) {
-						log.debug("bsPool size=" + bsPool.size() + " kvs=" + bs.kvs.size());
 						bs.kvs.clear();
 						// bs.values.clear();
 						bsPool.retobj(bs);
@@ -250,11 +244,14 @@ public class StateTrie implements ActorService {
 												if (bs != null) {
 													batchStorage.remove();
 													if (bsPool.size() < 100) {
+<<<<<<< HEAD
 														// log.debug("bsPool
 														// size=" +
 														// bsPool.size() + "
 														// kvs=" +
 														// bs.kvs.size());
+=======
+>>>>>>> 016ddb710aa3152215655269f816df4c5554b079
 														bs.kvs.clear();
 														// bs.values.clear();
 														bsPool.retobj(bs);
@@ -602,21 +599,19 @@ public class StateTrie implements ActorService {
 	}
 
 	Cache<String, byte[]> cacheByHash = CacheBuilder.newBuilder().initialCapacity(10000)
-			.expireAfterWrite(120, TimeUnit.SECONDS).maximumSize(1000000)
+			.expireAfterWrite(180, TimeUnit.SECONDS).maximumSize(1000000)
 			.concurrencyLevel(Runtime.getRuntime().availableProcessors()).build();
 
 	private byte[] getHash(byte[] hash) {
 		OKey key = oEntityHelper.byteKey2OKey(hash);
 		String hexHash = encApi.hexEnc(hash);
 		OValue v = null;
-		BatchStorage bs = batchStorage.get();
-		if (bs != null) {
-			v = bs.kvs.get(key);
-		}
+		// BatchStorage bs = batchStorage.get();
+		// if (bs != null) {
+		// v = bs.kvs.get(key);
+		// }
 		try {
 			if (v == null) {
-				// log.debug("statetrie getHash from db::" +
-				// encApi.hexEnc(hash));
 				byte[] body = cacheByHash.getIfPresent(hexHash);
 				if (body != null) {
 					return body;
@@ -632,7 +627,6 @@ public class StateTrie implements ActorService {
 		} catch (Exception e) {
 			log.warn("getHash Error:" + e.getMessage() + ",key=" + hexHash, e);
 		}
-		log.debug("statetrie getHash not found::" + hexHash);
 		return null;
 	}
 
@@ -641,21 +635,19 @@ public class StateTrie implements ActorService {
 		if (bs != null) {
 			// log.debug("add into state trie key::" + encApi.hexEnc(hash));
 			bs.add(hash, ret);
+			cacheByHash.put(encApi.hexEnc(hash), ret);
 		} else {
 			dao.getAccountDao().put(oEntityHelper.byteKey2OKey(hash), oEntityHelper.byteValue2OValue(ret));
 		}
 	}
 
 	private void deleteHash(byte[] hash) {
-		// log.debug("trie delete key::" + Hex.toHexString(hash) + " root::" +
-		// Hex.toHexString(this.root.hash));
 		BatchStorage bs = batchStorage.get();
 		if (bs != null) {
 			// log.debug("add into state trie key::" + encApi.hexEnc(hash));
 			bs.remove(hash);
 			log.debug("state trie batch bs " + encApi.hexEnc(hash));
 		}
-		// cacheByHash.invalidate(encApi.hexEnc(hash));
 	}
 
 	public byte[] get(byte[] key) {
@@ -833,18 +825,6 @@ public class StateTrie implements ActorService {
 
 	}
 
-	// public boolean flush() {
-	// if (root != null && root.dirty) {
-	// // persist all dirty nodes to underlying Source
-	// encode();
-	// // release all Trie Node instances for GC
-	// root = new Node(root.hash);
-	// return true;
-	// } else {
-	// return false;
-	// }
-	// }
-
 	@Override
 	public boolean equals(Object o) {
 		if (this == o)
@@ -901,17 +881,4 @@ public class StateTrie implements ActorService {
 			scanAction.doOnValue(node.hash, node, k.concat(node.kvNodeGetKey()).toNormal(), node.kvNodeGetValue());
 		}
 	}
-
-	// private static String hash2str(byte[] hash, boolean shortHash) {
-	// String ret = Hex.toHexString(hash);
-	// return "0x" + (shortHash ? ret.substring(0, 8) : ret);
-	// }
-	//
-	// private static String val2str(byte[] val, boolean shortHash) {
-	// String ret = Hex.toHexString(val);
-	// if (val.length > 16) {
-	// ret = ret.substring(0, 10) + "... len " + val.length;
-	// }
-	// return "\"" + ret + "\"";
-	// }
 }

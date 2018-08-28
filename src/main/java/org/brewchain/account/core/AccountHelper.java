@@ -720,12 +720,8 @@ public class AccountHelper implements ActorService {
 				this.stateTrie.put(encApi.hexDec(key), value.toByteArray());
 			}
 		}
-		// AccountTask task = new AccountTask(accountValues);
 		doPutAccounts(accountValues);
-		// KeyConstant.QUEUE.add(accountValues);
 	}
-
-	;
 
 	public void doPutAccounts(Map<String, Account.Builder> accountValues) {
 		try {

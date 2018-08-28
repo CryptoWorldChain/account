@@ -73,13 +73,14 @@ public class V2Processor implements IProcessor, ActorService {
 
 		Map<String, ByteString> results = new ConcurrentHashMap<>();
 		mts.reset();
+		long start = System.currentTimeMillis();
 		CountDownLatch cdl = new CountDownLatch(oMultiTransactions.length);
 		for (int i = 0; i < mts.getBucketSize(); i++) {
 			this.stateTrie.getExecutor().submit(new MisV2TransactionRunner(mts.getTxnQueue(i), transactionHelper,
 					currentBlock, accounts, results, cdl));
 		}
 		mts.doClearing(oMultiTransactions);
-		log.debug(" ====> ExecuteTransaction.clearing:" + mts.getBucketInfo());
+		log.debug(" ====> ExecuteTransaction.clearing:" + mts.getBucketInfo()+",cost="+(System.currentTimeMillis() - start));
 		cdl.await();
 		log.debug("--:cdlwaitup" + cdl.getCount());
 		oAccountHelper.BatchPutAccounts(accounts);
@@ -280,7 +281,6 @@ public class V2Processor implements IProcessor, ActorService {
 		CacheTrie oReceiptTrie = new CacheTrie(this.encApi);
 		long start = System.currentTimeMillis();
 		this.stateTrie.setRoot(encApi.hexDec(oParentBlock.getHeader().getStateRoot()));
-
 		log.debug("====> set root hash::" + oParentBlock.getHeader().getStateRoot() + ":blocknumber:"
 				+ oBlockEntity.getHeader().getNumber() + ",txcount=" + oBlockHeader.getTxHashsCount());
 		BlockBody.Builder bb = oBlockEntity.getBody().toBuilder();
@@ -338,9 +338,6 @@ public class V2Processor implements IProcessor, ActorService {
 		// }
 		//
 		oBlockEntity.setBody(bb);
-
-		log.error("====>  start exec number::" + oBlockEntity.getHeader().getNumber() + ":exec tx count=" + i + ",txs="
-				+ bb.getTxsCount() + "," + txs.length + ", load txss cost=" + (System.currentTimeMillis() - start));
 		start = System.currentTimeMillis();
 		Map<String, ByteString> results = ExecuteTransaction(txs, oBlockEntity.build(), accounts);
 		log.error("====>  end exec number::" + oBlockEntity.getHeader().getNumber() + ":exec tx count=" + i + ",cost="
@@ -376,6 +373,7 @@ public class V2Processor implements IProcessor, ActorService {
 				+ (System.currentTimeMillis() - start) + ",txcount=" + i);
 
 		oBlockEntity.setHeader(header);
+
 		return true;
 	}
 
@@ -387,13 +385,7 @@ public class V2Processor implements IProcessor, ActorService {
 				+ oBlockEntity.getHeader().getNumber() + " miner::" + applyBlock.getMiner().getAddress() + ",headerTx="
 				+ applyBlock.getHeader().getTxHashsCount() + ",bodyTx=" + applyBlock.getBody().getTxsCount());
 		AddBlockResponse.Builder oAddBlockResponse = AddBlockResponse.newBuilder();
-		// log.debug("receive block number::" +
-		// applyBlock.getHeader().getNumber() + " hash::"
-		// + oBlockEntity.getHeader().getBlockHash() + " parent::" +
-		// applyBlock.getHeader().getParentHash()
-		// + " stateroot::" + applyBlock.getHeader().getStateRoot() + " miner::"
-		// + applyBlock.getMiner().getAddress());
-
+		
 		try {
 			BlockHeader.Builder oBlockHeader = BlockHeader.parseFrom(oBlockEntity.getHeader().toByteArray())
 					.toBuilder();
