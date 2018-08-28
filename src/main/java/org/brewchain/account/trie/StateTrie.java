@@ -24,6 +24,7 @@ import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.bouncycastle.util.encoders.Hex;
 import org.brewchain.account.dao.DefDaos;
+import org.brewchain.account.exception.BlockStateTrieRuntimeException;
 import org.brewchain.account.util.ByteUtil;
 import org.brewchain.account.util.FastByteComparisons;
 import org.brewchain.account.util.OEntityBuilder;
@@ -131,7 +132,7 @@ public class StateTrie implements ActorService {
 
 		private void resolve() {
 			if (!resolveCheck()) {
-				throw new RuntimeException("Invalid Trie state, can't resolve hash " + Hex.toHexString(hash));
+				throw new BlockStateTrieRuntimeException("Invalid Trie state, can't resolve hash " + Hex.toHexString(hash));
 			}
 		}
 
