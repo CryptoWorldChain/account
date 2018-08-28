@@ -80,7 +80,8 @@ public class V2Processor implements IProcessor, ActorService {
 					currentBlock, accounts, results, cdl));
 		}
 		mts.doClearing(oMultiTransactions);
-		log.debug(" ====> ExecuteTransaction.clearing:" + mts.getBucketInfo()+",cost="+(System.currentTimeMillis() - start));
+		log.debug(" ====> ExecuteTransaction.clearing:" + mts.getBucketInfo() + ",cost="
+				+ (System.currentTimeMillis() - start));
 		cdl.await();
 		log.debug("--:cdlwaitup" + cdl.getCount());
 		oAccountHelper.BatchPutAccounts(accounts);
@@ -249,8 +250,7 @@ public class V2Processor implements IProcessor, ActorService {
 					oMultiTransaction = transactionHelper.GetTransaction(txHash);
 				}
 				if (StringUtils.isBlank(oMultiTransaction.getTxHash())
-						|| oMultiTransaction.getTxBody().getInputsCount() <= 0
-						|| oMultiTransaction.getTxBody().getOutputsCount() <= 0) {
+						|| oMultiTransaction.getTxBody().getInputsCount() <= 0) {
 					log.error("cannot load tx :txhash=" + oMultiTransaction.getTxHash() + ",inputs="
 							+ oMultiTransaction.getTxBody().getInputsCount() + ",outputs="
 							+ oMultiTransaction.getTxBody().getOutputsCount());
@@ -388,7 +388,7 @@ public class V2Processor implements IProcessor, ActorService {
 				+ oBlockEntity.getHeader().getNumber() + " miner::" + applyBlock.getMiner().getAddress() + ",headerTx="
 				+ applyBlock.getHeader().getTxHashsCount() + ",bodyTx=" + applyBlock.getBody().getTxsCount());
 		AddBlockResponse.Builder oAddBlockResponse = AddBlockResponse.newBuilder();
-		
+
 		try {
 			BlockHeader.Builder oBlockHeader = BlockHeader.parseFrom(oBlockEntity.getHeader().toByteArray())
 					.toBuilder();
