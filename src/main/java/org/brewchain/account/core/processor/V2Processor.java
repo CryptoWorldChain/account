@@ -80,9 +80,9 @@ public class V2Processor implements IProcessor, ActorService {
 					currentBlock, accounts, results, cdl));
 		}
 		mts.doClearing(oMultiTransactions);
+		cdl.await();
 		log.debug(" ====> ExecuteTransaction.clearing:" + mts.getBucketInfo() + ",cost="
 				+ (System.currentTimeMillis() - start));
-		cdl.await();
 		log.debug("--:cdlwaitup" + cdl.getCount());
 		oAccountHelper.BatchPutAccounts(accounts);
 		return results;

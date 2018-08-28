@@ -1,11 +1,9 @@
 package org.brewchain.account.core.processor;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 
 import org.brewchain.account.core.KeyConstant;
 import org.brewchain.account.core.TransactionHelper;

@@ -1,7 +1,6 @@
 package org.brewchain.account.core.mis;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,6 +10,8 @@ import org.apache.commons.codec.binary.Hex;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionOutput;
+
+import com.google.protobuf.ByteString;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -30,12 +31,12 @@ import lombok.NoArgsConstructor;
 @Data
 public class MultiTransactionSeparator {
 
-	int bucketSize = Runtime.getRuntime().availableProcessors()*2;
+	int bucketSize = Runtime.getRuntime().availableProcessors();
 
 	class RelationShip {
 		Map<String, MultiTransaction> sequances = new HashMap<>();
-		
-		LinkedBlockingQueue<MultiTransaction> queue = new LinkedBlockingQueue<>(); 
+
+		LinkedBlockingQueue<MultiTransaction> queue = new LinkedBlockingQueue<>();
 	}
 
 	public LinkedBlockingQueue<MultiTransaction> getTxnQueue(int index) {
@@ -68,6 +69,16 @@ public class MultiTransactionSeparator {
 		return sb.toString();
 	}
 
+	public static int MAX_COMPARE_SIZE = 4;
+
+	public String fastAddress(ByteString bstr) {
+		StringBuffer sb = new StringBuffer();
+		for (int i = 0; i < MAX_COMPARE_SIZE && i < bstr.size(); i++) {
+			sb.append(bstr.byteAt(0));
+		}
+		return sb.toString();
+	}
+
 	public void doClearing(MultiTransaction[] oMultiTransactions) {
 		int offset = 0;
 		for (MultiTransaction tx : oMultiTransactions) {
@@ -80,7 +91,7 @@ public class MultiTransactionSeparator {
 				}
 				if (bucketIdx < 0) {
 					for (MultiTransactionInput input : tx.getTxBody().getInputsList()) {
-						if (rs.sequances.containsKey(Hex.encodeHexString(input.getAddress().toByteArray()))) {
+						if (rs.sequances.containsKey(fastAddress(input.getAddress()))) {
 							bucketIdx = i;
 							break;
 						}
@@ -88,7 +99,7 @@ public class MultiTransactionSeparator {
 				}
 				if (bucketIdx < 0) {
 					for (MultiTransactionOutput output : tx.getTxBody().getOutputsList()) {
-						if (rs.sequances.containsKey(Hex.encodeHexString(output.getAddress().toByteArray()))) {
+						if (rs.sequances.containsKey(fastAddress(output.getAddress()))) {
 							bucketIdx = i;
 							break;
 						}
@@ -101,10 +112,10 @@ public class MultiTransactionSeparator {
 			}
 			RelationShip rs = buckets.get((bucketIdx) % bucketSize);
 			for (MultiTransactionOutput output : tx.getTxBody().getOutputsList()) {
-				rs.sequances.put(Hex.encodeHexString(output.getAddress().toByteArray()), tx);
+				rs.sequances.put(fastAddress(output.getAddress()), tx);
 			}
 			for (MultiTransactionInput input : tx.getTxBody().getInputsList()) {
-				rs.sequances.put(Hex.encodeHexString(input.getAddress().toByteArray()), tx);
+				rs.sequances.put(fastAddress(input.getAddress()), tx);
 			}
 			rs.queue.offer(tx);
 
