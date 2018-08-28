@@ -67,12 +67,12 @@ public class V2Processor implements IProcessor, ActorService {
 	AccountHelper oAccountHelper;
 
 	public synchronized Map<String, ByteString> ExecuteTransaction(MultiTransaction[] oMultiTransactions,
-			BlockEntity currentBlock,Map<String, Account.Builder> accounts) throws Exception {
+			BlockEntity currentBlock, Map<String, Account.Builder> accounts) throws Exception {
 
 		Map<String, ByteString> results = new HashMap<>();
 
 		Map<Integer, iTransactionActuator> actorByType = new HashMap<>();
-//		Map<String, Account.Builder> accounts = new HashMap<>();
+		// Map<String, Account.Builder> accounts = new HashMap<>();
 		for (MultiTransaction oTransaction : oMultiTransactions) {
 			iTransactionActuator oiTransactionActuator = actorByType.get(oTransaction.getTxBody().getType());
 			if (oiTransactionActuator == null) {
@@ -260,6 +260,7 @@ public class V2Processor implements IProcessor, ActorService {
 		MultiTransaction[] bb;
 		byte[][] txTrieBB;
 		Map<String, Account.Builder> accounts;
+
 		@Override
 		public void run() {
 			try {
@@ -283,7 +284,7 @@ public class V2Processor implements IProcessor, ActorService {
 					transactionHelper.merageTransactionAccounts(oMultiTransaction, accounts);
 
 				}
-				
+
 			} catch (Exception e) {
 				log.error("error in loading tx:" + txHash + ",idx=" + dstIndex, e);
 			} finally {
@@ -304,37 +305,32 @@ public class V2Processor implements IProcessor, ActorService {
 		CacheTrie oReceiptTrie = new CacheTrie(this.encApi);
 		long start = System.currentTimeMillis();
 		this.stateTrie.setRoot(encApi.hexDec(oParentBlock.getHeader().getStateRoot()));
-<<<<<<< HEAD
-		
-		long start = System.currentTimeMillis();
-
-		log.debug("set root hash::" + oParentBlock.getHeader().getStateRoot());
-=======
-
 		log.debug("====> set root hash::" + oParentBlock.getHeader().getStateRoot() + ":blocknumber:"
 				+ oBlockEntity.getHeader().getNumber() + ",txcount=" + oBlockHeader.getTxHashsCount());
->>>>>>> 2932b3a34e61e9f89636af830c9f08d0c240f016
 		BlockBody.Builder bb = oBlockEntity.getBody().toBuilder();
 
 		byte[][] txTrieBB = new byte[oBlockHeader.getTxHashsCount()][];
 		MultiTransaction[] txs = new MultiTransaction[oBlockHeader.getTxHashsCount()];
 		int i = 0;
-		Map<String, Account.Builder> accounts=new ConcurrentHashMap<>(oBlockHeader.getTxHashsCount());
+		Map<String, Account.Builder> accounts = new ConcurrentHashMap<>(oBlockHeader.getTxHashsCount());
 		CountDownLatch cdl = new CountDownLatch(oBlockHeader.getTxHashsCount());
 		for (String txHash : oBlockHeader.getTxHashsList()) {
-//			HashPair hp = transactionHelper.removeWaitingSendOrBlockTx(txHash);
-//			MultiTransaction oMultiTransaction = null;
-//			if (hp != null) {
-//				oMultiTransaction = hp.getTx();
-//			}
-//			if (oMultiTransaction == null) {
-				this.stateTrie.getExecutor().submit(new ParalTxLoader(txHash, i, cdl, txs, txTrieBB,accounts));
-//			}else{
-//				txs[i] = oMultiTransaction;
-//				txTrieBB[i] = transactionHelper.getTransactionContent(oMultiTransaction);
-//				transactionHelper.merageTransactionAccounts(oMultiTransaction, accounts);
-//				cdl.countDown();
-//			}
+			// HashPair hp =
+			// transactionHelper.removeWaitingSendOrBlockTx(txHash);
+			// MultiTransaction oMultiTransaction = null;
+			// if (hp != null) {
+			// oMultiTransaction = hp.getTx();
+			// }
+			// if (oMultiTransaction == null) {
+			this.stateTrie.getExecutor().submit(new ParalTxLoader(txHash, i, cdl, txs, txTrieBB, accounts));
+			// }else{
+			// txs[i] = oMultiTransaction;
+			// txTrieBB[i] =
+			// transactionHelper.getTransactionContent(oMultiTransaction);
+			// transactionHelper.merageTransactionAccounts(oMultiTransaction,
+			// accounts);
+			// cdl.countDown();
+			// }
 			i++;
 		}
 
@@ -366,18 +362,9 @@ public class V2Processor implements IProcessor, ActorService {
 		// }
 		//
 		oBlockEntity.setBody(bb);
-<<<<<<< HEAD
-//		log.error("====>  start exec number::" + oBlockEntity.getHeader().getNumber() + ":exec tx count=" + i);
-		Map<String, ByteString> results = ExecuteTransaction(txs, oBlockEntity.build());
-		log.debug("====>  end exec number::" + oBlockEntity.getHeader().getNumber() + ":exec tx count=" + i + ",cost="
-=======
-
-		log.error("====>  start exec number::" + oBlockEntity.getHeader().getNumber() + ":exec tx count=" + i + ",txs="
-				+ bb.getTxsCount() + "," + txs.length + ", load txss cost=" + (System.currentTimeMillis() - start));
 		start = System.currentTimeMillis();
-		Map<String, ByteString> results = ExecuteTransaction(txs, oBlockEntity.build(),accounts);
+		Map<String, ByteString> results = ExecuteTransaction(txs, oBlockEntity.build(), accounts);
 		log.error("====>  end exec number::" + oBlockEntity.getHeader().getNumber() + ":exec tx count=" + i + ",cost="
->>>>>>> 2932b3a34e61e9f89636af830c9f08d0c240f016
 				+ (System.currentTimeMillis() - start));
 
 		BlockHeader.Builder header = oBlockEntity.getHeaderBuilder();
@@ -403,17 +390,12 @@ public class V2Processor implements IProcessor, ActorService {
 				oTransactionTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY : oTransactionTrie.getRootHash()));
 		start = System.currentTimeMillis();
 		header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
-<<<<<<< HEAD
-		log.debug("====>  end get root number::" + oBlockEntity.getHeader().getNumber() + ",cost="
-				+ (System.currentTimeMillis() - start));
-=======
 
 		log.debug("====> calc trie at block=" + oBlockEntity.getHeader().getNumber() + ",hash=" + header.getStateRoot()
 				+ ",rewardAddr=" + oBlockEntity.getMiner().getAddress() + ",reward="
 				+ ByteUtil.bytesToBigInteger(oBlockEntity.getMiner().getReward().toByteArray()) + ",cost="
 				+ (System.currentTimeMillis() - start) + ",txcount=" + i);
 
->>>>>>> 2932b3a34e61e9f89636af830c9f08d0c240f016
 		oBlockEntity.setHeader(header);
 
 		return true;
@@ -427,13 +409,7 @@ public class V2Processor implements IProcessor, ActorService {
 				+ oBlockEntity.getHeader().getNumber() + " miner::" + applyBlock.getMiner().getAddress() + ",headerTx="
 				+ applyBlock.getHeader().getTxHashsCount() + ",bodyTx=" + applyBlock.getBody().getTxsCount());
 		AddBlockResponse.Builder oAddBlockResponse = AddBlockResponse.newBuilder();
-		// log.debug("receive block number::" +
-		// applyBlock.getHeader().getNumber() + " hash::"
-		// + oBlockEntity.getHeader().getBlockHash() + " parent::" +
-		// applyBlock.getHeader().getParentHash()
-		// + " stateroot::" + applyBlock.getHeader().getStateRoot() + " miner::"
-		// + applyBlock.getMiner().getAddress());
-
+		
 		try {
 			BlockHeader.Builder oBlockHeader = BlockHeader.parseFrom(oBlockEntity.getHeader().toByteArray())
 					.toBuilder();
