@@ -15,6 +15,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -57,10 +58,8 @@ public class StateTrie implements ActorService {
 	OEntityBuilder oEntityHelper;
 
 	private final static Object NULL_NODE = new Object();
-	private final static int MIN_BRANCHES_CONCURRENTLY = 4;//Math.min(16,Runtime.getRuntime().availableProcessors());
-	private static ExecutorService executor = Executors.newFixedThreadPool(
-			Runtime.getRuntime().availableProcessors() * 4,
-			new ThreadFactoryBuilder().setNameFormat("trie-calc-thread-%d").build());;
+	private final static int MIN_BRANCHES_CONCURRENTLY = 4;// Math.min(16,Runtime.getRuntime().availableProcessors());
+	private static ExecutorService executor = new ForkJoinPool(Runtime.getRuntime().availableProcessors() * 6);
 
 	public static ExecutorService getExecutor() {
 		return executor;
@@ -151,17 +150,20 @@ public class StateTrie implements ActorService {
 					OValue[] ovs = new OValue[size];
 					int i = 0;
 
-//					String trace = "";
+					// String trace = "";
 					for (Map.Entry<OKey, OValue> kvs : bs.kvs.entrySet()) {
 						oks[i] = kvs.getKey();
 						ovs[i] = kvs.getValue();
 
-//						trace += encApi.hexEnc(kvs.getKey().getData().toByteArray()) + System.lineSeparator();
+						// trace +=
+						// encApi.hexEnc(kvs.getKey().getData().toByteArray()) +
+						// System.lineSeparator();
 						i++;
 					}
 
 					dao.getAccountDao().batchPuts(oks, ovs);
-//					log.debug("state trie batch puts " + size + " trace::" + trace);
+					// log.debug("state trie batch puts " + size + " trace::" +
+					// trace);
 					bs.kvs.clear();
 				} catch (Exception e) {
 					log.warn("error in flushBS" + e.getMessage(), e);
@@ -248,7 +250,11 @@ public class StateTrie implements ActorService {
 												if (bs != null) {
 													batchStorage.remove();
 													if (bsPool.size() < 100) {
-//														log.debug("bsPool size=" + bsPool.size() + " kvs=" + bs.kvs.size());
+														// log.debug("bsPool
+														// size=" +
+														// bsPool.size() + "
+														// kvs=" +
+														// bs.kvs.size());
 														bs.kvs.clear();
 														// bs.values.clear();
 														bsPool.retobj(bs);
