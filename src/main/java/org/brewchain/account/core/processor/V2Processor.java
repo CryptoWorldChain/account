@@ -338,6 +338,9 @@ public class V2Processor implements IProcessor, ActorService {
 		// }
 		//
 		oBlockEntity.setBody(bb);
+		log.error("====>  start exec number::" + oBlockEntity.getHeader().getNumber() + ":exec tx count=" + i + ",txs="
+				+ bb.getTxsCount() + "," + txs.length + ", load txss cost=" + (System.currentTimeMillis() - start));
+
 		start = System.currentTimeMillis();
 		Map<String, ByteString> results = ExecuteTransaction(txs, oBlockEntity.build(), accounts);
 		log.error("====>  end exec number::" + oBlockEntity.getHeader().getNumber() + ":exec tx count=" + i + ",cost="
