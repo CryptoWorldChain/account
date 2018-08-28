@@ -59,7 +59,7 @@ public class StateTrie implements ActorService {
 	private final static Object NULL_NODE = new Object();
 	private final static int MIN_BRANCHES_CONCURRENTLY = 4;//Math.min(16,Runtime.getRuntime().availableProcessors());
 	private static ExecutorService executor = Executors.newFixedThreadPool(
-			Runtime.getRuntime().availableProcessors() * 2,
+			Runtime.getRuntime().availableProcessors() * 4,
 			new ThreadFactoryBuilder().setNameFormat("trie-calc-thread-%d").build());;
 
 	public static ExecutorService getExecutor() {

@@ -263,7 +263,14 @@ public class V2Processor implements IProcessor, ActorService {
 		@Override
 		public void run() {
 			try {
-				MultiTransaction oMultiTransaction = transactionHelper.GetTransaction(txHash);
+				HashPair hp = transactionHelper.removeWaitingSendOrBlockTx(txHash);
+				MultiTransaction oMultiTransaction = null;
+				if (hp != null) {
+					oMultiTransaction = hp.getTx();
+				}
+				if (oMultiTransaction == null) {
+					oMultiTransaction = transactionHelper.GetTransaction(txHash);
+				}
 				if (StringUtils.isBlank(oMultiTransaction.getTxHash())
 						|| oMultiTransaction.getTxBody().getInputsCount() <= 0
 						|| oMultiTransaction.getTxBody().getOutputsCount() <= 0) {
@@ -273,7 +280,6 @@ public class V2Processor implements IProcessor, ActorService {
 				} else {
 					bb[dstIndex] = oMultiTransaction;
 					txTrieBB[dstIndex] = transactionHelper.getTransactionContent(oMultiTransaction);
-					
 					transactionHelper.merageTransactionAccounts(oMultiTransaction, accounts);
 
 				}
@@ -316,19 +322,19 @@ public class V2Processor implements IProcessor, ActorService {
 		Map<String, Account.Builder> accounts=new ConcurrentHashMap<>(oBlockHeader.getTxHashsCount());
 		CountDownLatch cdl = new CountDownLatch(oBlockHeader.getTxHashsCount());
 		for (String txHash : oBlockHeader.getTxHashsList()) {
-			HashPair hp = transactionHelper.removeWaitingSendOrBlockTx(txHash);
-			MultiTransaction oMultiTransaction = null;
-			if (hp != null) {
-				oMultiTransaction = hp.getTx();
-			}
-			if (oMultiTransaction == null) {
+//			HashPair hp = transactionHelper.removeWaitingSendOrBlockTx(txHash);
+//			MultiTransaction oMultiTransaction = null;
+//			if (hp != null) {
+//				oMultiTransaction = hp.getTx();
+//			}
+//			if (oMultiTransaction == null) {
 				this.stateTrie.getExecutor().submit(new ParalTxLoader(txHash, i, cdl, txs, txTrieBB,accounts));
-			}else{
-				txs[i] = oMultiTransaction;
-				txTrieBB[i] = transactionHelper.getTransactionContent(oMultiTransaction);
-				transactionHelper.merageTransactionAccounts(oMultiTransaction, accounts);
-				cdl.countDown();
-			}
+//			}else{
+//				txs[i] = oMultiTransaction;
+//				txTrieBB[i] = transactionHelper.getTransactionContent(oMultiTransaction);
+//				transactionHelper.merageTransactionAccounts(oMultiTransaction, accounts);
+//				cdl.countDown();
+//			}
 			i++;
 		}
 
