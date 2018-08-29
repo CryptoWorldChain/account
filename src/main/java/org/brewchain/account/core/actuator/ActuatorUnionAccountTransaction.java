@@ -93,7 +93,7 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 	}
 
 	@Override
-	public void onVerifySignature(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts)
+	public void onVerifySignature(MultiTransaction oMultiTransaction)
 			throws Exception {
 
 		// 签名的账户是否是该多重签名账户的子账户，如果不是，抛出异常
@@ -101,6 +101,6 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 			// TODO 需要能解出签名地址的方法，验证每个签名地址都是多重签名账户的关联自账户
 		}
 
-		super.onVerifySignature(oMultiTransaction, accounts);
+		super.onVerifySignature(oMultiTransaction);
 	}
 }

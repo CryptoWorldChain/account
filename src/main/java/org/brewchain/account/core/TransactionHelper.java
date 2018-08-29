@@ -215,9 +215,14 @@ public class TransactionHelper implements ActorService {
 			if (oValue != null) {
 				log.warn("transaction " + oMultiTransaction.getTxHash() + "exists in DB, drop it");
 			} else {
-
 				oMultiTransaction.clearStatus();
 				oMultiTransaction.clearResult();
+
+				iTransactionActuator oiTransactionActuator = getActuator(oMultiTransaction.getTxBody().getType(), null);
+				if (oiTransactionActuator.needSignature()) {
+					oiTransactionActuator.onVerifySignature(oMultiTransaction.build());
+				}
+
 				byte validKeyByte[] = encApi.sha256Encode(oMultiTransaction.getTxBody().toByteArray());
 				if (!FastByteComparisons.equal(validKeyByte, keyByte)) {
 					log.error("fail to sync transaction::" + oMultiTransaction.getTxHash() + ", content invalid");
@@ -245,24 +250,35 @@ public class TransactionHelper implements ActorService {
 
 	public void syncTransaction(List<MultiTransaction.Builder> oMultiTransaction, boolean isBroadCast,
 			BigInteger bits) {
-		try {
-			if (oMultiTransaction.size() > 0) {
-				List<OKey> keys = new ArrayList<>();
-				List<OValue> values = new ArrayList<>();
-				HashMap<String, HashPair> buffer = new HashMap<>();
-				for (MultiTransaction.Builder mtb : oMultiTransaction) {// db没有
+
+		if (oMultiTransaction.size() > 0) {
+			List<OKey> keys = new ArrayList<>();
+			List<OValue> values = new ArrayList<>();
+			HashMap<String, HashPair> buffer = new HashMap<>();
+			for (MultiTransaction.Builder mtb : oMultiTransaction) {
+				try {
 					dao.getStats().signalAcceptTx();
 					MultiTransaction cacheTx = txDBCacheByHash.getIfPresent(mtb.getTxHash());
 					MultiTransaction mt = mtb.clearStatus().clearResult().build();
+
+					iTransactionActuator oiTransactionActuator = getActuator(mt.getTxBody().getType(), null);
+					if (oiTransactionActuator.needSignature()) {
+						oiTransactionActuator.onVerifySignature(mt);
+					}
+
 					ByteString mts = mt.toByteString();
 					HashPair hp = new HashPair(mt.getTxHash(), mts.toByteArray(), mt);
-					if (cacheTx == null) {// 缓存没有的时候再添加进去
+					if (cacheTx == null) {
 						keys.add(oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash())));
 						values.add(OValue.newBuilder().setExtdata(mts).setInfo(mtb.getTxHash()).build());
 					}
 					buffer.put(mtb.getTxHash(), hp);
+				} catch (Exception e) {
+					log.error("fail to sync transaction::" + oMultiTransaction.size() + " error::" + e, e);
 				}
+			}
 
+			try {
 				Future<OValue[]> f = dao.getTxsDao().putIfNotExist(keys.toArray(new OKey[] {}),
 						values.toArray(new OValue[] {}));// 返回DB里面不存在的,但是数据库已经存进去的
 				if (f != null && f.get() != null && isBroadCast) {
@@ -275,9 +291,9 @@ public class TransactionHelper implements ActorService {
 						KeyConstant.counter.incrementAndGet();
 					}
 				}
+			} catch (Exception e) {
+				log.error("fail to sync transaction::" + oMultiTransaction.size() + " error::" + e, e);
 			}
-		} catch (Exception e) {
-			log.error("fail to sync transaction::" + oMultiTransaction.size() + " error::" + e, e);
 		}
 	}
 
@@ -599,7 +615,7 @@ public class TransactionHelper implements ActorService {
 
 		// 如果交易本身需要验证签名
 		if (oiTransactionActuator.needSignature()) {
-			oiTransactionActuator.onVerifySignature(oMultiTransaction.build(), accounts);
+			oiTransactionActuator.onVerifySignature(oMultiTransaction.build());
 		}
 
 		// 执行交易执行前的数据校验

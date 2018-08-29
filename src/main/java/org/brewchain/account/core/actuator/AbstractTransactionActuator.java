@@ -72,7 +72,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	// }
 
 	@Override
-	public void onVerifySignature(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts)
+	public void onVerifySignature(MultiTransaction oMultiTransaction)
 			throws Exception {
 
 		List<String> inputAddresses = new ArrayList<>();
