@@ -82,8 +82,9 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 		List<String> inputAddresses = new ArrayList<>();
 		for (int i = 0; i < oMultiTransaction.getTxBody().getInputsCount(); i++) {
 			String inputAddress = encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(i).getAddress().toByteArray());
-			if (!inputAddresses.contains(inputAddress))
+			if (!inputAddresses.contains(inputAddress)) {
 				inputAddresses.add(inputAddress);
+			}
 		}
 
 		// 获取交易原始encode
