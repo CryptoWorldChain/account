@@ -78,7 +78,7 @@ public class ActuatorCallContract extends AbstractTransactionActuator implements
 		ProgramInvokeImpl programInvoke = new ProgramInvokeImpl(existsContract.getAddress().toByteArray(),
 				callAccount.getAddress().toByteArray(), callAccount.getAddress().toByteArray(),
 				oInput.getAmount().toByteArray(), ByteUtil.bigIntegerToBytes(BigInteger.ZERO),
-				oMultiTransaction.getTxBody().getData().toByteArray(), encApi.hexDec(oBlock.getHeader().getBlockHash()), // encApi.hexDec(oBlock.getHeader().getParentHash()),
+				oMultiTransaction.getTxBody().getData().toByteArray(), encApi.hexDec(oBlock.getHeader().getParentHash()), // encApi.hexDec(oBlock.getHeader().getParentHash()),
 				null, // encApi.hexDec(oBlock.getMiner().getAddress()),
 				Long.parseLong(String.valueOf(oBlock.getHeader().getTimestamp())),
 				Long.parseLong(String.valueOf(oBlock.getHeader().getNumber())), ByteString.EMPTY.toByteArray(),
