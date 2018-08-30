@@ -369,10 +369,11 @@ public class V2Processor implements IProcessor, ActorService {
 
 	@Override
 	public synchronized AddBlockResponse ApplyBlock(BlockEntity.Builder oBlockEntity) {
-		BlockEntity.Builder applyBlock = oBlockEntity;
+		BlockEntity.Builder applyBlock = oBlockEntity.clone();
 		long start = System.currentTimeMillis();
 		log.debug("====> start apply block hash::" + oBlockEntity.getHeader().getBlockHash() + " number:: "
-				+ oBlockEntity.getHeader().getNumber() + " miner::" + applyBlock.getMiner().getAddress() + ",headerTx="
+				+ oBlockEntity.getHeader().getNumber() + " stateroot::" + oBlockEntity.getHeader().getStateRoot()
+				+ " miner::" + applyBlock.getMiner().getAddress() + ",headerTx="
 				+ applyBlock.getHeader().getTxHashsCount() + ",bodyTx=" + applyBlock.getBody().getTxsCount());
 		AddBlockResponse.Builder oAddBlockResponse = AddBlockResponse.newBuilder();
 
@@ -445,10 +446,12 @@ public class V2Processor implements IProcessor, ActorService {
 						processBlock(applyBlock, parentBlock);
 
 						log.debug("=====sync-> " + applyBlock.getHeader().getNumber() + " state::"
-								+ applyBlock.getHeader().getStateRoot() + " tx::"
-								+ applyBlock.getHeader().getTxTrieRoot() + " parent::"
+								+ applyBlock.getHeader().getStateRoot() + "-" + oBlockEntity.getHeader().getStateRoot()
+								+ " tx::" + applyBlock.getHeader().getTxTrieRoot() + "-"
+								+ oBlockEntity.getHeader().getTxTrieRoot() + " parent::"
 								+ applyBlock.getHeader().getParentHash() + " receipt::"
-								+ applyBlock.getHeader().getReceiptTrieRoot());
+								+ applyBlock.getHeader().getReceiptTrieRoot() + "-"
+								+ oBlockEntity.getHeader().getReceiptTrieRoot());
 
 						if (!oBlockEntity.getHeader().getStateRoot().equals(applyBlock.getHeader().getStateRoot())
 								|| !oBlockEntity.getHeader().getTxTrieRoot()

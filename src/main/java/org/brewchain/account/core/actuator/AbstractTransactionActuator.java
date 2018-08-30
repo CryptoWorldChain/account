@@ -11,9 +11,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.felix.ipojo.util.Log;
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
+import org.brewchain.account.core.processor.V2Processor;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.trie.CacheTrie;
 import org.brewchain.account.trie.StateTrie;
@@ -31,6 +33,9 @@ import org.fc.brewchain.bcapi.UnitUtil;
 
 import com.google.protobuf.ByteString;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public abstract class AbstractTransactionActuator implements iTransactionActuator {
 
 	// protected Map<String, AccountValue> accountValues = new HashMap<>();
@@ -72,8 +77,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	// }
 
 	@Override
-	public void onVerifySignature(MultiTransaction oMultiTransaction)
-			throws Exception {
+	public void onVerifySignature(MultiTransaction oMultiTransaction) throws Exception {
 
 		List<String> inputAddresses = new ArrayList<>();
 		for (int i = 0; i < oMultiTransaction.getTxBody().getInputsCount(); i++) {
@@ -125,9 +129,9 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 		this.dao = dao;
 		this.oStateTrie = oStateTrie;
 	}
-	
-	public void reset(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
-			BlockEntity currentBlock, EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
+
+	public void reset(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper, BlockEntity currentBlock,
+			EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
 		this.oAccountHelper = oAccountHelper;
 		this.oTransactionHelper = oTransactionHelper;
 		this.oBlock = currentBlock;

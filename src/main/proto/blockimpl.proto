@@ -15,6 +15,7 @@ enum PBCTCommand {
 	GBN = 6; // 根据高度获取block
 	GBS = 7; // 根据高度获取blocks
 	GBT = 8; // 获取block connect 状态
+	GBA = 9; // 根据交易hash获取block
 }
 
 message RespGetBlocksStoreByNumber {

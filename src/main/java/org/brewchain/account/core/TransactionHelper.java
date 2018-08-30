@@ -112,7 +112,6 @@ public class TransactionHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public HashPair CreateMultiTransaction(MultiTransaction.Builder oMultiTransaction) throws Exception {
-		// 节点
 		MultiTransactionNode.Builder oNode = MultiTransactionNode.newBuilder();
 		oNode.setBcuid(KeyConstant.node.getBcuid());
 		oNode.setAddress(KeyConstant.node.getoAccount().getAddress());
@@ -121,23 +120,11 @@ public class TransactionHelper implements ActorService {
 
 		HashPair hp = verifyAndSaveMultiTransaction(oMultiTransaction);
 
-		// 保存交易到缓存中，用于广播
 		oSendingHashMapDB.put(hp.getKey(), hp);
 
-		// 保存交易到缓存中，用于打包
-		// 如果指定了委托，并且委托是本节点
 		oConfirmMapDB.confirmTx(hp);
 
-		// to add status info
 		dao.getStats().signalAcceptTx();
-		// oPendingHashMapDB.put(hp.getKey(), hp);
-
-		// {node} {component} {opt} {type} {msg}
-		// log.info("LOGFILTER {} {} {} {} CreateTX[%s]",
-		// encApi.hexEnc(KeyConstant.node.getoAccount().getAddress().toByteArray()),
-		// "account", "create",
-		// "transaction", encApi.hexEnc(hp.getKey()));
-
 		return hp;
 	}
 
@@ -222,7 +209,6 @@ public class TransactionHelper implements ActorService {
 				if (oiTransactionActuator.needSignature()) {
 					oiTransactionActuator.onVerifySignature(oMultiTransaction.build());
 				}
-
 				byte validKeyByte[] = encApi.sha256Encode(oMultiTransaction.getTxBody().toByteArray());
 				if (!FastByteComparisons.equal(validKeyByte, keyByte)) {
 					log.error("fail to sync transaction::" + oMultiTransaction.getTxHash() + ", content invalid");
@@ -265,6 +251,8 @@ public class TransactionHelper implements ActorService {
 					if (oiTransactionActuator.needSignature()) {
 						oiTransactionActuator.onVerifySignature(mt);
 					}
+					
+					log.debug("sync tx::" + mt.getTxHash());
 
 					ByteString mts = mt.toByteString();
 					HashPair hp = new HashPair(mt.getTxHash(), mts.toByteArray(), mt);
@@ -507,7 +495,11 @@ public class TransactionHelper implements ActorService {
 		oMultiTransactionImpl
 				.setStatus(StringUtils.isNotBlank(oTransaction.getStatus()) ? oTransaction.getStatus() : "");
 
-		oMultiTransactionImpl.setResult(encApi.hexEnc(oTransaction.getResult().toByteArray()));
+		if (oMultiTransactionImpl.getStatus().equals("done")) {
+			oMultiTransactionImpl.setResult(encApi.hexEnc(oTransaction.getResult().toByteArray()));
+		} else {
+			oMultiTransactionImpl.setResult(oTransaction.getResult().toStringUtf8());
+		}
 
 		MultiTransactionBodyImpl.Builder oMultiTransactionBodyImpl = MultiTransactionBodyImpl.newBuilder();
 
