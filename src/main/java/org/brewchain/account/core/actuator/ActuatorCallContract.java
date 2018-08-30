@@ -19,6 +19,7 @@ import org.brewchain.evmapi.gens.Act.Account.Builder;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
+import org.brewchain.evmapi.gens.Tx.MultiTransactionOutput;
 import org.brewchain.rcvm.exec.VM;
 import org.brewchain.rcvm.exec.invoke.ProgramInvokeImpl;
 import org.brewchain.rcvm.program.Program;
@@ -51,6 +52,13 @@ public class ActuatorCallContract extends AbstractTransactionActuator implements
 			throw new TransactionExecuteException("parameter invalid, crypto token must be null");
 		}
 
+		MultiTransactionOutput output = oMultiTransaction.getTxBody().getOutputs(0);
+
+		if (!oAccountHelper.isContract(output.getAddress())) {
+			throw new TransactionExecuteException("parameter invalid, address "
+					+ encApi.hexEnc(output.getAddress().toByteArray()) + " is not validate contract.");
+		}
+
 		super.onPrepareExecute(oMultiTransaction, accounts);
 	}
 
@@ -61,12 +69,12 @@ public class ActuatorCallContract extends AbstractTransactionActuator implements
 				.get(encApi.hexEnc(oMultiTransaction.getTxBody().getOutputs(0).getAddress().toByteArray()));
 		Account.Builder callAccount = accounts
 				.get(encApi.hexEnc(oMultiTransaction.getTxBody().getInputs(0).getAddress().toByteArray()));
-		
+
 		AccountValue.Builder senderAccountValue = callAccount.getValue().toBuilder();
 		senderAccountValue.setNonce(senderAccountValue.getNonce() + 1);
 		callAccount.setValue(senderAccountValue);
 		accounts.put(encApi.hexEnc(callAccount.getAddress().toByteArray()), callAccount);
-		
+
 		// BlockEntity.Builder oBlock = oBlockHelper.GetBestBlock();
 
 		EvmApiImp evmApiImp = new EvmApiImp();
@@ -78,7 +86,8 @@ public class ActuatorCallContract extends AbstractTransactionActuator implements
 		ProgramInvokeImpl programInvoke = new ProgramInvokeImpl(existsContract.getAddress().toByteArray(),
 				callAccount.getAddress().toByteArray(), callAccount.getAddress().toByteArray(),
 				oInput.getAmount().toByteArray(), ByteUtil.bigIntegerToBytes(BigInteger.ZERO),
-				oMultiTransaction.getTxBody().getData().toByteArray(), encApi.hexDec(oBlock.getHeader().getParentHash()), // encApi.hexDec(oBlock.getHeader().getParentHash()),
+				oMultiTransaction.getTxBody().getData().toByteArray(),
+				encApi.hexDec(oBlock.getHeader().getParentHash()), // encApi.hexDec(oBlock.getHeader().getParentHash()),
 				null, // encApi.hexDec(oBlock.getMiner().getAddress()),
 				Long.parseLong(String.valueOf(oBlock.getHeader().getTimestamp())),
 				Long.parseLong(String.valueOf(oBlock.getHeader().getNumber())), ByteString.EMPTY.toByteArray(),
@@ -91,10 +100,10 @@ public class ActuatorCallContract extends AbstractTransactionActuator implements
 
 		if (result.getException() != null || result.isRevert()) {
 			if (result.getException() != null) {
-                throw result.getException();
-            } else {
-            	throw new TransactionExecuteException("REVERT opcode executed");
-            }
+				throw result.getException();
+			} else {
+				throw new TransactionExecuteException("REVERT opcode executed");
+			}
 		} else {
 			Iterator iter = evmApiImp.getTouchAccount().entrySet().iterator();
 			while (iter.hasNext()) {

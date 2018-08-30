@@ -23,6 +23,21 @@ enum PTSTCommand {
 	TRO = 14; // crypto token transaction
 	TOO = 15; // token transaction
 	TCO = 16; // create crypto token transaction
+	TCA = 17; // create union account
+}
+
+message ReqCreateUnionAccount {
+	string address = 1;
+	string privKey = 2;
+	string max = 4;
+	string acceptMax = 5;
+	int32 acceptLimit = 6;
+	repeated string relAddress = 7;
+}
+
+message RespCreateUnionAccount {
+	int32 retCode = 1;
+	string retMsg = 2;
 }
 
 message ReqCreateContract {

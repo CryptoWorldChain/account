@@ -65,26 +65,30 @@ public class AccountHelper implements ActorService {
 	}
 
 	public Account.Builder CreateAccount(ByteString address) {
-		return CreateAccount(address, BigInteger.ZERO, BigInteger.ZERO, 0, null, null, null);
+		return CreateAccount(address, ByteString.copyFrom(ByteUtil.ZERO_BYTE_ARRAY),
+				ByteString.copyFrom(ByteUtil.ZERO_BYTE_ARRAY), 0, null, null, null);
 	}
 
-	public Account.Builder CreateUnionAccount(ByteString address, BigInteger max, BigInteger acceptMax, int acceptLimit,
+	public Account.Builder CreateUnionAccount(ByteString address, ByteString max, ByteString acceptMax, int acceptLimit,
 			List<ByteString> addresses) {
 		return CreateAccount(address, max, acceptMax, acceptLimit, addresses, null, null);
 	}
 
-	public Account.Builder CreateAccount(ByteString address, BigInteger max, BigInteger acceptMax, int acceptLimit,
+	public Account.Builder CreateAccount(ByteString address, ByteString max, ByteString acceptMax, int acceptLimit,
 			List<ByteString> addresses, ByteString code, ByteString exdata) {
 		Account.Builder oUnionAccount = Account.newBuilder();
 		AccountValue.Builder oUnionAccountValue = AccountValue.newBuilder();
 
 		oUnionAccountValue.setAcceptLimit(acceptLimit);
-		oUnionAccountValue.setAcceptMax(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(acceptMax)));
-		if (addresses != null)
-			oUnionAccountValue.addAllAddress(addresses);
+		oUnionAccountValue.setAcceptMax(acceptMax);
+		if (addresses != null) {
+			for (int i = 0; i < addresses.size(); i++) {
+				oUnionAccountValue.addAddress(addresses.get(i));
+			}
+		}
 
 		oUnionAccountValue.setBalance(ByteString.copyFrom(ByteUtil.ZERO_BYTE_ARRAY));
-		oUnionAccountValue.setMax(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(max)));
+		oUnionAccountValue.setMax(max);
 		oUnionAccountValue.setNonce(KeyConstant.EMPTY_NONCE.intValue());
 
 		if (code != null) {

@@ -64,20 +64,6 @@ message RespCreateAccount {
     int32 retCode = 1;
 }
 
-message ReqCreateUnionAccount {
-    string address = 1;
-    string max = 2;
-    string acceptMax = 3;
-    int32 acceptLimit = 4;
-    repeated string relAddress = 5;
-    repeated string signature = 6;
-    repeated string pubKey = 7;
-}
-
-message RespCreateUnionAccount {
-    int32 retCode = 1;
-}
-
 message ReqGetAccount {
     string address = 1;
     int32 s = 2;
