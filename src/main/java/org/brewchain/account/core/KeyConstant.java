@@ -28,7 +28,11 @@ public class KeyConstant {
 	public static final String DB_EXISTS_CRYPTO_TOKEN_STR = "DB_EXISTS_CRYPTO_TOKEN_7513d2287ce94891ba227ba83aa6fe51";
 	public static final byte[] DB_EXISTS_TOKEN = "DB_EXISTS_TOKEN_7513d2287ce94891ba227ba83aa6fe51".getBytes();
 	public static final byte[] DB_EXISTS_CONTRACT = "DB_EXISTS_CONTRACT_7513d2287ce94891ba227ba83aa6fe51".getBytes();
+	public static final String DB_NODE_ACCOUNT_STR = "MANAGE_NODE_ACCOUNT_7513d2287ce94891ba227ba83aa6fe51";
+	public static final String DB_ADMINISTRATOR_KEY_STR = "ADMINISTRATOR_KEY_7513d2287ce94891ba227ba83aa6fe51";
+	public static final String DB_NODE_NET_STR = "NODE_NET_7513d2287ce94891ba227ba83aa6fe51";
 
+	
 	public static final int CACHE_SIZE = 200;
 
 	public static boolean isStart = false;
@@ -39,4 +43,5 @@ public class KeyConstant {
 	public static AtomicLong txCounter = new AtomicLong(0);
 	public static LinkedBlockingQueue<Map<String, Account.Builder>> QUEUE = new LinkedBlockingQueue<>();
 
+	
 }
