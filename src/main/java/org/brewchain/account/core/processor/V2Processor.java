@@ -96,7 +96,7 @@ public class V2Processor implements IProcessor, ActorService {
 		Map<String, ByteString> results = new HashMap<>();
 
 		Map<Integer, iTransactionActuator> actorByType = new HashMap<>();
-		Map<String, Account.Builder> accounts = new HashMap<>();
+//		Map<String, Account.Builder> accounts = new HashMap<>();
 		for (MultiTransaction oTransaction : oMultiTransactions) {
 			iTransactionActuator oiTransactionActuator = actorByType.get(oTransaction.getTxBody().getType());
 			if (oiTransactionActuator == null) {
@@ -108,8 +108,8 @@ public class V2Processor implements IProcessor, ActorService {
 
 			try {
 
-				// Map<String, Account.Builder> accounts
-				// =transactionHelper.getTransactionAccounts(oTransaction);
+				//Map<String, Account.Builder> accounts = transactionHelper.getTransactionAccounts(oTransaction);
+				Map<String, Account.Builder> accounts = new HashMap<>();
 				transactionHelper.merageTransactionAccounts(oTransaction.toBuilder(), accounts);
 				oiTransactionActuator.onPrepareExecute(oTransaction, accounts);
 				ByteString result = oiTransactionActuator.onExecute(oTransaction, accounts);
@@ -124,7 +124,7 @@ public class V2Processor implements IProcessor, ActorService {
 				KeyConstant.txCounter.incrementAndGet();
 
 				results.put(oTransaction.getTxHash(), result);
-				// oAccountHelper.BatchPutAccounts(accounts);
+				oAccountHelper.BatchPutAccounts(accounts);
 			} catch (Exception e) {
 				log.error("block " + currentBlock.getHeader().getBlockHash() + " exec transaction hash::"
 						+ oTransaction.getTxHash() + " error::" + e.getMessage());
@@ -140,7 +140,7 @@ public class V2Processor implements IProcessor, ActorService {
 			}
 		}
 
-		oAccountHelper.BatchPutAccounts(accounts);
+		// oAccountHelper.BatchPutAccounts(accounts);
 		return results;
 	}
 
@@ -165,8 +165,9 @@ public class V2Processor implements IProcessor, ActorService {
 		oBlockHeader.setParentHash(oBestBlockHeader.getBlockHash());
 
 		long currentTimestamp = System.currentTimeMillis();
-		oBlockHeader.setTimestamp(System.currentTimeMillis() == oBestBlockHeader.getTimestamp()
-				? oBestBlockHeader.getTimestamp() + 1 : currentTimestamp);
+		oBlockHeader.setTimestamp(
+				System.currentTimeMillis() == oBestBlockHeader.getTimestamp() ? oBestBlockHeader.getTimestamp() + 1
+						: currentTimestamp);
 		oBlockHeader.setNumber(oBestBlockHeader.getNumber() + 1);
 		oBlockHeader.setExtraData(extraData);
 		for (int i = 0; i < txs.size(); i++) {
