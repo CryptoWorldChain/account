@@ -87,6 +87,13 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 
 		if (amount.compareTo(acceptMax) >= 0) {
 			if (oMultiTransaction.getTxBody().getData() != null && !oMultiTransaction.getTxBody().getData().isEmpty()) {
+
+				MultiTransaction originalTx = oTransactionHelper
+						.GetTransaction(encApi.hexEnc(oMultiTransaction.getTxBody().getData().toByteArray()));
+				if (originalTx == null) {
+					throw new TransactionExecuteException("parameter invalid, not found original transaction");
+				}
+
 				byte[] confirmTxBytes = oAccountHelper.getStorage(unionAccount,
 						oMultiTransaction.getTxBody().getData().toByteArray());
 				UnionAccountStorage oUnionAccountStorage = UnionAccountStorage.parseFrom(confirmTxBytes);
@@ -111,6 +118,11 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 				if (!isExistsConfirmTx) {
 					throw new TransactionExecuteException(
 							"parameter invalid, not found transaction need to be confirmed");
+				}
+				if (!FastByteComparisons.equal(originalTx.getTxBody().getInputs(0).getAmount().toByteArray(),
+						oInput.getAmount().toByteArray())) {
+					throw new TransactionExecuteException(
+							"parameter invalid, transaction amount not equal with original transaction");
 				}
 
 				if (oUnionAccountStorage != null) {

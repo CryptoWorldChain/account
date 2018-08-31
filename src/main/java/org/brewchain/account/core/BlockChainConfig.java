@@ -26,7 +26,6 @@ public class BlockChainConfig extends SessionModules<Message> {
 	private String pwd = props().get("org.bc.manage.node.dev.pwd", KeyConstant.PWD);
 	private String keystoreNumber = props().get("org.bc.manage.node.keystore.num",
 			String.valueOf(Math.abs(NodeHelper.getCurrNodeListenOutPort() - 5100 + 1)));
-	private String net = readNet();
 	private int stableBlocks = props().get("org.brewchain.stable.blocks", KeyConstant.STABLE_BLOCK);
 	private BigInteger contract_lock_balance = new BigInteger(props().get("org.brewchain.contract.lock.balance", "0"));
 	private String lock_account_address = props().get("org.brewchain.account.lock.address", null);
@@ -41,7 +40,8 @@ public class BlockChainConfig extends SessionModules<Message> {
 	private String nodeAccount = props().get("org.bc.manage.node.account", KeyConstant.DB_NODE_ACCOUNT_STR);
 	private String adminKey = props().get("org.bc.manage.admin.account", KeyConstant.DB_ADMINISTRATOR_KEY_STR);
 	private String nodeNet = props().get("org.bc.manage.node.net", KeyConstant.DB_NODE_NET_STR);
-	
+	private String net = readNet();
+
 	@Override
 	public String[] getCmds() {
 		return new String[] { "BlockChainConfig" };
@@ -80,7 +80,7 @@ public class BlockChainConfig extends SessionModules<Message> {
 			File networkFile = new File(".chainnet");
 			if (!networkFile.exists() || !networkFile.canRead()) {
 				// read default config
-				network = nodeNet;
+				network = this.getNodeNet();
 			}
 			if (network == null || network.isEmpty()) {
 				while (!networkFile.exists() || !networkFile.canRead()) {

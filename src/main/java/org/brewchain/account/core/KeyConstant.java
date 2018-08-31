@@ -30,7 +30,7 @@ public class KeyConstant {
 	public static final byte[] DB_EXISTS_CONTRACT = "DB_EXISTS_CONTRACT_7513d2287ce94891ba227ba83aa6fe51".getBytes();
 	public static final String DB_NODE_ACCOUNT_STR = "MANAGE_NODE_ACCOUNT_7513d2287ce94891ba227ba83aa6fe51";
 	public static final String DB_ADMINISTRATOR_KEY_STR = "ADMINISTRATOR_KEY_7513d2287ce94891ba227ba83aa6fe51";
-	public static final String DB_NODE_NET_STR = "NODE_NET_7513d2287ce94891ba227ba83aa6fe51";
+	public static final String DB_NODE_NET_STR = "testnet";
 
 	
 	public static final int CACHE_SIZE = 200;
