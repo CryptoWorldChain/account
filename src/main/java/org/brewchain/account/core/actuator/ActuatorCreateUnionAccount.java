@@ -7,6 +7,7 @@ import java.util.Map;
 
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.TransactionHelper;
+import org.brewchain.account.core.actuator.AbstractTransactionActuator.TransactionExecuteException;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.util.ByteUtil;
@@ -32,12 +33,14 @@ public class ActuatorCreateUnionAccount extends AbstractTransactionActuator impl
 	@Override
 	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts)
 			throws Exception {
+		
 		if (oMultiTransaction.getTxBody().getInputsCount() != 1) {
 			throw new TransactionExecuteException("parameter invalid, inputs must be only one");
 		}
-
-		if (ByteUtil.bytesToBigInteger(oMultiTransaction.getTxBody().getInputs(0).getAmount().toByteArray())
-				.compareTo(BigInteger.ZERO) != 0) {
+		
+		MultiTransactionInput oInput = oMultiTransaction.getTxBody().getInputs(0);
+		
+		if (ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray()).compareTo(BigInteger.ZERO) != 0) {
 			throw new TransactionExecuteException("parameter invalid, amount must be zero");
 		}
 
@@ -47,6 +50,15 @@ public class ActuatorCreateUnionAccount extends AbstractTransactionActuator impl
 
 		if (oMultiTransaction.getTxBody().getInputsCount() != oMultiTransaction.getTxBody().getSignaturesCount()) {
 			throw new TransactionExecuteException("parameter invalid, inputs count must equal with signatures count");
+		}
+		
+		Account.Builder sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
+		AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
+		int txNonce = oInput.getNonce();
+		int nonce = senderAccountValue.getNonce();
+		if (nonce != txNonce) {
+			throw new TransactionExecuteException(
+					String.format("sender nonce %s is not equal with transaction nonce %s", nonce, nonce));
 		}
 
 		UnionAccountData oUnionAccountData = UnionAccountData

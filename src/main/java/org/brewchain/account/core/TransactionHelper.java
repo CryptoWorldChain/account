@@ -150,7 +150,7 @@ public class TransactionHelper implements ActorService {
 		if (isExistsTransaction(oMultiTransaction.getTxHash())) {
 			throw new Exception("transaction exists, drop it txhash::" + oMultiTransaction.getTxHash());
 		}
-		oMultiTransaction.setStatus("done");
+		TXStatus.setDone(oMultiTransaction);
 		MultiTransaction multiTransaction = oMultiTransaction.build();
 		// 保存交易到db中
 		// log.debug("====put genesis transaction::"+
@@ -207,7 +207,9 @@ public class TransactionHelper implements ActorService {
 
 				iTransactionActuator oiTransactionActuator = getActuator(oMultiTransaction.getTxBody().getType(), null);
 				if (oiTransactionActuator.needSignature()) {
-					oiTransactionActuator.onVerifySignature(oMultiTransaction.build());
+					Map<String, Account.Builder> accounts = getTransactionAccounts(oMultiTransaction);
+
+					oiTransactionActuator.onVerifySignature(oMultiTransaction.build(), accounts);
 				}
 				byte validKeyByte[] = encApi.sha256Encode(oMultiTransaction.getTxBody().toByteArray());
 				if (!FastByteComparisons.equal(validKeyByte, keyByte)) {
@@ -249,9 +251,10 @@ public class TransactionHelper implements ActorService {
 
 					iTransactionActuator oiTransactionActuator = getActuator(mt.getTxBody().getType(), null);
 					if (oiTransactionActuator.needSignature()) {
-						oiTransactionActuator.onVerifySignature(mt);
+						Map<String, Account.Builder> accounts = getTransactionAccounts(mt);
+						oiTransactionActuator.onVerifySignature(mt, accounts);
 					}
-					
+
 					log.debug("sync tx::" + mt.getTxHash());
 
 					ByteString mts = mt.toByteString();
@@ -362,6 +365,9 @@ public class TransactionHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public MultiTransaction GetTransaction(String txHash) throws Exception {
+		if (StringUtils.isBlank(txHash)) {
+			return null;
+		}
 		MultiTransaction cacheTx = txDBCacheByHash.getIfPresent(txHash);
 		if (cacheTx != null) {
 			return cacheTx;
@@ -495,7 +501,7 @@ public class TransactionHelper implements ActorService {
 		oMultiTransactionImpl
 				.setStatus(StringUtils.isNotBlank(oTransaction.getStatus()) ? oTransaction.getStatus() : "");
 
-		if (oMultiTransactionImpl.getStatus().equals("done")) {
+		if (TXStatus.isDone(oTransaction)) {
 			oMultiTransactionImpl.setResult(encApi.hexEnc(oTransaction.getResult().toByteArray()));
 		} else {
 			oMultiTransactionImpl.setResult(oTransaction.getResult().toStringUtf8());
@@ -607,7 +613,7 @@ public class TransactionHelper implements ActorService {
 
 		// 如果交易本身需要验证签名
 		if (oiTransactionActuator.needSignature()) {
-			oiTransactionActuator.onVerifySignature(oMultiTransaction.build());
+			oiTransactionActuator.onVerifySignature(oMultiTransaction.build(), accounts);
 		}
 
 		// 执行交易执行前的数据校验
@@ -819,9 +825,7 @@ public class TransactionHelper implements ActorService {
 
 	public void setTransactionDone(MultiTransaction tx, ByteString result) throws Exception {
 		MultiTransaction.Builder oTransaction = tx.toBuilder();
-		oTransaction.setStatus("done");
-		oTransaction.setResult(result);
-
+		TXStatus.setDone(oTransaction, result);
 		txDBCacheByHash.put(oTransaction.getTxHash(), oTransaction.build());
 
 		dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(oTransaction.getTxHash())),
@@ -830,8 +834,7 @@ public class TransactionHelper implements ActorService {
 
 	public void setTransactionError(MultiTransaction tx, ByteString result) throws Exception {
 		MultiTransaction.Builder oTransaction = tx.toBuilder();
-		oTransaction.setStatus("error");
-		oTransaction.setResult(result);
+		TXStatus.setError(oTransaction, result);
 
 		txDBCacheByHash.put(oTransaction.getTxHash(), oTransaction.build());
 

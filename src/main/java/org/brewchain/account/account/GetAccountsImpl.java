@@ -68,6 +68,8 @@ public class GetAccountsImpl extends SessionModules<ReqGetAccounts> {
 					for (ByteString relAddress : oAccountValue.getAddressList()) {
 						oAccountValueImpl.addAddress(encApi.hexEnc(relAddress.toByteArray()));
 					}
+					oAccountValueImpl.setAccumulated(String.valueOf(ByteUtil.bytesToBigInteger(oAccountValue.getAccumulated().toByteArray())));
+					oAccountValueImpl.setAccumulatedTimestamp(oAccountValue.getAccumulatedTimestamp());
 
 					oAccountValueImpl.setBalance(String.valueOf(ByteUtil.bytesToBigInteger(oAccountValue.getBalance().toByteArray())));
 					// oAccountValueImpl.setCryptos(index, value)

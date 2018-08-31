@@ -767,45 +767,63 @@ public class AccountHelper implements ActorService {
 		return cryptoTokenBuild;
 	}
 
-	public void saveStorage(ByteString address, byte[] key, byte[] value) {
-		StorageTrie oStorage = getStorageTrie(address);
+	public void putStorage(Account.Builder oAccount, byte[] key, byte[] value) {
+		StorageTrie oStorage = getStorageTrie(oAccount.getAddress());
 		oStorage.put(key, value);
 		byte[] rootHash = oStorage.getRootHash();
 
-		Account.Builder contract = GetAccount(address);
-		AccountValue.Builder oAccountValue = contract.getValue().toBuilder();
+		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 		oAccountValue.setStorage(ByteString.copyFrom(rootHash));
-		putAccountValue(address, oAccountValue.build());
+		oAccount.setValue(oAccountValue);
 	}
 
-	public StorageTrie getStorageTrie(ByteString address) {
-		StorageTrie oStorage = storageTrieCache.get(encApi.hexEnc(address.toByteArray()));
+	public void saveStorage(ByteString address, byte[] key, byte[] value) {
+		Account.Builder oAccount = GetAccount(address);
+		putStorage(oAccount, key, value);
+//		putAccountValue(address, oAccount.getValue());
+	}
+
+	public StorageTrie getStorageTrie(Account.Builder oAccount) {
+		StorageTrie oStorage = storageTrieCache.get(encApi.hexEnc(oAccount.getAddress().toByteArray()));
 		if (oStorage == null) {
 			oStorage = new StorageTrie(this.dao, this.encApi, this.oEntityHelper);
-			Account.Builder contract = GetAccount(address);
-			log.debug("contract address::" + encApi.hexEnc(address.toByteArray()));
-			if (contract == null || contract.getValue() == null || contract.getValue().getStorage() == null) {
+			if (oAccount == null || oAccount.getValue() == null || oAccount.getValue().getStorage() == null) {
 				oStorage.setRoot(ByteUtil.EMPTY_BYTE_ARRAY);
 			} else {
-				oStorage.setRoot(contract.getValue().getStorage().toByteArray());
+				oStorage.setRoot(oAccount.getValue().getStorage().toByteArray());
 			}
-			storageTrieCache.put(encApi.hexEnc(address.toByteArray()), oStorage);
+			storageTrieCache.put(encApi.hexEnc(oAccount.getAddress().toByteArray()), oStorage);
 		}
 		return oStorage;
 	}
 
-	public Map<String, byte[]> getStorage(ByteString address, List<byte[]> keys) {
+	public StorageTrie getStorageTrie(ByteString address) {
+		Account.Builder oAccount = GetAccount(address);
+		return getStorageTrie(oAccount);
+	}
+
+	public Map<String, byte[]> getStorage(Account.Builder oAccount, List<byte[]> keys) {
 		Map<String, byte[]> storage = new HashMap<>();
-		StorageTrie oStorage = getStorageTrie(address);
+		StorageTrie oStorage = getStorageTrie(oAccount);
 		for (int i = 0; i < keys.size(); i++) {
 			storage.put(encApi.hexEnc(keys.get(i)), oStorage.get(keys.get(i)));
 		}
 		return storage;
 	}
 
-	public byte[] getStorage(ByteString address, byte[] key) {
-		StorageTrie oStorage = getStorageTrie(address);
+	public Map<String, byte[]> getStorage(ByteString address, List<byte[]> keys) {
+		Account.Builder oAccount = GetAccount(address);
+		return getStorage(oAccount, keys);
+	}
+
+	public byte[] getStorage(Account.Builder oAccount, byte[] key) {
+		StorageTrie oStorage = getStorageTrie(oAccount);
 		return oStorage.get(key);
+	}
+
+	public byte[] getStorage(ByteString address, byte[] key) {
+		Account.Builder oAccount = GetAccount(address);
+		return getStorage(oAccount, key);
 	}
 
 	public boolean canCreateCryptoToken(ByteString symbol, ByteString address, long total, int codeCount) {

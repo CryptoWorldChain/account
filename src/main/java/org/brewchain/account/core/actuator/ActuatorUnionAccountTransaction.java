@@ -2,20 +2,30 @@ package org.brewchain.account.core.actuator;
 
 import java.math.BigInteger;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import org.brewchain.account.core.AbstractLocalCache;
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockHelper;
+import org.brewchain.account.core.TXStatus;
 import org.brewchain.account.core.TransactionHelper;
+import org.brewchain.account.core.actuator.AbstractTransactionActuator.TransactionExecuteException;
 import org.brewchain.account.dao.DefDaos;
+import org.brewchain.account.enums.TransTypeEnum;
 import org.brewchain.account.trie.StateTrie;
+import org.brewchain.account.util.DateTimeUtil;
+import org.brewchain.account.util.FastByteComparisons;
 import org.brewchain.core.util.ByteUtil;
 import org.brewchain.evmapi.gens.Act.Account;
+import org.brewchain.evmapi.gens.Act.Account.Builder;
 import org.brewchain.evmapi.gens.Act.AccountValue;
+import org.brewchain.evmapi.gens.Act.UnionAccountStorage;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
+import org.brewchain.evmapi.gens.Tx.MultiTransactionBody;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionSignature;
 import org.fc.brewchain.bcapi.EncAPI;
@@ -35,72 +45,198 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 	@Override
 	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts)
 			throws Exception {
-		// 校验每日最大转账金额
-		// 校验每笔最大转账金额
-		// 校验超过单笔转账金额后的用户签名
-		if (accounts.size() != 1) {
-			throw new Exception(String.format("not allow multi sender address %s", accounts.size()));
+
+		if (oMultiTransaction.getTxBody().getInputsCount() != 1
+				|| oMultiTransaction.getTxBody().getOutputsCount() != 1) {
+			throw new TransactionExecuteException("parameter invalid, inputs or outputs must be only one");
 		}
 
-		AccountValue.Builder oSenderValue = accounts.get(accounts.keySet().toArray()[0]).getValue().toBuilder();
+		MultiTransactionInput oInput = oMultiTransaction.getTxBody().getInputs(0);
 
-		BigInteger totalAmount = BigInteger.ZERO;
-		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
-			totalAmount = totalAmount.add(ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray()));
+		Account.Builder unionAccount = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
+		AccountValue.Builder unionAccountValue = unionAccount.getValue().toBuilder();
+		int txNonce = oInput.getNonce();
+		int nonce = unionAccountValue.getNonce();
+		if (nonce != txNonce) {
+			throw new TransactionExecuteException(
+					String.format("sender nonce %s is not equal with transaction nonce %s", nonce, nonce));
 		}
-		String key = String.format("%s_%s", new SimpleDateFormat("yyyy-MM-dd").format(new Date()),
-				oMultiTransaction.getTxBody().getInputs(0).getAddress());
-		log.debug(String.format("%s 累计 %s", key, AbstractLocalCache.dayTotalAmount.get(key)));
 
-		BigInteger dayTotal = totalAmount.add(AbstractLocalCache.dayTotalAmount.get(key));
-		BigInteger dayMax = ByteUtil.bytesToBigInteger(oSenderValue.getMax().toByteArray());
-		if (dayTotal.compareTo(dayMax) == 1) {
-			throw new Exception(String.format("day accumulated amount %s more than %s", dayTotal, dayMax));
+		BigInteger amount = ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray());
+		BigInteger unionAccountBalance = ByteUtil.bytesToBigInteger(unionAccountValue.getBalance().toByteArray());
+		BigInteger acceptMax = ByteUtil.bytesToBigInteger(unionAccountValue.getAcceptMax().toByteArray());
+		BigInteger max = ByteUtil.bytesToBigInteger(unionAccountValue.getMax().toByteArray());
+
+		if (amount.compareTo(BigInteger.ZERO) <= 0) {
+			throw new TransactionExecuteException("parameter invalid, amount invalidate");
 		}
-		// 当单笔金额超过一个预设值后，则需要多方签名
-		if (totalAmount.compareTo(ByteUtil.bytesToBigInteger(oSenderValue.getAcceptMax().toByteArray())) == 1) {
-			if (oMultiTransaction.getTxBody().getSignaturesCount() != oSenderValue.getAcceptLimit()) {
-				throw new Exception(String.format("must have %s signature when transaction value %s more than %s",
-						totalAmount, oSenderValue.getAcceptMax(), oSenderValue.getAcceptLimit()));
+
+		if (amount.compareTo(unionAccountBalance) > 0) {
+			throw new TransactionExecuteException(
+					String.format("sender balance %s less than %s", unionAccountBalance, amount));
+		}
+
+		if (amount.compareTo(max) > 0) {
+			throw new TransactionExecuteException("parameter invalid, amount must small than " + max);
+		}
+
+		if (!FastByteComparisons.equal(oInput.getAmount().toByteArray(),
+				oMultiTransaction.getTxBody().getOutputs(0).getAmount().toByteArray())) {
+			throw new TransactionExecuteException("parameter invalid, transaction value not equal");
+		}
+
+		if (amount.compareTo(acceptMax) >= 0) {
+			if (oMultiTransaction.getTxBody().getData() != null && !oMultiTransaction.getTxBody().getData().isEmpty()) {
+				byte[] confirmTxBytes = oAccountHelper.getStorage(unionAccount,
+						oMultiTransaction.getTxBody().getData().toByteArray());
+				UnionAccountStorage oUnionAccountStorage = UnionAccountStorage.parseFrom(confirmTxBytes);
+
+				boolean isAlreadyConfirm = false;
+				boolean isExistsConfirmTx = false;
+				for (int i = 0; i < oUnionAccountStorage.getAddressCount(); i++) {
+					if (FastByteComparisons.equal(oUnionAccountStorage.getAddress(i).toByteArray(),
+							oMultiTransaction.getTxBody().getExdata().toByteArray())) {
+						isAlreadyConfirm = true;
+						break;
+					}
+					if (oUnionAccountStorage.getTxHash(i)
+							.equals(encApi.hexEnc(oMultiTransaction.getTxBody().getData().toByteArray()))) {
+						isExistsConfirmTx = true;
+					}
+				}
+				if (isAlreadyConfirm) {
+					throw new TransactionExecuteException("parameter invalid, transaction already confirmed by address "
+							+ encApi.hexEnc(oMultiTransaction.getTxBody().getExdata().toByteArray()));
+				}
+				if (!isExistsConfirmTx) {
+					throw new TransactionExecuteException(
+							"parameter invalid, not found transaction need to be confirmed");
+				}
+
+				if (oUnionAccountStorage != null) {
+					if (oUnionAccountStorage.getAddressCount() >= unionAccountValue.getAcceptLimit()) {
+						throw new TransactionExecuteException("parameter invalid, transaction already confirmed");
+					}
+				}
+
+				if (oUnionAccountStorage.getAddressCount() + 1 == unionAccountValue.getAcceptLimit()) {
+					if (DateTimeUtil.isToday(unionAccountValue.getAccumulatedTimestamp())) {
+						BigInteger totalMax = ByteUtil
+								.bytesToBigInteger(unionAccountValue.getAccumulated().toByteArray());
+						if (amount.add(totalMax).compareTo(max) > 0) {
+							throw new TransactionExecuteException(
+									"parameter invalid, already more than the maximum transfer amount of the day");
+						}
+					}
+				}
 			} else {
-				// TODO 如何判断交易的签名，是由多重签名账户的关联账户进行签名的
+				BigInteger totalMax = ByteUtil.bytesToBigInteger(unionAccountValue.getAccumulated().toByteArray());
+				if (amount.add(totalMax).compareTo(max) > 0) {
+					throw new TransactionExecuteException(
+							"parameter invalid, already more than the maximum transfer amount of the day");
+				}
 			}
 		} else {
-			// 需要至少有一个子账户签名
-			if (oMultiTransaction.getTxBody().getSignaturesCount() == 0) {
-				throw new Exception(String.format("the transaction requires at least one signature to be verified"));
+			BigInteger totalMax = ByteUtil.bytesToBigInteger(unionAccountValue.getAccumulated().toByteArray());
+			if (amount.add(totalMax).compareTo(max) > 0) {
+				throw new TransactionExecuteException(
+						"parameter invalid, already more than the maximum transfer amount of the day");
 			}
 		}
-
-		super.onPrepareExecute(oMultiTransaction, accounts);
 	}
 
 	@Override
-	public void onExecuteDone(MultiTransaction oMultiTransaction, ByteString result) throws Exception {
-		// 缓存，累加当天转账金额
-		BigInteger totalAmount = BigInteger.ZERO;
-		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
-			// totalAmount += oInput.getAmount();
-			totalAmount = totalAmount.add(ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray()));
+	public ByteString onExecute(MultiTransaction oMultiTransaction, Map<String, Builder> accounts) throws Exception {
 
-			// totalAmount += oInput.getFee();
+		MultiTransactionInput oInput = oMultiTransaction.getTxBody().getInputs(0);
+		Account.Builder unionAccount = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
+		AccountValue.Builder unionAccountValue = unionAccount.getValue().toBuilder();
+
+		BigInteger amount = ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray());
+		BigInteger acceptMax = ByteUtil.bytesToBigInteger(unionAccountValue.getAcceptMax().toByteArray());
+
+		if (amount.compareTo(acceptMax) >= 0) {
+			if (oMultiTransaction.getTxBody().getData() == null || oMultiTransaction.getTxBody().getData().isEmpty()) {
+				unionAccountValue.setNonce(unionAccountValue.getNonce() + 1);
+				unionAccount.setValue(unionAccountValue);
+
+				UnionAccountStorage.Builder oUnionAccountStorage = UnionAccountStorage.newBuilder();
+				oUnionAccountStorage.addAddress(oMultiTransaction.getTxBody().getExdata());
+				oUnionAccountStorage.addTxHash(oMultiTransaction.getTxHash());
+
+				oAccountHelper.putStorage(unionAccount, encApi.hexDec(oMultiTransaction.getTxHash()),
+						oUnionAccountStorage.build().toByteArray());
+				accounts.put(encApi.hexEnc(oInput.getAddress().toByteArray()), unionAccount);
+				return ByteString.EMPTY;
+			} else {
+				byte[] confirmTxBytes = oAccountHelper.getStorage(unionAccount,
+						oMultiTransaction.getTxBody().getData().toByteArray());
+				UnionAccountStorage.Builder oUnionAccountStorage = UnionAccountStorage.parseFrom(confirmTxBytes)
+						.toBuilder();
+				oUnionAccountStorage.addAddress(oMultiTransaction.getTxBody().getExdata());
+				oUnionAccountStorage.addTxHash(oMultiTransaction.getTxHash());
+
+				oAccountHelper.putStorage(unionAccount, oMultiTransaction.getTxBody().getData().toByteArray(),
+						oUnionAccountStorage.build().toByteArray());
+
+				if (oUnionAccountStorage.getAddressCount() != unionAccountValue.getAcceptLimit()) {
+					unionAccountValue.setNonce(unionAccountValue.getNonce() + 1);
+					unionAccount.setValue(unionAccountValue);
+					accounts.put(encApi.hexEnc(oInput.getAddress().toByteArray()), unionAccount);
+					return ByteString.EMPTY;
+				}
+			}
 		}
-		String key = String.format("%s_%s", new SimpleDateFormat("yyyy-MM-dd").format(new Date()),
-				oMultiTransaction.getTxBody().getInputs(0).getAddress());
-		BigInteger v = AbstractLocalCache.dayTotalAmount.get(key);
-		AbstractLocalCache.dayTotalAmount.put(key, v.add(totalAmount));
-		super.onExecuteDone(oMultiTransaction, result);
+		if (DateTimeUtil.isToday(unionAccountValue.getAccumulatedTimestamp())) {
+			BigInteger accumulated = ByteUtil.bytesToBigInteger(unionAccountValue.getAccumulated().toByteArray());
+			unionAccountValue.setAccumulated(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(accumulated.add(amount))));
+		} else {
+			unionAccountValue.setAccumulated(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(amount)));
+		}
+		unionAccountValue.setAccumulatedTimestamp(oMultiTransaction.getTxBody().getTimestamp());
+		unionAccount.setValue(unionAccountValue);
+		accounts.put(encApi.hexEnc(unionAccount.getAddress().toByteArray()), unionAccount);
+		return super.onExecute(oMultiTransaction, accounts);
 	}
 
 	@Override
-	public void onVerifySignature(MultiTransaction oMultiTransaction)
+	public void onVerifySignature(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts)
 			throws Exception {
+		MultiTransactionInput oInput = oMultiTransaction.getTxBody().getInputs(0);
+		Account.Builder sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
+		AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 
-		// 签名的账户是否是该多重签名账户的子账户，如果不是，抛出异常
-		for (MultiTransactionSignature oSignature : oMultiTransaction.getTxBody().getSignaturesList()) {
-			// TODO 需要能解出签名地址的方法，验证每个签名地址都是多重签名账户的关联自账户
+		MultiTransaction.Builder signatureTx = oMultiTransaction.toBuilder();
+		MultiTransactionBody.Builder txBody = signatureTx.getTxBodyBuilder();
+		signatureTx.clearTxHash();
+		txBody = txBody.clearSignatures();
+		byte[] oMultiTransactionEncode = txBody.build().toByteArray();
+		MultiTransactionSignature oMultiTransactionSignature = oMultiTransaction.getTxBody().getSignatures(0);
+		String hexPubKey = encApi.hexEnc(encApi.ecToKeyBytes(oMultiTransactionEncode,
+				encApi.hexEnc(oMultiTransactionSignature.getSignature().toByteArray())));
+		String hexAddress = encApi.hexEnc(encApi.ecToAddress(oMultiTransactionEncode,
+				encApi.hexEnc(oMultiTransactionSignature.getSignature().toByteArray())));
+
+		boolean isRelAddress = false;
+		for (ByteString relAddress : senderAccountValue.getAddressList()) {
+			if (hexAddress.equals(encApi.hexEnc(relAddress.toByteArray()))) {
+				isRelAddress = true;
+				break;
+			}
+		}
+		if (isRelAddress) {
+			if (!encApi.ecVerify(hexPubKey, oMultiTransactionEncode,
+					oMultiTransactionSignature.getSignature().toByteArray())) {
+				throw new TransactionExecuteException(String.format("signature %s verify fail with pubkey %s",
+						encApi.hexEnc(oMultiTransactionSignature.getSignature().toByteArray()), hexPubKey));
+			}
+		} else {
+			throw new TransactionExecuteException(
+					"signature verify fail, current account are not allowed to initiate transactions");
 		}
 
-		super.onVerifySignature(oMultiTransaction);
+		if (!encApi.hexEnc(oMultiTransaction.getTxBody().getExdata().toByteArray()).equals(hexAddress)) {
+			throw new TransactionExecuteException("signature verify fail, transaction data not equal with Signer");
+		}
 	}
 }

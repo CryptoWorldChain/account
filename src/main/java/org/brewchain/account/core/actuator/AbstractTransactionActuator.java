@@ -77,7 +77,8 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	// }
 
 	@Override
-	public void onVerifySignature(MultiTransaction oMultiTransaction) throws Exception {
+	public void onVerifySignature(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts)
+			throws Exception {
 
 		List<String> inputAddresses = new ArrayList<>();
 		for (int i = 0; i < oMultiTransaction.getTxBody().getInputsCount(); i++) {
@@ -194,7 +195,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 
 			if (ByteUtil.bytesToBigInteger(balance.toByteArray()).compareTo(inputsTotal) == -1) {
 				throw new TransactionExecuteException(String.format("sender balance %s less than %s", balance,
-						UnitUtil.fromWei(ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray()))));
+						ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray())));
 			}
 
 			int nonce = senderAccountValue.getNonce();

@@ -102,6 +102,8 @@ message AccountValueImpl {
     string codeHash = 12;
     string accountAddress = 13;
     string data = 14;
+    int64 accumulatedTimestamp = 15;
+    string accumulated = 16;
 }
 
 message AccountTokenValueImpl {

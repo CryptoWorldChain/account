@@ -24,7 +24,7 @@ public interface iTransactionActuator {
 	 * @param receivers
 	 * @throws Exception
 	 */
-	void onVerifySignature(MultiTransaction oMultiTransaction) throws Exception;
+	void onVerifySignature(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts) throws Exception;
 
 	/**
 	 * 交易执行前的数据校验。
