@@ -23,6 +23,7 @@ import org.brewchain.account.core.actuator.ActuatorCreateUnionAccount;
 import org.brewchain.account.core.actuator.ActuatorCryptoTokenTransaction;
 import org.brewchain.account.core.actuator.ActuatorDefault;
 import org.brewchain.account.core.actuator.ActuatorLockTokenTransaction;
+import org.brewchain.account.core.actuator.ActuatorSanctionTransaction;
 import org.brewchain.account.core.actuator.ActuatorTokenTransaction;
 import org.brewchain.account.core.actuator.ActuatorUnionAccountTransaction;
 import org.brewchain.account.core.actuator.iTransactionActuator;
@@ -691,6 +692,11 @@ public class TransactionHelper implements ActorService {
 			oiTransactionActuator = new ActuatorCreateCryptoToken(oAccountHelper, this, oCurrentBlock, encApi, dao,
 					this.stateTrie);
 			break;
+		case TYPE_Sanction:
+			oiTransactionActuator = new ActuatorSanctionTransaction(oAccountHelper, this, oCurrentBlock, encApi, dao,
+					this.stateTrie);
+			break;
+			
 		default:
 			oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, this, oCurrentBlock, encApi, dao,
 					this.stateTrie);
