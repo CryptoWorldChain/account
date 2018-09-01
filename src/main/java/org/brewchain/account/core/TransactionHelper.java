@@ -582,13 +582,21 @@ public class TransactionHelper implements ActorService {
 		for (MultiTransactionOutputImpl output : oMultiTransactionBodyImpl.getOutputsList()) {
 			MultiTransactionOutput.Builder oMultiTransactionOutput = MultiTransactionOutput.newBuilder();
 			oMultiTransactionOutput.setAddress(ByteString.copyFrom(encApi.hexDec(output.getAddress())));
-			if (new BigInteger(output.getAmount()).compareTo(BigInteger.ZERO) < 0) {
-				throw new TransactionException("amount must large than 0");
+			if (StringUtils.isNotBlank(output.getAmount())) {
+				if (new BigInteger(output.getAmount()).compareTo(BigInteger.ZERO) < 0) {
+					throw new TransactionException("amount must large than 0");
+				}
+				oMultiTransactionOutput
+						.setAmount(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(new BigInteger(output.getAmount()))));
+				oMultiTransactionOutput.setCryptoToken(ByteString.copyFrom(encApi.hexDec(output.getCryptoToken())));
+				oMultiTransactionOutput.setSymbol(output.getSymbol());
+			} else {
+				oMultiTransactionOutput
+						.setAmount(ByteString.copyFrom(ByteUtil.intToBytes(0)));
+//				oMultiTransactionOutput.setCryptoToken(ByteString.copyFrom(encApi.hexDec(output.getCryptoToken())));
+				oMultiTransactionOutput.setSymbol(output.getSymbol());
+
 			}
-			oMultiTransactionOutput
-					.setAmount(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(new BigInteger(output.getAmount()))));
-			oMultiTransactionOutput.setCryptoToken(ByteString.copyFrom(encApi.hexDec(output.getCryptoToken())));
-			oMultiTransactionOutput.setSymbol(output.getSymbol());
 			oMultiTransactionBody.addOutputs(oMultiTransactionOutput);
 		}
 		for (MultiTransactionSignatureImpl signature : oMultiTransactionBodyImpl.getSignaturesList()) {
@@ -696,7 +704,7 @@ public class TransactionHelper implements ActorService {
 			oiTransactionActuator = new ActuatorSanctionTransaction(oAccountHelper, this, oCurrentBlock, encApi, dao,
 					this.stateTrie);
 			break;
-			
+
 		default:
 			oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, this, oCurrentBlock, encApi, dao,
 					this.stateTrie);

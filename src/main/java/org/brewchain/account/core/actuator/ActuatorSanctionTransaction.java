@@ -14,7 +14,6 @@ import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.trie.StorageTrie;
 import org.brewchain.account.util.ByteUtil;
 import org.brewchain.evmapi.gens.Act.Account;
-import org.brewchain.evmapi.gens.Act.AccountTokenValue;
 import org.brewchain.evmapi.gens.Act.AccountValue;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
@@ -62,7 +61,6 @@ public class ActuatorSanctionTransaction extends AbstractTransactionActuator imp
 			throw new TransactionExecuteException("parameter invalid, inputs must large than one.");
 		}
 		encApi.hexEnc(oMultiTransaction.getTxBody().getOutputs(0).getAddress().toByteArray());
-
 		BigInteger inputsTotal = BigInteger.ZERO;
 		BigInteger outputsTotal = BigInteger.ZERO;
 
@@ -73,9 +71,6 @@ public class ActuatorSanctionTransaction extends AbstractTransactionActuator imp
 		// }
 		// 获取cws
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
-			if (oInput.getToken().isEmpty() || oInput.getToken() == "") {
-				throw new Exception(String.format("token must not be empty"));
-			}
 			// TODO sean
 			// 1. 检查cws够不够
 			// 2. oinput的签名：ecverhash256.txbody
@@ -104,26 +99,10 @@ public class ActuatorSanctionTransaction extends AbstractTransactionActuator imp
 		// TODO: up to sean
 	}
 
-	public boolean contains(ByteString bs, ByteString sub) {
-		boolean founded = true;
-		for (int i = 0; i < bs.size(); i += 64) {
-			founded = true;
-			for (int j = 0; j < sub.size() && j + i < bs.size(); j++) {
-				if (bs.byteAt(i + j) != sub.byteAt(j)) {
-					founded = false;
-					break;
-				}
-			}
-			if (founded) {
-				return true;
-			}
-		}
-		return false;
-	}
-
 	public ByteString setResult(ByteString bs, ByteString address, byte[] resultHash) {
 		boolean founded = true;
 		ByteBuffer buffer = ByteBuffer.allocate(bs.size());
+		buffer.put(bs.substring(0, 64).toByteArray());
 		for (int i = 64; i < bs.size(); i += 52) {
 			founded = true;
 			for (int j = 0; j < address.size() && j + i < bs.size(); j++) {
@@ -139,10 +118,26 @@ public class ActuatorSanctionTransaction extends AbstractTransactionActuator imp
 				buffer.put(resultHash);
 			}
 		}
+		buffer.flip();
 		return ByteString.copyFrom(buffer);
 	}
 
 	ByteString zeroBS = ByteString.copyFrom(Hex.decode(StringUtils.rightPad("", 64, '0')));
+
+	public byte[] initNewSanction(MultiTransaction oMultiTransaction) {
+		byte[] voteDatas = oMultiTransaction.getTxBody().getData().toByteArray();
+
+		ByteBuffer buffer = ByteBuffer.allocate(voteDatas.length + (voteDatas.length - 64) / 20 * 32);
+		buffer.put(voteDatas, 0, 32);
+		byte[] resultHash = encApi.sha256Encode(oMultiTransaction.getTxBody().getExdata().toByteArray());
+		buffer.put(resultHash, 0, 32);
+		for (int i = 64; i + 20 <= voteDatas.length; i += 20) {
+			buffer.put(voteDatas, i, 20);
+			buffer.put(zeroBS.toByteArray(), 0, 32);
+		}
+		buffer.flip();
+		return ByteString.copyFrom(buffer).toByteArray();
+	}
 
 	@Override
 	public ByteString onExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts)
@@ -152,8 +147,13 @@ public class ActuatorSanctionTransaction extends AbstractTransactionActuator imp
 		}
 		cwsLock(oMultiTransaction, accounts);
 		MultiTransactionOutput output_ContractID = oMultiTransaction.getTxBody().getOutputs(0);
-		StorageTrie storageTrie = oAccountHelper.getStorageTrie(output_ContractID.getAddress());
-		Account.Builder contractAccount = oAccountHelper.GetAccount(output_ContractID.getAddress());
+		ByteString contractAddr = oMultiTransaction.getTxBody().getOutputs(0).getAddress();
+		Account.Builder contractAccount = oAccountHelper.GetAccount(contractAddr);
+		if (contractAccount == null) {
+			contractAccount = oAccountHelper.GetAccountOrCreate(contractAddr);
+			accounts.put(encApi.hexEnc(contractAddr.toByteArray()), contractAccount);
+		}
+		StorageTrie storageTrie = oAccountHelper.getStorageTrie(contractAccount);
 		AccountValue.Builder oAccountValue = contractAccount.getValue().toBuilder();
 		byte[] nonceBB = ByteUtil.intToBytes(oAccountValue.getNonce() + 1);
 		byte votehashBB[] = storageTrie.get(nonceBB);
@@ -162,22 +162,14 @@ public class ActuatorSanctionTransaction extends AbstractTransactionActuator imp
 		if (votehashBB == null) {
 			// create new one
 			// already have one
-			votehashBB = encApi.hexDec(oMultiTransaction.getTxHash());
+			voteDatas = initNewSanction(oMultiTransaction);
 			txhash = oMultiTransaction.getTxHash();
-			voteDatas = oMultiTransaction.getTxBody().toByteArray();
-
-			ByteBuffer buffer = ByteBuffer.allocate(voteDatas.length);
-			buffer.put(voteDatas, 0, 64);
-			for (int i = 64; i + 20 < voteDatas.length; i++) {
-				buffer.put(voteDatas, i, 20);
-				buffer.put(zeroBS.toByteArray(), i + 20, 32);
-			}
-			voteDatas = ByteString.copyFrom(buffer).toByteArray();
+			votehashBB = encApi.hexDec(txhash);
 		} else {
 			txhash = encApi.hexEnc(votehashBB);
 			voteDatas = storageTrie.get(votehashBB);
 		}
-		if (voteDatas == null || !oMultiTransaction.getTxBody().equals(voteDatas)) {
+		if (voteDatas == null) {
 			log.debug("txbody not equal:" + txhash);
 			return ByteString.EMPTY;
 		}
@@ -186,32 +178,41 @@ public class ActuatorSanctionTransaction extends AbstractTransactionActuator imp
 		// 和前面64个字节完全一样
 		long matchNeed = new BigInteger(1, bs.substring(0, 8).toByteArray()).longValue();
 		long endBlock = new BigInteger(1, bs.substring(8, 16).toByteArray()).longValue();
+		if (oBlock.getHeader().getNumber() >= endBlock) {
+			voteDatas = initNewSanction(oMultiTransaction);
+			txhash = oMultiTransaction.getTxHash();
+			votehashBB = encApi.hexDec(txhash);
+			matchNeed = new BigInteger(1, bs.substring(0, 8).toByteArray()).longValue();
+			endBlock = new BigInteger(1, bs.substring(8, 16).toByteArray()).longValue();
+			bs = ByteString.copyFrom(voteDatas);// .concat(other)
+		}
+
 		byte votestatus = bs.byteAt(16);
 		if (votestatus > 0) {// already finished!
 			log.debug("tx vote finished:status=" + votestatus + ",txid=" + txhash);
 			return ByteString.EMPTY;
 		}
 
-		byte[] resultHex = encApi.sha256Encode(oMultiTransaction.getResult().toByteArray());
+		byte[] resultHash = encApi.sha256Encode(oMultiTransaction.getTxBody().getExdata().toByteArray());
 		// 32+32=64,each
-		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
-			bs = setResult(bs, oInput.getAddress(), resultHex);
-		}
 		ByteString matchBS = bs.substring(32, 64);
+		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
+			bs = setResult(bs, oInput.getAddress(), resultHash);
+		}
 		int zeroCount = 0;
 		int matchCount = 0;
 		int unmatchCount = 0;
-		int totalCount = bs.size() / 64 - 1;
-		for (int i = 64 + 20; i + 32 < bs.size(); i += 54) {
-			if (bs.substring(i, i + 32).equals(matchBS)) {
+		int totalCount = (bs.size() - 64) / 52;
+		for (int i = 64; i + 32 <= bs.size(); i += 52) {
+			if (bs.substring(i + 20, i + 52).equals(matchBS)) {
 				matchCount++;
-			} else if (bs.substring(i, i + 32).equals(zeroBS)) {
+			} else if (bs.substring(i + 20, i + 52).equals(zeroBS)) {
 				zeroCount++;
 			} else {
 				unmatchCount++;
 			}
 		}
-		log.debug("try to check vote:matchCount={},totalCount={},zeroCount={},tx={},mathbs={}", matchCount, totalCount,
+		log.debug("sanction check:matchCount={},totalCount={},zeroCount={},tx={},mathbs={}", matchCount, totalCount,
 				zeroCount, txhash, encApi.hexEnc(matchBS.toByteArray()));
 		if (matchCount >= matchNeed) {
 			log.debug("Converge,fro tx = " + txhash + ",resulthash=" + encApi.hexEnc(matchBS.toByteArray())
@@ -241,10 +242,17 @@ public class ActuatorSanctionTransaction extends AbstractTransactionActuator imp
 			contractAccount.setValue(oAccountValue);
 			accounts.put(encApi.hexEnc(contractAccount.getAddress().toByteArray()), contractAccount);
 		}
-
+		accounts.put(encApi.hexEnc(contractAccount.getAddress().toByteArray()), contractAccount);
+		oAccountHelper.putAccountValue(contractAccount.getAddress(), contractAccount.getValue());
 		oAccountHelper.saveStorage(output_ContractID.getAddress(), nonceBB, votehashBB);
 		oAccountHelper.saveStorage(output_ContractID.getAddress(), votehashBB, newbb);
 
 		return ByteString.EMPTY;
 	}
+
+	@Override
+	public boolean needSignature() {
+		return false;// for test
+	}
+
 }
