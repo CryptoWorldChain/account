@@ -235,6 +235,11 @@ public class AccountHelper implements ActorService {
 		return setNonce(addr, 1);
 	}
 
+	public synchronized BigInteger addBalance(ByteString addr, BigInteger balance) throws Exception {
+		Account.Builder oAccount = GetAccount(addr);
+		return addBalance(oAccount, balance);
+	}
+
 	public synchronized BigInteger addBalance(Account.Builder oAccount, BigInteger balance) throws Exception {
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 		oAccountValue.setBalance(ByteString.copyFrom(ByteUtil
@@ -249,6 +254,11 @@ public class AccountHelper implements ActorService {
 				ByteUtil.bytesToBigInteger(oAccountValue.getBalance().toByteArray()).subtract(balance))));
 		oAccount.setValue(oAccountValue);
 		return ByteUtil.bytesToBigInteger(oAccountValue.getBalance().toByteArray());
+	}
+
+	public synchronized BigInteger addTokenBalance(ByteString addr, String token, BigInteger balance) throws Exception {
+		Account.Builder oAccount = GetAccount(addr);
+		return addTokenBalance(oAccount, token, balance);
 	}
 
 	public synchronized BigInteger addTokenBalance(Account.Builder oAccount, String token, BigInteger balance)
