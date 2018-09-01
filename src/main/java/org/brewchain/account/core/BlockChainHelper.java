@@ -286,7 +286,7 @@ public class BlockChainHelper implements ActorService {
 	public String getNodeAccount() {
 		OValue oOValue;
 		try {
-			oOValue = dao.getAccountDao().get(oEntityHelper.byteKey2OKey("org.bc.manage.node.account".getBytes()))
+			oOValue = dao.getCommonDao().get(oEntityHelper.byteKey2OKey(blockChainConfig.getNodeAccount().getBytes()))
 					.get();
 			if (oOValue == null || oOValue.getExtdata() == null || oOValue.getExtdata().equals(ByteString.EMPTY)) {
 				// get net config
@@ -318,7 +318,7 @@ public class BlockChainHelper implements ActorService {
 						if (oKeyStoreValue == null) {
 							return null;
 						} else {
-							dao.getAccountDao().put(oEntityHelper.byteKey2OKey("org.bc.manage.node.account".getBytes()),
+							dao.getCommonDao().put(oEntityHelper.byteKey2OKey(blockChainConfig.getNodeAccount().getBytes()),
 									oEntityHelper.byteValue2OValue(encApi.hexDec(oKeyStoreValue.getAddress())));
 							return oKeyStoreValue.getAddress();
 						}
