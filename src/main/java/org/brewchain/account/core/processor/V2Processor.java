@@ -84,7 +84,7 @@ public class V2Processor implements IProcessor, ActorService {
 		cdl.await();
 		log.debug(" ====> ExecuteTransaction.clearing:" + mts.getBucketInfo() + ",cost="
 				+ (System.currentTimeMillis() - start));
-		log.debug("--:cdlwaitup" + cdl.getCount());
+//		log.debug("--:cdlwaitup" + cdl.getCount());
 		oAccountHelper.BatchPutAccounts(accounts);
 		return results;
 	}
@@ -291,8 +291,8 @@ public class V2Processor implements IProcessor, ActorService {
 		CacheTrie oReceiptTrie = new CacheTrie(this.encApi);
 		long start = System.currentTimeMillis();
 		this.stateTrie.setRoot(encApi.hexDec(oParentBlock.getHeader().getStateRoot()));
-		log.debug("====> set root hash::" + oParentBlock.getHeader().getStateRoot() + ":blocknumber:"
-				+ oBlockEntity.getHeader().getNumber() + ",txcount=" + oBlockHeader.getTxHashsCount());
+//		log.debug("====> set root hash::" + oParentBlock.getHeader().getStateRoot() + ":blocknumber:"
+//				+ oBlockEntity.getHeader().getNumber() + ",txcount=" + oBlockHeader.getTxHashsCount());
 		BlockBody.Builder bb = oBlockEntity.getBody().toBuilder();
 
 		byte[][] txTrieBB = new byte[oBlockHeader.getTxHashsCount()][];
@@ -321,7 +321,7 @@ public class V2Processor implements IProcessor, ActorService {
 		}
 
 		cdl.await();
-		log.debug("cdl--waitup..=" + cdl.getCount());
+//		log.debug("cdl--waitup..=" + cdl.getCount());
 
 		for (i = 0; i < oBlockHeader.getTxHashsCount(); i++) {
 			bb.addTxs(txs[i]);
@@ -406,7 +406,7 @@ public class V2Processor implements IProcessor, ActorService {
 								+ applyBlock.getHeader().getNumber());
 						try {
 							long rollBackNumber = applyBlock.getHeader().getNumber() - 2;
-							log.debug("need prev block number::" + rollBackNumber);
+//							log.debug("need prev block number::" + rollBackNumber);
 							oAddBlockResponse.setRetCode(-9);
 							oAddBlockResponse.setCurrentNumber(rollBackNumber);
 							oAddBlockResponse.setWantNumber(rollBackNumber + 1);
@@ -470,7 +470,7 @@ public class V2Processor implements IProcessor, ActorService {
 						break;
 					case APPLY_CHILD:
 						List<BlockEntity> childs = blockChainHelper.getChildBlock(applyBlock.build());
-						log.debug("find childs count::" + childs.size());
+//						log.debug("find childs count::" + childs.size());
 						for (BlockEntity blockEntity : childs) {
 							applyBlock = blockEntity.toBuilder();
 							log.info("ready to apply child block::" + applyBlock.getHeader().getBlockHash()

@@ -239,7 +239,7 @@ public class StateTrie implements ActorService {
 												flushBS(bs);
 												return ret;
 											} catch (Exception e) {
-												log.debug("error in exec bs:" + e.getMessage(), e);
+												log.error("error in exec bs:" + e.getMessage(), e);
 												throw e;
 											} finally {
 												if (bs != null) {
@@ -639,7 +639,7 @@ public class StateTrie implements ActorService {
 		if (bs != null) {
 			// log.debug("add into state trie key::" + encApi.hexEnc(hash));
 			bs.remove(hash);
-			log.debug("state trie batch bs " + encApi.hexEnc(hash));
+//			log.debug("state trie batch bs " + encApi.hexEnc(hash));
 		}
 	}
 

@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.brewchain.account.dao.DefDaos;
+import org.brewchain.account.exception.AccountTokenNotFoundException;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.trie.StorageTrie;
 import org.brewchain.account.trie.StorageTrieCache;
@@ -234,33 +235,24 @@ public class AccountHelper implements ActorService {
 		return setNonce(addr, 1);
 	}
 
-	/**
-	 * 增加用户账户余额
-	 * 
-	 * @param addr
-	 * @param balance
-	 * @return
-	 * @throws Exception
-	 */
-	public synchronized BigInteger addBalance(ByteString addr, BigInteger balance) throws Exception {
-		Account.Builder oAccount = GetAccountOrCreate(addr);
+	public synchronized BigInteger addBalance(Account.Builder oAccount, BigInteger balance) throws Exception {
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 		oAccountValue.setBalance(ByteString.copyFrom(ByteUtil
 				.bigIntegerToBytes(balance.add(ByteUtil.bytesToBigInteger(oAccountValue.getBalance().toByteArray())))));
-		putAccountValue(addr, oAccountValue.build());
+		oAccount.setValue(oAccountValue);
 		return ByteUtil.bytesToBigInteger(oAccountValue.getBalance().toByteArray());
 	}
 
-	/**
-	 * 增加用户代币账户余额
-	 * 
-	 * @param addr
-	 * @param balance
-	 * @return
-	 * @throws Exception
-	 */
-	public synchronized BigInteger addTokenBalance(ByteString addr, String token, BigInteger balance) throws Exception {
-		Account.Builder oAccount = GetAccountOrCreate(addr);
+	public synchronized BigInteger subBalance(Account.Builder oAccount, BigInteger balance) throws Exception {
+		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
+		oAccountValue.setBalance(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(
+				ByteUtil.bytesToBigInteger(oAccountValue.getBalance().toByteArray()).subtract(balance))));
+		oAccount.setValue(oAccountValue);
+		return ByteUtil.bytesToBigInteger(oAccountValue.getBalance().toByteArray());
+	}
+
+	public synchronized BigInteger addTokenBalance(Account.Builder oAccount, String token, BigInteger balance)
+			throws Exception {
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 
 		for (int i = 0; i < oAccountValue.getTokensCount(); i++) {
@@ -268,8 +260,7 @@ public class AccountHelper implements ActorService {
 				oAccountValue.setTokens(i, oAccountValue.getTokens(i).toBuilder()
 						.setBalance(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(balance.add(
 								ByteUtil.bytesToBigInteger(oAccountValue.getTokens(i).getBalance().toByteArray()))))));
-
-				putAccountValue(addr, oAccountValue.build());
+				oAccount.setValue(oAccountValue);
 				return ByteUtil.bytesToBigInteger(oAccountValue.getTokens(i).getBalance().toByteArray());
 			}
 		}
@@ -278,8 +269,27 @@ public class AccountHelper implements ActorService {
 		oAccountTokenValue.setBalance(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(balance)));
 		oAccountTokenValue.setToken(token);
 		oAccountValue.addTokens(oAccountTokenValue);
-		putAccountValue(addr, oAccountValue.build());
+		oAccount.setValue(oAccountValue);
 		return ByteUtil.bytesToBigInteger(oAccountTokenValue.getBalance().toByteArray());
+	}
+
+	public synchronized BigInteger subTokenBalance(Account.Builder oAccount, String token, BigInteger balance)
+			throws Exception {
+		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
+
+		for (int i = 0; i < oAccountValue.getTokensCount(); i++) {
+			if (oAccountValue.getTokens(i).getToken().equals(token)) {
+				oAccountValue.setTokens(i,
+						oAccountValue.getTokens(i).toBuilder()
+								.setBalance(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(ByteUtil
+										.bytesToBigInteger(oAccountValue.getTokens(i).getBalance().toByteArray())
+										.subtract(balance)))));
+
+				oAccount.setValue(oAccountValue);
+				return ByteUtil.bytesToBigInteger(oAccountValue.getTokens(i).getBalance().toByteArray());
+			}
+		}
+		throw new AccountTokenNotFoundException("not found token" + token);
 	}
 
 	public synchronized BigInteger addTokenLockBalance(ByteString addr, String token, BigInteger balance)
@@ -505,22 +515,26 @@ public class AccountHelper implements ActorService {
 	 * @return
 	 * @throws Exception
 	 */
-	public BigInteger getTokenBalance(ByteString addr, ByteString token) throws Exception {
+	public BigInteger getTokenBalance(ByteString addr, String token) throws Exception {
 		Account.Builder oAccount = GetAccount(addr);
+		return getTokenBalance(oAccount, token);
+	}
+
+	public BigInteger getTokenBalance(Account.Builder oAccount, String token) throws Exception {
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 		for (int i = 0; i < oAccountValue.getTokensCount(); i++) {
-			if (oAccountValue.getTokens(i).getTokenBytes().equals(token)) {
+			if (oAccountValue.getTokens(i).getToken().equals(token)) {
 				return ByteUtil.bytesToBigInteger(oAccountValue.getTokens(i).getBalance().toByteArray());
 			}
 		}
 		return BigInteger.ZERO;
 	}
 
-	public BigInteger getTokenLockedBalance(ByteString addr, ByteString token) throws Exception {
+	public BigInteger getTokenLockedBalance(ByteString addr, String token) throws Exception {
 		Account.Builder oAccount = GetAccount(addr);
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 		for (int i = 0; i < oAccountValue.getTokensCount(); i++) {
-			if (oAccountValue.getTokens(i).getTokenBytes().equals(token)) {
+			if (oAccountValue.getTokens(i).getToken().equals(token)) {
 				return ByteUtil.bytesToBigInteger(oAccountValue.getTokens(i).getLocked().toByteArray());
 			}
 		}
@@ -780,7 +794,7 @@ public class AccountHelper implements ActorService {
 	public void saveStorage(ByteString address, byte[] key, byte[] value) {
 		Account.Builder oAccount = GetAccount(address);
 		putStorage(oAccount, key, value);
-//		putAccountValue(address, oAccount.getValue());
+		// putAccountValue(address, oAccount.getValue());
 	}
 
 	public StorageTrie getStorageTrie(Account.Builder oAccount) {

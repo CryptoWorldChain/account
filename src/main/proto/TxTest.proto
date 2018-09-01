@@ -25,6 +25,8 @@ enum PTSTCommand {
 	TCO = 16; // create crypto token transaction
 	TCA = 17; // create union account
 	TUA = 18; // union account transaction
+	STM = 19; // multi account to multi account
+	MTY = 20; // for delay test
 }
 
 message ReqUnionAccountTransaction {

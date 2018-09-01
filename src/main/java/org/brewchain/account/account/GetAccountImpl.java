@@ -66,7 +66,8 @@ public class GetAccountImpl extends SessionModules<ReqGetAccount> {
 				for (ByteString relAddress : oAccountValue.getAddressList()) {
 					oAccountValueImpl.addAddress(encApi.hexEnc(relAddress.toByteArray()));
 				}
-				oAccountValueImpl.setAccumulated(String.valueOf(ByteUtil.bytesToBigInteger(oAccountValue.getAccumulated().toByteArray())));
+				oAccountValueImpl.setAccumulated(
+						String.valueOf(ByteUtil.bytesToBigInteger(oAccountValue.getAccumulated().toByteArray())));
 				oAccountValueImpl.setAccumulatedTimestamp(oAccountValue.getAccumulatedTimestamp());
 
 				oAccountValueImpl.setBalance(
@@ -132,6 +133,7 @@ public class GetAccountImpl extends SessionModules<ReqGetAccount> {
 				oAccountValueImpl.setStorage(encApi.hexEnc(oAccountValue.getStorage().toByteArray()));
 				oAccountValueImpl.setCode(encApi.hexEnc(oAccountValue.getCode().toByteArray()));
 				oAccountValueImpl.setCodeHash(encApi.hexEnc(oAccountValue.getCodeHash().toByteArray()));
+				oAccountValueImpl.setData(oAccountValue.getData().toStringUtf8());
 			} else {
 				log.error("cannot find address::" + pb.getAddress());
 			}

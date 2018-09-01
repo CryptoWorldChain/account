@@ -139,8 +139,8 @@ public class BlockStableStore implements IBlockStore, ActorService {
 			dao.getTxblockDao().batchPuts(txBlockKeyList.toArray(new OKey[0]), txBlockValueList.toArray(new OValue[0]));
 		}
 
-		log.debug(
-				"stable block number::" + block.getHeader().getNumber() + " hash::" + block.getHeader().getBlockHash());
+//		log.debug(
+//				"stable block number::" + block.getHeader().getNumber() + " hash::" + block.getHeader().getBlockHash());
 
 		// log.debug("====put stable block::"+
 		// block.getHeader().getBlockHash());

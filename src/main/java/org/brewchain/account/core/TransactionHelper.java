@@ -256,8 +256,6 @@ public class TransactionHelper implements ActorService {
 						oiTransactionActuator.onVerifySignature(mt, accounts);
 					}
 
-					log.debug("sync tx::" + mt.getTxHash());
-
 					ByteString mts = mt.toByteString();
 					HashPair hp = new HashPair(mt.getTxHash(), mts.toByteArray(), mt);
 					if (cacheTx == null) {
@@ -704,7 +702,6 @@ public class TransactionHelper implements ActorService {
 			oiTransactionActuator = new ActuatorSanctionTransaction(oAccountHelper, this, oCurrentBlock, encApi, dao,
 					this.stateTrie);
 			break;
-
 		default:
 			oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, this, oCurrentBlock, encApi, dao,
 					this.stateTrie);

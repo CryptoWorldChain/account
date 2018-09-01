@@ -37,12 +37,12 @@ public class BlockStoreNodeValue {
 	}
 
 	public void connect() {
-		log.debug("connect hash::" + this.blockHash + " number::" + this.number);
+//		log.debug("connect hash::" + this.blockHash + " number::" + this.number);
 		this.isConnect = true;
 	}
 
 	public void disConnect() {
-		log.debug("disconnect hash::" + this.blockHash + " number::" + this.number);
+//		log.debug("disconnect hash::" + this.blockHash + " number::" + this.number);
 		this.isConnect = false;
 	}
 }

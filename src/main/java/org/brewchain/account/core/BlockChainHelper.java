@@ -297,8 +297,8 @@ public class BlockChainHelper implements ActorService {
 					BufferedReader br = null;
 					try {
 						// read file
-						log.debug("keystore" + File.separator + blockChainConfig.getNet() + File.separator + "keystore"
-								+ blockChainConfig.getKeystoreNumber() + ".json");
+//						log.debug("keystore" + File.separator + blockChainConfig.getNet() + File.separator + "keystore"
+//								+ blockChainConfig.getKeystoreNumber() + ".json");
 
 						fr = new FileReader("keystore" + File.separator + blockChainConfig.getNet() + File.separator
 								+ "keystore" + blockChainConfig.getKeystoreNumber() + ".json");
@@ -369,7 +369,7 @@ public class BlockChainHelper implements ActorService {
 				KeyConstant.node = oNodeDef;
 			}
 			reloadBlockCache();
-			log.debug("block load complete");
+			log.info("block load complete");
 
 			AccountStore as = new AccountStore();
 			as.setDao(dao);

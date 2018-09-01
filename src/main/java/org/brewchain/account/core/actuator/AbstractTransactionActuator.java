@@ -163,15 +163,15 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 		// oMultiTransaction.getTxBody().getOutputsList().size()));
 		// }
 
-		String uniqueInputAddress = "";
+//		String uniqueInputAddress = "";
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
-			if (StringUtils.isBlank(uniqueInputAddress)) {
-				uniqueInputAddress = encApi.hexEnc(oInput.getAddress().toByteArray());
-			} else {
-				if (!uniqueInputAddress.equals(encApi.hexEnc(oInput.getAddress().toByteArray()))) {
-					throw new TransactionExecuteException("parameter invalid, input address must be unique");
-				}
-			}
+//			if (StringUtils.isBlank(uniqueInputAddress)) {
+//				uniqueInputAddress = encApi.hexEnc(oInput.getAddress().toByteArray());
+//			} else {
+//				if (!uniqueInputAddress.equals(encApi.hexEnc(oInput.getAddress().toByteArray()))) {
+//					throw new TransactionExecuteException("parameter invalid, input address must be unique");
+//				}
+//			}
 
 			BigInteger bi = ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray());
 			if (bi.compareTo(BigInteger.ZERO) < 0) {

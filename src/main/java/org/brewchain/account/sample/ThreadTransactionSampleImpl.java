@@ -128,8 +128,8 @@ public class ThreadTransactionSampleImpl extends SessionModules<ReqThreadTransac
 
 						oMultiTransaction.setTxBody(oMultiTransactionBody);
 						String txHash = th.CreateMultiTransaction(oMultiTransaction).getKey();
-						log.debug("Thread Transaction Test ==> txHash::" + txHash + " form::" + address + " nonce::"
-								+ nonce + " to::" + oTo.getAddress());
+//						log.debug("Thread Transaction Test ==> txHash::" + txHash + " form::" + address + " nonce::"
+//								+ nonce + " to::" + oTo.getAddress());
 					} catch (Exception e) {
 						e.printStackTrace();
 					}

@@ -81,9 +81,9 @@ public class BlockStore implements ActorService {
 			log.error(String.format("exists last stable block hash, but last block not exists, start empty node"));
 		} else {
 			if (oLastConnectBlockEntity.getHeader().getNumber() == 0) {
-				log.debug("load block into stable cache number::" + oLastConnectBlockEntity.getHeader().getNumber()
-						+ " hash::" + oLastConnectBlockEntity.getHeader().getBlockHash() + " stateroot::"
-						+ oLastConnectBlockEntity.getHeader().getStateRoot());
+//				log.debug("load block into stable cache number::" + oLastConnectBlockEntity.getHeader().getNumber()
+//						+ " hash::" + oLastConnectBlockEntity.getHeader().getBlockHash() + " stateroot::"
+//						+ oLastConnectBlockEntity.getHeader().getStateRoot());
 				stableStore.add(oLastConnectBlockEntity);
 				if (maxStableNumber < oLastConnectBlockEntity.getHeader().getNumber()) {
 					maxStableNumber = oLastConnectBlockEntity.getHeader().getNumber();
@@ -107,19 +107,19 @@ public class BlockStore implements ActorService {
 						}
 
 						if (isStable) {
-							log.debug("load block into stable cache number::" + loopBlockEntity.getHeader().getNumber()
-									+ " hash::" + loopBlockEntity.getHeader().getBlockHash() + " stateroot::"
-									+ loopBlockEntity.getHeader().getStateRoot());
+//							log.debug("load block into stable cache number::" + loopBlockEntity.getHeader().getNumber()
+//									+ " hash::" + loopBlockEntity.getHeader().getBlockHash() + " stateroot::"
+//									+ loopBlockEntity.getHeader().getStateRoot());
 							stableStore.add(loopBlockEntity);
 							if (maxStableNumber < loopBlockEntity.getHeader().getNumber()) {
 								maxStableNumber = loopBlockEntity.getHeader().getNumber();
 								maxStableBlock = loopBlockEntity;
 							}
 						} else {
-							log.debug(
-									"load block into unstable cache number::" + loopBlockEntity.getHeader().getNumber()
-											+ " hash::" + loopBlockEntity.getHeader().getBlockHash() + " stateroot::"
-											+ loopBlockEntity.getHeader().getStateRoot());
+//							log.debug(
+//									"load block into unstable cache number::" + loopBlockEntity.getHeader().getNumber()
+//											+ " hash::" + loopBlockEntity.getHeader().getBlockHash() + " stateroot::"
+//											+ loopBlockEntity.getHeader().getStateRoot());
 							unStableStore.add(loopBlockEntity);
 							unStableStore.append(loopBlockEntity.getHeader().getBlockHash(),
 									loopBlockEntity.getHeader().getNumber());
