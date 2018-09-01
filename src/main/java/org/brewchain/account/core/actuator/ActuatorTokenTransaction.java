@@ -30,17 +30,10 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 		super(oAccountHelper, oTransactionHelper, oBlock, encApi, dao, oStateTrie);
 	}
 
-	/*
-	 * 校验交易有效性。余额，索引等
-	 * 
-	 * @see org.brewchain.account.core.transaction.AbstractTransactionActuator#
-	 * onVerify(org.brewchain.account.gens.Tx.MultiTransaction, java.util.Map,
-	 * java.util.Map)
-	 */
 	@Override
 	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts)
 			throws Exception {
-		
+
 		if (oMultiTransaction.getTxBody().getInputsCount() != 1) {
 			throw new TransactionExecuteException("parameter invalid, inputs must be only one");
 		}
@@ -48,7 +41,7 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 		if (oMultiTransaction.getTxBody().getOutputsCount() == 0) {
 			throw new TransactionExecuteException("parameter invalid, outputs must not be null");
 		}
-		
+
 		String token = "";
 		BigInteger inputsTotal = BigInteger.ZERO;
 		BigInteger outputsTotal = BigInteger.ZERO;
@@ -69,13 +62,7 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			Account.Builder sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 			BigInteger tokenBalance = BigInteger.ZERO;
-			for (int i = 0; i < senderAccountValue.getTokensCount(); i++) {
-				if (senderAccountValue.getTokens(i).getToken().equals(oInput.getToken())) {
-					tokenBalance = tokenBalance.add(
-							ByteUtil.bytesToBigInteger(senderAccountValue.getTokens(i).getBalance().toByteArray()));
-					break;
-				}
-			}
+			tokenBalance = tokenBalance.add(oAccountHelper.getTokenBalance(sender, oInput.getToken()));
 
 			inputsTotal = inputsTotal.add(ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray()));
 
@@ -84,17 +71,16 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			}
 
 			if (ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray()).compareTo(BigInteger.ZERO) == -1) {
-				throw new IllegalArgumentException(
-						String.format("transaction value %s less than 0", ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray())));
+				throw new IllegalArgumentException(String.format("transaction value %s less than 0",
+						ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray())));
 			}
 
 			if (tokenBalance.subtract(ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray()))
-					.compareTo(BigInteger.ZERO) == -1) {// - oInput.getFeeLimit()
-				// 余额不够
-				throw new Exception(String.format("sender balance %s less than %s", tokenBalance, ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray())));
+					.compareTo(BigInteger.ZERO) == -1) {
+				throw new Exception(String.format("sender balance %s less than %s", tokenBalance,
+						ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray())));
 			}
 
-			// 判断nonce是否一致
 			int nonce = senderAccountValue.getNonce();
 			if (nonce != oInput.getNonce()) {
 				throw new Exception(String.format("sender nonce %s is not equal with transaction nonce %s", nonce,
@@ -104,8 +90,8 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
 			if (ByteUtil.bytesToBigInteger(oOutput.getAmount().toByteArray()).compareTo(BigInteger.ZERO) == -1) {
-				throw new IllegalArgumentException(
-						String.format("receive balance %s less than 0", ByteUtil.bytesToBigInteger(oOutput.getAmount().toByteArray())));
+				throw new IllegalArgumentException(String.format("receive balance %s less than 0",
+						ByteUtil.bytesToBigInteger(oOutput.getAmount().toByteArray())));
 			}
 			outputsTotal = ByteUtil.bytesAdd(outputsTotal, oOutput.getAmount().toByteArray());
 		}
@@ -118,34 +104,15 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 	@Override
 	public ByteString onExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts)
 			throws Exception {
-		// LinkedList<OKey> keys = new LinkedList<>();
-		// LinkedList<AccountValue> values = new LinkedList<>();
-
 		String token = "";
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			// 取发送方账户
 			Account.Builder sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
-
 			token = oInput.getToken();
-			boolean isExistToken = false;
-			for (int i = 0; i < senderAccountValue.getTokensCount(); i++) {
-				if (senderAccountValue.getTokens(i).getToken().equals(oInput.getToken())) {
-					senderAccountValue.setTokens(i,
-							senderAccountValue.getTokens(i).toBuilder()
-									.setBalance(ByteString.copyFrom(ByteUtil.bytesSubToBytes(
-											senderAccountValue.getTokens(i).getBalance().toByteArray(),
-											oInput.getAmount().toByteArray()))));
-					isExistToken = true;
-					break;
-				}
-			}
-			if (!isExistToken) {
-				throw new Exception(String.format("cannot found token %s in sender account", oInput.getToken()));
-			}
-
+			oAccountHelper.subTokenBalance(sender, oInput.getToken(),
+					ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray()));
 			senderAccountValue.setNonce(senderAccountValue.getNonce() + 1);
-
 			sender.setValue(senderAccountValue);
 			accounts.put(encApi.hexEnc(sender.getAddress().toByteArray()), sender);
 
@@ -157,37 +124,8 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 				receiver = oAccountHelper.CreateAccount(oOutput.getAddress());
 			}
 			AccountValue.Builder receiverAccountValue = receiver.getValue().toBuilder();
-
-			boolean isExistToken = false;
-			for (int i = 0; i < receiverAccountValue.getTokensCount(); i++) {
-				if (receiverAccountValue.getTokens(i).getToken().equals(token)) {
-					receiverAccountValue
-							.setTokens(i,
-									receiverAccountValue.getTokens(i).toBuilder()
-											.setBalance(ByteString.copyFrom(ByteUtil.bytesAddToBytes(
-													receiverAccountValue.getTokens(i).getBalance().toByteArray(),
-													oOutput.getAmount().toByteArray()))));
-					isExistToken = true;
-					break;
-				}
-			}
-
-			// 如果对应账户中没有该token，则直接创建
-			if (!isExistToken) {
-				AccountTokenValue.Builder oAccountTokenValue = AccountTokenValue.newBuilder();
-				oAccountTokenValue.setToken(token);
-				oAccountTokenValue.setBalance(oOutput.getAmount());
-				receiverAccountValue.addTokens(oAccountTokenValue);
-			}
-
-//			DBTrie oCacheTrie = new DBTrie(this.dao, oTransactionHelper.getOEntityHelper());
-//			if (receiverAccountValue.getStorage() == null) {
-//				oCacheTrie.setRoot(null);
-//			} else {
-//				oCacheTrie.setRoot(receiverAccountValue.getStorage().toByteArray());
-//			}
-//			oCacheTrie.put(receiver.getAddress().toByteArray(), receiverAccountValue.build().toByteArray());
-//			receiverAccountValue.setStorage(ByteString.copyFrom((oCacheTrie.getRootHash())));
+			oAccountHelper.addTokenBalance(receiver, token,
+					ByteUtil.bytesToBigInteger(oOutput.getAmount().toByteArray()));
 			receiver.setValue(receiverAccountValue);
 			accounts.put(encApi.hexEnc(receiver.getAddress().toByteArray()), receiver);
 		}
