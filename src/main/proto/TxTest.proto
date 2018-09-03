@@ -28,6 +28,17 @@ enum PTSTCommand {
 	STM = 19; // multi account to multi account
 	MTY = 20; // for delay test
 	VTS = 21; // vote transaction
+	VTT = 22; // for vote storage test
+}
+
+message ReqVoteStorage {
+	string address = 1;
+	string key = 2;
+}
+
+message RespVoteStorage {
+	int32 retCode = 1;
+	string retMsg = 2;
 }
 
 message ReqVoteTransaction {

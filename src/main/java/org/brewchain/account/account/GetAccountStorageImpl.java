@@ -1,5 +1,7 @@
 package org.brewchain.account.account;
 
+import java.math.BigInteger;
+
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.gens.Actimpl.AccountCryptoTokenImpl;
 import org.brewchain.account.gens.Actimpl.AccountCryptoValueImpl;
@@ -42,7 +44,7 @@ public class GetAccountStorageImpl extends SessionModules<ReqGetStorage> {
 
 	@Override
 	public String[] getCmds() {
-		return new String[] { PACTCommand.GAS.name() };
+		return new String[] { PACTCommand.QAS.name() };
 	}
 
 	@Override
@@ -59,7 +61,12 @@ public class GetAccountStorageImpl extends SessionModules<ReqGetStorage> {
 					.GetAccount(ByteString.copyFrom(encApi.hexDec(ByteUtil.formatHexAddress(pb.getAddress()))));
 
 			for (int i = 0; i < pb.getKeyCount(); i++) {
-				oRespGetStorage.addContent(encApi.hexEnc(oAccountHelper.getStorage(oAccount, encApi.hexDec(pb.getKey(i)))));
+				byte[] v = oAccountHelper.getStorage(oAccount, encApi.hexDec(pb.getKey(i)));
+				if (v != null) {
+					oRespGetStorage.addContent(encApi.hexEnc(v));
+				} else {
+					oRespGetStorage.addContent("");
+				}
 			}
 			oRespGetStorage.setRetMsg("success");
 			oRespGetStorage.setRetCode(1);

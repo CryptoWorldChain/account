@@ -80,7 +80,7 @@ public class VoteTransactionSample extends SessionModules<ReqVoteTransaction> {
 			int nonce = accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(pb.getAddress())));
 			oMultiTransactionInput4.setNonce(nonce);
 			oMultiTransactionBody.addInputs(oMultiTransactionInput4);
-			oMultiTransactionBody.setType(TransTypeEnum.TYPE_UnionAccountTransaction.value());
+			oMultiTransactionBody.setType(TransTypeEnum.TYPE_Sanction.value());
 			oMultiTransactionBody.setTimestamp(System.currentTimeMillis());
 
 			SanctionData.Builder oSanctionData = SanctionData.newBuilder();
