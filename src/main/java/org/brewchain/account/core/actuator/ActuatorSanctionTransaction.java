@@ -67,7 +67,8 @@ public class ActuatorSanctionTransaction extends AbstractTransactionActuator imp
 
 			if (oAccountHelper.getTokenBalance(senderAccount, "CWS")
 					.compareTo(ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray())) < 0) {
-				throw new TransactionParameterInvalidException("parameter invalid, not enouth CWS token to initiate vote");
+				throw new TransactionParameterInvalidException(
+						"parameter invalid, not enouth CWS token to initiate vote");
 			}
 		} else {
 			if (ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray())
@@ -79,7 +80,8 @@ public class ActuatorSanctionTransaction extends AbstractTransactionActuator imp
 
 			for (ByteString b : oSanctionStorage.getAddressList()) {
 				if (FastByteComparisons.equal(b.toByteArray(), oInput.getAddress().toByteArray())) {
-					throw new TransactionParameterInvalidException("parameter invalid, Duplicate join vote is not allowed");
+					throw new TransactionParameterInvalidException(
+							"parameter invalid, Duplicate join vote is not allowed");
 				}
 			}
 
@@ -96,8 +98,8 @@ public class ActuatorSanctionTransaction extends AbstractTransactionActuator imp
 			SanctionData.Builder oVoteSanctionData = SanctionData.parseFrom(oVoteTx.getTxBody().getData().toByteArray())
 					.toBuilder();
 
-			if (!FastByteComparisons.equal(oVoteSanctionData.getContent().toByteArray(),
-					oSanctionData.getContent().toByteArray())) {
+			if (oSanctionData.getEndBlockHeight() != oVoteSanctionData.getEndBlockHeight() || !FastByteComparisons
+					.equal(oVoteSanctionData.getContent().toByteArray(), oSanctionData.getContent().toByteArray())) {
 				throw new TransactionParameterInvalidException("parameter invalid, vote content invalidate");
 			}
 		}
