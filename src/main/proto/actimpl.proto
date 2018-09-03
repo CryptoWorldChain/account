@@ -12,6 +12,18 @@ enum PACTCommand {
     QIC = 2; // 查询已创建的token
     QII = 3; // 查询已创建的cryptotoken
     QIO = 4; // 查询已创建的token
+    QAS = 5; // 查询storage
+}
+
+message ReqGetStorage {
+	string address = 1;
+	repeated string key = 2;
+}
+
+message RespGetStorage {
+	int32 retCode = 1;
+	string retMsg = 2;
+	repeated string content = 3;
 }
 
 message ReqQueryCryptoToken {

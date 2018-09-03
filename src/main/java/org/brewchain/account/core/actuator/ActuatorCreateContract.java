@@ -8,9 +8,10 @@ import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.KeyConstant;
 import org.brewchain.account.core.TransactionHelper;
-import org.brewchain.account.core.actuator.AbstractTransactionActuator.TransactionExecuteException;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.evmapi.EvmApiImp;
+import org.brewchain.account.exception.TransactionExecuteException;
+import org.brewchain.account.exception.TransactionParameterInvalidException;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.util.ByteUtil;
 import org.brewchain.account.util.OEntityBuilder;
@@ -39,20 +40,20 @@ public class ActuatorCreateContract extends AbstractTransactionActuator implemen
 	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts)
 			throws Exception {
 		if (oMultiTransaction.getTxBody().getInputsCount() != 1) {
-			throw new TransactionExecuteException("parameter invalid, inputs must be only one");
+			throw new TransactionParameterInvalidException("parameter invalid, inputs must be only one");
 		}
 		if (oMultiTransaction.getTxBody().getOutputsCount() != 0) {
-			throw new TransactionExecuteException("parameter invalid, outputs must be null");
+			throw new TransactionParameterInvalidException("parameter invalid, outputs must be null");
 		}
 
 		MultiTransactionInput input = oMultiTransaction.getTxBody().getInputs(0);
 		if (StringUtils.isNotBlank(input.getToken())) {
-			throw new TransactionExecuteException("parameter invalid, token must be null");
+			throw new TransactionParameterInvalidException("parameter invalid, token must be null");
 		}
 
 		if (StringUtils.isNotBlank(input.getSymbol())
 				|| (input.getCryptoToken() != null && !input.getCryptoToken().equals(ByteString.EMPTY))) {
-			throw new TransactionExecuteException("parameter invalid, crypto token must be null");
+			throw new TransactionParameterInvalidException("parameter invalid, crypto token must be null");
 		}
 
 		Account.Builder sender = accounts

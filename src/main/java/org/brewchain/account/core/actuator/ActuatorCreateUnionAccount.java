@@ -1,14 +1,12 @@
 package org.brewchain.account.core.actuator;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.TransactionHelper;
-import org.brewchain.account.core.actuator.AbstractTransactionActuator.TransactionExecuteException;
 import org.brewchain.account.dao.DefDaos;
+import org.brewchain.account.exception.TransactionParameterInvalidException;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.util.ByteUtil;
 import org.brewchain.evmapi.gens.Act.Account;
@@ -35,21 +33,21 @@ public class ActuatorCreateUnionAccount extends AbstractTransactionActuator impl
 			throws Exception {
 		
 		if (oMultiTransaction.getTxBody().getInputsCount() != 1) {
-			throw new TransactionExecuteException("parameter invalid, inputs must be only one");
+			throw new TransactionParameterInvalidException("parameter invalid, inputs must be only one");
 		}
 		
 		MultiTransactionInput oInput = oMultiTransaction.getTxBody().getInputs(0);
 		
 		if (ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray()).compareTo(BigInteger.ZERO) != 0) {
-			throw new TransactionExecuteException("parameter invalid, amount must be zero");
+			throw new TransactionParameterInvalidException("parameter invalid, amount must be zero");
 		}
 
 		if (oMultiTransaction.getTxBody().getOutputsCount() != 0) {
-			throw new TransactionExecuteException("parameter invalid, inputs must be empty");
+			throw new TransactionParameterInvalidException("parameter invalid, inputs must be empty");
 		}
 
 		if (oMultiTransaction.getTxBody().getInputsCount() != oMultiTransaction.getTxBody().getSignaturesCount()) {
-			throw new TransactionExecuteException("parameter invalid, inputs count must equal with signatures count");
+			throw new TransactionParameterInvalidException("parameter invalid, inputs count must equal with signatures count");
 		}
 		
 		Account.Builder sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
@@ -57,19 +55,19 @@ public class ActuatorCreateUnionAccount extends AbstractTransactionActuator impl
 		int txNonce = oInput.getNonce();
 		int nonce = senderAccountValue.getNonce();
 		if (nonce != txNonce) {
-			throw new TransactionExecuteException(
-					String.format("sender nonce %s is not equal with transaction nonce %s", nonce, nonce));
+			throw new TransactionParameterInvalidException(
+					String.format("parameter invalid, sender nonce %s is not equal with transaction nonce %s", nonce, nonce));
 		}
 
 		UnionAccountData oUnionAccountData = UnionAccountData
 				.parseFrom(oMultiTransaction.getTxBody().getData().toByteArray());
 		if (oUnionAccountData == null || oUnionAccountData.getMax() == null || oUnionAccountData.getAcceptLimit() < 0
 				|| oUnionAccountData.getAcceptMax() == null || oUnionAccountData.getAddressCount() < 2) {
-			throw new TransactionExecuteException("parameter invalid, union account info invalidate");
+			throw new TransactionParameterInvalidException("parameter invalid, union account info invalidate");
 		}
 
 		if (oUnionAccountData.getAcceptLimit() > oUnionAccountData.getAddressCount()) {
-			throw new TransactionExecuteException(
+			throw new TransactionParameterInvalidException(
 					"parameter invalid, AcceptLimit count must smaller than address count");
 		}
 	}

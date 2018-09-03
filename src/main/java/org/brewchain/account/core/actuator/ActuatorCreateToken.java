@@ -4,9 +4,9 @@ import java.math.BigInteger;
 import java.util.Map;
 
 import org.brewchain.account.core.AccountHelper;
-import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.dao.DefDaos;
+import org.brewchain.account.exception.TransactionParameterInvalidException;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.util.ByteUtil;
 import org.brewchain.evmapi.gens.Act.Account;
@@ -70,33 +70,33 @@ public class ActuatorCreateToken extends AbstractTransactionActuator implements 
 			throws Exception {
 
 		if (oMultiTransaction.getTxBody().getInputsCount() != 1) {
-			throw new TransactionExecuteException("parameter invalid, inputs must be only one");
+			throw new TransactionParameterInvalidException("parameter invalid, inputs must be only one");
 		}
 
 		if (oMultiTransaction.getTxBody().getOutputsCount() != 0) {
-			throw new TransactionExecuteException("parameter invalid, outputs must be null");
+			throw new TransactionParameterInvalidException("parameter invalid, outputs must be null");
 		}
 
 		MultiTransactionInput oInput = oMultiTransaction.getTxBody().getInputs(0);
 
 		String token = oInput.getToken();
 		if (token == null || token.isEmpty()) {
-			throw new TransactionExecuteException(String.format("parameter invalid, token name must not be empty"));
+			throw new TransactionParameterInvalidException(String.format("parameter invalid, token name must not be empty"));
 		}
 
 		if (token.toUpperCase().startsWith("CW")) {
-			throw new TransactionExecuteException(String.format("parameter invalid, token name invalid"));
+			throw new TransactionParameterInvalidException(String.format("parameter invalid, token name invalid"));
 		}
 
 		if (!token.toUpperCase().equals(token)) {
-			throw new TransactionExecuteException(String.format("parameter invalid, token name invalid"));
+			throw new TransactionParameterInvalidException(String.format("parameter invalid, token name invalid"));
 		}
 
 		if (ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray())
 				.compareTo(oTransactionHelper.getBlockChainConfig().getMinerReward()) == -1
 				|| ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray())
 						.compareTo(oTransactionHelper.getBlockChainConfig().getMaxTokenTotal()) == 1) {
-			throw new TransactionExecuteException(
+			throw new TransactionParameterInvalidException(
 					String.format("parameter invalid, token amount must between %s and %s ",
 							UnitUtil.fromWei(oTransactionHelper.getBlockChainConfig().getMinTokenTotal()),
 							UnitUtil.fromWei(oTransactionHelper.getBlockChainConfig().getMaxTokenTotal())));
@@ -106,18 +106,18 @@ public class ActuatorCreateToken extends AbstractTransactionActuator implements 
 		AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 		if (ByteUtil.bytesToBigInteger(senderAccountValue.getBalance().toByteArray())
 				.compareTo(this.oTransactionHelper.getBlockChainConfig().getToken_lock_balance()) == -1) {
-			throw new TransactionExecuteException(
+			throw new TransactionParameterInvalidException(
 					String.format("parameter invalid, not enough deposit %s to create token",
 							this.oTransactionHelper.getBlockChainConfig().getToken_lock_balance()));
 		}
 
 		if (oAccountHelper.isExistsToken(token)) {
-			throw new TransactionExecuteException(String.format("parameter invalid, duplicate token name %s", token));
+			throw new TransactionParameterInvalidException(String.format("parameter invalid, duplicate token name %s", token));
 		}
 
 		int nonce = senderAccountValue.getNonce();
 		if (nonce != oInput.getNonce()) {
-			throw new TransactionExecuteException(
+			throw new TransactionParameterInvalidException(
 					String.format("sender nonce %s is not equal with transaction nonce %s", nonce, oInput.getNonce()));
 		}
 	}

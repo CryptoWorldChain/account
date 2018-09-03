@@ -7,8 +7,8 @@ import java.util.Map;
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
-import org.brewchain.account.core.actuator.AbstractTransactionActuator.TransactionExecuteException;
 import org.brewchain.account.dao.DefDaos;
+import org.brewchain.account.exception.TransactionParameterInvalidException;
 import org.brewchain.account.trie.CacheTrie;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.util.ByteUtil;
@@ -35,11 +35,11 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			throws Exception {
 
 		if (oMultiTransaction.getTxBody().getInputsCount() != 1) {
-			throw new TransactionExecuteException("parameter invalid, inputs must be only one");
+			throw new TransactionParameterInvalidException("parameter invalid, inputs must be only one");
 		}
 
 		if (oMultiTransaction.getTxBody().getOutputsCount() == 0) {
-			throw new TransactionExecuteException("parameter invalid, outputs must not be null");
+			throw new TransactionParameterInvalidException("parameter invalid, outputs must not be null");
 		}
 
 		String token = "";
@@ -48,13 +48,13 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			if (oInput.getToken().isEmpty() || oInput.getToken() == "") {
-				throw new Exception(String.format("token must not be empty"));
+				throw new TransactionParameterInvalidException(String.format("parameter invalid, token must not be empty"));
 			}
 			if (token == "") {
 				token = oInput.getToken();
 			} else {
 				if (!token.equals(oInput.getToken())) {
-					throw new Exception(String.format("not allow multi token %s %s", token, oInput.getToken()));
+					throw new TransactionParameterInvalidException(String.format("parameter invalid, not allow multi token %s %s", token, oInput.getToken()));
 				}
 			}
 
@@ -67,37 +67,37 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			inputsTotal = inputsTotal.add(ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray()));
 
 			if (tokenBalance.compareTo(BigInteger.ZERO) == -1) {
-				throw new IllegalArgumentException(String.format("sender balance %s less than 0", tokenBalance));
+				throw new TransactionParameterInvalidException(String.format("parameter invalid, sender balance %s less than 0", tokenBalance));
 			}
 
 			if (ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray()).compareTo(BigInteger.ZERO) == -1) {
-				throw new IllegalArgumentException(String.format("transaction value %s less than 0",
+				throw new TransactionParameterInvalidException(String.format("parameter invalid, transaction value %s less than 0",
 						ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray())));
 			}
 
 			if (tokenBalance.subtract(ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray()))
 					.compareTo(BigInteger.ZERO) == -1) {
-				throw new Exception(String.format("sender balance %s less than %s", tokenBalance,
+				throw new TransactionParameterInvalidException(String.format("parameter invalid, sender balance %s less than %s", tokenBalance,
 						ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray())));
 			}
 
 			int nonce = senderAccountValue.getNonce();
 			if (nonce != oInput.getNonce()) {
-				throw new Exception(String.format("sender nonce %s is not equal with transaction nonce %s", nonce,
+				throw new TransactionParameterInvalidException(String.format("parameter invalid, sender nonce %s is not equal with transaction nonce %s", nonce,
 						oInput.getNonce()));
 			}
 		}
 
 		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
 			if (ByteUtil.bytesToBigInteger(oOutput.getAmount().toByteArray()).compareTo(BigInteger.ZERO) == -1) {
-				throw new IllegalArgumentException(String.format("receive balance %s less than 0",
+				throw new TransactionParameterInvalidException(String.format("parameter invalid, receive balance %s less than 0",
 						ByteUtil.bytesToBigInteger(oOutput.getAmount().toByteArray())));
 			}
 			outputsTotal = ByteUtil.bytesAdd(outputsTotal, oOutput.getAmount().toByteArray());
 		}
 
 		if (inputsTotal.compareTo(outputsTotal) != 0) {
-			throw new Exception(String.format("transaction value %s not equal with %s", inputsTotal, outputsTotal));
+			throw new TransactionParameterInvalidException(String.format("parameter invalid, transaction value %s not equal with %s", inputsTotal, outputsTotal));
 		}
 	}
 
@@ -106,7 +106,6 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			throws Exception {
 		String token = "";
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
-			// 取发送方账户
 			Account.Builder sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 			token = oInput.getToken();

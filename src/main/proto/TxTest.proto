@@ -27,6 +27,22 @@ enum PTSTCommand {
 	TUA = 18; // union account transaction
 	STM = 19; // multi account to multi account
 	MTY = 20; // for delay test
+	VTS = 21; // vote transaction
+}
+
+message ReqVoteTransaction {
+	string address = 1;
+	string privKey = 2;
+	string voteContent = 3;
+	string voteAddress = 4;
+	int64 endHeight = 5;
+	string amount = 6;
+	string result = 7;
+}
+
+message RespVoteTransaction {
+	int32 retCode = 1;
+	string retMsg = 2;
 }
 
 message ReqUnionAccountTransaction {

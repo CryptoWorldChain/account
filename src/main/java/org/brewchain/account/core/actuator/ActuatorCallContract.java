@@ -7,10 +7,11 @@ import java.util.Map.Entry;
 
 import org.apache.commons.lang3.StringUtils;
 import org.brewchain.account.core.AccountHelper;
-import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.evmapi.EvmApiImp;
+import org.brewchain.account.exception.TransactionExecuteException;
+import org.brewchain.account.exception.TransactionParameterInvalidException;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.util.ByteUtil;
 import org.brewchain.evmapi.gens.Act.Account;
@@ -39,23 +40,23 @@ public class ActuatorCallContract extends AbstractTransactionActuator implements
 	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Builder> accounts) throws Exception {
 		if (oMultiTransaction.getTxBody().getInputsCount() != 1
 				|| oMultiTransaction.getTxBody().getOutputsCount() != 1) {
-			throw new TransactionExecuteException("parameter invalid, the inputs and outputs must be only one");
+			throw new TransactionParameterInvalidException("parameter invalid, the inputs and outputs must be only one");
 		}
 
 		MultiTransactionInput input = oMultiTransaction.getTxBody().getInputs(0);
 		if (StringUtils.isNotBlank(input.getToken())) {
-			throw new TransactionExecuteException("parameter invalid, token must be null");
+			throw new TransactionParameterInvalidException("parameter invalid, token must be null");
 		}
 
 		if (StringUtils.isNotBlank(input.getSymbol())
 				|| (input.getCryptoToken() != null && !input.getCryptoToken().equals(ByteString.EMPTY))) {
-			throw new TransactionExecuteException("parameter invalid, crypto token must be null");
+			throw new TransactionParameterInvalidException("parameter invalid, crypto token must be null");
 		}
 
 		MultiTransactionOutput output = oMultiTransaction.getTxBody().getOutputs(0);
 
 		if (!oAccountHelper.isContract(output.getAddress())) {
-			throw new TransactionExecuteException("parameter invalid, address "
+			throw new TransactionParameterInvalidException("parameter invalid, address "
 					+ encApi.hexEnc(output.getAddress().toByteArray()) + " is not validate contract.");
 		}
 

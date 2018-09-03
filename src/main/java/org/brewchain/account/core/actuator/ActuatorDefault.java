@@ -6,6 +6,7 @@ import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.dao.DefDaos;
+import org.brewchain.account.exception.TransactionParameterInvalidException;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.evmapi.gens.Act.Account;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
@@ -27,12 +28,12 @@ public class ActuatorDefault extends AbstractTransactionActuator implements iTra
 			throws Exception {
 
 		if (oMultiTransaction.getTxBody().getInputsCount() > 1 && oMultiTransaction.getTxBody().getOutputsCount() > 1) {
-			throw new TransactionExecuteException("parameter invalid, multi inputs and outputs");
+			throw new TransactionParameterInvalidException("parameter invalid, multi inputs and outputs");
 		}
 
 		if (oMultiTransaction.getTxBody().getInputsCount() == 0
 				|| oMultiTransaction.getTxBody().getOutputsCount() == 0) {
-			throw new TransactionExecuteException("parameter invalid, inputs or outputs must not be null");
+			throw new TransactionParameterInvalidException("parameter invalid, inputs or outputs must not be null");
 		}
 
 		super.onPrepareExecute(oMultiTransaction, accounts);

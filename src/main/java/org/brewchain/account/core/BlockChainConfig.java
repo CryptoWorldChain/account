@@ -22,25 +22,29 @@ import onight.tfw.mservice.NodeHelper;
 @Slf4j
 @Instantiate(name = "BlockChain_Config")
 public class BlockChainConfig extends SessionModules<Message> {
-	private BigInteger minerReward = new BigInteger(props().get("block.miner.reward", "0"));
 	private String pwd = props().get("org.bc.manage.node.dev.pwd", KeyConstant.PWD);
 	private String keystoreNumber = props().get("org.bc.manage.node.keystore.num",
 			String.valueOf(Math.abs(NodeHelper.getCurrNodeListenOutPort() - 5100 + 1)));
 	private int stableBlocks = props().get("org.brewchain.stable.blocks", KeyConstant.STABLE_BLOCK);
-	private BigInteger contract_lock_balance = new BigInteger(props().get("org.brewchain.contract.lock.balance", "0"));
 	private String lock_account_address = props().get("org.brewchain.account.lock.address", null);
 	private boolean isDev = props().get("org.brewchain.man.dev", "true").equals("true");
-	private BigInteger token_lock_balance = new BigInteger(props().get("org.brewchain.token.lock.balance", "0"));
 	private int defaultRollBackCount = props().get("org.brewchain.manage.rollback.count", 1);
 	private int accountVersion = props().get("org.brewchain.account.version", 0);
-	private BigInteger maxTokenTotal = new BigInteger(props().get("org.brewchain.token.max.total", "0"));
-	private BigInteger minTokenTotal = new BigInteger(props().get("org.brewchain.token.min.total", "0"));
 	private int blockEpochMSecond = props().get("org.bc.dpos.blk.epoch.ms", 1000) / 1000;
 	private int blockEpochSecond = props().get("org.bc.dpos.blk.epoch.sec", 1);
 	private String nodeAccount = props().get("org.bc.manage.node.account", KeyConstant.DB_NODE_ACCOUNT_STR);
 	private String adminKey = props().get("org.bc.manage.admin.account", KeyConstant.DB_ADMINISTRATOR_KEY_STR);
 	private String nodeNet = props().get("org.bc.manage.node.net", KeyConstant.DB_NODE_NET_STR);
 	private String net = readNet();
+	
+	private BigInteger token_lock_balance = new BigInteger(props().get("org.brewchain.token.lock.balance", "0"));
+	private BigInteger contract_lock_balance = new BigInteger(props().get("org.brewchain.contract.lock.balance", "0"));
+	private BigInteger minerReward = new BigInteger(props().get("block.miner.reward", "0"));
+	private BigInteger maxTokenTotal = new BigInteger(props().get("org.brewchain.token.max.total", "0"));
+	private BigInteger minTokenTotal = new BigInteger(props().get("org.brewchain.token.min.total", "0"));
+	private BigInteger minSanctionCost = new BigInteger(props().get("org.brewchain.sanction.cost", "0"));
+	private BigInteger minVoteCost = new BigInteger(props().get("org.brewchain.vote.cost", "0"));
+
 
 	@Override
 	public String[] getCmds() {

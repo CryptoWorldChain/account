@@ -11,6 +11,7 @@ import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.dao.DefDaos;
+import org.brewchain.account.exception.TransactionParameterInvalidException;
 import org.brewchain.account.trie.CacheTrie;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.util.OEntityBuilder;
@@ -48,12 +49,6 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 	public void onPrepareExecute(MultiTransaction oMultiTransaction, Map<String, Account.Builder> accounts)
 			throws Exception {
 
-		// if (oMultiTransaction.getTxBody().getOutputsCount() !=
-		// oMultiTransaction.getTxBody().getInputsCount()) {
-		// throw new TransactionExecuteException("parameter invalid, inputs
-		// count not equal with outputs count");
-		// }
-
 		List<String> inputSymbol = new ArrayList<>();
 		List<String> inputTokens = new ArrayList<>();
 
@@ -65,12 +60,12 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 				existsSender = encApi.hexEnc(oInput.getAddress().toByteArray());
 			}
 			if (!existsSender.equals(encApi.hexEnc(oInput.getAddress().toByteArray()))) {
-				throw new TransactionExecuteException("parameter invalid, sender address must be unique");
+				throw new TransactionParameterInvalidException("parameter invalid, sender address must be unique");
 			}
 			inputSymbol.add(oInput.getSymbol());
 			if (oInput.getCryptoToken() != null && !oInput.getCryptoToken().equals(ByteString.EMPTY)) {
 				if (inputTokens.contains(encApi.hexEnc(oInput.getCryptoToken().toByteArray()))) {
-					throw new TransactionExecuteException("parameter invalid, duplicate token");
+					throw new TransactionParameterInvalidException("parameter invalid, duplicate token");
 				} else
 					inputTokens.add(encApi.hexEnc(oInput.getCryptoToken().toByteArray()));
 			}
@@ -94,7 +89,7 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 					}
 				}
 				if (!isTokenExists) {
-					throw new TransactionExecuteException(
+					throw new TransactionParameterInvalidException(
 							String.format("parameter invalid, input %s not found token [%s] with hash [%s]",
 									encApi.hexEnc(oInput.getAddress().toByteArray()), oInput.getSymbol(),
 									encApi.hexEnc(oInput.getCryptoToken().toByteArray())));
@@ -110,7 +105,7 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 					}
 				}
 				if (!isExistsOutput) {
-					throw new TransactionExecuteException(
+					throw new TransactionParameterInvalidException(
 							String.format("parameter invalid, not found token %s with hash %s in output list",
 									oInput.getSymbol(), encApi.hexEnc(oInput.getCryptoToken().toByteArray())));
 				}
@@ -129,7 +124,6 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 		for (int i = 0; i < oMultiTransaction.getTxBody().getInputsCount(); i++) {
 			MultiTransactionInput oInput = oMultiTransaction.getTxBody().getInputs(i);
 
-			// tokens.put(oMultiTransaction.get, value);
 			Account.Builder sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue.Builder oAccountValue = sender.getValue().toBuilder();
 
@@ -218,7 +212,6 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 					oAccountCryptoValue.setSymbol(oOutput.getSymbol());
 
 					receiverAccountValue.addCryptos(oAccountCryptoValue);
-					// update token mapping acocunt
 					this.dao.getAccountDao()
 							.put(oTransactionHelper.getOEntityHelper()
 									.byteKey2OKey(oAccountCryptoToken.getHash().toByteArray()),
@@ -227,34 +220,10 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 				}
 			}
 
-			// DBTrie oCacheTrie = new DBTrie(this.dao,
-			// oTransactionHelper.getOEntityHelper());
-			// if (receiverAccountValue.getStorage() == null) {
-			// oCacheTrie.setRoot(null);
-			// } else {
-			// oCacheTrie.setRoot(receiverAccountValue.getStorage().toByteArray());
-			// }
-			// oCacheTrie.put(receiver.getAddress().toByteArray(),
-			// receiverAccountValue.build().toByteArray());
-			// receiverAccountValue.setStorage(ByteString.copyFrom(oCacheTrie.getRootHash()));
-
-			// keys.add(OEntityBuilder.byteKey2OKey(oOutput.getAddress().toByteArray()));
-			// values.add(receiverAccountValue.build());
 			receiver.setValue(receiverAccountValue);
 			accounts.put(encApi.hexEnc(receiver.getAddress().toByteArray()), receiver);
-			// this.accountValues.put(encApi.hexEnc(oOutput.getAddress().toByteArray()),
-			// receiverAccountValue.build());
 		}
 
 		return ByteString.EMPTY;
-		// this.keys.addAll(keys);
-		// this.values.addAll(values);
-		// oAccountHelper.BatchPutAccounts(keys, values);
-	}
-
-	@Override
-	public void onExecuteDone(MultiTransaction oMultiTransaction, ByteString result) throws Exception {
-		// TODO Auto-generated method stub
-		super.onExecuteDone(oMultiTransaction, result);
 	}
 }

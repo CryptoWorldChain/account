@@ -1,20 +1,14 @@
 package org.brewchain.account.core.actuator;
 
 import java.math.BigInteger;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 import java.util.Map;
 
-import org.brewchain.account.core.AbstractLocalCache;
 import org.brewchain.account.core.AccountHelper;
-import org.brewchain.account.core.BlockHelper;
-import org.brewchain.account.core.TXStatus;
 import org.brewchain.account.core.TransactionHelper;
-import org.brewchain.account.core.actuator.AbstractTransactionActuator.TransactionExecuteException;
 import org.brewchain.account.dao.DefDaos;
-import org.brewchain.account.enums.TransTypeEnum;
+import org.brewchain.account.exception.TransactionExecuteException;
+import org.brewchain.account.exception.TransactionParameterInvalidException;
+import org.brewchain.account.exception.TransactionVerifyException;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.util.DateTimeUtil;
 import org.brewchain.account.util.FastByteComparisons;
@@ -48,7 +42,7 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 
 		if (oMultiTransaction.getTxBody().getInputsCount() != 1
 				|| oMultiTransaction.getTxBody().getOutputsCount() != 1) {
-			throw new TransactionExecuteException("parameter invalid, inputs or outputs must be only one");
+			throw new TransactionParameterInvalidException("parameter invalid, inputs or outputs must be only one");
 		}
 
 		MultiTransactionInput oInput = oMultiTransaction.getTxBody().getInputs(0);
@@ -58,7 +52,7 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 		int txNonce = oInput.getNonce();
 		int nonce = unionAccountValue.getNonce();
 		if (nonce != txNonce) {
-			throw new TransactionExecuteException(
+			throw new TransactionParameterInvalidException(
 					String.format("sender nonce %s is not equal with transaction nonce %s", nonce, nonce));
 		}
 
@@ -68,21 +62,21 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 		BigInteger max = ByteUtil.bytesToBigInteger(unionAccountValue.getMax().toByteArray());
 
 		if (amount.compareTo(BigInteger.ZERO) <= 0) {
-			throw new TransactionExecuteException("parameter invalid, amount invalidate");
+			throw new TransactionParameterInvalidException("parameter invalid, amount invalidate");
 		}
 
 		if (amount.compareTo(unionAccountBalance) > 0) {
-			throw new TransactionExecuteException(
+			throw new TransactionParameterInvalidException(
 					String.format("sender balance %s less than %s", unionAccountBalance, amount));
 		}
 
 		if (amount.compareTo(max) > 0) {
-			throw new TransactionExecuteException("parameter invalid, amount must small than " + max);
+			throw new TransactionParameterInvalidException("parameter invalid, amount must small than " + max);
 		}
 
 		if (!FastByteComparisons.equal(oInput.getAmount().toByteArray(),
 				oMultiTransaction.getTxBody().getOutputs(0).getAmount().toByteArray())) {
-			throw new TransactionExecuteException("parameter invalid, transaction value not equal");
+			throw new TransactionParameterInvalidException("parameter invalid, transaction value not equal");
 		}
 
 		if (amount.compareTo(acceptMax) >= 0) {
@@ -91,7 +85,7 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 				MultiTransaction originalTx = oTransactionHelper
 						.GetTransaction(encApi.hexEnc(oMultiTransaction.getTxBody().getData().toByteArray()));
 				if (originalTx == null) {
-					throw new TransactionExecuteException("parameter invalid, not found original transaction");
+					throw new TransactionParameterInvalidException("parameter invalid, not found original transaction");
 				}
 
 				byte[] confirmTxBytes = oAccountHelper.getStorage(unionAccount,
@@ -112,22 +106,24 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 					}
 				}
 				if (isAlreadyConfirm) {
-					throw new TransactionExecuteException("parameter invalid, transaction already confirmed by address "
-							+ encApi.hexEnc(oMultiTransaction.getTxBody().getExdata().toByteArray()));
+					throw new TransactionParameterInvalidException(
+							"parameter invalid, transaction already confirmed by address "
+									+ encApi.hexEnc(oMultiTransaction.getTxBody().getExdata().toByteArray()));
 				}
 				if (!isExistsConfirmTx) {
-					throw new TransactionExecuteException(
+					throw new TransactionParameterInvalidException(
 							"parameter invalid, not found transaction need to be confirmed");
 				}
 				if (!FastByteComparisons.equal(originalTx.getTxBody().getInputs(0).getAmount().toByteArray(),
 						oInput.getAmount().toByteArray())) {
-					throw new TransactionExecuteException(
+					throw new TransactionParameterInvalidException(
 							"parameter invalid, transaction amount not equal with original transaction");
 				}
 
 				if (oUnionAccountStorage != null) {
 					if (oUnionAccountStorage.getAddressCount() >= unionAccountValue.getAcceptLimit()) {
-						throw new TransactionExecuteException("parameter invalid, transaction already confirmed");
+						throw new TransactionParameterInvalidException(
+								"parameter invalid, transaction already confirmed");
 					}
 				}
 
@@ -136,7 +132,7 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 						BigInteger totalMax = ByteUtil
 								.bytesToBigInteger(unionAccountValue.getAccumulated().toByteArray());
 						if (amount.add(totalMax).compareTo(max) > 0) {
-							throw new TransactionExecuteException(
+							throw new TransactionParameterInvalidException(
 									"parameter invalid, already more than the maximum transfer amount of the day");
 						}
 					}
@@ -144,14 +140,14 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 			} else {
 				BigInteger totalMax = ByteUtil.bytesToBigInteger(unionAccountValue.getAccumulated().toByteArray());
 				if (amount.add(totalMax).compareTo(max) > 0) {
-					throw new TransactionExecuteException(
+					throw new TransactionParameterInvalidException(
 							"parameter invalid, already more than the maximum transfer amount of the day");
 				}
 			}
 		} else {
 			BigInteger totalMax = ByteUtil.bytesToBigInteger(unionAccountValue.getAccumulated().toByteArray());
 			if (amount.add(totalMax).compareTo(max) > 0) {
-				throw new TransactionExecuteException(
+				throw new TransactionParameterInvalidException(
 						"parameter invalid, already more than the maximum transfer amount of the day");
 			}
 		}
@@ -239,16 +235,16 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 		if (isRelAddress) {
 			if (!encApi.ecVerify(hexPubKey, oMultiTransactionEncode,
 					oMultiTransactionSignature.getSignature().toByteArray())) {
-				throw new TransactionExecuteException(String.format("signature %s verify fail with pubkey %s",
+				throw new TransactionVerifyException(String.format("signature %s verify fail with pubkey %s",
 						encApi.hexEnc(oMultiTransactionSignature.getSignature().toByteArray()), hexPubKey));
 			}
 		} else {
-			throw new TransactionExecuteException(
+			throw new TransactionVerifyException(
 					"signature verify fail, current account are not allowed to initiate transactions");
 		}
 
 		if (!encApi.hexEnc(oMultiTransaction.getTxBody().getExdata().toByteArray()).equals(hexAddress)) {
-			throw new TransactionExecuteException("signature verify fail, transaction data not equal with Signer");
+			throw new TransactionVerifyException("signature verify fail, transaction data not equal with Signer");
 		}
 	}
 }
