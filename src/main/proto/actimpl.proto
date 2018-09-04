@@ -5,14 +5,27 @@ package org.brewchain.account.gens;
 enum PACTModule {
 	ACT = 0; // 账户，合约，合约代码
 };
-enum PACTCommand {
-    GAC = 0; // 获取单个账户
-    GAS = 1; // 批量获取账户
 
-    QIC = 2; // 查询已创建的token
-    QII = 3; // 查询已创建的cryptotoken
-    QIO = 4; // 查询已创建的token
-    QAS = 5; // 查询storage
+enum PACTCommand {
+	GAC = 0; // 获取单个账户
+	GAS = 1; // 批量获取账户
+	QIC = 2; // 查询已创建的token
+	QII = 3; // 查询已创建的cryptotoken
+	QIO = 4; // 查询已创建的token
+	QAS = 5; // 查询storage
+	GEA = 6; // 生成账户信息
+}
+
+message ReqGenerateAccount {
+	string key = 1;
+}
+
+message RespGenerateAccount {
+	string address = 1;
+	string privKey = 2;
+	string pubKey = 3;
+	int32 retCode = 4;
+	string retMsg = 5;
 }
 
 message ReqGetStorage {
@@ -32,8 +45,8 @@ message ReqQueryCryptoToken {
 
 message RespQueryCryptoToken {
 	int32 retCode = 1;
-    string retMsg = 2;
-    MsgCryptoToken token = 3;
+	string retMsg = 2;
+	MsgCryptoToken token = 3;
 }
 
 message MsgCryptoToken {
@@ -44,99 +57,98 @@ message MsgCryptoToken {
 }
 
 message ReqQueryToken {
-    string token = 1;
-    string address = 2;
+	string token = 1;
+	string address = 2;
 }
 
 message RespQueryToken {
-    int32 retCode = 1;
-    string retMsg = 2;
-    repeated MsgToken tokens = 3;
+	int32 retCode = 1;
+	string retMsg = 2;
+	repeated MsgToken tokens = 3;
 }
 
 message RespQuerySingleToken {
-    int32 retCode = 1;
-    string retMsg = 2;
-    MsgToken tokens = 3;
+	int32 retCode = 1;
+	string retMsg = 2;
+	MsgToken tokens = 3;
 }
 
 message MsgToken {
-    string token = 1;
-    string amount = 2;
-    string creator = 3;
-    string timestamp = 4;
+	string token = 1;
+	string amount = 2;
+	string creator = 3;
+	string timestamp = 4;
 }
 
 message ReqCreateAccount {
-    string address = 1;
-    string pubKey = 2;
+	string address = 1;
+	string pubKey = 2;
 }
 
 message RespCreateAccount {
-    int32 retCode = 1;
+	int32 retCode = 1;
 }
 
 message ReqGetAccount {
-    string address = 1;
-    int32 s = 2;
-    int32 p = 3;
+	string address = 1;
+	int32 s = 2;
+	int32 p = 3;
 }
 
 message RespGetAccount {
-    int32 retCode = 1;
-    string address = 2;
-    AccountValueImpl account = 3;
+	int32 retCode = 1;
+	string address = 2;
+	AccountValueImpl account = 3;
 }
 
 message ReqGetAccounts {
-    repeated string address = 1;
+	repeated string address = 1;
 }
 
 message RespGetAccounts {
-    int32 retCode = 1;
-    repeated string address = 2;
-    repeated AccountValueImpl account = 3;
+	int32 retCode = 1;
+	repeated string address = 2;
+	repeated AccountValueImpl account = 3;
 }
 
-
 message AccountValueImpl {
-    int32 nonce = 1;
-    string balance = 2;
-    string pubKey = 3;
-    string max = 4;
-    string acceptMax = 5;
-    int32 acceptLimit = 6;
-    repeated string address = 7;
-    repeated AccountTokenValueImpl tokens = 8;
-    repeated AccountCryptoValueImpl cryptos = 9;
-    string code = 10;
-    string storage = 11;
-    string codeHash = 12;
-    string accountAddress = 13;
-    string data = 14;
-    int64 accumulatedTimestamp = 15;
-    string accumulated = 16;
+	int32 nonce = 1;
+	string balance = 2;
+	string pubKey = 3;
+	string max = 4;
+	string acceptMax = 5;
+	int32 acceptLimit = 6;
+	repeated string address = 7;
+	repeated AccountTokenValueImpl tokens = 8;
+	repeated AccountCryptoValueImpl cryptos = 9;
+	string code = 10;
+	string storage = 11;
+	string codeHash = 12;
+	string accountAddress = 13;
+	string data = 14;
+	int64 accumulatedTimestamp = 15;
+	string accumulated = 16;
 }
 
 message AccountTokenValueImpl {
-    string token = 1;
-    string balance = 2;
-    string locked = 3;
+	string token = 1;
+	string balance = 2;
+	string locked = 3;
 }
 
 message AccountCryptoValueImpl {
-    string symbol = 1; // 用于分类ERC721 Token的标记
-    repeated AccountCryptoTokenImpl tokens = 2;
+	string symbol = 1; // 用于分类ERC721 Token的标记
+	repeated AccountCryptoTokenImpl tokens = 2;
 }
 
 message AccountCryptoTokenImpl {
-    string hash = 1; // Token的hash，hash(index,total,code,name,timestamp)
-    int64 timestamp = 2; // Token创建时间
-    int64 index = 3; // 该Token发行时的索引
-    int64 total = 4; // 该Token的发行总数量
-    string code = 5; // Token的编号
-    string name = 6; // Token的名称
-    string owner = 7; // 所有人的账户地址
-    int32 nonce = 8; // 交易次数
-    int64 ownertime = 9; // 所有人获取时间
+	string hash = 1; // Token的hash，hash(index,total,code,name,timestamp)
+	int64 timestamp = 2; // Token创建时间
+	int64 index = 3; // 该Token发行时的索引
+	int64 total = 4; // 该Token的发行总数量
+	string code = 5; // Token的编号
+	string name = 6; // Token的名称
+	string owner = 7; // 所有人的账户地址
+	int32 nonce = 8; // 交易次数
+	int64 ownertime = 9; // 所有人获取时间
 }
