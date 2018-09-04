@@ -39,6 +39,20 @@ message ReqVoteStorage {
 message RespVoteStorage {
 	int32 retCode = 1;
 	string retMsg = 2;
+	string voteTxHash = 3;
+	repeated RespVoteStorageItem items = 4;
+}
+
+message RespVoteStorageItem {
+	string address = 1;
+	string txHash = 2;
+	string blockHash = 3;
+	int64 blockHeight = 4;
+	int64 timestamp = 5;
+	string voteContent = 6;
+	string voteResult = 7;
+	string cost = 8;
+	int64 endBlockHeight = 9;
 }
 
 message ReqVoteTransaction {

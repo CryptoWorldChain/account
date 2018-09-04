@@ -43,8 +43,12 @@ public class ActuatorSanctionTransaction extends AbstractTransactionActuator imp
 			throw new TransactionParameterInvalidException("parameter invalid, inputs or outputs must be only one");
 		}
 
-		SanctionData.Builder oSanctionData = SanctionData
-				.parseFrom(oMultiTransaction.getTxBody().getData().toByteArray()).toBuilder();
+		SanctionData.Builder oSanctionData;
+		try {
+			oSanctionData = SanctionData.parseFrom(oMultiTransaction.getTxBody().getData().toByteArray()).toBuilder();
+		} catch (Exception e) {
+			throw new TransactionParameterInvalidException("parameter invalid, sanction data format invalid");
+		}
 		if (oBlock != null && oBlock.getHeader().getNumber() > oSanctionData.getEndBlockHeight()) {
 			throw new TransactionParameterInvalidException("parameter invalid, this vote has ended");
 		}

@@ -16,9 +16,11 @@ import org.brewchain.account.gens.TxTest.ReqVoteStorage;
 import org.brewchain.account.gens.TxTest.ReqVoteTransaction;
 import org.brewchain.account.gens.TxTest.RespCreateUnionAccount;
 import org.brewchain.account.gens.TxTest.RespVoteStorage;
+import org.brewchain.account.gens.TxTest.RespVoteStorageItem;
 import org.brewchain.account.gens.TxTest.RespVoteTransaction;
 import org.brewchain.evmapi.gens.Act.Account;
 import org.brewchain.evmapi.gens.Act.SanctionStorage;
+import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionBody;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
@@ -76,10 +78,35 @@ public class VoteStorageSample extends SessionModules<ReqVoteStorage> {
 			Account.Builder oAccount = accountHelper.GetAccount(ByteString.copyFrom(encApi.hexDec(pb.getAddress())));
 
 			byte[] v = accountHelper.getStorage(oAccount, encApi.hexDec(pb.getKey()));
-			if (v != null) {				
+			if (v != null) {
 				SanctionStorage oSanctionStorage = SanctionStorage.parseFrom(v);
+				for (int i = 0; i < oSanctionStorage.getAddressCount(); i++) {
+					RespVoteStorageItem.Builder oItem = RespVoteStorageItem.newBuilder();
+					String txHash = oSanctionStorage.getTxHash(i);
+					MultiTransaction oMultiTransaction = transactionHelper.GetTransaction(txHash);
+
+					oItem.setAddress(encApi.hexEnc(oSanctionStorage.getAddress(i).toByteArray()));
+
+					BlockEntity oBlockEntity = blockHelper.getBlockByTransaction(encApi.hexDec(txHash));
+					if (oBlockEntity != null) {
+						oItem.setBlockHash(oBlockEntity.getHeader().getBlockHash());
+						oItem.setBlockHeight(oBlockEntity.getHeader().getNumber());
+					}
+					oItem.setTxHash(txHash);
+					oItem.setTimestamp(oMultiTransaction.getTxBody().getTimestamp());
+					oItem.setCost(ByteUtil
+							.bytesToBigInteger(oMultiTransaction.getTxBody().getInputs(0).getAmount().toByteArray())
+							.toString());
+
+					SanctionData oSanctionData = SanctionData.parseFrom(oMultiTransaction.getTxBody().getData());
+					oItem.setVoteContent(oSanctionData.getContent().toStringUtf8());
+					oItem.setVoteResult(oSanctionData.getResult().toStringUtf8());
+					oItem.setEndBlockHeight(oSanctionData.getEndBlockHeight());
+					oRespVoteStorage.setVoteTxHash(oSanctionStorage.getVoteTxHash());
+					oRespVoteStorage.addItems(oItem);
+				}
 				oRespVoteStorage.setRetMsg(oSanctionStorage.toString());
-				
+
 			} else {
 				oRespVoteStorage.setRetMsg("");
 			}
