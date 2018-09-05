@@ -61,17 +61,21 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			String hexAddress = encApi.hexEnc(encApi.ecToAddress(oMultiTransactionEncode,
 					encApi.hexEnc(oMultiTransactionSignature.getSignature().toByteArray())));
 
-			inputAddresses.remove(hexAddress);
-			if (!encApi.ecVerify(hexPubKey, oMultiTransactionEncode,
-					oMultiTransactionSignature.getSignature().toByteArray())) {
-				throw new TransactionVerifyException(String.format("signature %s verify fail with pubkey %s",
-						encApi.hexEnc(oMultiTransactionSignature.getSignature().toByteArray()), hexPubKey));
+			if (inputAddresses.remove(hexAddress)) {
+				if (!encApi.ecVerify(hexPubKey, oMultiTransactionEncode,
+						oMultiTransactionSignature.getSignature().toByteArray())) {
+					throw new TransactionVerifyException(String.format("signature %s verify fail with pubkey %s",
+							encApi.hexEnc(oMultiTransactionSignature.getSignature().toByteArray()), hexPubKey));
+				}
+			} else {
+				throw new TransactionVerifyException(
+						String.format("signature cannot find sign address %s", hexAddress));
 			}
 		}
 
 		if (inputAddresses.size() > 0) {
 			throw new TransactionVerifyException(
-					String.format("signature cannot match address %s ", inputAddresses.get(0)));
+					String.format("signature cannot match address %s", inputAddresses.get(0)));
 		}
 	}
 
