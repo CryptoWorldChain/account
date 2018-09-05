@@ -237,6 +237,9 @@ public class AccountHelper implements ActorService {
 
 	public synchronized BigInteger addBalance(ByteString addr, BigInteger balance) throws Exception {
 		Account.Builder oAccount = GetAccount(addr);
+		if (oAccount == null) {
+			oAccount = CreateAccount(addr);
+		}
 		return addBalance(oAccount, balance);
 	}
 
@@ -258,6 +261,9 @@ public class AccountHelper implements ActorService {
 
 	public synchronized BigInteger addTokenBalance(ByteString addr, String token, BigInteger balance) throws Exception {
 		Account.Builder oAccount = GetAccount(addr);
+		if (oAccount == null) {
+			oAccount = CreateAccount(addr);
+		}
 		return addTokenBalance(oAccount, token, balance);
 	}
 
