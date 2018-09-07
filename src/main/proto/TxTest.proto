@@ -29,6 +29,19 @@ enum PTSTCommand {
 	MTY = 20; // for delay test
 	VTS = 21; // vote transaction
 	VTT = 22; // for vote storage test
+	SLT = 23; // sign load test
+	GLT = 24; // cal address load test
+}
+
+message ReqSignLoadTest {
+	int32 repeated = 1;
+}
+
+message RespSignLoadTest {
+	int64 start = 1;
+	int64 end = 2;
+	string duration = 3;
+	string tps = 4;
 }
 
 message ReqVoteStorage {
