@@ -239,7 +239,6 @@ public class TransactionHelper implements ActorService {
 
 	public void syncTransaction(List<MultiTransaction.Builder> oMultiTransaction, boolean isBroadCast,
 			BigInteger bits) {
-
 		if (oMultiTransaction.size() > 0) {
 			List<OKey> keys = new ArrayList<>();
 			List<OValue> values = new ArrayList<>();
@@ -298,6 +297,7 @@ public class TransactionHelper implements ActorService {
 			oBroadcastTransactionMsg.addTxHash(ByteString.copyFrom(encApi.hexDec(item.getKey())));
 			oBroadcastTransactionMsg.addTxDatas(ByteString.copyFrom(item.getValue().getData()));
 			it.remove();
+//			log.debug("start sync tx getWaitSendTxToSend::" + item.getKey());
 			total += 1;
 			if (count == total) {
 				break;
@@ -314,22 +314,8 @@ public class TransactionHelper implements ActorService {
 	 * @throws InvalidProtocolBufferException
 	 */
 	public List<MultiTransaction> getWaitBlockTx(int count, int confirmTimes) {
-		// LinkedList<MultiTransaction> list = new
-		// LinkedList<MultiTransaction>();
-		// int total = 0;
+//		log.debug("start sync tx count::" + count + " confirmTimes::" + confirmTimes);
 		return oConfirmMapDB.poll(count, confirmTimes);
-		// for (Iterator<Map.Entry<String, HashPair>> it =
-		// oPendingHashMapDB.getStorage().entrySet().iterator(); it
-		// .hasNext();) {
-		// Map.Entry<String, HashPair> item = it.next();
-		// list.add(item.getValue().getTx());
-		// it.remove();
-		// total += 1;
-		// if (count == total) {
-		// break;
-		// }
-		// }
-		// return list;
 	}
 
 	public void confirmRecvTx(String key, BigInteger fromBits) {

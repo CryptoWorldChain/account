@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.brewchain.account.dao.DefDaos;
+import org.brewchain.account.exception.AccountNotFoundException;
 import org.brewchain.account.exception.AccountTokenNotFoundException;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.trie.StorageTrie;
@@ -102,12 +103,7 @@ public class AccountHelper implements ActorService {
 		}
 		oUnionAccount.setAddress(address);
 		oUnionAccount.setValue(oUnionAccountValue);
-		return CreateUnionAccount(oUnionAccount);
-	}
-
-	public Account.Builder CreateUnionAccount(Account.Builder oAccount) {
-		// putAccountValue(oAccount.getAddress(), oAccount.getValue());
-		return oAccount;
+		return oUnionAccount;
 	}
 
 	/**
@@ -235,12 +231,15 @@ public class AccountHelper implements ActorService {
 		return setNonce(addr, 1);
 	}
 
-	public synchronized BigInteger addBalance(ByteString addr, BigInteger balance) throws Exception {
+	public synchronized Account addBalance(ByteString addr, BigInteger balance) throws Exception {
 		Account.Builder oAccount = GetAccount(addr);
 		if (oAccount == null) {
 			oAccount = CreateAccount(addr);
+			// throw new AccountNotFoundException("account " +
+			// encApi.hexEnc(addr.toByteArray()) + " not found");
 		}
-		return addBalance(oAccount, balance);
+		addBalance(oAccount, balance);
+		return oAccount.build();
 	}
 
 	public synchronized BigInteger addBalance(Account.Builder oAccount, BigInteger balance) throws Exception {
@@ -263,6 +262,8 @@ public class AccountHelper implements ActorService {
 		Account.Builder oAccount = GetAccount(addr);
 		if (oAccount == null) {
 			oAccount = CreateAccount(addr);
+			// throw new AccountNotFoundException("account " +
+			// encApi.hexEnc(addr.toByteArray()) + " not found");
 		}
 		return addTokenBalance(oAccount, token, balance);
 	}
@@ -308,9 +309,8 @@ public class AccountHelper implements ActorService {
 		throw new AccountTokenNotFoundException("not found token" + token);
 	}
 
-	public synchronized BigInteger addTokenLockBalance(ByteString addr, String token, BigInteger balance)
+	public synchronized BigInteger addTokenLockBalance(Account.Builder oAccount, String token, BigInteger balance)
 			throws Exception {
-		Account.Builder oAccount = GetAccount(addr);
 		AccountValue.Builder oAccountValue = oAccount.getValue().toBuilder();
 
 		for (int i = 0; i < oAccountValue.getTokensCount(); i++) {
@@ -318,7 +318,7 @@ public class AccountHelper implements ActorService {
 				oAccountValue.setTokens(i, oAccountValue.getTokens(i).toBuilder()
 						.setLocked(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(balance.add(
 								ByteUtil.bytesToBigInteger(oAccountValue.getTokens(i).getLocked().toByteArray()))))));
-				putAccountValue(addr, oAccountValue.build());
+				// putAccountValue(oAccount.getAddress(), oAccountValue.build());
 				return ByteUtil.bytesToBigInteger(oAccountValue.getTokens(i).getBalance().toByteArray());
 			}
 		}
@@ -327,9 +327,11 @@ public class AccountHelper implements ActorService {
 		oAccountTokenValue.setLocked(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(balance)));
 		oAccountTokenValue.setToken(token);
 		oAccountValue.addTokens(oAccountTokenValue);
-		putAccountValue(addr, oAccountValue.build());
+		oAccount.setValue(oAccountValue);
+		// putAccountValue(oAccount.getAddress(), oAccountValue.build());
 		return ByteUtil.bytesToBigInteger(oAccountTokenValue.getBalance().toByteArray());
 	}
+
 	//
 	// /**
 	// * 增加加密Token账户余额
