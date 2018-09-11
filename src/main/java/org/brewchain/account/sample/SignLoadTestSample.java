@@ -54,19 +54,32 @@ public class SignLoadTestSample extends SessionModules<ReqSignLoadTest> {
 		final byte[] bs = new byte[500];
 		secureRandom.nextBytes(bs);
 
-		parallRun(pb.getRepeated(), new Runnable() {
-			@Override
-			public void run() {
-				sign(bs, oKeyPairs);
-			}
-		});
+		if (pb.getTestCase().equals("sign")) {
+			parallRun(pb.getRepeated(), new Runnable() {
+				@Override
+				public void run() {
+					sign(bs, oKeyPairs);
+				}
+			});
+		} else if (pb.getTestCase().equals("verify")) {
+			final byte[] sign = encApi.ecSign(oKeyPairs.getPrikey(), bs);
+			parallRun(pb.getRepeated(), new Runnable() {
+				@Override
+				public void run() {
+					verify(bs, sign, oKeyPairs);
+				}
+			});
+		}
 
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespSignLoadTest.build()));
 		return;
 	}
 
 	private void sign(byte[] bs, KeyPairs oKeyPairs) {
-		byte[] sign = encApi.ecSign(oKeyPairs.getPrikey(), bs);
+		encApi.ecSign(oKeyPairs.getPrikey(), bs);
+	}
+
+	private void verify(byte[] bs, byte[] sign, KeyPairs oKeyPairs) {
 		encApi.ecVerify(oKeyPairs.getPubkey(), bs, sign);
 	}
 
@@ -93,7 +106,8 @@ public class SignLoadTestSample extends SessionModules<ReqSignLoadTest> {
 		} catch (InterruptedException e) {
 		}
 		long end = System.currentTimeMillis();
-		log.debug("tps test :: sign ::" + String.valueOf(size * 1000 / (end - start)));
+		log.debug("tps test :: sign ::" + String.valueOf(size * 1000 / (end - start)) + " end::" + end + " start::"
+				+ start);
 	}
 
 }

@@ -46,17 +46,34 @@ public class GenerateAddressTestSample extends SessionModules<ReqSignLoadTest> {
 		return PTSTModule.TST.name();
 	}
 
-
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqSignLoadTest pb, final CompleteHandler handler) {
 		RespSignLoadTest.Builder oRespSignLoadTest = RespSignLoadTest.newBuilder();
-		parallRun(pb.getRepeated(), new Runnable() {
-			@Override
-			public void run() {
-				gen();
-			}
-		});
+		final SecureRandom secureRandom = new SecureRandom();
+		final KeyPairs oKeyPairs = encApi.genKeys();
+		final byte[] bs = new byte[500];
+		secureRandom.nextBytes(bs);
+		long start = 0;
+		long end = 0;
+		if (pb.getTestCase().equals("sign")) {
+			start = System.currentTimeMillis();
 
+			for (int i = 0; i < pb.getRepeated(); i++) {
+				encApi.ecSign(oKeyPairs.getPrikey(), bs1);
+			}
+			end = System.currentTimeMillis();
+		} else if (pb.getTestCase().equals("verify")) {
+			final byte[] sign = encApi.ecSign(oKeyPairs.getPrikey(), bs);
+			start = System.currentTimeMillis();
+
+			for (int i = 0; i < pb.getRepeated(); i++) {
+				encApi.ecVerify(oKeyPairs.getPubkey(), bs, sign);
+			}
+			end = System.currentTimeMillis();
+		}
+		
+		oRespSignLoadTest.setStart(start);
+		oRespSignLoadTest.setEnd(end);
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespSignLoadTest.build()));
 		return;
 	}

@@ -1,5 +1,7 @@
 package org.brewchain.account.sample;
 
+import java.math.BigInteger;
+
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockChainHelper;
 import org.brewchain.account.core.BlockHelper;
@@ -10,7 +12,15 @@ import org.brewchain.account.gens.TxTest.ReqCommonTest;
 import org.brewchain.account.gens.TxTest.RespCommonTest;
 import org.brewchain.account.gens.TxTest.RespCreateTransactionTest;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
+import org.brewchain.evmapi.gens.Tx.MultiTransactionBody;
+import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
+import org.brewchain.evmapi.gens.Tx.MultiTransactionOutput;
+import org.brewchain.evmapi.gens.Tx.MultiTransactionSignature;
+import org.brewchain.rcvm.utils.ByteUtil;
 import org.fc.brewchain.bcapi.EncAPI;
+import org.fc.brewchain.bcapi.KeyPairs;
+
+import com.google.protobuf.ByteString;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -56,6 +66,9 @@ public class TransactionLoadTestExecImpl extends SessionModules<ReqCommonTest> {
 		try {
 			MultiTransaction.Builder tx = transactionLoadTestStore.getOne();
 			if (tx != null) {
+				if (pb.getArg1().equals("ttt")) {
+					tx.setTxBody(tx.getTxBodyBuilder().setTimestamp(System.currentTimeMillis()));
+				}
 				txHash = transactionHelper.CreateMultiTransaction(tx).getKey();
 				oRespCreateTransactionTest.setRetmsg("success");
 				oRespCreateTransactionTest.setTxhash(txHash);
@@ -68,7 +81,19 @@ public class TransactionLoadTestExecImpl extends SessionModules<ReqCommonTest> {
 					log.error("wrong txHash::" + txHash);
 				}
 			} else {
-				log.error("cannot find test case::");
+				// make one
+				KeyPairs from = encApi.genKeys();
+				KeyPairs to = encApi.genKeys();
+				tx = addDefaultTx(from, to);
+				if (tx != null) {
+					txHash = transactionHelper.CreateMultiTransaction(tx).getKey();
+					oRespCreateTransactionTest.setRetmsg("success");
+					oRespCreateTransactionTest.setTxhash(txHash);
+					oRespCreateTransactionTest
+							.setFrom(encApi.hexEnc(tx.getTxBody().getInputs(0).getAddress().toByteArray()));
+					oRespCreateTransactionTest
+							.setTo(encApi.hexEnc(tx.getTxBody().getOutputs(0).getAddress().toByteArray()));
+				}
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -78,5 +103,40 @@ public class TransactionLoadTestExecImpl extends SessionModules<ReqCommonTest> {
 		}
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespCreateTransactionTest.build()));
 		return;
+	}
+
+	private MultiTransaction.Builder addDefaultTx(KeyPairs oFrom, KeyPairs oTo) {
+		MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
+		MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
+		try {
+
+			// KeyPairs oFrom = encApi.genKeys();
+			// KeyPairs oTo = encApi.genKeys();
+			MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
+			oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
+			oMultiTransactionInput4.setAmount(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(BigInteger.ZERO)));
+			int nonce = accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
+			// nonce = nonce + i - 1;
+			oMultiTransactionInput4.setNonce(nonce);
+			oMultiTransactionBody.addInputs(oMultiTransactionInput4);
+
+			MultiTransactionOutput.Builder oMultiTransactionOutput1 = MultiTransactionOutput.newBuilder();
+			oMultiTransactionOutput1.setAddress(ByteString.copyFrom(encApi.hexDec(oTo.getAddress())));
+			oMultiTransactionOutput1.setAmount(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(BigInteger.ZERO)));
+			oMultiTransactionBody.addOutputs(oMultiTransactionOutput1);
+			oMultiTransaction.clearTxHash();
+			oMultiTransactionBody.clearSignatures();
+			oMultiTransactionBody.setTimestamp(System.currentTimeMillis());
+			// 签名
+			MultiTransactionSignature.Builder oMultiTransactionSignature21 = MultiTransactionSignature.newBuilder();
+			oMultiTransactionSignature21.setSignature(
+					ByteString.copyFrom(encApi.ecSign(oFrom.getPrikey(), oMultiTransactionBody.build().toByteArray())));
+			oMultiTransactionBody.addSignatures(oMultiTransactionSignature21);
+
+			oMultiTransaction.setTxBody(oMultiTransactionBody);
+			return oMultiTransaction;
+		} catch (Exception e) {
+		}
+		return null;
 	}
 }
