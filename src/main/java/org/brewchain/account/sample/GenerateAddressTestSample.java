@@ -59,7 +59,7 @@ public class GenerateAddressTestSample extends SessionModules<ReqSignLoadTest> {
 			start = System.currentTimeMillis();
 
 			for (int i = 0; i < pb.getRepeated(); i++) {
-				encApi.ecSign(oKeyPairs.getPrikey(), bs1);
+				encApi.ecSign(oKeyPairs.getPrikey(), bs);
 			}
 			end = System.currentTimeMillis();
 		} else if (pb.getTestCase().equals("verify")) {
