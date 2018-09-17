@@ -70,7 +70,7 @@ public class TestMPT {
 		System.out.println("gen pbuffer cost=" + (end1 - startTime));
 		System.out.println("get put to trie cost=" + (end2 - end1));
 		System.out.println("get roothash cost=" + (end3 - end2));
-		System.out.println("total=" + (end2 - startTime));
+		System.out.println("total cost=" + (end2 - startTime));
 	}
 
 	public static void main(String[] args) {

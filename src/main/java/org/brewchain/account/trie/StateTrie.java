@@ -132,7 +132,8 @@ public class StateTrie implements ActorService {
 
 		private void resolve() {
 			if (!resolveCheck()) {
-				throw new BlockStateTrieRuntimeException("Invalid Trie state, can't resolve hash " + Hex.toHexString(hash));
+				throw new BlockStateTrieRuntimeException(
+						"Invalid Trie state, can't resolve hash " + Hex.toHexString(hash));
 			}
 		}
 
@@ -624,13 +625,20 @@ public class StateTrie implements ActorService {
 	}
 
 	private void addHash(byte[] hash, byte[] ret) {
+//		System.out.println("addHash:" + type + ",hash=" + Hex.toHexString(hash));
+
 		BatchStorage bs = batchStorage.get();
 		if (bs != null) {
 			// log.debug("add into state trie key::" + encApi.hexEnc(hash));
-			bs.add(hash, ret);
+//			if (type == NodeType.KVNodeNode || type == NodeType.KVNodeValue) {
+				bs.add(hash, ret);
+//			}
 			cacheByHash.put(encApi.hexEnc(hash), ret);
 		} else {
-			dao.getAccountDao().put(oEntityHelper.byteKey2OKey(hash), oEntityHelper.byteValue2OValue(ret));
+//			if (type == NodeType.KVNodeNode || type == NodeType.KVNodeValue) {
+
+				dao.getAccountDao().put(oEntityHelper.byteKey2OKey(hash), oEntityHelper.byteValue2OValue(ret));
+//			}
 		}
 	}
 
@@ -639,7 +647,7 @@ public class StateTrie implements ActorService {
 		if (bs != null) {
 			// log.debug("add into state trie key::" + encApi.hexEnc(hash));
 			bs.remove(hash);
-//			log.debug("state trie batch bs " + encApi.hexEnc(hash));
+			// log.debug("state trie batch bs " + encApi.hexEnc(hash));
 		}
 	}
 
