@@ -44,6 +44,9 @@ public class BlockChainConfig extends SessionModules<Message> {
 	private BigInteger minTokenTotal = new BigInteger(props().get("org.brewchain.token.min.total", "0"));
 	private BigInteger minSanctionCost = new BigInteger(props().get("org.brewchain.sanction.cost", "0"));
 	private BigInteger minVoteCost = new BigInteger(props().get("org.brewchain.vote.cost", "0"));
+	
+	private int cacheTxInitSize =  props().get("org.brewchain.account.cache.tx.init", 10000);
+	private long cacheTxMaximumSize = props().get("org.brewchain.account.cache.tx.max", 1000000);
 
 
 	@Override

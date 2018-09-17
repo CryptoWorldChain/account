@@ -97,12 +97,11 @@ public class TransactionHelper implements ActorService {
 	StateTrie stateTrie;
 	@ActorRequire(name = "OEntity_Helper", scope = "global")
 	OEntityBuilder oEntityHelper;
-	// 10万笔交易。。。后续再改吧
 	PropHelper prop = new PropHelper(null);
 	Cache<String, MultiTransaction> txDBCacheByHash = CacheBuilder.newBuilder()
-			.initialCapacity(prop.get("org.brewchain.account.cache.tx.init", 10000))
+			.initialCapacity(blockChainConfig.getCacheTxInitSize())
 			.expireAfterWrite(300, TimeUnit.SECONDS)
-			.maximumSize(prop.get("org.brewchain.account.cache.tx.max", 1000000))
+			.maximumSize(blockChainConfig.getCacheTxMaximumSize())
 			.concurrencyLevel(Runtime.getRuntime().availableProcessors()).build();
 
 	/**
@@ -188,7 +187,7 @@ public class TransactionHelper implements ActorService {
 	public void syncTransaction(MultiTransaction.Builder oMultiTransaction, boolean isBroadCast, BigInteger bits) {
 		try {
 
-			dao.getStats().signalAcceptTx();
+//			dao.getStats().signalAcceptTx();
 
 			MultiTransaction cacheTx = txDBCacheByHash.getIfPresent(oMultiTransaction.getTxHash());
 			if (cacheTx != null) {
@@ -222,6 +221,8 @@ public class TransactionHelper implements ActorService {
 					dao.getTxsDao().put(key, OValue.newBuilder().setExtdata(ByteString.copyFrom(hp.getData()))
 							.setInfo(mt.getTxHash()).build());
 					txDBCacheByHash.put(hp.getKey(), hp.getTx());
+					
+					dao.getStats().getTxSyncCount().incrementAndGet();
 					if (isBroadCast) {
 						oConfirmMapDB.confirmTx(hp, bits);
 					}
@@ -245,7 +246,7 @@ public class TransactionHelper implements ActorService {
 			HashMap<String, HashPair> buffer = new HashMap<>();
 			for (MultiTransaction.Builder mtb : oMultiTransaction) {
 				try {
-					dao.getStats().signalAcceptTx();
+//					dao.getStats().signalAcceptTx();
 					MultiTransaction cacheTx = txDBCacheByHash.getIfPresent(mtb.getTxHash());
 					MultiTransaction mt = mtb.clearStatus().clearResult().build();
 
@@ -262,13 +263,14 @@ public class TransactionHelper implements ActorService {
 						values.add(OValue.newBuilder().setExtdata(mts).setInfo(mtb.getTxHash()).build());
 					}
 					buffer.put(mtb.getTxHash(), hp);
+					dao.getStats().getTxSyncCount().incrementAndGet();
 				} catch (Exception e) {
 					log.error("fail to sync transaction::" + oMultiTransaction.size() + " error::" + e, e);
 				}
 			}
 
 			try {
-				Future<OValue[]> f = dao.getTxsDao().putIfNotExist(keys.toArray(new OKey[] {}),
+				Future<OValue[]> f = dao.getTxsDao().batchPuts(keys.toArray(new OKey[] {}),
 						values.toArray(new OValue[] {}));// 返回DB里面不存在的,但是数据库已经存进去的
 				if (f != null && f.get() != null && isBroadCast) {
 					for (OValue ov : f.get()) {

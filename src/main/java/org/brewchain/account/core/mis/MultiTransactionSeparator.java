@@ -118,7 +118,6 @@ public class MultiTransactionSeparator {
 				rs.sequances.put(fastAddress(input.getAddress()), tx);
 			}
 			rs.queue.offer(tx);
-
 		}
 	}
 }

@@ -30,6 +30,9 @@ public class StatsInfo implements Runnable {
 	long firstBlockTxTime = 0;
 	long lastBlockTxTime = 0;
 	long lastBlockTxCount = 0;
+	AtomicLong rollBackTxCount = new AtomicLong(0);
+	AtomicLong rollBackBlockCount = new AtomicLong(0);
+	AtomicLong txSyncCount = new AtomicLong(0);
 	boolean running = true;
 
 	public void setCurBlockID(long blockid) {

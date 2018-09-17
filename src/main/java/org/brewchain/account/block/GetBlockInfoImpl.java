@@ -1,5 +1,6 @@
 package org.brewchain.account.block;
 
+import java.math.BigInteger;
 import java.util.LinkedList;
 
 import org.brewchain.account.core.BlockChainHelper;
@@ -48,7 +49,6 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 	@ActorRequire(name = "ConfirmTxHashDB", scope = "global")
 	ConfirmTxHashMapDB oConfirmMapDB; // 保存待打包block的交易
 
-
 	@Override
 	public String[] getCmds() {
 		return new String[] { PBCTCommand.BIO.name() };
@@ -63,7 +63,7 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 	public void onPBPacket(final FramePacket pack, final ReqBlockInfo pb, final CompleteHandler handler) {
 		RespBlockInfo.Builder oRespBlockInfo = RespBlockInfo.newBuilder();
 		try {
-			if("true".equalsIgnoreCase(pack.getExtStrProp("clear"))){
+			if ("true".equalsIgnoreCase(pack.getExtStrProp("clear"))) {
 				dao.getStats().getAcceptTxCount().set(0);
 				dao.getStats().getBlockTxCount().set(0);
 				dao.getStats().setFirstBlockTxTime(0);
@@ -72,9 +72,9 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 				dao.getStats().setLastAcceptTxTime(0);
 			}
 			oRespBlockInfo.setBlockCount(blockChainHelper.getLastStableBlockNumber());
-			oRespBlockInfo.setCache("sync::" + String.valueOf(KeyConstant.counter) 
-			+ " exec::" + String.valueOf(KeyConstant.txCounter)
-			+" bps::"+(dao.getStats().getBlockTxCount().get()*1000.0/(dao.getStats().getLastBlockTxTime()-dao.getStats().getFirstBlockTxTime())));
+			oRespBlockInfo.setCache("sync::" + String.valueOf(KeyConstant.counter) + " exec::"
+					+ String.valueOf(KeyConstant.txCounter) + " bps::" + (dao.getStats().getBlockTxCount().get()
+							* 1000.0 / (dao.getStats().getLastBlockTxTime() - dao.getStats().getFirstBlockTxTime())));
 			oRespBlockInfo.setNumber(blockChainHelper.getLastBlockNumber());
 			// oRespBlockInfo.setCache(blockChainHelper.getBlockCacheDump());
 			oRespBlockInfo.setWaitSync(oSendingHashMapDB.size());
@@ -83,61 +83,31 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 			oRespBlockInfo.setTxAcceptTps(dao.getStats().getTxAcceptTps());
 			oRespBlockInfo.setTxBlockCount(dao.getStats().getBlockTxCount().get());
 			oRespBlockInfo.setTxBlockTps(dao.getStats().getTxBlockTps());
-			
+
 			oRespBlockInfo.setMaxBlockTps(dao.getStats().getMaxBlockTps());
 			oRespBlockInfo.setMaxAcceptTps(dao.getStats().getMaxAcceptTps());
-			
+
 			oRespBlockInfo.setFirstBlockTxTime(dao.getStats().getFirstBlockTxTime());
 			oRespBlockInfo.setLastBlockTxTime(dao.getStats().getLastBlockTxTime());
-			oRespBlockInfo.setBlockTxTimeCostMS(dao.getStats().getLastBlockTxTime()-dao.getStats().getFirstBlockTxTime());
+			oRespBlockInfo
+					.setBlockTxTimeCostMS(dao.getStats().getLastBlockTxTime() - dao.getStats().getFirstBlockTxTime());
 
-			
 			oRespBlockInfo.setFirstAcceptTxTime(dao.getStats().getFirstAcceptTxTime());
 			oRespBlockInfo.setLastAcceptTxTime(dao.getStats().getLastAcceptTxTime());
-			oRespBlockInfo.setAcceptTxTimeCostMS(dao.getStats().getLastAcceptTxTime()-dao.getStats().getFirstAcceptTxTime());
+			oRespBlockInfo.setAcceptTxTimeCostMS(
+					dao.getStats().getLastAcceptTxTime() - dao.getStats().getFirstAcceptTxTime());
 
-//			LinkedList<BlockEntity> list = blockChainHelper.getParentsBlocks(encApi.hexEnc(dao.getBlockDao()
-//					.get(oEntityHelper.byteKey2OKey(KeyConstant.DB_CURRENT_BLOCK)).get().getExtdata().toByteArray()),
-//					null, 10000);
-//			int curr = 0;
-//			String retCache = "";
-//			String parent = "";
-//			for (int i = 0; i < list.size(); i++) {
-//				oRespBlockInfo.addDump(String.format("%s %s %s", list.get(i).getHeader().getNumber(),
-//						list.get(i).getHeader().getBlockHash(), list.get(i).getHeader().getParentHash()));
-//
-//				if (parent.isEmpty()) {
-//					parent = list.get(i).getHeader().getParentHash();
-//
-//				} else {
-//					if (!parent.equals(list.get(i).getHeader().getBlockHash())) {
-//						retCache += String.format("%s %s %s ;", list.get(i).getHeader().getNumber(),
-//								list.get(i).getHeader().getBlockHash(), list.get(i).getHeader().getParentHash());
-//					}
-//					parent = list.get(i).getHeader().getParentHash();
-//
-//				}
-//
-//				// if (i == 0)
-//				// retCache = list.get(i).getHeader().getNumber() + ";";
-//				// else
-//				// retCache = list.get(i).getHeader().getNumber() + "->" + retCache;
-//				// if (curr == 0) {
-//				// curr = list.get(i).getHeader().getNumber();
-//				// } else {
-//				// if ((curr - 1) != list.get(i).getHeader().getNumber()) {
-//				// retCache += "error:" + list.get(i).getHeader().getNumber() + ";";
-//				// } else {
-//				// curr = list.get(i).getHeader().getNumber();
-//				// }
-//				// }
-//			}
+			BigInteger c = BigInteger.ZERO;
 
-			//oRespBlockInfo.setCache(retCache);
+			for (int i = 1; i < blockChainHelper.getLastBlockNumber(); i++) {
+				BlockEntity be = blockChainHelper.getBlockByNumber(i);
+				c = c.add(new BigInteger(String.valueOf(be.getHeader().getTxHashsCount())));
+			}
 
-			// StateTrie oStateTrie = new StateTrie(this.dao,this.encApi);
-			// oStateTrie.setRoot(list.getFirst().getHeader().getStateRoot().toByteArray());
-			// oRespBlockInfo.setCache(oStateTrie.dumpTrie());
+			oRespBlockInfo.setRealTxBlockCount(c.longValue());
+			oRespBlockInfo.setRollBackBlockCount(dao.getStats().getRollBackBlockCount().intValue());
+			oRespBlockInfo.setRollBackTxCount(dao.getStats().getRollBackTxCount().intValue());
+			oRespBlockInfo.setTxSyncCount(dao.getStats().getTxSyncCount().intValue());
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			// e.printStackTrace();

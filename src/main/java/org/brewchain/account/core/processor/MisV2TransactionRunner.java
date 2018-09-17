@@ -64,13 +64,10 @@ public class MisV2TransactionRunner implements Runnable {
 					} finally {
 						cdl.countDown();
 					}
-
 				}
 			}
 		} finally {
 			cdl.countDown();
 		}
-
 	}
-
 }

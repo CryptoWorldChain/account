@@ -2,6 +2,7 @@ package org.brewchain.account.core;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -24,17 +25,20 @@ import onight.tfw.ntrans.api.annotation.ActorRequire;
 @Slf4j
 @Data
 public class ConfirmTxHashMapDB implements ActorService {
-	protected ConcurrentHashMap<String, HashPair> storage;
+	protected HashMap<String, HashPair> storage;
 	protected LinkedBlockingDeque<HashPair> confirmQueue = new LinkedBlockingDeque<>();
 	ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
 	@ActorRequire(name = "WaitSend_HashMapDB", scope = "global")
 	WaitSendHashMapDB oSendingHashMapDB; // 保存待广播交易
 
 	public ConfirmTxHashMapDB() {
-		this(new ConcurrentHashMap<String, HashPair>());
+		this(new HashMap<String, HashPair>());
 	}
 
-	public ConfirmTxHashMapDB(ConcurrentHashMap<String, HashPair> storage) {
+//	public ConfirmTxHashMapDB(ConcurrentHashMap<String, HashPair> storage) {
+//		this.storage = storage;
+//	}
+	public ConfirmTxHashMapDB(HashMap<String, HashPair> storage) {
 		this.storage = storage;
 	}
 
@@ -62,6 +66,9 @@ public class ConfirmTxHashMapDB implements ActorService {
 						_hp = hp;
 					}
 				}
+//				storage.put(hp.getKey(), hp);
+//				confirmQueue.addLast(hp);
+//				_hp = hp;
 			} else {
 				if (_hp.getTx() == null && hp.getTx() != null) {
 					_hp.setData(hp.getData());
@@ -89,6 +96,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 					}
 				}
 			}
+//			HashPair _hp = storage.putIfAbsent(key, new HashPair(key, null, null));
 			_hp.setBits(bits);
 		} catch (Exception e) {
 		} finally {
