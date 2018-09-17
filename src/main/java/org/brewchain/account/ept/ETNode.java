@@ -30,9 +30,6 @@ import onight.tfw.outils.pool.ReusefulLoopPool;
 @Data
 @Slf4j
 public class ETNode {
-	DefDaos dao;
-	OEntityBuilder oEntityHelper;
-	EncAPI encApi;
 
 	// String hashs[] = new String[EHelper.radix];
 	String childrenHashs[] = new String[EHelper.radix];
@@ -75,9 +72,9 @@ public class ETNode {
 		BatchStorage bs = batchStorage.get();
 		if (bs != null) {
 			bs.add(hash, ret);
-			cacheByHash.put(encApi.hexEnc(hash), ret);
+			cacheByHash.put(EHelper.encAPI.hexEnc(hash), ret);
 		} else {
-			dao.getAccountDao().put(oEntityHelper.byteKey2OKey(hash), oEntityHelper.byteValue2OValue(ret));
+			EHelper.dao.getAccountDao().put(oEntityHelper.byteKey2OKey(hash), oEntityHelper.byteValue2OValue(ret));
 		}
 	}
 
@@ -86,7 +83,7 @@ public class ETNode {
 			return hash;
 		}
 		
-		contentData = toBytes();
+		contentData = this.toBytes();
 		hash = EHelper.encAPI.sha3Encode(contentData);
 		dirty = false;
 		return hash;
@@ -110,7 +107,7 @@ public class ETNode {
 					i++;
 				}
 
-				dao.getAccountDao().batchPuts(oks, ovs);
+				EHelper.dao.getAccountDao().batchPuts(oks, ovs);
 				bs.kvs.clear();
 			} catch (Exception e) {
 				log.warn("error in flushBS" + e.getMessage(), e);
@@ -148,7 +145,7 @@ public class ETNode {
 		try (ByteArrayOutputStream bout = new ByteArrayOutputStream()) {
 			StringBuffer sb = new StringBuffer(key);
 			int i = 0;
-			for (ETNode node : children) {
+			for (ETNode node : this.children) {
 				if (node != null) {
 					byte[] bb = node.encode();
 					childrenHashs[i] = EHelper.encAPI.hexEnc(bb);
@@ -209,7 +206,7 @@ public class ETNode {
 	public ETNode(String key, byte[] v) {
 		this.key = key;
 		this.v = v;
-		appendChildNode(this, key.charAt(0));
+//		appendChildNode(this, key.charAt(0));
 	}
 
 	class BatchStorage {

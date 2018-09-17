@@ -3,12 +3,14 @@ package org.brewchain.account.ept;
 import java.math.BigInteger;
 import java.util.HashMap;
 
-import org.brewchain.ecrypto.impl.EncInstance;
+import org.brewchain.account.dao.DefDaos;
 import org.fc.brewchain.bcapi.EncAPI;
 
 public class EHelper {
 	public final static String AlphbetMap = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 	public static EncAPI encAPI = null;
+	public static DefDaos dao = null;
+
 	public final static int radix = AlphbetMap.length();
 	public final static BigInteger modx = new BigInteger("" + radix);
 	public final static HashMap<Character, Integer> charAtIdx = new HashMap<>();

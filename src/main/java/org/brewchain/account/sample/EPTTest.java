@@ -1,13 +1,38 @@
 package org.brewchain.account.sample;
 
+import org.apache.felix.ipojo.annotations.Instantiate;
+import org.apache.felix.ipojo.annotations.Provides;
 import org.bouncycastle.util.encoders.Hex;
+import org.brewchain.account.core.AccountHelper;
+import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.ept.EHelper;
 import org.brewchain.account.ept.EMTree;
 import org.brewchain.account.ept.ETNode;
+import org.brewchain.account.trie.StateTrie;
+import org.brewchain.account.trie.StorageTrieCache;
+import org.brewchain.account.util.OEntityBuilder;
 import org.fc.brewchain.bcapi.EncAPI;
 //import org.junit.Test;
 
-public class EPTTest {
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
+import onight.osgi.annotation.NActorProvider;
+import onight.tfw.ntrans.api.ActorService;
+import onight.tfw.ntrans.api.annotation.ActorRequire;
+
+@NActorProvider
+@Provides(specifications = { ActorService.class }, strategy = "SINGLETON")
+@Instantiate(name = "EPTTest_Tree")
+@Slf4j
+@Data
+public class EPTTest implements ActorService  {
+	@ActorRequire(name = "bc_encoder", scope = "global")
+	static EncAPI encApi;
+	@ActorRequire(name = "Def_Daos", scope = "global")
+	static DefDaos dao;
+	@ActorRequire(name = "OEntity_Helper", scope = "global")
+	static OEntityBuilder oEntityHelper;
+	
 	public static void main(String[] args) {
 		testCase1();
 	}
@@ -27,6 +52,10 @@ public class EPTTest {
 			byte[] dude = Hex.encode("dude".getBytes());
 
 			EMTree oEMTree = new EMTree();
+			oEMTree.setDao(dao);
+			oEMTree.setEncApi(encApi);
+			oEMTree.setOEntityHelper(oEntityHelper);
+			
 			System.out.println("~~~~");
 			EHelper.init();
 			System.out.println("~~~~");

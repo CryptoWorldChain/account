@@ -20,8 +20,6 @@ import onight.tfw.ntrans.api.annotation.ActorRequire;
 @Provides(specifications = { ActorService.class }, strategy = "SINGLETON")
 @Instantiate(name = "Block_BrewTrie")
 public class EMTree implements ActorService {
-	@ActorRequire(name = "bc_encoder", scope = "global")
-	EncAPI encApi;
 	@ActorRequire(name = "Def_Daos", scope = "global")
 	DefDaos dao;
 	@ActorRequire(name = "OEntity_Helper", scope = "global")
@@ -46,15 +44,8 @@ public class EMTree implements ActorService {
 		ETNode child = node.getChild(ch);
 		if (child == null) {
 			ETNode oETNode = new ETNode(key, value);
-			oETNode.setEncApi(encApi);
-			oETNode.setDao(dao);
-			oETNode.setOEntityHelper(oEntityHelper);
 			node.appendChildNode(oETNode, ch);
 		} else {
-			child.setEncApi(encApi);
-			child.setDao(dao);
-			child.setOEntityHelper(oEntityHelper);
-
 			child.setDirty(true);
 			insert(child, key, value, deep + 1);
 		}
@@ -92,9 +83,6 @@ public class EMTree implements ActorService {
 	public void putM(String mapKey, byte[] value) {
 		if (root == null) {
 			root = new ETNode(mapKey, value);
-			root.setEncApi(encApi);
-			root.setDao(dao);
-			root.setOEntityHelper(oEntityHelper);
 		} else {
 			if (value == null || value.length == 0) {
 				root = delete(root, mapKey);
