@@ -78,6 +78,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 			}
 			_hp.setBits(bits);
 		} catch (Exception e) {
+			log.error("confirmTx::" + e);
 		} finally {
 			// rwLock.writeLock().unlock();
 		}
@@ -99,6 +100,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 //			HashPair _hp = storage.putIfAbsent(key, new HashPair(key, null, null));
 			_hp.setBits(bits);
 		} catch (Exception e) {
+			log.error("confirmTx::" + e);
 		} finally {
 			// rwLock.writeLock().unlock();
 		}

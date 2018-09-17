@@ -2,17 +2,38 @@ package org.brewchain.account.ept;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.codec.binary.Hex;
+import org.brewchain.account.dao.DefDaos;
+import org.brewchain.account.util.OEntityBuilder;
+import org.brewchain.bcapi.gens.Oentity.OKey;
+import org.brewchain.bcapi.gens.Oentity.OValue;
+import org.fc.brewchain.bcapi.EncAPI;
+
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import onight.tfw.outils.pool.ReusefulLoopPool;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
+@Slf4j
 public class ETNode {
+	DefDaos dao;
+	OEntityBuilder oEntityHelper;
+	EncAPI encApi;
+
 	// String hashs[] = new String[EHelper.radix];
 	String childrenHashs[] = new String[EHelper.radix];
 	private String key;
@@ -21,6 +42,16 @@ public class ETNode {
 	private byte[] hash = null;
 	private byte[] contentData = null;
 	private ETNode children[] = new ETNode[EHelper.radix];
+	ThreadLocal<BatchStorage> batchStorage = new ThreadLocal<>();
+	ReusefulLoopPool<BatchStorage> bsPool = new ReusefulLoopPool<>();
+	Cache<String, byte[]> cacheByHash = CacheBuilder.newBuilder().initialCapacity(10000)
+			.expireAfterWrite(300, TimeUnit.SECONDS).maximumSize(1000000)
+			.concurrencyLevel(Runtime.getRuntime().availableProcessors()).build();
+	private static ExecutorService executor = new ForkJoinPool(Runtime.getRuntime().availableProcessors() * 6);
+
+	public static ExecutorService getExecutor() {
+		return executor;
+	}
 
 	public void toJsonString(StringBuffer sb) {
 		sb.append("{");
@@ -36,15 +67,56 @@ public class ETNode {
 		}
 		sb.append("}");
 	}
-	
-	public byte[] encode(){
-		if(hash!=null&!dirty){
+
+	private void addHash(byte[] hash, byte[] ret) {
+		// System.out.println("addHash:" + type + ",hash=" +
+		// Hex.toHexString(hash));
+
+		BatchStorage bs = batchStorage.get();
+		if (bs != null) {
+			bs.add(hash, ret);
+			cacheByHash.put(encApi.hexEnc(hash), ret);
+		} else {
+			dao.getAccountDao().put(oEntityHelper.byteKey2OKey(hash), oEntityHelper.byteValue2OValue(ret));
+		}
+	}
+
+	public byte[] encode() throws Exception {
+		if (hash != null & !dirty) {
 			return hash;
 		}
+		
 		contentData = toBytes();
 		hash = EHelper.encAPI.sha3Encode(contentData);
 		dirty = false;
 		return hash;
+	}
+
+	public void flushBS(BatchStorage bs) {
+		long start = System.currentTimeMillis();
+
+		int size = bs.kvs.size();
+		if (size > 0) {
+			try {
+				OKey[] oks = new OKey[size];
+				OValue[] ovs = new OValue[size];
+				int i = 0;
+
+				// String trace = "";
+				for (Map.Entry<OKey, OValue> kvs : bs.kvs.entrySet()) {
+					oks[i] = kvs.getKey();
+					ovs[i] = kvs.getValue();
+
+					i++;
+				}
+
+				dao.getAccountDao().batchPuts(oks, ovs);
+				bs.kvs.clear();
+			} catch (Exception e) {
+				log.warn("error in flushBS" + e.getMessage(), e);
+			}
+			// bs.values.clear();
+		}
 	}
 
 	public String getHashs(int idx) {
@@ -65,18 +137,28 @@ public class ETNode {
 	public void appendChildNode(ETNode node, char ch) {
 		int idx = EHelper.findIdx(ch);
 		this.children[idx] = node;
-		this.childrenHashs[idx] = node.getKey();
+		// this.childrenHashs[idx] = node.getKey();
 		this.dirty = true;
+
+		// node.encode();
+		// addHash(node.getHash());
 	}
 
 	public byte[] toBytes() {
-		
 		try (ByteArrayOutputStream bout = new ByteArrayOutputStream()) {
 			StringBuffer sb = new StringBuffer(key);
-			for (String childHash : childrenHashs) {
-				sb.append(",");
-				if (childHash != null) {
-					sb.append(childHash);
+			int i = 0;
+			for (ETNode node : children) {
+				if (node != null) {
+					byte[] bb = node.encode();
+					childrenHashs[i] = EHelper.encAPI.hexEnc(bb);
+					i++;
+
+					addHash(bb, node.getContentData());
+					sb.append(",");
+					sb.append(node.getContentData());
+				} else {
+					sb.append(",");
 				}
 			}
 			byte[] hashBB = sb.toString().getBytes();
@@ -112,7 +194,7 @@ public class ETNode {
 				bin.read(bbv);
 				node.v = bbv;
 			}
-			
+
 			return node;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -127,6 +209,18 @@ public class ETNode {
 	public ETNode(String key, byte[] v) {
 		this.key = key;
 		this.v = v;
+		appendChildNode(this, key.charAt(0));
 	}
 
+	class BatchStorage {
+		LinkedHashMap<OKey, OValue> kvs = new LinkedHashMap<>();
+
+		public void add(byte[] key, byte[] v) {
+			kvs.put(oEntityHelper.byteKey2OKey(key), oEntityHelper.byteValue2OValue(v));
+		}
+
+		public void remove(byte[] key) {
+			kvs.remove(oEntityHelper.byteKey2OKey(key));
+		}
+	}
 }

@@ -1,13 +1,31 @@
 package org.brewchain.account.ept;
 
+import org.apache.felix.ipojo.annotations.Instantiate;
+import org.apache.felix.ipojo.annotations.Provides;
+import org.brewchain.account.dao.DefDaos;
+import org.brewchain.account.util.OEntityBuilder;
+import org.fc.brewchain.bcapi.EncAPI;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import onight.osgi.annotation.NActorProvider;
+import onight.tfw.ntrans.api.ActorService;
+import onight.tfw.ntrans.api.annotation.ActorRequire;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class EMTree {
+@NActorProvider
+@Provides(specifications = { ActorService.class }, strategy = "SINGLETON")
+@Instantiate(name = "Block_BrewTrie")
+public class EMTree implements ActorService {
+	@ActorRequire(name = "bc_encoder", scope = "global")
+	EncAPI encApi;
+	@ActorRequire(name = "Def_Daos", scope = "global")
+	DefDaos dao;
+	@ActorRequire(name = "OEntity_Helper", scope = "global")
+	OEntityBuilder oEntityHelper;
 
 	ETNode root;
 
@@ -15,15 +33,52 @@ public class EMTree {
 		return root;
 	}
 
+	public byte[] getRootHash() throws Exception {
+		return root.encode();
+	}
+
+	public void setRootHash(byte[] hash) {
+		
+	}
+
 	public ETNode insert(ETNode node, String key, byte[] value, int deep) {
 		char ch = key.charAt(deep);
 		ETNode child = node.getChild(ch);
 		if (child == null) {
-			node.appendChildNode(new ETNode(key, value), ch);
+			ETNode oETNode = new ETNode(key, value);
+			oETNode.setEncApi(encApi);
+			oETNode.setDao(dao);
+			oETNode.setOEntityHelper(oEntityHelper);
+			node.appendChildNode(oETNode, ch);
 		} else {
+			child.setEncApi(encApi);
+			child.setDao(dao);
+			child.setOEntityHelper(oEntityHelper);
+
+			child.setDirty(true);
 			insert(child, key, value, deep + 1);
 		}
 		return node;
+	}
+
+	public byte[] get(byte[] key) {
+		if (root == null) {
+			return null;
+		} else {
+			return get(EHelper.bytesToMapping(key), 0, root);
+		}
+	}
+
+	public byte[] get(String key, int deep, ETNode lastNode) {
+		char ch = key.charAt(deep);
+		ETNode oETNode = lastNode.getChild(ch);
+		if (oETNode == null) {
+			return lastNode.getContentData();
+		} else if (oETNode.getKey().equals(key)) {
+			return oETNode.getV();
+		} else {
+			return get(key, deep + 1, oETNode);
+		}
 	}
 
 	public void put(byte[] key, byte[] value) {
@@ -37,6 +92,9 @@ public class EMTree {
 	public void putM(String mapKey, byte[] value) {
 		if (root == null) {
 			root = new ETNode(mapKey, value);
+			root.setEncApi(encApi);
+			root.setDao(dao);
+			root.setOEntityHelper(oEntityHelper);
 		} else {
 			if (value == null || value.length == 0) {
 				root = delete(root, mapKey);
