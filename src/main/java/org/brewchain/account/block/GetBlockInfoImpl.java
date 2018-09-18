@@ -77,8 +77,7 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 				dao.getStats().setLastAcceptTxTime(0);
 			}
 			oRespBlockInfo.setBlockCount(blockChainHelper.getLastStableBlockNumber());
-			oRespBlockInfo.setCache("sync::" + String.valueOf(KeyConstant.counter) + " exec::"
-					+ String.valueOf(KeyConstant.txCounter) + " bps::" + (dao.getStats().getBlockTxCount().get()
+			oRespBlockInfo.setCache(" bps::" + (dao.getStats().getBlockTxCount().get()
 							* 1000.0 / (dao.getStats().getLastBlockTxTime() - dao.getStats().getFirstBlockTxTime())));
 			oRespBlockInfo.setNumber(blockChainHelper.getLastBlockNumber());
 			// oRespBlockInfo.setCache(blockChainHelper.getBlockCacheDump());
@@ -113,19 +112,19 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 			oRespBlockInfo.setRollBackBlockCount(dao.getStats().getRollBackBlockCount().intValue());
 			oRespBlockInfo.setRollBackTxCount(dao.getStats().getRollBackTxCount().intValue());
 			oRespBlockInfo.setTxSyncCount(dao.getStats().getTxSyncCount().intValue());
-
-			int i = 500;
-			for (Iterator<HashPair> it = oConfirmMapDB.getConfirmQueue().iterator(); it.hasNext();) {
-				if (i <= 0) {
-					break;
-				}
-				HashPair item = it.next();
-				WaitBlockItem.Builder oWaitBlockItem = WaitBlockItem.newBuilder();
-				oWaitBlockItem.setC(item.getBits().toString());
-				oWaitBlockItem.setHash(item.getKey());
-				oRespBlockInfo.addWaits(oWaitBlockItem);
-				i--;
-			}
+//
+//			int i = 500;
+//			for (Iterator<HashPair> it = oConfirmMapDB.getConfirmQueue().iterator(); it.hasNext();) {
+//				if (i <= 0) {
+//					break;
+//				}
+//				HashPair item = it.next();
+//				WaitBlockItem.Builder oWaitBlockItem = WaitBlockItem.newBuilder();
+//				oWaitBlockItem.setC(String.valueOf(item.getBits().bitCount()));
+//				oWaitBlockItem.setHash(item.getKey());
+//				oRespBlockInfo.addWaits(oWaitBlockItem);
+//				i--;
+//			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			// e.printStackTrace();

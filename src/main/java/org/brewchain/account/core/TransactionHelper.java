@@ -156,7 +156,6 @@ public class TransactionHelper implements ActorService {
 		// log.debug("====put genesis transaction::"+
 		// multiTransaction.getTxHash());
 		dao.getStats().signalAcceptTx();
-		KeyConstant.counter.incrementAndGet();
 
 		dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(multiTransaction.getTxHash())),
 				oEntityHelper.byteValue2OValue(multiTransaction.toByteArray()));
@@ -187,7 +186,7 @@ public class TransactionHelper implements ActorService {
 	public void syncTransaction(MultiTransaction.Builder oMultiTransaction, boolean isBroadCast, BigInteger bits) {
 		try {
 
-//			dao.getStats().signalAcceptTx();
+			// dao.getStats().signalAcceptTx();
 
 			MultiTransaction cacheTx = txDBCacheByHash.getIfPresent(oMultiTransaction.getTxHash());
 			if (cacheTx != null) {
@@ -220,15 +219,15 @@ public class TransactionHelper implements ActorService {
 					MultiTransaction mt = oMultiTransaction.build();
 
 					HashPair hp = new HashPair(mt.getTxHash(), mt.toByteArray(), mt);
+					hp.setNeedBroadCast(!isBroadCast);
 					dao.getTxsDao().put(key, OValue.newBuilder().setExtdata(ByteString.copyFrom(hp.getData()))
 							.setInfo(mt.getTxHash()).build());
 					txDBCacheByHash.put(hp.getKey(), hp.getTx());
-					
-					dao.getStats().getTxSyncCount().incrementAndGet();
-					if (isBroadCast) {
-						oConfirmMapDB.confirmTx(hp, bits);
-					}
-					KeyConstant.counter.incrementAndGet();
+
+					dao.getStats().signalSyncTx();
+					// if (isBroadCast) {
+					oConfirmMapDB.confirmTx(hp, bits);
+					// }
 				}
 			}
 		} catch (Exception e) {
@@ -248,7 +247,7 @@ public class TransactionHelper implements ActorService {
 			HashMap<String, HashPair> buffer = new HashMap<>();
 			for (MultiTransaction.Builder mtb : oMultiTransaction) {
 				try {
-//					dao.getStats().signalAcceptTx();
+					// dao.getStats().signalAcceptTx();
 					MultiTransaction cacheTx = txDBCacheByHash.getIfPresent(mtb.getTxHash());
 					MultiTransaction mt = mtb.clearStatus().clearResult().build();
 
@@ -260,12 +259,13 @@ public class TransactionHelper implements ActorService {
 
 					ByteString mts = mt.toByteString();
 					HashPair hp = new HashPair(mt.getTxHash(), mts.toByteArray(), mt);
+					hp.setNeedBroadCast(!isBroadCast);
 					if (cacheTx == null) {
 						keys.add(oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash())));
 						values.add(OValue.newBuilder().setExtdata(mts).setInfo(mtb.getTxHash()).build());
 					}
 					buffer.put(mtb.getTxHash(), hp);
-					
+
 					oConfirmMapDB.confirmTx(mtb.getTxHash(), bits);
 
 				} catch (Exception e) {
@@ -276,16 +276,15 @@ public class TransactionHelper implements ActorService {
 			try {
 				Future<OValue[]> f = dao.getTxsDao().batchPuts(keys.toArray(new OKey[] {}),
 						values.toArray(new OValue[] {}));// 返回DB里面不存在的,但是数据库已经存进去的
-				if (f != null && f.get() != null && isBroadCast) {
+				if (f != null && f.get() != null) {
 					for (OValue ov : f.get()) {
 						if (ov != null) {
 							HashPair hp = buffer.get(ov.getInfo());
-//							oConfirmMapDB.confirmTx(hp, bits);
+							// oConfirmMapDB.confirmTx(hp, bits);
 							txDBCacheByHash.put(hp.getKey(), hp.getTx());
-							
-							dao.getStats().getTxSyncCount().incrementAndGet();
+
+							dao.getStats().signalSyncTx();
 						}
-						KeyConstant.counter.incrementAndGet();
 					}
 				}
 			} catch (Exception e) {
@@ -305,7 +304,7 @@ public class TransactionHelper implements ActorService {
 			oBroadcastTransactionMsg.addTxHash(ByteString.copyFrom(encApi.hexDec(item.getKey())));
 			oBroadcastTransactionMsg.addTxDatas(ByteString.copyFrom(item.getValue().getData()));
 			it.remove();
-//			log.debug("start sync tx getWaitSendTxToSend::" + item.getKey());
+			// log.debug("start sync tx getWaitSendTxToSend::" + item.getKey());
 			total += 1;
 			if (count == total) {
 				break;
@@ -322,7 +321,8 @@ public class TransactionHelper implements ActorService {
 	 * @throws InvalidProtocolBufferException
 	 */
 	public List<MultiTransaction> getWaitBlockTx(int count, int confirmTimes) {
-//		log.debug("start sync tx count::" + count + " confirmTimes::" + confirmTimes);
+		// log.debug("start sync tx count::" + count + " confirmTimes::" +
+		// confirmTimes);
 		return oConfirmMapDB.poll(count, confirmTimes);
 	}
 
@@ -583,9 +583,8 @@ public class TransactionHelper implements ActorService {
 				oMultiTransactionOutput.setCryptoToken(ByteString.copyFrom(encApi.hexDec(output.getCryptoToken())));
 				oMultiTransactionOutput.setSymbol(output.getSymbol());
 			} else {
-				oMultiTransactionOutput
-						.setAmount(ByteString.copyFrom(ByteUtil.intToBytes(0)));
-//				oMultiTransactionOutput.setCryptoToken(ByteString.copyFrom(encApi.hexDec(output.getCryptoToken())));
+				oMultiTransactionOutput.setAmount(ByteString.copyFrom(ByteUtil.intToBytes(0)));
+				// oMultiTransactionOutput.setCryptoToken(ByteString.copyFrom(encApi.hexDec(output.getCryptoToken())));
 				oMultiTransactionOutput.setSymbol(output.getSymbol());
 
 			}

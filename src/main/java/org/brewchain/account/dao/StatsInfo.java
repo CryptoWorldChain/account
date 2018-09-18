@@ -49,6 +49,10 @@ public class StatsInfo implements Runnable {
 		}
 	}
 	
+	public void signalSyncTx() {
+		txSyncCount.incrementAndGet();
+	}
+	
 	public void signalAcceptTx(){
 		acceptTxCount.incrementAndGet();
 		lastAcceptTxTime = System.currentTimeMillis();

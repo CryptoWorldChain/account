@@ -39,8 +39,6 @@ public class KeyConstant {
 	public static NodeDef node;
 	public static String PWD;
 	
-	public static AtomicInteger counter = new AtomicInteger(0);
-	public static AtomicLong txCounter = new AtomicLong(0);
 	public static LinkedBlockingQueue<Map<String, Account.Builder>> QUEUE = new LinkedBlockingQueue<>();
 
 	

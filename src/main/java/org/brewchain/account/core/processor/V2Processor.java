@@ -122,7 +122,6 @@ public class V2Processor implements IProcessor, ActorService {
 				// this.stateTrie.put(encApi.hexDec(key), value.toByteArray());
 				// }
 				oiTransactionActuator.onExecuteDone(oTransaction, result);
-				KeyConstant.txCounter.incrementAndGet();
 
 				results.put(oTransaction.getTxHash(), result);
 				oAccountHelper.BatchPutAccounts(accounts);

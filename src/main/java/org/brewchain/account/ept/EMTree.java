@@ -83,6 +83,7 @@ public class EMTree implements ActorService {
 	public void putM(String mapKey, byte[] value) {
 		if (root == null) {
 			root = new ETNode(mapKey, value);
+			root = insert(root, mapKey, value, 0);
 		} else {
 			if (value == null || value.length == 0) {
 				root = delete(root, mapKey);

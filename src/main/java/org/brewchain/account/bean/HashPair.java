@@ -15,6 +15,7 @@ public class HashPair {
 	transient MultiTransaction tx;
 	BigInteger bits = new BigInteger("0");
 	boolean isRemoved = false;
+	boolean isNeedBroadCast = true;
 	long lastUpdateTime = System.currentTimeMillis();
 
 	public synchronized void setBits(BigInteger bits) {
@@ -37,6 +38,7 @@ public class HashPair {
 		this.key = key;
 		this.tx = tx;
 		this.data = tx.toByteArray();
+		this.bits = BigInteger.ZERO;
 	}
 
 	public HashPair(String key, byte[] data, MultiTransaction tx) {
@@ -44,6 +46,7 @@ public class HashPair {
 		this.key = key;
 		this.tx = tx;
 		this.data = data;
+		this.bits = BigInteger.ZERO;
 	}
 
 }

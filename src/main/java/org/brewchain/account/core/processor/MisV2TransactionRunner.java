@@ -48,7 +48,6 @@ public class MisV2TransactionRunner implements Runnable {
 						oiTransactionActuator.onPrepareExecute(oTransaction, accounts);
 						ByteString result = oiTransactionActuator.onExecute(oTransaction, accounts);
 						oiTransactionActuator.onExecuteDone(oTransaction, result);
-						KeyConstant.txCounter.incrementAndGet();
 						results.put(oTransaction.getTxHash(), result);
 					} catch (Throwable e) {//e.printStackTrace();
 						log.error("block " + currentBlock.getHeader().getBlockHash() + " exec transaction hash::"
