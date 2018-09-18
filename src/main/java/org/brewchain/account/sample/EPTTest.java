@@ -53,7 +53,7 @@ public class EPTTest implements ActorService  {
 
 			EMTree oEMTree = new EMTree();
 			oEMTree.setDao(dao);
-			oEMTree.setEncApi(encApi);
+//			oEMTree.setEncApi(encApi);
 			oEMTree.setOEntityHelper(oEntityHelper);
 			
 			System.out.println("~~~~");

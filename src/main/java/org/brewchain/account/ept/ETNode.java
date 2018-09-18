@@ -74,7 +74,7 @@ public class ETNode {
 			bs.add(hash, ret);
 			cacheByHash.put(EHelper.encAPI.hexEnc(hash), ret);
 		} else {
-			EHelper.dao.getAccountDao().put(oEntityHelper.byteKey2OKey(hash), oEntityHelper.byteValue2OValue(ret));
+//			EHelper.dao.getAccountDao().put(oEntityHelper.byteKey2OKey(hash), oEntityHelper.byteValue2OValue(ret));
 		}
 	}
 
@@ -211,11 +211,11 @@ public class ETNode {
 		LinkedHashMap<OKey, OValue> kvs = new LinkedHashMap<>();
 
 		public void add(byte[] key, byte[] v) {
-			kvs.put(oEntityHelper.byteKey2OKey(key), oEntityHelper.byteValue2OValue(v));
+//			kvs.put(oEntityHelper.byteKey2OKey(key), oEntityHelper.byteValue2OValue(v));
 		}
 
 		public void remove(byte[] key) {
-			kvs.remove(oEntityHelper.byteKey2OKey(key));
+//			kvs.remove(oEntityHelper.byteKey2OKey(key));
 		}
 	}
 }

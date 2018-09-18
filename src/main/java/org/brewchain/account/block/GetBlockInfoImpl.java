@@ -1,19 +1,24 @@
 package org.brewchain.account.block;
 
 import java.math.BigInteger;
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map;
 
+import org.brewchain.account.bean.HashPair;
 import org.brewchain.account.core.BlockChainHelper;
 import org.brewchain.account.core.CacheBlockHashMapDB;
 import org.brewchain.account.core.ConfirmTxHashMapDB;
 import org.brewchain.account.core.KeyConstant;
 import org.brewchain.account.core.WaitBlockHashMapDB;
 import org.brewchain.account.core.WaitSendHashMapDB;
+import org.brewchain.account.core.store.BlockStoreNodeValue;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.gens.Blockimpl.PBCTCommand;
 import org.brewchain.account.gens.Blockimpl.PBCTModule;
 import org.brewchain.account.gens.Blockimpl.ReqBlockInfo;
 import org.brewchain.account.gens.Blockimpl.RespBlockInfo;
+import org.brewchain.account.gens.Blockimpl.WaitBlockItem;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.fc.brewchain.bcapi.EncAPI;
@@ -108,6 +113,19 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 			oRespBlockInfo.setRollBackBlockCount(dao.getStats().getRollBackBlockCount().intValue());
 			oRespBlockInfo.setRollBackTxCount(dao.getStats().getRollBackTxCount().intValue());
 			oRespBlockInfo.setTxSyncCount(dao.getStats().getTxSyncCount().intValue());
+
+			int i = 500;
+			for (Iterator<HashPair> it = oConfirmMapDB.getConfirmQueue().iterator(); it.hasNext();) {
+				if (i <= 0) {
+					break;
+				}
+				HashPair item = it.next();
+				WaitBlockItem.Builder oWaitBlockItem = WaitBlockItem.newBuilder();
+				oWaitBlockItem.setC(item.getBits().toString());
+				oWaitBlockItem.setHash(item.getKey());
+				oRespBlockInfo.addWaits(oWaitBlockItem);
+				i--;
+			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			// e.printStackTrace();

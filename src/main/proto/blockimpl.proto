@@ -95,6 +95,12 @@ message RespBlockInfo {
 	int64 rollBackBlockCount = 53;
 	int64 rollBackTxCount = 54;
 	int64 dropTxCount = 55;
+	repeated WaitBlockItem waits = 56;
+}
+
+message WaitBlockItem {
+	string hash = 1;
+	string c = 2;
 }
 
 message RespBlockDetail {

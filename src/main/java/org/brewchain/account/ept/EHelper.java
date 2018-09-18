@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.util.HashMap;
 
 import org.brewchain.account.dao.DefDaos;
+import org.brewchain.ecrypto.impl.EncInstance;
 import org.fc.brewchain.bcapi.EncAPI;
 
 public class EHelper {
