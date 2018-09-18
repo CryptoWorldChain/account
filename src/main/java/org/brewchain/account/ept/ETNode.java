@@ -45,7 +45,7 @@ public class ETNode {
 			.expireAfterWrite(300, TimeUnit.SECONDS).maximumSize(1000000)
 			.concurrencyLevel(Runtime.getRuntime().availableProcessors()).build();
 	private static ExecutorService executor = new ForkJoinPool(Runtime.getRuntime().availableProcessors() * 6);
-
+	private OEntityBuilder oEntityHelper = new OEntityBuilder();
 	public static ExecutorService getExecutor() {
 		return executor;
 	}
@@ -211,11 +211,11 @@ public class ETNode {
 		LinkedHashMap<OKey, OValue> kvs = new LinkedHashMap<>();
 
 		public void add(byte[] key, byte[] v) {
-//			kvs.put(oEntityHelper.byteKey2OKey(key), oEntityHelper.byteValue2OValue(v));
+			kvs.put(oEntityHelper.byteKey2OKey(key), oEntityHelper.byteValue2OValue(v));
 		}
 
 		public void remove(byte[] key) {
-//			kvs.remove(oEntityHelper.byteKey2OKey(key));
+			kvs.remove(oEntityHelper.byteKey2OKey(key));
 		}
 	}
 }
