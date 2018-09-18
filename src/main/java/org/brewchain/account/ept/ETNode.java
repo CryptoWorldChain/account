@@ -82,7 +82,7 @@ public class ETNode {
 		if (hash != null & !dirty) {
 			return hash;
 		}
-		
+
 		contentData = this.toBytes();
 		hash = EHelper.encAPI.sha3Encode(contentData);
 		dirty = false;
@@ -144,16 +144,14 @@ public class ETNode {
 	public byte[] toBytes() {
 		try (ByteArrayOutputStream bout = new ByteArrayOutputStream()) {
 			StringBuffer sb = new StringBuffer(key);
-			int i = 0;
-			for (ETNode node : this.children) {
+			for (int i = 0; i < children.length; i++) {
+				ETNode node = this.children[i];
 				if (node != null) {
 					byte[] bb = node.encode();
 					childrenHashs[i] = EHelper.encAPI.hexEnc(bb);
-					i++;
-
 					addHash(bb, node.getContentData());
 					sb.append(",");
-					sb.append(node.getContentData());
+					sb.append(childrenHashs[i]);
 				} else {
 					sb.append(",");
 				}
@@ -206,7 +204,7 @@ public class ETNode {
 	public ETNode(String key, byte[] v) {
 		this.key = key;
 		this.v = v;
-//		appendChildNode(this, key.charAt(0));
+		// appendChildNode(this, key.charAt(0));
 	}
 
 	class BatchStorage {
