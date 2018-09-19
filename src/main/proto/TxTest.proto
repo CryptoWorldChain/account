@@ -31,6 +31,7 @@ enum PTSTCommand {
 	VTT = 22; // for vote storage test
 	SLT = 23; // sign load test
 	GLT = 24; // cal address load test
+	EPT = 25; 
 }
 
 message ReqSignLoadTest {

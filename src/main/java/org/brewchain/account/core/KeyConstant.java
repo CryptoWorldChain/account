@@ -33,7 +33,7 @@ public class KeyConstant {
 	public static final String DB_NODE_NET_STR = "testnet";
 
 	
-	public static final int CACHE_SIZE = 200;
+	public static final int CACHE_SIZE = 5000;
 
 	public static boolean isStart = false;
 	public static NodeDef node;

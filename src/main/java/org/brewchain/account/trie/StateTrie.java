@@ -593,7 +593,7 @@ public class StateTrie implements ActorService {
 	}
 
 	Cache<String, byte[]> cacheByHash = CacheBuilder.newBuilder().initialCapacity(10000)
-			.expireAfterWrite(180, TimeUnit.SECONDS).maximumSize(1000000)
+			.expireAfterWrite(3600, TimeUnit.SECONDS).maximumSize(5000000)
 			.concurrencyLevel(Runtime.getRuntime().availableProcessors()).build();
 
 	private byte[] getHash(byte[] hash) {

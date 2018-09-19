@@ -4,6 +4,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -47,7 +48,9 @@ public class BlockStableStore implements IBlockStore, ActorService {
 	DefDaos dao;
 
 	protected final LoadingCache<String, BlockEntity> blocks = CacheBuilder.newBuilder()
-			.maximumSize(KeyConstant.CACHE_SIZE).build(new CacheLoader<String, BlockEntity>() {
+			.maximumSize(KeyConstant.CACHE_SIZE)
+			.expireAfterWrite(1800, TimeUnit.SECONDS)
+			.build(new CacheLoader<String, BlockEntity>() {
 				public BlockEntity load(String key) {
 					try {
 						List<OPair> oPairs = dao.getBlockDao().listBySecondKey(key).get();
@@ -63,6 +66,7 @@ public class BlockStableStore implements IBlockStore, ActorService {
 			});
 	protected final LoadingCache<Long, BlockEntity> blocksByNumber = CacheBuilder.newBuilder()
 			.maximumSize(KeyConstant.CACHE_SIZE)
+			.expireAfterWrite(1800, TimeUnit.SECONDS)
 			.build(new CacheLoader<Long, BlockEntity>() {
 				public BlockEntity load(Long key) {
 					try {
@@ -125,25 +129,18 @@ public class BlockStableStore implements IBlockStore, ActorService {
 			this.blocksByNumber.put(block.getHeader().getNumber(), block);
 		}
 
-		if (block.getBody() != null) {
-			LinkedList<OKey> txBlockKeyList = new LinkedList<OKey>();
-			LinkedList<OValue> txBlockValueList = new LinkedList<OValue>();
-
-			for (MultiTransaction oMultiTransaction : block.getBody().getTxsList()) {
-				txBlockKeyList.add(oEntityHelper.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash())));
-				txBlockValueList.add(oEntityHelper.byteValue2OValue(encApi.hexDec(block.getHeader().getBlockHash())));
-			}
-
-			// log.debug("====put transaction rel block::"+
-			// block.getHeader().getBlockHash());
-			dao.getTxblockDao().batchPuts(txBlockKeyList.toArray(new OKey[0]), txBlockValueList.toArray(new OValue[0]));
-		}
-
-//		log.debug(
-//				"stable block number::" + block.getHeader().getNumber() + " hash::" + block.getHeader().getBlockHash());
-
-		// log.debug("====put stable block::"+
-		// block.getHeader().getBlockHash());
+		// TODO need?
+//		if (block.getBody() != null) {
+//			LinkedList<OKey> txBlockKeyList = new LinkedList<OKey>();
+//			LinkedList<OValue> txBlockValueList = new LinkedList<OValue>();
+//
+//			for (MultiTransaction oMultiTransaction : block.getBody().getTxsList()) {
+//				txBlockKeyList.add(oEntityHelper.byteKey2OKey(encApi.hexDec(oMultiTransaction.getTxHash())));
+//				txBlockValueList.add(oEntityHelper.byteValue2OValue(encApi.hexDec(block.getHeader().getBlockHash())));
+//			}
+//
+//			dao.getTxblockDao().batchPuts(txBlockKeyList.toArray(new OKey[0]), txBlockValueList.toArray(new OValue[0]));
+//		}
 
 		if (maxNumber < number) {
 			maxNumber = number;
