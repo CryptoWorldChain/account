@@ -267,7 +267,9 @@ public class TransactionHelper implements ActorService {
 						keys.add(oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash())));
 						values.add(OValue.newBuilder().setExtdata(mts).setInfo(mtb.getTxHash()).build());
 						oConfirmMapDB.confirmTx(hp, bits, false);
-
+						// oConfirmMapDB.confirmTx(hp, bits);
+						txDBCacheByHash.put(hp.getKey(), hp.getTx());
+						dao.getStats().signalSyncTx();
 					} else {
 						// oConfirmMapDB.confirmTx(mtb.getTxHash(), bits, true);
 					}
@@ -281,18 +283,14 @@ public class TransactionHelper implements ActorService {
 			try {
 				Future<OValue[]> f = dao.getTxsDao().batchPuts(keys.toArray(new OKey[] {}),
 						values.toArray(new OValue[] {}));// 返回DB里面不存在的,但是数据库已经存进去的
-				if (f != null && f.get() != null) {
-					log.debug("sync tx:: batch::" + keys.size() + " new::" + f.get().length);
-					for (OValue ov : f.get()) {
-						if (ov != null) {
-							HashPair hp = buffer.get(ov.getInfo());
-							// oConfirmMapDB.confirmTx(hp, bits);
-							txDBCacheByHash.put(hp.getKey(), hp.getTx());
-
-							dao.getStats().signalSyncTx();
-						}
-					}
-				}
+//				if (f != null && f.get() != null) {
+//					log.debug("sync tx:: batch::" + keys.size() + " new::" + f.get().length);
+//					for (OValue ov : f.get()) {
+//						if (ov != null) {
+//							
+//						}
+//					}
+//				}
 			} catch (Exception e) {
 				log.error("fail to sync transaction::" + oMultiTransaction.size() + " error::" + e, e);
 			}
