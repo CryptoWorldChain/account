@@ -36,18 +36,17 @@ public class BlockChainConfig extends SessionModules<Message> {
 	private String adminKey = props().get("org.bc.manage.admin.account", KeyConstant.DB_ADMINISTRATOR_KEY_STR);
 	private String nodeNet = props().get("org.bc.manage.node.net", KeyConstant.DB_NODE_NET_STR);
 	private String net = readNet();
-	
+
 	private BigInteger token_lock_balance = new BigInteger(props().get("org.brewchain.token.lock.balance", "0"));
 	private BigInteger contract_lock_balance = new BigInteger(props().get("org.brewchain.contract.lock.balance", "0"));
 	private BigInteger minerReward = new BigInteger(props().get("block.miner.reward", "0"));
-	private BigInteger maxTokenTotal = new BigInteger(props().get("org.brewchain.token.max.total", "0"));
-	private BigInteger minTokenTotal = new BigInteger(props().get("org.brewchain.token.min.total", "0"));
-	private BigInteger minSanctionCost = new BigInteger(props().get("org.brewchain.sanction.cost", "0"));
-	private BigInteger minVoteCost = new BigInteger(props().get("org.brewchain.vote.cost", "0"));
-	
-	private int cacheTxInitSize =  props().get("org.brewchain.account.cache.tx.init", 10000);
-	private long cacheTxMaximumSize = props().get("org.brewchain.account.cache.tx.max", 1000000);
+	private BigInteger maxTokenTotal = readBigIntegerValue("org.brewchain.token.max.total", "0");
+	private BigInteger minTokenTotal = readBigIntegerValue("org.brewchain.token.min.total", "0");
+	private BigInteger minSanctionCost = readBigIntegerValue("org.brewchain.sanction.cost", "0");
+	private BigInteger minVoteCost = readBigIntegerValue("org.brewchain.vote.cost", "0");
 
+	private int cacheTxInitSize = props().get("org.brewchain.account.cache.tx.init", 10000);
+	private long cacheTxMaximumSize = props().get("org.brewchain.account.cache.tx.max", 1000000);
 
 	@Override
 	public String[] getCmds() {
@@ -77,6 +76,15 @@ public class BlockChainConfig extends SessionModules<Message> {
 		log.info(String.format("configuration %s = %s", "org.bc.manage.node.net", net));
 		log.info(String.format("configuration %s = %s", "org.bc.manage.admin.account", adminKey));
 		log.info(String.format("configuration %s = %s", "org.bc.manage.node.account", nodeAccount));
+	}
+
+	private BigInteger readBigIntegerValue(String key, String defaultVal) {
+		try {
+			return new BigInteger(props().get(key, defaultVal));
+		} catch (Exception e) {
+			log.error("cannot read key::" + key, e);
+		}
+		return new BigInteger(defaultVal);
 	}
 
 	private String readNet() {

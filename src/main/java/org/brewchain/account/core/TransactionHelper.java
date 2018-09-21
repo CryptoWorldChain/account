@@ -192,7 +192,7 @@ public class TransactionHelper implements ActorService {
 			MultiTransaction cacheTx = txDBCacheByHash.getIfPresent(oMultiTransaction.getTxHash());
 			if (cacheTx != null) {
 				log.warn("transaction " + oMultiTransaction.getTxHash() + "exists in Cached, drop it");
-				oConfirmMapDB.confirmTx(cacheTx.getTxHash(), bits);
+				oConfirmMapDB.confirmTx(cacheTx.getTxHash(), bits, false);
 				return;
 			}
 
@@ -202,7 +202,7 @@ public class TransactionHelper implements ActorService {
 			OValue oValue = dao.getTxsDao().get(key).get();
 			if (oValue != null) {
 				log.warn("transaction " + oMultiTransaction.getTxHash() + "exists in DB, drop it");
-				oConfirmMapDB.confirmTx(oMultiTransaction.getTxHash(), bits);
+				oConfirmMapDB.confirmTx(oMultiTransaction.getTxHash(), bits, false);
 			} else {
 				oMultiTransaction.clearStatus();
 				oMultiTransaction.clearResult();
@@ -227,7 +227,7 @@ public class TransactionHelper implements ActorService {
 
 					dao.getStats().signalSyncTx();
 					// if (isBroadCast) {
-					oConfirmMapDB.confirmTx(hp, bits);
+					oConfirmMapDB.confirmTx(hp, bits , true);
 					// }
 				}
 			}
@@ -264,10 +264,14 @@ public class TransactionHelper implements ActorService {
 					if (cacheTx == null) {
 						keys.add(oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash())));
 						values.add(OValue.newBuilder().setExtdata(mts).setInfo(mtb.getTxHash()).build());
+						oConfirmMapDB.confirmTx(mtb.getTxHash(), bits, false);
+
+					} else {
+						oConfirmMapDB.confirmTx(mtb.getTxHash(), bits, true);
+
 					}
 					buffer.put(mtb.getTxHash(), hp);
 
-					oConfirmMapDB.confirmTx(mtb.getTxHash(), bits);
 
 				} catch (Exception e) {
 					log.error("fail to sync transaction::" + oMultiTransaction.size() + " error::" + e, e);
@@ -328,7 +332,7 @@ public class TransactionHelper implements ActorService {
 	}
 
 	public void confirmRecvTx(String key, BigInteger fromBits) {
-		oConfirmMapDB.confirmTx(key, fromBits);
+		oConfirmMapDB.confirmTx(key, fromBits, false);
 	}
 
 	public HashPair removeWaitingSendOrBlockTx(String txHash) throws InvalidProtocolBufferException {

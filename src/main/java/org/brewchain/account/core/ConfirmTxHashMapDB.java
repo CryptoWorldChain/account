@@ -42,7 +42,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 	BigInteger zeroBit = new BigInteger("0");
 
 	public void confirmTx(HashPair hp) {
-		confirmTx(hp, zeroBit);
+		confirmTx(hp, zeroBit, true);
 	}
 
 	public boolean containsKey(String txhash) {
@@ -50,7 +50,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 		return _hp != null && _hp.getTx() != null;
 	}
 
-	public void confirmTx(HashPair hp, BigInteger bits) {
+	public void confirmTx(HashPair hp, BigInteger bits, boolean isNew) {
 		try {
 			// rwLock.writeLock().lock();
 			HashPair _hp = storage.get(hp.getKey());
@@ -58,7 +58,9 @@ public class ConfirmTxHashMapDB implements ActorService {
 				synchronized (hp.getKey().substring(0, 3).intern()) {
 					_hp = storage.get(hp.getKey());// double entry
 					if (_hp == null) {
-						storage.put(hp.getKey(), hp);
+						if (isNew)
+							storage.put(hp.getKey(), hp);
+
 						confirmQueue.addLast(hp);
 						_hp = hp;
 					}
@@ -81,7 +83,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 		}
 	}
 
-	public void confirmTx(String key, BigInteger bits) {
+	public void confirmTx(String key, BigInteger bits, boolean isNew) {
 		try {
 			// rwLock.writeLock().lock();
 			HashPair _hp = storage.get(key);
@@ -90,7 +92,8 @@ public class ConfirmTxHashMapDB implements ActorService {
 					_hp = storage.get(key);// double entry
 					if (_hp == null) {
 						_hp = new HashPair(key, null, null);
-						storage.put(key, _hp);
+						if (isNew)
+							storage.put(key, _hp);
 					}
 				}
 			}

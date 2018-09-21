@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.concurrent.LinkedBlockingDeque;
 
 import org.brewchain.account.bean.HashPair;
 import org.brewchain.account.core.BlockChainHelper;
@@ -77,8 +78,8 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 				dao.getStats().setLastAcceptTxTime(0);
 			}
 			oRespBlockInfo.setBlockCount(blockChainHelper.getLastStableBlockNumber());
-			oRespBlockInfo.setCache(" bps::" + (dao.getStats().getBlockTxCount().get()
-							* 1000.0 / (dao.getStats().getLastBlockTxTime() - dao.getStats().getFirstBlockTxTime())));
+			oRespBlockInfo.setCache(" bps::" + (dao.getStats().getBlockTxCount().get() * 1000.0
+					/ (dao.getStats().getLastBlockTxTime() - dao.getStats().getFirstBlockTxTime())));
 			oRespBlockInfo.setNumber(blockChainHelper.getLastBlockNumber());
 			// oRespBlockInfo.setCache(blockChainHelper.getBlockCacheDump());
 			oRespBlockInfo.setWaitSync(oSendingHashMapDB.size());
@@ -113,18 +114,20 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 			oRespBlockInfo.setRollBackTxCount(dao.getStats().getRollBackTxCount().intValue());
 			oRespBlockInfo.setTxSyncCount(dao.getStats().getTxSyncCount().intValue());
 
-//			int i = 500;
-//			for (Iterator<HashPair> it = oConfirmMapDB.getConfirmQueue().iterator(); it.hasNext();) {
-//				if (i <= 0) {
-//					break;
-//				}
-//				HashPair item = it.next();
-//				WaitBlockItem.Builder oWaitBlockItem = WaitBlockItem.newBuilder();
-//				oWaitBlockItem.setC(String.valueOf(item.getBits().bitCount()));
-//				oWaitBlockItem.setHash(item.getKey());
-//				oRespBlockInfo.addWaits(oWaitBlockItem);
-//				i--;
-//			}
+			LinkedBlockingDeque<HashPair> lbd = new LinkedBlockingDeque<HashPair>(oConfirmMapDB.getConfirmQueue());
+
+			int i = 500;
+			for (Iterator<HashPair> it = lbd.iterator(); it.hasNext();) {
+				if (i <= 0) {
+					break;
+				}
+				HashPair item = it.next();
+				WaitBlockItem.Builder oWaitBlockItem = WaitBlockItem.newBuilder();
+				oWaitBlockItem.setC(String.valueOf(item.getBits().bitCount()));
+				oWaitBlockItem.setHash(item.getKey());
+				oRespBlockInfo.addWaits(oWaitBlockItem);
+				i--;
+			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			// e.printStackTrace();

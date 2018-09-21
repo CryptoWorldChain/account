@@ -66,6 +66,7 @@ public class BlockHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public BlockEntity.Builder CreateNewBlock(String extraData, int confirmRecvCount, String term) throws Exception {
+		log.debug("make new block:: confirmRecvCount::" + confirmRecvCount + " term::" + term);
 		return CreateNewBlock(KeyConstant.DEFAULT_BLOCK_TX_COUNT, confirmRecvCount, extraData, term);
 	}
 
