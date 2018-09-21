@@ -101,6 +101,7 @@ message RespBlockInfo {
 message WaitBlockItem {
 	string hash = 1;
 	string c = 2;
+	string remove = 3;
 }
 
 message RespBlockDetail {

@@ -126,6 +126,7 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 				WaitBlockItem.Builder oWaitBlockItem = WaitBlockItem.newBuilder();
 				oWaitBlockItem.setC(String.valueOf(item.getBits().bitCount()));
 				oWaitBlockItem.setHash(item.getKey());
+				oWaitBlockItem.setRemove(String.valueOf(item.isRemoved()));
 				oRespBlockInfo.addWaits(oWaitBlockItem);
 				i--;
 			}
