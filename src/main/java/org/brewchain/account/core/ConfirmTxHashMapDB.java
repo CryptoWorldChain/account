@@ -84,7 +84,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 		}
 	}
 
-	public void confirmTx(String key, BigInteger bits, boolean isNew) {
+	public void confirmTx(String key, BigInteger bits) {
 		try {
 			// rwLock.writeLock().lock();
 			HashPair _hp = storage.get(key);
@@ -93,7 +93,6 @@ public class ConfirmTxHashMapDB implements ActorService {
 					_hp = storage.get(key);// double entry
 					if (_hp == null) {
 						_hp = new HashPair(key, null, null);
-						// if (isNew)
 						storage.put(key, _hp);
 					}
 				}

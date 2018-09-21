@@ -49,4 +49,12 @@ public class HashPair {
 		this.bits = BigInteger.ZERO;
 	}
 
+	public static void main(String[] args) {
+		BigInteger bits = new BigInteger("0");
+		bits = bits.setBit(1).setBit(2);
+		
+		BigInteger bits1 = new BigInteger("0");
+		bits1 = bits1.setBit(3).setBit(4);
+		System.out.println(bits.bitCount()+"==>"+bits1.bitCount());
+	}
 }

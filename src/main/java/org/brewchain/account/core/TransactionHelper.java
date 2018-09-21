@@ -283,14 +283,15 @@ public class TransactionHelper implements ActorService {
 			try {
 				Future<OValue[]> f = dao.getTxsDao().batchPuts(keys.toArray(new OKey[] {}),
 						values.toArray(new OValue[] {}));// 返回DB里面不存在的,但是数据库已经存进去的
-//				if (f != null && f.get() != null) {
-//					log.debug("sync tx:: batch::" + keys.size() + " new::" + f.get().length);
-//					for (OValue ov : f.get()) {
-//						if (ov != null) {
-//							
-//						}
-//					}
-//				}
+				// if (f != null && f.get() != null) {
+				// log.debug("sync tx:: batch::" + keys.size() + " new::" +
+				// f.get().length);
+				// for (OValue ov : f.get()) {
+				// if (ov != null) {
+				//
+				// }
+				// }
+				// }
 			} catch (Exception e) {
 				log.error("fail to sync transaction::" + oMultiTransaction.size() + " error::" + e, e);
 			}
@@ -331,7 +332,17 @@ public class TransactionHelper implements ActorService {
 	}
 
 	public void confirmRecvTx(String key, BigInteger fromBits) {
-		oConfirmMapDB.confirmTx(key, fromBits, false);
+		try {
+			MultiTransaction otx = GetTransaction(key);
+			if (otx != null && otx.getTxBody() != null) {
+				if (TXStatus.isDone(otx)) {
+					return;
+				}
+			}
+			oConfirmMapDB.confirmTx(key, fromBits);
+		} catch (Exception e) {
+			log.error("error in confirmRecvTx:"+key+",fromBits="+fromBits);
+		}
 	}
 
 	public HashPair removeWaitingSendOrBlockTx(String txHash) throws InvalidProtocolBufferException {
