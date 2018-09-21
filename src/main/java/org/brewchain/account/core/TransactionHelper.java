@@ -188,11 +188,11 @@ public class TransactionHelper implements ActorService {
 		try {
 
 			// dao.getStats().signalAcceptTx();
-
+			log.debug("sync tx count x::" + oMultiTransaction.getTxHash());
 			MultiTransaction cacheTx = txDBCacheByHash.getIfPresent(oMultiTransaction.getTxHash());
 			if (cacheTx != null) {
 				log.warn("transaction " + oMultiTransaction.getTxHash() + "exists in Cached, drop it");
-//				oConfirmMapDB.confirmTx(cacheTx.getTxHash(), bits, false);
+				// oConfirmMapDB.confirmTx(cacheTx.getTxHash(), bits, false);
 				return;
 			}
 
@@ -202,7 +202,8 @@ public class TransactionHelper implements ActorService {
 			OValue oValue = dao.getTxsDao().get(key).get();
 			if (oValue != null) {
 				log.warn("transaction " + oMultiTransaction.getTxHash() + "exists in DB, drop it");
-//				oConfirmMapDB.confirmTx(oMultiTransaction.getTxHash(), bits, false);
+				// oConfirmMapDB.confirmTx(oMultiTransaction.getTxHash(), bits,
+				// false);
 			} else {
 				oMultiTransaction.clearStatus();
 				oMultiTransaction.clearResult();
@@ -227,7 +228,7 @@ public class TransactionHelper implements ActorService {
 
 					dao.getStats().signalSyncTx();
 					// if (isBroadCast) {
-					oConfirmMapDB.confirmTx(hp, bits , true);
+					oConfirmMapDB.confirmTx(hp, bits, true);
 					// }
 				}
 			}
@@ -247,6 +248,7 @@ public class TransactionHelper implements ActorService {
 			List<OValue> values = new ArrayList<>();
 			HashMap<String, HashPair> buffer = new HashMap<>();
 			for (MultiTransaction.Builder mtb : oMultiTransaction) {
+				log.debug("sync tx count y::" + mtb.getTxHash());
 				try {
 					// dao.getStats().signalAcceptTx();
 					MultiTransaction cacheTx = txDBCacheByHash.getIfPresent(mtb.getTxHash());
@@ -267,10 +269,9 @@ public class TransactionHelper implements ActorService {
 						oConfirmMapDB.confirmTx(hp, bits, false);
 
 					} else {
-//						oConfirmMapDB.confirmTx(mtb.getTxHash(), bits, true);
+						// oConfirmMapDB.confirmTx(mtb.getTxHash(), bits, true);
 					}
 					buffer.put(mtb.getTxHash(), hp);
-
 
 				} catch (Exception e) {
 					log.error("fail to sync transaction::" + oMultiTransaction.size() + " error::" + e, e);
@@ -281,6 +282,7 @@ public class TransactionHelper implements ActorService {
 				Future<OValue[]> f = dao.getTxsDao().batchPuts(keys.toArray(new OKey[] {}),
 						values.toArray(new OValue[] {}));// 返回DB里面不存在的,但是数据库已经存进去的
 				if (f != null && f.get() != null) {
+					log.debug("sync tx:: batch::" + keys.size() + " new::" + f.get().length);
 					for (OValue ov : f.get()) {
 						if (ov != null) {
 							HashPair hp = buffer.get(ov.getInfo());
