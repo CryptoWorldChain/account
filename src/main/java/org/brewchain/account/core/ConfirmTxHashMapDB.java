@@ -73,7 +73,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 				if (_hp.getTx() == null && hp.getTx() != null) {
 					_hp.setData(hp.getData());
 					_hp.setTx(hp.getTx());
-//					confirmQueue.addLast(_hp);
+					confirmQueue.addLast(_hp);
 				}
 			}
 			_hp.setBits(bits);
@@ -95,13 +95,9 @@ public class ConfirmTxHashMapDB implements ActorService {
 						_hp = new HashPair(key, null, null);
 						if (isNew)
 							storage.put(key, _hp);
-						
-						//confirmQueue.addLast(_hp);
 					}
 				}
 			}
-			// HashPair _hp = storage.putIfAbsent(key, new HashPair(key, null,
-			// null));
 			_hp.setBits(bits);
 		} catch (Exception e) {
 			log.error("confirmTx::" + e);
@@ -136,7 +132,6 @@ public class ConfirmTxHashMapDB implements ActorService {
 		List<MultiTransaction> ret = new ArrayList<>();
 		long checkTime = System.currentTimeMillis();
 
-		log.debug("confirm tx poll maxsize::" + maxsize + " minConfirm::" + minConfirm + " checkTime::" + checkTime);
 		while (i < maxtried) {
 			HashPair hp = confirmQueue.pollFirst();
 			if (hp == null) {
@@ -166,6 +161,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 			}
 		}
 
+		log.debug("confirm tx poll maxsize::" + maxsize + " minConfirm::" + minConfirm + " checkTime::" + checkTime + " ret::" + ret.size());
 		return ret;
 	}
 
