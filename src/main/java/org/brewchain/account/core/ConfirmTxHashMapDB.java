@@ -58,10 +58,11 @@ public class ConfirmTxHashMapDB implements ActorService {
 				synchronized (hp.getKey().substring(0, 3).intern()) {
 					_hp = storage.get(hp.getKey());// double entry
 					if (_hp == null) {
-						if (isNew)
+						if (isNew) {
 							storage.put(hp.getKey(), hp);
-
-						confirmQueue.addLast(hp);
+							confirmQueue.addLast(hp);
+						}
+							
 						_hp = hp;
 					}
 				}
@@ -72,7 +73,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 				if (_hp.getTx() == null && hp.getTx() != null) {
 					_hp.setData(hp.getData());
 					_hp.setTx(hp.getTx());
-					confirmQueue.addLast(_hp);
+//					confirmQueue.addLast(_hp);
 				}
 			}
 			_hp.setBits(bits);
@@ -94,6 +95,8 @@ public class ConfirmTxHashMapDB implements ActorService {
 						_hp = new HashPair(key, null, null);
 						if (isNew)
 							storage.put(key, _hp);
+						
+						//confirmQueue.addLast(_hp);
 					}
 				}
 			}

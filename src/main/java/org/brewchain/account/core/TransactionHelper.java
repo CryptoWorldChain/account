@@ -192,7 +192,7 @@ public class TransactionHelper implements ActorService {
 			MultiTransaction cacheTx = txDBCacheByHash.getIfPresent(oMultiTransaction.getTxHash());
 			if (cacheTx != null) {
 				log.warn("transaction " + oMultiTransaction.getTxHash() + "exists in Cached, drop it");
-				oConfirmMapDB.confirmTx(cacheTx.getTxHash(), bits, false);
+//				oConfirmMapDB.confirmTx(cacheTx.getTxHash(), bits, false);
 				return;
 			}
 
@@ -202,7 +202,7 @@ public class TransactionHelper implements ActorService {
 			OValue oValue = dao.getTxsDao().get(key).get();
 			if (oValue != null) {
 				log.warn("transaction " + oMultiTransaction.getTxHash() + "exists in DB, drop it");
-				oConfirmMapDB.confirmTx(oMultiTransaction.getTxHash(), bits, false);
+//				oConfirmMapDB.confirmTx(oMultiTransaction.getTxHash(), bits, false);
 			} else {
 				oMultiTransaction.clearStatus();
 				oMultiTransaction.clearResult();
@@ -264,11 +264,10 @@ public class TransactionHelper implements ActorService {
 					if (cacheTx == null) {
 						keys.add(oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash())));
 						values.add(OValue.newBuilder().setExtdata(mts).setInfo(mtb.getTxHash()).build());
-						oConfirmMapDB.confirmTx(mtb.getTxHash(), bits, false);
+						oConfirmMapDB.confirmTx(hp, bits, false);
 
 					} else {
-						oConfirmMapDB.confirmTx(mtb.getTxHash(), bits, true);
-
+//						oConfirmMapDB.confirmTx(mtb.getTxHash(), bits, true);
 					}
 					buffer.put(mtb.getTxHash(), hp);
 
