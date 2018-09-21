@@ -78,7 +78,7 @@ public class TransactionCreateContract extends SessionModules<ReqCreateContract>
 			oMultiTransactionBody.setExdata(ByteString.copyFromUtf8("aabbccdd:12331 \n xxxx"));
 			oMultiTransaction.clearTxHash();
 			oMultiTransactionBody.clearSignatures();
-			oMultiTransactionBody.setTimestamp(System.currentTimeMillis());
+//			oMultiTransactionBody.setTimestamp(System.currentTimeMillis());
 			// 签名
 			MultiTransactionSignature.Builder oMultiTransactionSignature21 = MultiTransactionSignature.newBuilder();
 			oMultiTransactionSignature21.setSignature(

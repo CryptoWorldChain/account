@@ -112,7 +112,7 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 			oRespBlockInfo.setRollBackBlockCount(dao.getStats().getRollBackBlockCount().intValue());
 			oRespBlockInfo.setRollBackTxCount(dao.getStats().getRollBackTxCount().intValue());
 			oRespBlockInfo.setTxSyncCount(dao.getStats().getTxSyncCount().intValue());
-//
+
 //			int i = 500;
 //			for (Iterator<HashPair> it = oConfirmMapDB.getConfirmQueue().iterator(); it.hasNext();) {
 //				if (i <= 0) {

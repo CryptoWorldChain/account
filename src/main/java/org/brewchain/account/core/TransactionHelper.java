@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import static java.util.Arrays.copyOfRange;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -865,9 +866,11 @@ public class TransactionHelper implements ActorService {
 		// oMultiTransaction.getTxBody().getInputs(0).getNonce(),
 		// pair.getAddress()));
 		// return ByteString.copyFrom(encApi.hexDec(pair.getAddress()));
-		return ByteString.copyFrom(
-				encApi.sha3Encode(RLP.encodeList(oMultiTransaction.getTxBody().getInputs(0).getAddress().toByteArray(),
-						ByteUtil.intToBytes(oMultiTransaction.getTxBody().getInputs(0).getNonce()))));
+
+		byte[] addr = encApi
+				.sha3Encode(RLP.encodeList(oMultiTransaction.getTxBody().getInputs(0).getAddress().toByteArray(),
+						ByteUtil.intToBytes(oMultiTransaction.getTxBody().getInputs(0).getNonce())));
+		return ByteString.copyFrom(copyOfRange(addr, 12, addr.length));
 		// KeyPairs pair = encApi.genKeys();
 		// byte[] addrHash = encApi.hexDec(pair.getAddress());
 		// return copyOfRange(addrHash, 12, addrHash.length);

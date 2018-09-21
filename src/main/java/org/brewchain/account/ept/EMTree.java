@@ -15,7 +15,6 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.brewchain.account.dao.DefDaos;
-import org.brewchain.account.ept.EMTree.ETNode.BatchStorage;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.trie.StateTrie.Node;
 import org.brewchain.account.util.OEntityBuilder;
@@ -80,7 +79,55 @@ public class EMTree implements ActorService {
 	}
 
 	public byte[] getRootHash() throws Exception {
-		return root.encode();
+		byte[] rootHash = root.encode();
+		BatchStorage bs = bsPool.borrow();
+		if (bs == null) {
+			bs = new BatchStorage();
+		}
+		try {
+			batchStorage.set(bs);
+			flushBS(bs);
+		} catch (Exception e) {
+			log.warn("error encode:" + e.getMessage(), e);
+			throw e;
+		} finally {
+			if (bs != null) {
+				if (bsPool.size() < 100) {
+					bs.kvs.clear();
+					// bs.values.clear();
+					bsPool.retobj(bs);
+				}
+			}
+			batchStorage.remove();
+		}
+		return rootHash;
+	}
+
+	public void flushBS(BatchStorage bs) {
+		long start = System.currentTimeMillis();
+
+		int size = bs.kvs.size();
+		if (size > 0) {
+			try {
+				OKey[] oks = new OKey[size];
+				OValue[] ovs = new OValue[size];
+				int i = 0;
+
+				// String trace = "";
+				for (Map.Entry<OKey, OValue> kvs : bs.kvs.entrySet()) {
+					oks[i] = kvs.getKey();
+					ovs[i] = kvs.getValue();
+
+					i++;
+				}
+
+				dao.getAccountDao().batchPuts(oks, ovs);
+				bs.kvs.clear();
+			} catch (Exception e) {
+				log.warn("error in flushBS" + e.getMessage(), e);
+			}
+			// bs.values.clear();
+		}
 	}
 
 	public void setRootHash(byte[] hash) {
@@ -224,55 +271,7 @@ public class EMTree implements ActorService {
 			hash = encApi.sha3Encode(contentData);
 			dirty = false;
 
-			BatchStorage bs = bsPool.borrow();
-			if (bs == null) {
-				bs = new BatchStorage();
-			}
-			try {
-				batchStorage.set(bs);
-				flushBS(bs);
-			} catch (Exception e) {
-				log.warn("error encode:" + e.getMessage(), e);
-				throw e;
-			} finally {
-				if (bs != null) {
-					if (bsPool.size() < 100) {
-						bs.kvs.clear();
-						// bs.values.clear();
-						bsPool.retobj(bs);
-					}
-				}
-				batchStorage.remove();
-			}
-
 			return hash;
-		}
-
-		public void flushBS(BatchStorage bs) {
-			long start = System.currentTimeMillis();
-
-			int size = bs.kvs.size();
-			if (size > 0) {
-				try {
-					OKey[] oks = new OKey[size];
-					OValue[] ovs = new OValue[size];
-					int i = 0;
-
-					// String trace = "";
-					for (Map.Entry<OKey, OValue> kvs : bs.kvs.entrySet()) {
-						oks[i] = kvs.getKey();
-						ovs[i] = kvs.getValue();
-
-						i++;
-					}
-
-					dao.getAccountDao().batchPuts(oks, ovs);
-					bs.kvs.clear();
-				} catch (Exception e) {
-					log.warn("error in flushBS" + e.getMessage(), e);
-				}
-				// bs.values.clear();
-			}
 		}
 
 		public String getHashs(int idx) {
@@ -287,7 +286,15 @@ public class EMTree implements ActorService {
 		}
 
 		public ETNode getChild(char ch) {
-			return children[findIdx(ch)];
+			if (childrenHashs[findIdx(ch)] != null) {
+				if (children[findIdx(ch)] == null) {
+					ETNode oNode = new ETNode().fromBytes(getHash(encApi.hexDec(childrenHashs[findIdx(ch)])));
+					children[findIdx(ch)] = oNode;
+				}
+				return children[findIdx(ch)];
+			} else {
+				return null;
+			}
 		}
 
 		public void appendChildNode(ETNode node, char ch) {
@@ -308,7 +315,7 @@ public class EMTree implements ActorService {
 					if (node != null) {
 						byte[] bb = node.encode();
 						childrenHashs[i] = encApi.hexEnc(bb);
-						addHash(bb, node.contentData);
+						addHash(node.hash, node.contentData);
 						sb.append(",");
 						sb.append(childrenHashs[i]);
 					} else {
@@ -368,17 +375,17 @@ public class EMTree implements ActorService {
 			this.v = v;
 			// appendChildNode(this, key.charAt(0));
 		}
+	}
 
-		class BatchStorage {
-			LinkedHashMap<OKey, OValue> kvs = new LinkedHashMap<>();
+	class BatchStorage {
+		LinkedHashMap<OKey, OValue> kvs = new LinkedHashMap<>();
 
-			public void add(byte[] key, byte[] v) {
-				kvs.put(oEntityHelper.byteKey2OKey(key), oEntityHelper.byteValue2OValue(v));
-			}
+		public void add(byte[] key, byte[] v) {
+			kvs.put(oEntityHelper.byteKey2OKey(key), oEntityHelper.byteValue2OValue(v));
+		}
 
-			public void remove(byte[] key) {
-				kvs.remove(oEntityHelper.byteKey2OKey(key));
-			}
+		public void remove(byte[] key) {
+			kvs.remove(oEntityHelper.byteKey2OKey(key));
 		}
 	}
 }

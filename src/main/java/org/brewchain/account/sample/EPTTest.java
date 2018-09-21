@@ -123,6 +123,9 @@ public class EPTTest extends SessionModules<ReqCreateMultiTransaction> {
 			System.out.println("roll back to node1");
 
 			EMTree oRollBackTree1 = new EMTree();
+			oRollBackTree1.setDao(dao);
+			oRollBackTree1.setEncApi(encApi);
+			oRollBackTree1.setOEntityHelper(oEntityHelper);
 			oRollBackTree1.setRootHash(oRootNodeHash1);
 
 			System.out.println("get::" + new String(Hex.decode(oRollBackTree1.get(ccc1))));
@@ -136,6 +139,9 @@ public class EPTTest extends SessionModules<ReqCreateMultiTransaction> {
 			System.out.println("back to node2");
 
 			EMTree oRollBackTree2 = new EMTree();
+			oRollBackTree2.setDao(dao);
+			oRollBackTree2.setEncApi(encApi);
+			oRollBackTree2.setOEntityHelper(oEntityHelper);
 			oRollBackTree2.setRootHash(oRootNodeHash2);
 
 			System.out.println("get::" + new String(Hex.decode(oRollBackTree2.get(ccc1))));

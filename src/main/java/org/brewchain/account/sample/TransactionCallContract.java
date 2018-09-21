@@ -82,7 +82,7 @@ public class TransactionCallContract extends SessionModules<ReqCallContract> {
 			oMultiTransactionBody.setData(ByteString.copyFrom(encApi.hexDec(pb.getData())));
 			oMultiTransaction.clearTxHash();
 			oMultiTransactionBody.clearSignatures();
-			oMultiTransactionBody.setTimestamp(System.currentTimeMillis());
+//			oMultiTransactionBody.setTimestamp(System.currentTimeMillis());
 			// 签名
 			MultiTransactionSignature.Builder oMultiTransactionSignature21 = MultiTransactionSignature.newBuilder();
 			oMultiTransactionSignature21.setSignature(
