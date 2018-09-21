@@ -132,6 +132,8 @@ public class ConfirmTxHashMapDB implements ActorService {
 		int maxtried = Math.min(maxsize, confirmQueue.size());
 		List<MultiTransaction> ret = new ArrayList<>();
 		long checkTime = System.currentTimeMillis();
+
+		log.debug("confirm tx poll maxsize::" + maxsize + " minConfirm::" + minConfirm + " checkTime::" + checkTime);
 		while (i < maxtried) {
 			HashPair hp = confirmQueue.pollFirst();
 			if (hp == null) {
@@ -143,17 +145,20 @@ public class ConfirmTxHashMapDB implements ActorService {
 						if (hp.getBits().bitCount() >= minConfirm) {
 							ret.add(hp.getTx());
 							hp.setRemoved(true);
+							i++;
 						} else {
 							// long time no seeee
 							if (hp.isNeedBroadCast() && (checkTime - hp.getLastUpdateTime() > 60000)) {
 								oSendingHashMapDB.put(hp.getKey(), hp);
 							}
 							confirmQueue.addLast(hp);
+							i++;
 						}
 					}
+				} catch (Exception e) {
+					log.error("cannot poll the tx::", e);
 				} finally {
-					i++;// increase try times
-					// rwLock.writeLock().unlock();
+
 				}
 			}
 		}

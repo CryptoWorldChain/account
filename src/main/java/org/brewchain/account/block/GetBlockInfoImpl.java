@@ -78,8 +78,9 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 				dao.getStats().setLastAcceptTxTime(0);
 			}
 			oRespBlockInfo.setBlockCount(blockChainHelper.getLastStableBlockNumber());
-			oRespBlockInfo.setCache(" bps::" + (dao.getStats().getBlockTxCount().get() * 1000.0
-					/ (dao.getStats().getLastBlockTxTime() - dao.getStats().getFirstBlockTxTime())));
+			oRespBlockInfo.setCache("queue:: " + oConfirmMapDB.getConfirmQueue().size() + " bps::"
+					+ (dao.getStats().getBlockTxCount().get() * 1000.0
+							/ (dao.getStats().getLastBlockTxTime() - dao.getStats().getFirstBlockTxTime())));
 			oRespBlockInfo.setNumber(blockChainHelper.getLastBlockNumber());
 			// oRespBlockInfo.setCache(blockChainHelper.getBlockCacheDump());
 			oRespBlockInfo.setWaitSync(oSendingHashMapDB.size());

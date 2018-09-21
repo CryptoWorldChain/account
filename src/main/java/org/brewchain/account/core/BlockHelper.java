@@ -66,7 +66,6 @@ public class BlockHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public BlockEntity.Builder CreateNewBlock(String extraData, int confirmRecvCount, String term) throws Exception {
-		log.debug("make new block:: confirmRecvCount::" + confirmRecvCount + " term::" + term);
 		return CreateNewBlock(KeyConstant.DEFAULT_BLOCK_TX_COUNT, confirmRecvCount, extraData, term);
 	}
 
@@ -81,6 +80,7 @@ public class BlockHelper implements ActorService {
 	 */
 	public BlockEntity.Builder CreateNewBlock(int txCount, int confirmRecvCount, String extraData, String term)
 			throws Exception {
+		log.debug("make new block:: confirmRecvCount::" + confirmRecvCount + " term::" + term);
 		return CreateNewBlock(transactionHelper.getWaitBlockTx(txCount, confirmRecvCount), extraData, term);
 	}
 
