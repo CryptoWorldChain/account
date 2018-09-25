@@ -107,7 +107,7 @@ public class TransactionSampleImpl extends SessionModules<ReqCreateTransactionTe
 			oMultiTransactionBody.setData(ByteString.copyFrom(encApi.hexDec(pb.getData())));
 			oMultiTransaction.clearTxHash();
 			oMultiTransactionBody.clearSignatures();
-			oMultiTransactionBody.setTimestamp(System.currentTimeMillis());
+//			oMultiTransactionBody.setTimestamp(System.currentTimeMillis());
 			List<MultiTransactionSignature.Builder> signs = new ArrayList<>();
 			// 签名
 			for (ReqTransactionAccount input : pb.getInputList()) {

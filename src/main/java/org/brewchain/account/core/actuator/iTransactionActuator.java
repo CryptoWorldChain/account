@@ -4,18 +4,21 @@ import java.util.Map;
 
 import org.brewchain.evmapi.gens.Act.Account;
 import org.brewchain.evmapi.gens.Act.AccountValue;
+import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 
 import com.google.protobuf.ByteString;
 
 public interface iTransactionActuator {
 	boolean needSignature();
-//	LinkedList<OKey> getKeys();
-//	LinkedList<AccountValue> getValues();
-//	LinkedList<OKey> getTxKeys();
-//	LinkedList<MultiTransaction> getTxValues();
+
+	// LinkedList<OKey> getKeys();
+	// LinkedList<AccountValue> getValues();
+	// LinkedList<OKey> getTxKeys();
+	// LinkedList<MultiTransaction> getTxValues();
 	// Map<String, AccountValue> getAccountValues();
 	Map<String, MultiTransaction> getTxValues();
+
 	/**
 	 * 交易签名校验
 	 * 
@@ -52,13 +55,13 @@ public interface iTransactionActuator {
 	 * @param oMultiTransaction
 	 * @throws Exception
 	 */
-	void onExecuteDone(MultiTransaction oMultiTransaction, ByteString result) throws Exception;
-	
+	void onExecuteDone(MultiTransaction oMultiTransaction, BlockEntity be, ByteString result) throws Exception;
+
 	/**
 	 * 交易执行失败后。
 	 * 
 	 * @param oMultiTransaction
 	 * @throws Exception
 	 */
-	void onExecuteError(MultiTransaction oMultiTransaction, ByteString result) throws Exception;
+	void onExecuteError(MultiTransaction oMultiTransaction, BlockEntity be, ByteString result) throws Exception;
 }

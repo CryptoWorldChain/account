@@ -141,10 +141,10 @@ public class ActuatorCreateCryptoToken extends AbstractTransactionActuator imple
 	}
 
 	@Override
-	public void onExecuteDone(MultiTransaction oMultiTransaction, ByteString result) throws Exception {
+	public void onExecuteDone(MultiTransaction oMultiTransaction,BlockEntity be, ByteString result) throws Exception {
 		CryptoTokenData oCryptoTokenData = CryptoTokenData
 				.parseFrom(oMultiTransaction.getTxBody().getData().toByteArray());
 		oAccountHelper.updateCryptoTokenValue(oCryptoTokenData.getSymbolBytes(), newCryptoTokenValue.build());
-		super.onExecuteDone(oMultiTransaction, result);
+		super.onExecuteDone(oMultiTransaction,be, result);
 	}
 }

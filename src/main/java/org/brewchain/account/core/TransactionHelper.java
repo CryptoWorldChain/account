@@ -210,9 +210,9 @@ public class TransactionHelper implements ActorService {
 
 				iTransactionActuator oiTransactionActuator = getActuator(oMultiTransaction.getTxBody().getType(), null);
 				if (oiTransactionActuator.needSignature()) {
-					Map<String, Account.Builder> accounts = getTransactionAccounts(oMultiTransaction);
+//					Map<String, Account.Builder> accounts = getTransactionAccounts(oMultiTransaction);
 
-					oiTransactionActuator.onVerifySignature(oMultiTransaction.build(), accounts);
+					oiTransactionActuator.onVerifySignature(oMultiTransaction.build(), null);
 				}
 				byte validKeyByte[] = encApi.sha256Encode(oMultiTransaction.getTxBody().toByteArray());
 				if (!FastByteComparisons.equal(validKeyByte, keyByte)) {
@@ -256,8 +256,8 @@ public class TransactionHelper implements ActorService {
 
 					iTransactionActuator oiTransactionActuator = getActuator(mt.getTxBody().getType(), null);
 					if (oiTransactionActuator.needSignature()) {
-						Map<String, Account.Builder> accounts = getTransactionAccounts(mt);
-						oiTransactionActuator.onVerifySignature(mt, accounts);
+//						Map<String, Account.Builder> accounts = getTransactionAccounts(mt);
+						oiTransactionActuator.onVerifySignature(mt, null);
 					}
 
 					ByteString mts = mt.toByteString();
@@ -341,7 +341,7 @@ public class TransactionHelper implements ActorService {
 			}
 			oConfirmMapDB.confirmTx(key, fromBits);
 		} catch (Exception e) {
-			log.error("error in confirmRecvTx:"+key+",fromBits="+fromBits);
+			log.error("error in confirmRecvTx:" + key + ",fromBits=" + fromBits);
 		}
 	}
 
@@ -842,23 +842,23 @@ public class TransactionHelper implements ActorService {
 		}
 	}
 
-	public void setTransactionDone(MultiTransaction tx, ByteString result) throws Exception {
+	public void setTransactionDone(MultiTransaction tx, BlockEntity be, ByteString result) throws Exception {
 		MultiTransaction.Builder oTransaction = tx.toBuilder();
 		TXStatus.setDone(oTransaction, result);
 		txDBCacheByHash.put(oTransaction.getTxHash(), oTransaction.build());
 
-		dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(oTransaction.getTxHash())),
-				oEntityHelper.byteValue2OValue(oTransaction.build().toByteArray()));
+		dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(oTransaction.getTxHash())), oEntityHelper
+				.byteValue2OValue(oTransaction.build().toByteArray(), String.valueOf(be.getHeader().getNumber())));
 	}
 
-	public void setTransactionError(MultiTransaction tx, ByteString result) throws Exception {
+	public void setTransactionError(MultiTransaction tx, BlockEntity be, ByteString result) throws Exception {
 		MultiTransaction.Builder oTransaction = tx.toBuilder();
 		TXStatus.setError(oTransaction, result);
 
 		txDBCacheByHash.put(oTransaction.getTxHash(), oTransaction.build());
 
-		dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(oTransaction.getTxHash())),
-				oEntityHelper.byteValue2OValue(oTransaction.build().toByteArray()));
+		dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(oTransaction.getTxHash())), oEntityHelper
+				.byteValue2OValue(oTransaction.build().toByteArray(), String.valueOf(be.getHeader().getNumber())));
 	}
 
 	/**

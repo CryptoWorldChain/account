@@ -52,9 +52,8 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 		MultiTransaction.Builder signatureTx = oMultiTransaction.toBuilder();
 		MultiTransactionBody.Builder txBody = signatureTx.getTxBodyBuilder();
 		signatureTx.clearTxHash();
-		
-		// only for ttt
-		txBody = txBody.clearSignatures().clearTimestamp();
+
+		txBody = txBody.clearSignatures();
 		byte[] oMultiTransactionEncode = txBody.build().toByteArray();
 		// 校验交易签名
 		for (MultiTransactionSignature oMultiTransactionSignature : oMultiTransaction.getTxBody().getSignaturesList()) {
@@ -209,12 +208,12 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 	}
 
 	@Override
-	public void onExecuteDone(MultiTransaction oMultiTransaction, ByteString result) throws Exception {
-		oTransactionHelper.setTransactionDone(oMultiTransaction, result);
+	public void onExecuteDone(MultiTransaction oMultiTransaction, BlockEntity be, ByteString result) throws Exception {
+		oTransactionHelper.setTransactionDone(oMultiTransaction, be, result);
 	}
 
 	@Override
-	public void onExecuteError(MultiTransaction oMultiTransaction, ByteString result) throws Exception {
-		oTransactionHelper.setTransactionError(oMultiTransaction, result);
+	public void onExecuteError(MultiTransaction oMultiTransaction, BlockEntity be, ByteString result) throws Exception {
+		oTransactionHelper.setTransactionError(oMultiTransaction, be, result);
 	}
 }

@@ -124,13 +124,14 @@ public class TransactionLoadTestExecImpl extends SessionModules<ReqCommonTest> {
 			oMultiTransactionBody.addOutputs(oMultiTransactionOutput1);
 			oMultiTransaction.clearTxHash();
 			oMultiTransactionBody.clearSignatures();
-			oMultiTransactionBody.setTimestamp(System.currentTimeMillis());
+//			oMultiTransactionBody.setTimestamp(System.currentTimeMillis());
 			// 签名
 			MultiTransactionSignature.Builder oMultiTransactionSignature21 = MultiTransactionSignature.newBuilder();
 			oMultiTransactionSignature21.setSignature(
 					ByteString.copyFrom(encApi.ecSign(oFrom.getPrikey(), oMultiTransactionBody.build().toByteArray())));
 			oMultiTransactionBody.addSignatures(oMultiTransactionSignature21);
 
+			oMultiTransactionBody.setTimestamp(System.currentTimeMillis());
 			oMultiTransaction.setTxBody(oMultiTransactionBody);
 			return oMultiTransaction;
 		} catch (Exception e) {

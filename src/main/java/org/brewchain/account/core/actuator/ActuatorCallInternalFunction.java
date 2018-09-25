@@ -44,13 +44,6 @@ public class ActuatorCallInternalFunction extends AbstractTransactionActuator im
 		return ByteString.EMPTY;
 		// super.onExecute(oMultiTransaction, senders, receivers);
 	}
-
-	@Override
-	public void onExecuteDone(MultiTransaction oMultiTransaction, ByteString result) throws Exception {
-		// TODO Auto-generated method stub
-		super.onExecuteDone(oMultiTransaction, result);
-	}
-
 	public ActuatorCallInternalFunction(AccountHelper oAccountHelper, TransactionHelper oTransactionHelper,
 			BlockEntity oBlock, EncAPI encApi, DefDaos dao, StateTrie oStateTrie) {
 		super(oAccountHelper, oTransactionHelper, oBlock, encApi, dao, oStateTrie);

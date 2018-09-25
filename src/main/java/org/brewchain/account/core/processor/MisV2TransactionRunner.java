@@ -47,13 +47,13 @@ public class MisV2TransactionRunner implements Runnable {
 					try {
 						oiTransactionActuator.onPrepareExecute(oTransaction, accounts);
 						ByteString result = oiTransactionActuator.onExecute(oTransaction, accounts);
-						oiTransactionActuator.onExecuteDone(oTransaction, result);
+						oiTransactionActuator.onExecuteDone(oTransaction, currentBlock, result);
 						results.put(oTransaction.getTxHash(), result);
-					} catch (Throwable e) {//e.printStackTrace();
+					} catch (Throwable e) {// e.printStackTrace();
 						log.error("block " + currentBlock.getHeader().getBlockHash() + " exec transaction hash::"
 								+ oTransaction.getTxHash() + " error::" + e.getMessage());
 						try {
-							oiTransactionActuator.onExecuteError(oTransaction, ByteString
+							oiTransactionActuator.onExecuteError(oTransaction, currentBlock, ByteString
 									.copyFromUtf8(e.getMessage() == null ? "unknown exception" : e.getMessage()));
 							results.put(oTransaction.getTxHash(), ByteString
 									.copyFromUtf8(e.getMessage() == null ? "unknown exception" : e.getMessage()));

@@ -81,10 +81,9 @@ public class V1Processor implements IProcessor, ActorService {
 				ByteString result = oiTransactionActuator.onExecute(oTransaction, accounts);
 
 				Iterator<String> iterator = accounts.keySet().iterator();
-				
-				
-//				while (iterator.hasNext()) {
-//					String key = iterator.next();
+
+				// while (iterator.hasNext()) {
+				// String key = iterator.next();
 				List<String> keys = new ArrayList<>();
 				while (iterator.hasNext()) {
 					String key = iterator.next();
@@ -99,14 +98,14 @@ public class V1Processor implements IProcessor, ActorService {
 					this.stateTrie.put(encApi.hexDec(key), value.toByteArray());
 				}
 				oAccountHelper.BatchPutAccounts(accounts);
-				oiTransactionActuator.onExecuteDone(oTransaction, result);
+				oiTransactionActuator.onExecuteDone(oTransaction, currentBlock, result);
 				results.put(oTransaction.getTxHash(), result);
 
 				log.debug("block " + currentBlock.getHeader().getBlockHash() + " exec transaction hash::"
 						+ oTransaction.getTxHash() + " done");
 
 			} catch (Exception e) {
-				oiTransactionActuator.onExecuteError(oTransaction,
+				oiTransactionActuator.onExecuteError(oTransaction, currentBlock,
 						ByteString.copyFromUtf8(e.getMessage() == null ? "unknown exception" : e.getMessage()));
 
 				results.put(oTransaction.getTxHash(),
@@ -133,7 +132,8 @@ public class V1Processor implements IProcessor, ActorService {
 	}
 
 	@Override
-	public BlockEntity.Builder CreateNewBlock(List<MultiTransaction> txs, String extraData, String term) throws Exception {
+	public BlockEntity.Builder CreateNewBlock(List<MultiTransaction> txs, String extraData, String term)
+			throws Exception {
 
 		log.debug("call create new block miner::" + KeyConstant.node.getAddress());
 
@@ -187,17 +187,20 @@ public class V1Processor implements IProcessor, ActorService {
 		this.stateTrie.setRoot(encApi.hexDec(oBestBlockHeader.getStateRoot()));
 		processBlock(oBlockEntity);
 
-		byte[] blockContent = org.brewchain.account.util.ByteUtil.appendBytes(oBlockEntity.getHeaderBuilder().clearBlockHash().build().toByteArray(),oBlockMiner.build().toByteArray() ); 
-		oBlockEntity.setHeader(oBlockEntity.getHeaderBuilder().setBlockHash(encApi.hexEnc(encApi.sha256Encode(blockContent))));
-		
+		byte[] blockContent = org.brewchain.account.util.ByteUtil.appendBytes(
+				oBlockEntity.getHeaderBuilder().clearBlockHash().build().toByteArray(),
+				oBlockMiner.build().toByteArray());
+		oBlockEntity.setHeader(
+				oBlockEntity.getHeaderBuilder().setBlockHash(encApi.hexEnc(encApi.sha256Encode(blockContent))));
+
 		BlockStoreSummary oSummary = blockChainHelper.addBlock(oBlockEntity.build());
 		switch (oSummary.getBehavior()) {
 		case APPLY:
-//			this.stateTrie.setRoot(encApi.hexDec(oBestBlockHeader.getStateRoot()));
-//			processBlock(oBlockEntity);
-//			
-//			oBlockHeader.setBlockHash(encApi.hexEnc(encApi.sha256Encode(oBlockHeader.build().toByteArray())));
-//			oBlockEntity.setHeader(oBlockHeader);
+			// this.stateTrie.setRoot(encApi.hexDec(oBestBlockHeader.getStateRoot()));
+			// processBlock(oBlockEntity);
+			//
+			// oBlockHeader.setBlockHash(encApi.hexEnc(encApi.sha256Encode(oBlockHeader.build().toByteArray())));
+			// oBlockEntity.setHeader(oBlockHeader);
 
 			blockChainHelper.connectBlock(oBlockEntity.build());
 
@@ -247,7 +250,7 @@ public class V1Processor implements IProcessor, ActorService {
 			i++;
 		}
 
-		//applyReward(oBlockEntity.build());
+		// applyReward(oBlockEntity.build());
 		accountHelper.addTokenBalance(ByteString.copyFrom(encApi.hexDec(oBlockEntity.getMiner().getAddress())), "CWS",
 				ByteUtil.bytesToBigInteger(oBlockEntity.getMiner().getReward().toByteArray()));
 
@@ -273,11 +276,11 @@ public class V1Processor implements IProcessor, ActorService {
 			BlockHeader.Builder oBlockHeader = BlockHeader.parseFrom(oBlockEntity.getHeader().toByteArray())
 					.toBuilder();
 			oBlockHeader.clearBlockHash();
-			
-			byte[] blockContent = org.brewchain.account.util.ByteUtil.appendBytes(oBlockHeader.build().toByteArray(),oBlockEntity.getMiner().toByteArray() ); 
-			
-			if (!oBlockEntity.getHeader().getBlockHash()
-					.equals(encApi.hexEnc(encApi.sha256Encode(blockContent)))) {
+
+			byte[] blockContent = org.brewchain.account.util.ByteUtil.appendBytes(oBlockHeader.build().toByteArray(),
+					oBlockEntity.getMiner().toByteArray());
+
+			if (!oBlockEntity.getHeader().getBlockHash().equals(encApi.hexEnc(encApi.sha256Encode(blockContent)))) {
 				log.warn("wrong block hash::" + oBlockEntity.getHeader().getBlockHash() + " need::"
 						+ encApi.hexEnc(encApi.sha256Encode(blockContent)));
 			} else {

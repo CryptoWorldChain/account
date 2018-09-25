@@ -206,10 +206,9 @@ public class BlockHelper implements ActorService {
 	 * @throws Exception
 	 */
 	public BlockEntity getBlockByTransaction(byte[] txHash) throws Exception {
-		OValue oOValue = dao.getTxblockDao().get(oEntityHelper.byteKey2OKey(txHash)).get();
+		OValue oOValue = dao.getTxsDao().get(oEntityHelper.byteKey2OKey(txHash)).get();
 		if (oOValue != null && oOValue.getExtdata() != null) {
-			String blockHash = encApi.hexEnc(oOValue.getExtdata().toByteArray());
-			return getBlock(blockHash).build();
+			return blockChainHelper.getBlockByNumber(Long.parseLong(oOValue.getSecondKey()));
 		}
 		return null;
 	}

@@ -160,7 +160,7 @@ public class AccountHelper implements ActorService {
 				}
 			}
 		} catch (Exception e) {
-			log.error("account not found::" + encApi.hexEnc(addr.toByteArray()));
+			log.error("account not found::" + encApi.hexEnc(addr.toByteArray()), e);
 		}
 		return null;
 	}
@@ -318,7 +318,8 @@ public class AccountHelper implements ActorService {
 				oAccountValue.setTokens(i, oAccountValue.getTokens(i).toBuilder()
 						.setLocked(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(balance.add(
 								ByteUtil.bytesToBigInteger(oAccountValue.getTokens(i).getLocked().toByteArray()))))));
-				// putAccountValue(oAccount.getAddress(), oAccountValue.build());
+				// putAccountValue(oAccount.getAddress(),
+				// oAccountValue.build());
 				return ByteUtil.bytesToBigInteger(oAccountValue.getTokens(i).getBalance().toByteArray());
 			}
 		}
@@ -756,7 +757,8 @@ public class AccountHelper implements ActorService {
 				this.stateTrie.put(encApi.hexDec(key), value.toByteArray());
 			}
 		}
-		doPutAccounts(accountValues);
+		// no need, because all account already on the mpt
+		// doPutAccounts(accountValues);
 	}
 
 	public void doPutAccounts(Map<String, Account.Builder> accountValues) {

@@ -175,6 +175,7 @@ public class BlockStore implements ActorService {
 				if (oParent.getHeader().getNumber() == 0) {
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.APPLY);
 				} else {
+					log.error("not found parent node number::" + block.getHeader().getNumber() + " parenthash::" + block.getHeader().getParentHash());
 					oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.ERROR);
 				}
 			} else {
