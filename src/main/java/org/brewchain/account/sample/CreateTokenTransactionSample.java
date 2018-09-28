@@ -27,6 +27,7 @@ import org.fc.brewchain.bcapi.EncAPI;
 import org.fc.brewchain.bcapi.UnitUtil;
 
 import com.google.protobuf.ByteString;
+import com.googlecode.protobuf.format.JsonFormat;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -92,7 +93,7 @@ public class CreateTokenTransactionSample extends SessionModules<ReqCreateTransa
 			}
 
 			oMultiTransactionBody.setType(TransTypeEnum.TYPE_CreateToken.value());
-			oMultiTransactionBody.setData(ByteString.copyFrom(encApi.hexDec(pb.getData())));
+//			oMultiTransactionBody.setData(ByteString.copyFrom(encApi.hexDec(pb.getData())));
 			oMultiTransaction.clearTxHash();
 			oMultiTransactionBody.clearSignatures();
 			oMultiTransactionBody.setTimestamp(System.currentTimeMillis());
@@ -105,6 +106,9 @@ public class CreateTokenTransactionSample extends SessionModules<ReqCreateTransa
 			}
 			oMultiTransaction.setTxBody(oMultiTransactionBody);
 
+//			JsonFormat jsonFormat = new JsonFormat();
+//			String jsonView = jsonFormat.printToString(oMultiTransaction.build());
+//			System.out.print(jsonView);
 			String txHash = transactionHelper.CreateMultiTransaction(oMultiTransaction).getKey();
 			oRespCreateTransactionTest.setTxhash(txHash);
 		} catch (Exception e) {

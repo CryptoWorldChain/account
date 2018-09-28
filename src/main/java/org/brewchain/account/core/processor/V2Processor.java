@@ -338,8 +338,7 @@ public class V2Processor implements IProcessor, ActorService {
 
 		start = System.currentTimeMillis();
 		Map<String, ByteString> results = ExecuteTransaction(txs, oBlockEntity.build(), accounts);
-		log.error("====> end exec number::" + oBlockEntity.getHeader().getNumber() + ":exec tx count=" + i + ",cost="
-				+ (System.currentTimeMillis() - start));
+		
 
 		BlockHeader.Builder header = oBlockEntity.getHeaderBuilder();
 
@@ -365,6 +364,15 @@ public class V2Processor implements IProcessor, ActorService {
 		start = System.currentTimeMillis();
 		header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
 
+		transactionHelper.getOConfirmMapDB().clear();
+		oTransactionTrie.clear();
+		oTransactionTrie = null;
+		oReceiptTrie.clear();
+		oReceiptTrie = null;
+		
+		this.stateTrie.clear();
+		log.error("====> end exec number::" + oBlockEntity.getHeader().getNumber() + ":exec tx count=" + i + ",cost="
+				+ (System.currentTimeMillis() - start));
 		// log.debug("====> calc trie at block=" +
 		// oBlockEntity.getHeader().getNumber() + ",hash=" +
 		// header.getStateRoot()
@@ -442,11 +450,11 @@ public class V2Processor implements IProcessor, ActorService {
 							if (!transactionHelper.isExistsWaitBlockTx(txHash)
 									&& !transactionHelper.isExistsTransaction(txHash)) {
 								oAddBlockResponse.addTxHashs(txHash);
-								log.error("need tx hash::" + txHash);
+//								log.error("need tx hash::" + txHash);
 							}
 						}
 						if (oAddBlockResponse.getTxHashsCount() > 0) {
-							log.error("need tx count::" + oAddBlockResponse.getTxHashsCount());
+//							log.error("need tx count::" + oAddBlockResponse.getTxHashsCount());
 							oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.ERROR);
 							oAddBlockResponse.setWantNumber(applyBlock.getHeader().getNumber());
 							break;

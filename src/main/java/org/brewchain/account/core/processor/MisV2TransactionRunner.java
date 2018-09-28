@@ -60,13 +60,14 @@ public class MisV2TransactionRunner implements Runnable {
 						} catch (Exception e1) {
 							log.error("onexec errro:" + e1.getMessage(), e1);
 						}
-					} finally {
+					} 
+					finally {
 						cdl.countDown();
 					}
 				}
 			}
 		} finally {
-			cdl.countDown();
+			//cdl.countDown();
 		}
 	}
 }

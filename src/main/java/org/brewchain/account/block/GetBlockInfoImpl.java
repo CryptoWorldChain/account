@@ -20,6 +20,7 @@ import org.brewchain.account.gens.Blockimpl.PBCTModule;
 import org.brewchain.account.gens.Blockimpl.ReqBlockInfo;
 import org.brewchain.account.gens.Blockimpl.RespBlockInfo;
 import org.brewchain.account.gens.Blockimpl.WaitBlockItem;
+import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.fc.brewchain.bcapi.EncAPI;
@@ -54,6 +55,8 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 	CacheBlockHashMapDB oCacheHashMapDB;
 	@ActorRequire(name = "ConfirmTxHashDB", scope = "global")
 	ConfirmTxHashMapDB oConfirmMapDB; // 保存待打包block的交易
+	@ActorRequire(name = "Block_StateTrie", scope = "global")
+	StateTrie stateTrie;
 
 	@Override
 	public String[] getCmds() {
@@ -78,7 +81,12 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 				dao.getStats().setLastAcceptTxTime(0);
 			}
 			oRespBlockInfo.setBlockCount(blockChainHelper.getLastStableBlockNumber());
-			oRespBlockInfo.setCache("queue:: " + oConfirmMapDB.getConfirmQueue().size() + " bps::"
+			oRespBlockInfo.setCache("state::" + stateTrie.getCacheByHash().size() + " pool::"
+					+ stateTrie.getBsPool().size() + " storage::"
+					+ ((stateTrie.getBatchStorage().get() == null || stateTrie.getBatchStorage().get().kvs == null)
+							? "0"
+							: stateTrie.getBatchStorage().get().kvs.size())
+					+ " queue:: " + oConfirmMapDB.getConfirmQueue().size() + " bps::"
 					+ (dao.getStats().getBlockTxCount().get() * 1000.0
 							/ (dao.getStats().getLastBlockTxTime() - dao.getStats().getFirstBlockTxTime())));
 			oRespBlockInfo.setNumber(blockChainHelper.getLastBlockNumber());
@@ -103,33 +111,34 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 			oRespBlockInfo.setAcceptTxTimeCostMS(
 					dao.getStats().getLastAcceptTxTime() - dao.getStats().getFirstAcceptTxTime());
 
-			BigInteger c = BigInteger.ZERO;
-
-			for (int i = 1; i < blockChainHelper.getLastBlockNumber(); i++) {
-				BlockEntity be = blockChainHelper.getBlockByNumber(i);
-				c = c.add(new BigInteger(String.valueOf(be.getHeader().getTxHashsCount())));
-			}
-
-			oRespBlockInfo.setRealTxBlockCount(c.longValue());
+			// BigInteger c = BigInteger.ZERO;
+			//
+			// for (int i = 1; i < blockChainHelper.getLastBlockNumber(); i++) {
+			// BlockEntity be = blockChainHelper.getBlockByNumber(i);
+			// c = c.add(new BigInteger(String.valueOf(be.getHeader().getTxHashsCount())));
+			// }
+			//
+			// oRespBlockInfo.setRealTxBlockCount(c.longValue());
 			oRespBlockInfo.setRollBackBlockCount(dao.getStats().getRollBackBlockCount().intValue());
 			oRespBlockInfo.setRollBackTxCount(dao.getStats().getRollBackTxCount().intValue());
 			oRespBlockInfo.setTxSyncCount(dao.getStats().getTxSyncCount().intValue());
 
-			LinkedBlockingDeque<HashPair> lbd = new LinkedBlockingDeque<HashPair>(oConfirmMapDB.getConfirmQueue());
-
-			int i = 500;
-			for (Iterator<HashPair> it = lbd.iterator(); it.hasNext();) {
-				if (i <= 0) {
-					break;
-				}
-				HashPair item = it.next();
-				WaitBlockItem.Builder oWaitBlockItem = WaitBlockItem.newBuilder();
-				oWaitBlockItem.setC(String.valueOf(item.getBits().bitCount()));
-				oWaitBlockItem.setHash(item.getKey());
-				oWaitBlockItem.setRemove(String.valueOf(item.isRemoved()));
-				oRespBlockInfo.addWaits(oWaitBlockItem);
-				i--;
-			}
+			// LinkedBlockingDeque<HashPair> lbd = new
+			// LinkedBlockingDeque<HashPair>(oConfirmMapDB.getConfirmQueue());
+			//
+			// int i = 500;
+			// for (Iterator<HashPair> it = lbd.iterator(); it.hasNext();) {
+			// if (i <= 0) {
+			// break;
+			// }
+			// HashPair item = it.next();
+			// WaitBlockItem.Builder oWaitBlockItem = WaitBlockItem.newBuilder();
+			// oWaitBlockItem.setC(String.valueOf(item.getBits().bitCount()));
+			// oWaitBlockItem.setHash(item.getKey());
+			// oWaitBlockItem.setRemove(String.valueOf(item.isRemoved()));
+			// oRespBlockInfo.addWaits(oWaitBlockItem);
+			// i--;
+			// }
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			// e.printStackTrace();

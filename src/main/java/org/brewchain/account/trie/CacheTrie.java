@@ -38,14 +38,14 @@ import onight.tfw.ntrans.api.annotation.ActorRequire;
 @Slf4j
 public class CacheTrie {
 	EncAPI encApi;
-	
+
 	private Object NULL_NODE = new Object();
 	private int MIN_BRANCHES_CONCURRENTLY = 3;
-	private ExecutorService executor;
+	private static ExecutorService executor;
 
 	public synchronized ExecutorService getExecutor() {
 		if (executor == null) {
-			executor = Executors.newFixedThreadPool(4,
+			executor = Executors.newFixedThreadPool(1,
 					new ThreadFactoryBuilder().setNameFormat("trie-calc-thread-%d").build());
 		}
 		return executor;
@@ -652,7 +652,9 @@ public class CacheTrie {
 	}
 
 	public void clear() {
-		throw new RuntimeException("Not implemented yet");
+		if (executor != null) {
+			executor.shutdown();
+		}
 	}
 
 	public boolean flush() {

@@ -42,7 +42,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 	BigInteger zeroBit = new BigInteger("0");
 
 	public void confirmTx(HashPair hp) {
-		confirmTx(hp, zeroBit, true);
+		confirmTx(hp, zeroBit);
 	}
 
 	public boolean containsKey(String txhash) {
@@ -50,7 +50,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 		return _hp != null && _hp.getTx() != null;
 	}
 
-	public void confirmTx(HashPair hp, BigInteger bits, boolean isNew) {
+	public void confirmTx(HashPair hp, BigInteger bits) {
 		try {
 			// rwLock.writeLock().lock();
 			HashPair _hp = storage.get(hp.getKey());
@@ -62,10 +62,14 @@ public class ConfirmTxHashMapDB implements ActorService {
 						storage.put(hp.getKey(), hp);
 						// }
 						confirmQueue.addLast(hp);
-
 						_hp = hp;
+
+						// log.error("sync tx putinto storage and queue::" + hp.getKey() + "
+						// needbroadcast"
+						// + hp.isNeedBroadCast());
 					}
 				}
+
 				// storage.put(hp.getKey(), hp);
 				// confirmQueue.addLast(hp);
 				// _hp = hp;
@@ -73,10 +77,19 @@ public class ConfirmTxHashMapDB implements ActorService {
 				if (_hp.getTx() == null && hp.getTx() != null) {
 					_hp.setData(hp.getData());
 					_hp.setTx(hp.getTx());
+					_hp.setBits(bits);
+					_hp.setNeedBroadCast(hp.isNeedBroadCast());
+					// if (_hp.getBits().bitCount() >= minConfirm)
 					confirmQueue.addLast(_hp);
+					// log.error("sync tx putinto queue::" + hp.getKey() + " needbroadcast" +
+					// hp.isNeedBroadCast());
 				}
 			}
+
+			// log.error("confirmQueue info create or sync key::" + _hp.getKey() + " c::" +
+			// bits.bitCount());
 			_hp.setBits(bits);
+
 		} catch (Exception e) {
 			log.error("confirmTx::" + e);
 		} finally {
@@ -98,6 +111,9 @@ public class ConfirmTxHashMapDB implements ActorService {
 				}
 			}
 			_hp.setBits(bits);
+			// log.error("confirmQueue info confirm key::" + key + " c::" +
+			// _hp.getBits().bitCount());
+
 		} catch (Exception e) {
 			log.error("confirmTx::" + e);
 		} finally {
@@ -131,9 +147,12 @@ public class ConfirmTxHashMapDB implements ActorService {
 		List<MultiTransaction> ret = new ArrayList<>();
 		long checkTime = System.currentTimeMillis();
 
+		// log.error("confirmQueue info poll:: maxsize::" + maxsize + " size::" +
+		// confirmQueue.size());
 		while (i < maxtried) {
 			HashPair hp = confirmQueue.pollFirst();
 			if (hp == null) {
+				log.error("confirmQueue info empty;");
 				break;
 			} else {
 				// rwLock.writeLock().lock();
@@ -145,10 +164,21 @@ public class ConfirmTxHashMapDB implements ActorService {
 							i++;
 						} else {
 							// long time no seeee
-							if (hp.isNeedBroadCast() && (checkTime - hp.getLastUpdateTime() > 60000)) {
-								oSendingHashMapDB.put(hp.getKey(), hp);
+							if (checkTime - hp.getLastUpdateTime() > 60000) {
+								if (hp.isNeedBroadCast()) {
+									// log.error("confirmQueue info broadcast;");
+									oSendingHashMapDB.put(hp.getKey(), hp);
+									confirmQueue.addLast(hp);
+								} else {
+									// log.error("confirmQueue info rm tx from queue::" + hp.getKey());
+								}
+							} else {
+								// log.error("confirmQueue info put last::" + hp.getKey() + " checktime::" +
+								// checkTime
+								// + " lasttime::" + hp.getLastUpdateTime() + " confirm::"
+								// + hp.getBits().bitCount() + " need::" + minConfirm);
+								confirmQueue.addLast(hp);
 							}
-							confirmQueue.addLast(hp);
 							i++;
 						}
 					}
@@ -163,6 +193,26 @@ public class ConfirmTxHashMapDB implements ActorService {
 		log.debug("confirm tx poll maxsize::" + maxsize + " minConfirm::" + minConfirm + " checkTime::" + checkTime
 				+ " ret::" + ret.size());
 		return ret;
+	}
+
+	public void clear() {
+		int i = 0;
+		int maxtried = confirmQueue.size();
+		while (i < maxtried) {
+			try {
+				HashPair hp = confirmQueue.pollFirst();
+				if (hp == null) {
+					break;
+				}
+				if (!hp.isRemoved()) {
+					confirmQueue.addLast(hp);
+				}
+			} catch (Exception e) {
+				log.error("cannot poll the tx::", e);
+			} finally {
+				i++;
+			}
+		}
 	}
 
 	public int size() {

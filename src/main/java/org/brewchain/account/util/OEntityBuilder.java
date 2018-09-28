@@ -26,44 +26,44 @@ import onight.tfw.ntrans.api.ActorService;
 @Data
 public class OEntityBuilder implements ActorService {
 	
-	public OKey byteKey2OKey(byte[] key) {
+	public static OKey byteKey2OKey(byte[] key) {
 		OKey.Builder oOKey = OKey.newBuilder();
 		oOKey.setData(ByteString.copyFrom(key));
 		return oOKey.build();
 	}
 
-	public OKey byteKey2OKey(ByteString key) {
+	public static OKey byteKey2OKey(ByteString key) {
 		OKey.Builder oOKey = OKey.newBuilder();
 		oOKey.setData(key);
 		return oOKey.build();
 	}
 
-	public byte[] oKey2byteKey(OKey key) {
+	public static byte[] oKey2byteKey(OKey key) {
 		return key.getData().toByteArray();
 	}
 
-	public OValue byteValue2OValue(byte[] value) {
+	public static OValue byteValue2OValue(byte[] value) {
 		OValue.Builder oOValue = OValue.newBuilder();
 		oOValue.setExtdata(ByteString.copyFrom(value));
 		return oOValue.build();
 	}
-	public OValue byteValue2OValue(byte[] value, String secKey) {
+	public static OValue byteValue2OValue(byte[] value, String secKey) {
 		OValue.Builder oOValue = OValue.newBuilder();
 		oOValue.setExtdata(ByteString.copyFrom(value));
 		oOValue.setSecondKey(secKey);
 		return oOValue.build();
 	}
-	public OValue.Builder byteValue2OValue(ByteString value) {
+	public static OValue.Builder byteValue2OValue(ByteString value) {
 		OValue.Builder oOValue = OValue.newBuilder();
 		oOValue.setExtdata(value);
 		return oOValue;
 	}
 
-	public byte[] oValue2byteValue(OValue value) {
+	public static byte[] oValue2byteValue(OValue value) {
 		return value.getExtdata().toByteArray();
 	}
 
-	public boolean isNullValue(OValue value) {
+	public static boolean isNullValue(OValue value) {
 		if (value == null)
 			return true;
 		if (value.getExtdata() == null)
@@ -71,7 +71,7 @@ public class OEntityBuilder implements ActorService {
 		return false;
 	}
 
-	public boolean isNullKey(OKey key) {
+	public static boolean isNullKey(OKey key) {
 		if (key == null)
 			return true;
 		if (key.getData() == null)

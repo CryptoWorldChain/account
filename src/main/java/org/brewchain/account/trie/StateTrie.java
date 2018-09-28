@@ -70,8 +70,8 @@ public class StateTrie implements ActorService {
 		BranchNode, KVNodeValue, KVNodeNode
 	}
 
-	class BatchStorage {
-		LinkedHashMap<OKey, OValue> kvs = new LinkedHashMap<>();
+	public class BatchStorage {
+		public LinkedHashMap<OKey, OValue> kvs = new LinkedHashMap<>();
 
 		public void add(byte[] key, byte[] v) {
 			kvs.put(oEntityHelper.byteKey2OKey(key), oEntityHelper.byteValue2OValue(v));
@@ -224,7 +224,7 @@ public class StateTrie implements ActorService {
 							if (encoded[i] == null) {
 								final Node child = branchNodeGetChild(i);
 								if (encodeCnt >= MIN_BRANCHES_CONCURRENTLY) {
-									encoded[i] = getExecutor().submit(new Callable<byte[]>() {
+									Callable<byte[]> oCallable = new Callable<byte[]>() {
 										@Override
 										public byte[] call() throws Exception {
 											BatchStorage bs = bsPool.borrow();
@@ -253,7 +253,9 @@ public class StateTrie implements ActorService {
 												}
 											}
 										}
-									});
+									};
+									encoded[i] = getExecutor().submit(oCallable);
+									oCallable = null;
 								} else {
 									encoded[i] = child.encode(depth + 1, false);
 								}
@@ -285,7 +287,7 @@ public class StateTrie implements ActorService {
 							encodeElement(value == null ? EMPTY_BYTE_ARRAY : value));
 				}
 				if (hash != null) {
-					// deleteHash(hash);
+					deleteHash(hash);
 				}
 				dirty = false;
 
@@ -593,7 +595,7 @@ public class StateTrie implements ActorService {
 	}
 
 	Cache<String, byte[]> cacheByHash = CacheBuilder.newBuilder().initialCapacity(10000)
-			.expireAfterWrite(3600, TimeUnit.SECONDS).maximumSize(5000000)
+			.expireAfterWrite(300, TimeUnit.SECONDS).maximumSize(100000)
 			.concurrencyLevel(Runtime.getRuntime().availableProcessors()).build();
 
 	private byte[] getHash(byte[] hash) {
@@ -625,20 +627,20 @@ public class StateTrie implements ActorService {
 	}
 
 	private void addHash(byte[] hash, byte[] ret) {
-//		System.out.println("addHash:" + type + ",hash=" + Hex.toHexString(hash));
+		// System.out.println("addHash:" + type + ",hash=" + Hex.toHexString(hash));
 
 		BatchStorage bs = batchStorage.get();
 		if (bs != null) {
 			// log.debug("add into state trie key::" + encApi.hexEnc(hash));
-//			if (type == NodeType.KVNodeNode || type == NodeType.KVNodeValue) {
-				bs.add(hash, ret);
-//			}
+			// if (type == NodeType.KVNodeNode || type == NodeType.KVNodeValue) {
+			bs.add(hash, ret);
+			// }
 			cacheByHash.put(encApi.hexEnc(hash), ret);
 		} else {
-//			if (type == NodeType.KVNodeNode || type == NodeType.KVNodeValue) {
+			// if (type == NodeType.KVNodeNode || type == NodeType.KVNodeValue) {
 
-				dao.getAccountDao().put(oEntityHelper.byteKey2OKey(hash), oEntityHelper.byteValue2OValue(ret));
-//			}
+			dao.getAccountDao().put(oEntityHelper.byteKey2OKey(hash), oEntityHelper.byteValue2OValue(ret));
+			// }
 		}
 	}
 
@@ -823,7 +825,12 @@ public class StateTrie implements ActorService {
 	}
 
 	public void clear() {
-
+		if (root != null && root.dirty) {
+			// persist all dirty nodes to underlying Source
+			// encode();
+			// release all Trie Node instances for GC
+			root = new Node(root.hash);
+		}
 	}
 
 	@Override

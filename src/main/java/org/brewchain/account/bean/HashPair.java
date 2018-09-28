@@ -15,12 +15,12 @@ public class HashPair {
 	transient MultiTransaction tx;
 	BigInteger bits = new BigInteger("0");
 	boolean isRemoved = false;
-	boolean isNeedBroadCast = true;
+	boolean isNeedBroadCast = false;
 	long lastUpdateTime = System.currentTimeMillis();
 
 	public synchronized void setBits(BigInteger bits) {
 		this.bits = this.bits.or(bits);
-		lastUpdateTime = System.currentTimeMillis();
+//		lastUpdateTime = System.currentTimeMillis();
 	}
 
 	public byte[] getKeyBytes() {

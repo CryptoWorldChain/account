@@ -107,10 +107,11 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 		String token = "";
 		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
 			Account.Builder sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
-			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 			token = oInput.getToken();
 			oAccountHelper.subTokenBalance(sender, oInput.getToken(),
 					ByteUtil.bytesToBigInteger(oInput.getAmount().toByteArray()));
+			
+			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 			senderAccountValue.setNonce(senderAccountValue.getNonce() + 1);
 			sender.setValue(senderAccountValue);
 			accounts.put(encApi.hexEnc(sender.getAddress().toByteArray()), sender);
@@ -122,9 +123,10 @@ public class ActuatorTokenTransaction extends AbstractTransactionActuator implem
 			if (receiver == null) {
 				receiver = oAccountHelper.CreateAccount(oOutput.getAddress());
 			}
-			AccountValue.Builder receiverAccountValue = receiver.getValue().toBuilder();
 			oAccountHelper.addTokenBalance(receiver, token,
 					ByteUtil.bytesToBigInteger(oOutput.getAmount().toByteArray()));
+			
+			AccountValue.Builder receiverAccountValue = receiver.getValue().toBuilder();
 			receiver.setValue(receiverAccountValue);
 			accounts.put(encApi.hexEnc(receiver.getAddress().toByteArray()), receiver);
 		}
