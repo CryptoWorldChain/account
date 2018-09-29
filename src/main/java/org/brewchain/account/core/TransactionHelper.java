@@ -224,7 +224,7 @@ public class TransactionHelper implements ActorService {
 					MultiTransaction mt = oMultiTransaction.build();
 
 					HashPair hp = new HashPair(mt.getTxHash(), mt.toByteArray(), mt);
-					hp.setNeedBroadCast(false);
+					hp.setNeedBroadCast(isBroadCast);
 					dao.getTxsDao().put(key, OValue.newBuilder().setExtdata(ByteString.copyFrom(hp.getData()))
 							.setInfo(mt.getTxHash()).build());
 					txDBCacheByHash.put(hp.getKey(), hp.getTx());
