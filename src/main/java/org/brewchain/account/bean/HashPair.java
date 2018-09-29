@@ -1,5 +1,6 @@
 package org.brewchain.account.bean;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 
 import org.apache.commons.codec.DecoderException;
@@ -9,7 +10,11 @@ import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import lombok.Data;
 
 @Data
-public class HashPair {
+public class HashPair implements Serializable{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 5829951203336980748L;
 	String key;
 	byte data[];
 	transient MultiTransaction tx;
