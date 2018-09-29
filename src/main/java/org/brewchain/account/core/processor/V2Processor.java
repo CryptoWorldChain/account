@@ -364,7 +364,6 @@ public class V2Processor implements IProcessor, ActorService {
 		start = System.currentTimeMillis();
 		header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
 
-		transactionHelper.getOConfirmMapDB().clear();
 		oTransactionTrie.clear();
 		oTransactionTrie = null;
 		oReceiptTrie.clear();
@@ -497,8 +496,15 @@ public class V2Processor implements IProcessor, ActorService {
 
 							blockChainHelper.rollbackTo(applyBlock.getHeader().getNumber() - 1);
 							oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.ERROR);
+							
+							// revalidate...
+							for (String txHash : oBlockHeader.getTxHashsList()) {
+								transactionHelper.getOConfirmMapDB().revalidate(txHash);
+							}
+							
 						} else {
 							oBlockStoreSummary = blockChainHelper.connectBlock(applyBlock.build());
+							transactionHelper.getOConfirmMapDB().clear();
 						}
 						break;
 					case APPLY_CHILD:

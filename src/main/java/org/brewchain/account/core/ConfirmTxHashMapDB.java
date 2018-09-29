@@ -144,6 +144,21 @@ public class ConfirmTxHashMapDB implements ActorService {
 		}
 	}
 
+	public HashPair revalidate(String key) {
+		// rwLock.writeLock().lock();
+		try {// second entry.
+			HashPair hp = storage.get(key);
+			if (hp != null && hp.isRemoved()) {
+				hp.setRemoved(false);
+			}
+			return hp;
+		} catch (Exception e) {
+			return null;
+		} finally {
+			// rwLock.writeLock().unlock();
+		}
+	}
+
 	public List<MultiTransaction> poll(int maxsize, int minConfirm) {
 		int i = 0;
 		int maxtried = Math.min(maxsize, confirmQueue.size());
