@@ -368,7 +368,8 @@ public class V2Processor implements IProcessor, ActorService {
 		oTransactionTrie = null;
 		oReceiptTrie.clear();
 		oReceiptTrie = null;
-				
+		transactionHelper.getOConfirmMapDB().clear();
+
 		this.stateTrie.clear();
 		log.error("====> end exec number::" + oBlockEntity.getHeader().getNumber() + ":exec tx count=" + i + ",cost="
 				+ (System.currentTimeMillis() - start));
@@ -497,7 +498,7 @@ public class V2Processor implements IProcessor, ActorService {
 							blockChainHelper.rollbackTo(applyBlock.getHeader().getNumber() - 1);
 							oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.ERROR);
 							
-							// revalidate...
+							// re
 							for (String txHash : oBlockHeader.getTxHashsList()) {
 								transactionHelper.getOConfirmMapDB().revalidate(txHash);
 							}
