@@ -416,15 +416,15 @@ public class V2Processor implements IProcessor, ActorService {
 				while (oBlockStoreSummary.getBehavior() != BLOCK_BEHAVIOR.DONE) {
 					switch (oBlockStoreSummary.getBehavior()) {
 					case DROP:
-						log.info("drop block number::" + applyBlock.getHeader().getNumber());
+						log.error("drop block number::" + applyBlock.getHeader().getNumber());
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 						break;
 					case EXISTS_DROP:
-						log.info("already exists, try to apply::" + applyBlock.getHeader().getNumber());
+						log.error("already exists, try to apply::" + applyBlock.getHeader().getNumber());
 						oBlockStoreSummary.setBehavior(blockChainHelper.tryAddBlock(applyBlock.build()).getBehavior());
 						break;
 					case EXISTS_PREV:
-						log.info("block exists, but cannot find parent block number::"
+						log.error("block exists, but cannot find parent block number::"
 								+ applyBlock.getHeader().getNumber());
 						try {
 							long rollBackNumber = applyBlock.getHeader().getNumber() - 2;
@@ -441,7 +441,7 @@ public class V2Processor implements IProcessor, ActorService {
 						}
 						break;
 					case CACHE:
-						log.info("cache block number::" + applyBlock.getHeader().getNumber());
+						log.error("cache block number::" + applyBlock.getHeader().getNumber());
 						oAddBlockResponse.setWantNumber(applyBlock.getHeader().getNumber());
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 						break;
@@ -513,7 +513,7 @@ public class V2Processor implements IProcessor, ActorService {
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 						break;
 					case STORE:
-						log.info("apply done number::" + blockChainHelper.getLastBlockNumber());
+						log.error("apply done number::" + blockChainHelper.getLastBlockNumber());
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 						break;
 					case ERROR:
