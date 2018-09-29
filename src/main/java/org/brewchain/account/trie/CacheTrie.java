@@ -12,6 +12,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 
 import org.apache.commons.lang3.text.StrBuilder;
@@ -41,13 +42,9 @@ public class CacheTrie {
 
 	private Object NULL_NODE = new Object();
 	private int MIN_BRANCHES_CONCURRENTLY = 3;
-	private static ExecutorService executor;
+	private static ExecutorService executor = new ForkJoinPool(Runtime.getRuntime().availableProcessors() * 6);
 
 	public synchronized ExecutorService getExecutor() {
-		if (executor == null) {
-			executor = Executors.newFixedThreadPool(1,
-					new ThreadFactoryBuilder().setNameFormat("trie-calc-thread-%d").build());
-		}
 		return executor;
 	}
 
@@ -652,9 +649,9 @@ public class CacheTrie {
 	}
 
 	public void clear() {
-		if (executor != null) {
-			executor.shutdown();
-		}
+//		if (executor != null) {
+//			executor.shutdown();
+//		}
 	}
 
 	public boolean flush() {

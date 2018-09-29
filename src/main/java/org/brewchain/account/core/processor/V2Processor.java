@@ -369,7 +369,7 @@ public class V2Processor implements IProcessor, ActorService {
 		oTransactionTrie = null;
 		oReceiptTrie.clear();
 		oReceiptTrie = null;
-		
+				
 		this.stateTrie.clear();
 		log.error("====> end exec number::" + oBlockEntity.getHeader().getNumber() + ":exec tx count=" + i + ",cost="
 				+ (System.currentTimeMillis() - start));
