@@ -279,29 +279,33 @@ public class BlockUnStableStore implements ActorService {
 	}
 
 	public BlockEntity getBlockByNumber(long number) {
-		if (storage.containsColumn(number)) {
-			// find connected block
-			BlockEntity be = null;
-			for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.column(number).entrySet().iterator(); it
-					.hasNext();) {
-				Map.Entry<String, BlockStoreNodeValue> item = it.next();
-				if (item.getValue().isConnect()) {
-					return item.getValue().getBlockEntity();
+		try (ALock l = writeLock.lock()) {
+
+			if (storage.containsColumn(number)) {
+				// find connected block
+				BlockEntity be = null;
+				for (Iterator<Map.Entry<String, BlockStoreNodeValue>> it = storage.column(number).entrySet()
+						.iterator(); it.hasNext();) {
+					Map.Entry<String, BlockStoreNodeValue> item = it.next();
+					if (item.getValue().isConnect()) {
+						return item.getValue().getBlockEntity();
+					}
+					if (be == null) {
+						be = item.getValue().getBlockEntity();
+					}
 				}
-				if (be == null) {
-					be = item.getValue().getBlockEntity();
-				}
+				return be;
+				// BlockStoreNodeValue[] objs =
+				// storage.column(number).values().toArray(new
+				// BlockStoreNodeValue[]
+				// {});
+				// for (int i = 0; i < objs.length; i++) {
+				// if (objs[i].isConnect()) {
+				// return objs[i].getBlockEntity();
+				// }
+				// }
+				// return objs[0].getBlockEntity();
 			}
-			return be;
-			// BlockStoreNodeValue[] objs =
-			// storage.column(number).values().toArray(new BlockStoreNodeValue[]
-			// {});
-			// for (int i = 0; i < objs.length; i++) {
-			// if (objs[i].isConnect()) {
-			// return objs[i].getBlockEntity();
-			// }
-			// }
-			// return objs[0].getBlockEntity();
 		}
 		return null;
 	}
