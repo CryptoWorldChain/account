@@ -205,20 +205,25 @@ public class ConfirmTxHashMapDB implements ActorService {
 
 	public void clear() {
 		try {
-			clearQueue();
+			long start = System.currentTimeMillis();
+			int cc = clearQueue();
+			log.error("end of clearQueue::cost=" + (System.currentTimeMillis() - start) + ",clearcount=" + cc);
 		} catch (Exception e1) {
 			log.error("error in clearQueue:", e1);
 		}
 		try {
-			clearStorage();
+			long start = System.currentTimeMillis();
+			int cc = clearStorage();
+			log.error("end of clearStorage::cost=" + (System.currentTimeMillis() - start) + ",clearcount=" + cc);
 		} catch (Exception e) {
 			log.error("error in clearStorage:", e);
 		}
 	}
 
-	public void clearQueue() {
+	public int clearQueue() {
 		int i = 0;
 		int maxtried = confirmQueue.size();
+		int clearcount = 0;
 		while (i < maxtried) {
 			try {
 				HashPair hp = confirmQueue.pollFirst();
@@ -228,6 +233,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 				if (!hp.isRemoved()) {// 180
 					confirmQueue.addLast(hp);
 				} else {
+					clearcount++;
 					storage.remove(hp.getKey());
 				}
 			} catch (Exception e) {
@@ -236,9 +242,10 @@ public class ConfirmTxHashMapDB implements ActorService {
 				i++;
 			}
 		}
+		return clearcount;
 	}
 
-	public void clearStorage() {
+	public int clearStorage() {
 		Enumeration<String> en = storage.keys();
 		List<String> removeKeys = new ArrayList<>();
 		while (en.hasMoreElements()) {
@@ -263,6 +270,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 			storage.remove(key);
 		}
 
+		return removeKeys.size();
 	}
 
 	public int size() {
