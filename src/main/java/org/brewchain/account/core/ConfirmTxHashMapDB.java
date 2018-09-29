@@ -2,6 +2,7 @@ package org.brewchain.account.core;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -203,6 +204,19 @@ public class ConfirmTxHashMapDB implements ActorService {
 	}
 
 	public void clear() {
+		try {
+			clearQueue();
+		} catch (Exception e1) {
+			log.error("error in clearQueue:", e1);
+		}
+		try {
+			clearStorage();
+		} catch (Exception e) {
+			log.error("error in clearStorage:", e);
+		}
+	}
+
+	public void clearQueue() {
 		int i = 0;
 		int maxtried = confirmQueue.size();
 		while (i < maxtried) {
@@ -211,10 +225,10 @@ public class ConfirmTxHashMapDB implements ActorService {
 				if (hp == null) {
 					break;
 				}
-				if (!hp.isRemoved() && (hp.getTx() != null && hp.getData() != null
-						&& System.currentTimeMillis() - hp.getLastUpdateTime() < 240 * 1000)) {// 180
-																								// second
+				if (!hp.isRemoved()) {// 180
 					confirmQueue.addLast(hp);
+				} else {
+					storage.remove(hp.getKey());
 				}
 			} catch (Exception e) {
 				log.error("cannot poll the tx::", e);
@@ -222,6 +236,33 @@ public class ConfirmTxHashMapDB implements ActorService {
 				i++;
 			}
 		}
+	}
+
+	public void clearStorage() {
+		Enumeration<String> en = storage.keys();
+		List<String> removeKeys = new ArrayList<>();
+		while (en.hasMoreElements()) {
+			try {
+				String key = en.nextElement();
+				HashPair hp = storage.get(key);
+				if (hp != null) {
+					if (hp.isRemoved()) {
+						removeKeys.add(key);
+					} else if (hp.getTx() == null && hp.getData() == null
+							&& System.currentTimeMillis() - hp.getLastUpdateTime() >= 240 * 1000) {
+						// time out confirm;
+						removeKeys.add(key);
+					}
+				}
+			} catch (Exception e) {
+				log.error("cannot remove the tx::", e);
+			} finally {
+			}
+		}
+		for (String key : removeKeys) {
+			storage.remove(key);
+		}
+
 	}
 
 	public int size() {
