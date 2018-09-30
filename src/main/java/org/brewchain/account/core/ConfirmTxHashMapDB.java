@@ -58,46 +58,22 @@ public class ConfirmTxHashMapDB implements ActorService {
 				synchronized (hp.getKey().substring(0, 3).intern()) {
 					_hp = storage.get(hp.getKey());// double entry
 					if (_hp == null) {
-						// if (isNew) {
 						storage.put(hp.getKey(), hp);
-						// }
-						if (hp.getTx() != null) {
-							confirmQueue.addLast(hp);
-						}
 						_hp = hp;
-
-						// log.error("sync tx putinto storage and queue::" +
-						// hp.getKey() + "
-						// needbroadcast"
-						// + hp.isNeedBroadCast());
 					}
 				}
-
-				// storage.put(hp.getKey(), hp);
-				// confirmQueue.addLast(hp);
-				// _hp = hp;
-			} else {
-				if (_hp.getTx() == null && hp.getTx() != null) {
-					_hp.setData(hp.getData());
-					_hp.setTx(hp.getTx());
-					_hp.setNeedBroadCast(hp.isNeedBroadCast());
-					// if (_hp.getBits().bitCount() >= minConfirm)
-					confirmQueue.addLast(_hp);
-					// log.error("sync tx putinto queue::" + hp.getKey() + "
-					// needbroadcast" +
-					// hp.isNeedBroadCast());
-				}
 			}
-
-			// log.error("confirmQueue info create or sync key::" + _hp.getKey()
-			// + " c::" +
-			// bits.bitCount());
+			if (_hp.getTx() == null && hp.getTx() != null) {
+				_hp.setData(hp.getData());
+				_hp.setTx(hp.getTx());
+				_hp.setNeedBroadCast(hp.isNeedBroadCast());
+				confirmQueue.addLast(_hp);
+			}
 			_hp.setBits(bits);
 
 		} catch (Exception e) {
 			log.error("confirmTx::" + e);
 		} finally {
-			// rwLock.writeLock().unlock();
 		}
 	}
 
@@ -165,8 +141,8 @@ public class ConfirmTxHashMapDB implements ActorService {
 		List<MultiTransaction> ret = new ArrayList<>();
 		long checkTime = System.currentTimeMillis();
 
-		log.error("confirmQueue info poll:: maxsize::" + maxsize + ",maxtried=" + maxtried + " size::"
-				+ confirmQueue.size());
+//		log.error("confirmQueue info poll:: maxsize::" + maxsize + ",maxtried=" + maxtried + " size::"
+//				+ confirmQueue.size()+",storage="+storage.size());
 		while (i < maxtried) {
 			HashPair hp = confirmQueue.pollFirst();
 			if (hp == null) {
@@ -213,8 +189,11 @@ public class ConfirmTxHashMapDB implements ActorService {
 			}
 		}
 
-		log.debug("confirm tx poll maxsize::" + maxsize + " minConfirm::" + minConfirm + " checkTime::" + checkTime
-				+ " ret::" + ret.size());
+		log.error("confirmQueue info poll:: maxsize::" + maxsize + ",maxtried=" + maxtried + " size::"
+				+ confirmQueue.size()+",storage="+storage.size()+",try="+i);
+
+//		log.debug("confirm tx poll maxsize::" + maxsize + " minConfirm::" + minConfirm + " checkTime::" + checkTime
+//				+ " ret::" + ret.size());
 		return ret;
 	}
 
