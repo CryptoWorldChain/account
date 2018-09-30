@@ -41,9 +41,9 @@ public class ConfirmTxHashMapDB implements ActorService {
 
 	BigInteger zeroBit = new BigInteger("0");
 
-	public void confirmTx(HashPair hp) {
-		confirmTx(hp, zeroBit);
-	}
+//	public void confirmTx(HashPair hp) {
+//		confirmTx(hp, zeroBit);
+//	}
 
 	public boolean containsKey(String txhash) {
 		HashPair _hp = storage.get(txhash);
@@ -67,9 +67,9 @@ public class ConfirmTxHashMapDB implements ActorService {
 				_hp.setData(hp.getData());
 				_hp.setTx(hp.getTx());
 				_hp.setNeedBroadCast(hp.isNeedBroadCast());
-				if (hp.isNeedBroadCast() && !confirmQueue.contains(_hp)) {
+//				if (!confirmQueue.contains(_hp)) {
 					confirmQueue.addLast(_hp);
-				}
+//				}
 			}
 			_hp.setBits(bits);
 
