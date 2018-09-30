@@ -41,9 +41,9 @@ public class ConfirmTxHashMapDB implements ActorService {
 
 	BigInteger zeroBit = new BigInteger("0");
 
-//	public void confirmTx(HashPair hp) {
-//		confirmTx(hp, zeroBit);
-//	}
+	// public void confirmTx(HashPair hp) {
+	// confirmTx(hp, zeroBit);
+	// }
 
 	public boolean containsKey(String txhash) {
 		HashPair _hp = storage.get(txhash);
@@ -54,22 +54,22 @@ public class ConfirmTxHashMapDB implements ActorService {
 		try {
 			// rwLock.writeLock().lock();
 			HashPair _hp = storage.get(hp.getKey());
-//			if (_hp == null) {
-//				synchronized (hp.getKey().substring(0, 3).intern()) {
-//					_hp = storage.get(hp.getKey());// double entry
-					if (_hp == null) {
-						storage.put(hp.getKey(), hp);
-						_hp = hp;
-					}
-//				}
-//			}
+			// if (_hp == null) {
+			// synchronized (hp.getKey().substring(0, 3).intern()) {
+			// _hp = storage.get(hp.getKey());// double entry
+			if (_hp == null) {
+				storage.put(hp.getKey(), hp);
+				_hp = hp;
+			}
+			// }
+			// }
 			if (_hp.getTx() == null && hp.getTx() != null) {
 				_hp.setData(hp.getData());
 				_hp.setTx(hp.getTx());
 				_hp.setNeedBroadCast(hp.isNeedBroadCast());
-//				if (!confirmQueue.contains(_hp)) {
-					confirmQueue.addLast(_hp);
-//				}
+				// if (!confirmQueue.contains(_hp)) {
+				confirmQueue.addLast(_hp);
+				// }
 			}
 			_hp.setBits(bits);
 
@@ -83,15 +83,15 @@ public class ConfirmTxHashMapDB implements ActorService {
 		try {
 			// rwLock.writeLock().lock();
 			HashPair _hp = storage.get(key);
-//			if (_hp == null) {
-//				synchronized (key.substring(0, 3).intern()) {
-//					_hp = storage.get(key);// double entry
-					if (_hp == null) {
-						_hp = new HashPair(key, null, null);
-						storage.put(key, _hp);
-					}
-//				}
-//			}
+			// if (_hp == null) {
+			// synchronized (key.substring(0, 3).intern()) {
+			// _hp = storage.get(key);// double entry
+			if (_hp == null) {
+				_hp = new HashPair(key, null, null);
+				storage.put(key, _hp);
+			}
+			// }
+			// }
 			_hp.setBits(bits);
 			// log.error("confirmQueue info confirm key::" + key + " c::" +
 			// _hp.getBits().bitCount());
@@ -161,15 +161,15 @@ public class ConfirmTxHashMapDB implements ActorService {
 							i++;
 						} else {
 							// long time no seeee
-							if (checkTime - hp.getLastUpdateTime() >= 10000) {
+							if (checkTime - hp.getLastUpdateTime() >= 60000) {
 								if (hp.getTx() != null && hp.getData() != null && hp.isNeedBroadCast()) {
 									// log.error("confirmQueue info
 									// broadcast;");
 									oSendingHashMapDB.put(hp.getKey(), hp);
 									confirmQueue.addLast(hp);
 								} else {
-									// log.error("confirmQueue info rm tx from
-									// queue::" + hp.getKey());
+									 log.error("confirmQueue info rm tx from  queue::" + hp.getKey());
+									 hp.setRemoved(true);
 								}
 							} else {
 								// log.error("confirmQueue info put last::" +
@@ -254,7 +254,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 					if (hp.isRemoved()) {
 						removeKeys.add(key);
 					} else if (hp.getTx() == null && hp.getData() == null
-							&& System.currentTimeMillis() - hp.getLastUpdateTime() >= 240 * 1000) {
+							&& System.currentTimeMillis() - hp.getLastUpdateTime() >= 180 * 1000) {
 						// time out confirm;
 						removeKeys.add(key);
 					}
