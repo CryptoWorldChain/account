@@ -50,24 +50,26 @@ public class ConfirmTxHashMapDB implements ActorService {
 		return _hp != null && _hp.getTx() != null;
 	}
 
-	public void confirmTx(HashPair hp, BigInteger bits) {
+	public synchronized void confirmTx(HashPair hp, BigInteger bits) {
 		try {
 			// rwLock.writeLock().lock();
 			HashPair _hp = storage.get(hp.getKey());
-			if (_hp == null) {
-				synchronized (hp.getKey().substring(0, 3).intern()) {
-					_hp = storage.get(hp.getKey());// double entry
+//			if (_hp == null) {
+//				synchronized (hp.getKey().substring(0, 3).intern()) {
+//					_hp = storage.get(hp.getKey());// double entry
 					if (_hp == null) {
 						storage.put(hp.getKey(), hp);
 						_hp = hp;
 					}
-				}
-			}
+//				}
+//			}
 			if (_hp.getTx() == null && hp.getTx() != null) {
 				_hp.setData(hp.getData());
 				_hp.setTx(hp.getTx());
 				_hp.setNeedBroadCast(hp.isNeedBroadCast());
-				confirmQueue.addLast(_hp);
+				if (hp.isNeedBroadCast() && !confirmQueue.contains(_hp)) {
+					confirmQueue.addLast(_hp);
+				}
 			}
 			_hp.setBits(bits);
 
@@ -77,19 +79,19 @@ public class ConfirmTxHashMapDB implements ActorService {
 		}
 	}
 
-	public void confirmTx(String key, BigInteger bits) {
+	public synchronized void confirmTx(String key, BigInteger bits) {
 		try {
 			// rwLock.writeLock().lock();
 			HashPair _hp = storage.get(key);
-			if (_hp == null) {
-				synchronized (key.substring(0, 3).intern()) {
-					_hp = storage.get(key);// double entry
+//			if (_hp == null) {
+//				synchronized (key.substring(0, 3).intern()) {
+//					_hp = storage.get(key);// double entry
 					if (_hp == null) {
 						_hp = new HashPair(key, null, null);
 						storage.put(key, _hp);
 					}
-				}
-			}
+//				}
+//			}
 			_hp.setBits(bits);
 			// log.error("confirmQueue info confirm key::" + key + " c::" +
 			// _hp.getBits().bitCount());
@@ -141,8 +143,9 @@ public class ConfirmTxHashMapDB implements ActorService {
 		List<MultiTransaction> ret = new ArrayList<>();
 		long checkTime = System.currentTimeMillis();
 
-//		log.error("confirmQueue info poll:: maxsize::" + maxsize + ",maxtried=" + maxtried + " size::"
-//				+ confirmQueue.size()+",storage="+storage.size());
+		// log.error("confirmQueue info poll:: maxsize::" + maxsize +
+		// ",maxtried=" + maxtried + " size::"
+		// + confirmQueue.size()+",storage="+storage.size());
 		while (i < maxtried) {
 			HashPair hp = confirmQueue.pollFirst();
 			if (hp == null) {
@@ -190,10 +193,11 @@ public class ConfirmTxHashMapDB implements ActorService {
 		}
 
 		log.error("confirmQueue info poll:: maxsize::" + maxsize + ",maxtried=" + maxtried + " size::"
-				+ confirmQueue.size()+",storage="+storage.size()+",try="+i);
+				+ confirmQueue.size() + ",storage=" + storage.size() + ",try=" + i);
 
-//		log.debug("confirm tx poll maxsize::" + maxsize + " minConfirm::" + minConfirm + " checkTime::" + checkTime
-//				+ " ret::" + ret.size());
+		// log.debug("confirm tx poll maxsize::" + maxsize + " minConfirm::" +
+		// minConfirm + " checkTime::" + checkTime
+		// + " ret::" + ret.size());
 		return ret;
 	}
 

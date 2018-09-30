@@ -359,7 +359,7 @@ public class TransactionHelper implements ActorService {
 			}
 			oConfirmMapDB.confirmTx(key, fromBits);
 		} catch (Exception e) {
-			log.error("error in confirmRecvTx:" + key + ",fromBits=" + fromBits);
+			log.error("error in confirmRecvTx:" + key + ",fromBits=" + fromBits,e);
 		}
 	}
 
