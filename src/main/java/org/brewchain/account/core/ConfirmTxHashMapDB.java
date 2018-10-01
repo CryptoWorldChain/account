@@ -26,6 +26,7 @@ import onight.tfw.ntrans.api.annotation.ActorRequire;
 @Data
 public class ConfirmTxHashMapDB implements ActorService {
 	protected ConcurrentHashMap<String, HashPair> storage;
+	protected ConcurrentHashMap<String, Long> removeSavestorage = new ConcurrentHashMap<>();;
 	protected LinkedBlockingDeque<HashPair> confirmQueue = new LinkedBlockingDeque<>();
 	ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
 	@ActorRequire(name = "WaitSend_HashMapDB", scope = "global")
@@ -50,26 +51,24 @@ public class ConfirmTxHashMapDB implements ActorService {
 		return _hp != null && _hp.getTx() != null;
 	}
 
-	public synchronized void confirmTx(HashPair hp, BigInteger bits) {
+	public void confirmTx(HashPair hp, BigInteger bits) {
 		try {
 			// rwLock.writeLock().lock();
 			HashPair _hp = storage.get(hp.getKey());
-			// if (_hp == null) {
-			// synchronized (hp.getKey().substring(0, 3).intern()) {
-			// _hp = storage.get(hp.getKey());// double entry
 			if (_hp == null) {
-				storage.put(hp.getKey(), hp);
-				_hp = hp;
+				synchronized (hp.getKey().substring(0, 3).intern()) {
+					_hp = storage.get(hp.getKey());// double entry
+					if (_hp == null) {
+						storage.put(hp.getKey(), hp);
+						_hp = hp;
+					}
+				}
 			}
-			// }
-			// }
 			if (_hp.getTx() == null && hp.getTx() != null) {
 				_hp.setData(hp.getData());
 				_hp.setTx(hp.getTx());
 				_hp.setNeedBroadCast(hp.isNeedBroadCast());
-				if (!confirmQueue.contains(_hp)) {
-					confirmQueue.addLast(_hp);
-				}
+				confirmQueue.addLast(_hp);
 			}
 			_hp.setBits(bits);
 
@@ -82,16 +81,19 @@ public class ConfirmTxHashMapDB implements ActorService {
 	public synchronized void confirmTx(String key, BigInteger bits) {
 		try {
 			// rwLock.writeLock().lock();
-			HashPair _hp = storage.get(key);
-			// if (_hp == null) {
-			// synchronized (key.substring(0, 3).intern()) {
-			// _hp = storage.get(key);// double entry
-			if (_hp == null) {
-				_hp = new HashPair(key, null, null);
-				storage.put(key, _hp);
+			if (removeSavestorage.containsKey(key)) {
+				return;
 			}
-			// }
-			// }
+			HashPair _hp = storage.get(key);
+			if (_hp == null) {
+				synchronized (key.substring(0, 3).intern()) {
+					_hp = storage.get(key);// double entry
+					if (_hp == null) {
+						_hp = new HashPair(key, null, null);
+						storage.put(key, _hp);
+					}
+				}
+			}
 			_hp.setBits(bits);
 			// log.error("confirmQueue info confirm key::" + key + " c::" +
 			// _hp.getBits().bitCount());
@@ -114,6 +116,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 			if (hp != null) {
 				hp.setRemoved(true);
 			}
+			removeSavestorage.put(key, System.currentTimeMillis());
 			return hp;
 		} catch (Exception e) {
 			return null;
@@ -129,6 +132,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 			if (hp != null && hp.isRemoved()) {
 				hp.setRemoved(false);
 			}
+			removeSavestorage.remove(key);
 			return hp;
 		} catch (Exception e) {
 			return null;
@@ -157,6 +161,8 @@ public class ConfirmTxHashMapDB implements ActorService {
 					if (!hp.isRemoved()) {
 						if (hp.getBits().bitCount() >= minConfirm) {
 							ret.add(hp.getTx());
+							removeSavestorage.put(hp.getKey(), System.currentTimeMillis());
+
 							hp.setRemoved(true);
 							i++;
 						} else {
@@ -168,8 +174,10 @@ public class ConfirmTxHashMapDB implements ActorService {
 									oSendingHashMapDB.put(hp.getKey(), hp);
 									confirmQueue.addLast(hp);
 								} else {
-//									log.error("confirmQueue info rm tx from  queue::" + hp.getKey());
+									// log.error("confirmQueue info rm tx from
+									// queue::" + hp.getKey());
 									hp.setRemoved(true);
+									removeSavestorage.put(hp.getKey(), System.currentTimeMillis());
 								}
 							} else {
 								confirmQueue.addLast(hp);
@@ -209,6 +217,14 @@ public class ConfirmTxHashMapDB implements ActorService {
 		} catch (Exception e) {
 			log.error("error in clearStorage:", e);
 		}
+		
+		try {
+			long start = System.currentTimeMillis();
+			int cc = clearRemoveQueue();
+			log.error("end of clearRemoveQueue::cost=" + (System.currentTimeMillis() - start) + ",clearcount=" + cc);
+		} catch (Exception e) {
+			log.error("error in clearRemoveQueue:", e);
+		}
 	}
 
 	public int clearQueue() {
@@ -234,6 +250,30 @@ public class ConfirmTxHashMapDB implements ActorService {
 			}
 		}
 		return clearcount;
+	}
+
+	public int clearRemoveQueue() {
+		Enumeration<String> en = removeSavestorage.keys();
+		List<String> removeKeys = new ArrayList<>();
+		while (en.hasMoreElements()) {
+			try {
+				String key = en.nextElement();
+				Long rmTime = removeSavestorage.get(key);
+				if (rmTime != null) {
+					if (System.currentTimeMillis() - rmTime > 60 * 1000) {
+						removeKeys.add(key);
+					}
+				}
+			} catch (Exception e) {
+				log.error("cannot remove the tx::", e);
+			} finally {
+			}
+		}
+		for (String key : removeKeys) {
+			removeSavestorage.remove(key);
+		}
+
+		return removeKeys.size();
 	}
 
 	public int clearStorage() {
