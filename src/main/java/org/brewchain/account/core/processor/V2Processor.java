@@ -508,8 +508,8 @@ public class V2Processor implements IProcessor, ActorService {
 							// re
 						} else {
 							oBlockStoreSummary = blockChainHelper.connectBlock(applyBlock.build());
-							log.error("connectok:apply=" + applyBlock.getHeader().getNumber() + ",connect="
-									+ oBlockStoreSummary);
+//							log.error("connectok:apply=" + applyBlock.getHeader().getNumber() + ",connect="
+//									+ oBlockStoreSummary);
 							this.stateTrie.getExecutor().submit(new Runnable() {
 								@Override
 								public void run() {
