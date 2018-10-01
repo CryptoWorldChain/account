@@ -109,7 +109,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 		return poll(maxsize, 0);
 	}
 
-	public HashPair invalidate(String key) {
+	public synchronized HashPair invalidate(String key) {
 		// rwLock.writeLock().lock();
 		try {// second entry.
 			HashPair hp = storage.get(key);
@@ -125,7 +125,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 		}
 	}
 
-	public HashPair revalidate(String key) {
+	public synchronized HashPair revalidate(String key) {
 		// rwLock.writeLock().lock();
 		try {// second entry.
 			HashPair hp = storage.get(key);

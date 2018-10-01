@@ -504,7 +504,7 @@ public class V2Processor implements IProcessor, ActorService {
 							
 						} else {
 							oBlockStoreSummary = blockChainHelper.connectBlock(applyBlock.build());
-							log.error("connectok:apply="+applyBlock.getHeader().getNumber()+",connect="+oBlockStoreSummary.getBlock().getHeader().getNumber());
+							log.error("connectok:apply="+applyBlock.getHeader().getNumber()+",connect="+oBlockStoreSummary);
 							transactionHelper.getOConfirmMapDB().clear();
 						}
 						break;
