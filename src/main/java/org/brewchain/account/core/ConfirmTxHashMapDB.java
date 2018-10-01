@@ -237,7 +237,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 			log.error("error in clearRemoveQueue:", e);
 		}
 		log.error("end of clear:cost=" + (System.currentTimeMillis() - tstart) + ":[" + cost[0] + "," + cost[1] + ","
-				+ cost[2] + "],count=" + ccs[0] + "," + ccs[1] + "," + ccs[2] + "]");
+				+ cost[2] + "],count=[" + ccs[0] + "," + ccs[1] + "," + ccs[2] + "]");
 	}
 
 	public int clearQueue() {
@@ -303,7 +303,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 							&& System.currentTimeMillis() - hp.getLastUpdateTime() >= 180 * 1000) {
 						// time out confirm;
 						removeKeys.add(key);
-					}
+					} 
 				}
 			} catch (Exception e) {
 				log.error("cannot remove the tx::", e);
