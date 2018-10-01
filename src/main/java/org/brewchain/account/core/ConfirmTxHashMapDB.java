@@ -67,9 +67,9 @@ public class ConfirmTxHashMapDB implements ActorService {
 				_hp.setData(hp.getData());
 				_hp.setTx(hp.getTx());
 				_hp.setNeedBroadCast(hp.isNeedBroadCast());
-				// if (!confirmQueue.contains(_hp)) {
-				confirmQueue.addLast(_hp);
-				// }
+				if (!confirmQueue.contains(_hp)) {
+					confirmQueue.addLast(_hp);
+				}
 			}
 			_hp.setBits(bits);
 
@@ -168,17 +168,10 @@ public class ConfirmTxHashMapDB implements ActorService {
 									oSendingHashMapDB.put(hp.getKey(), hp);
 									confirmQueue.addLast(hp);
 								} else {
-									 log.error("confirmQueue info rm tx from  queue::" + hp.getKey());
-									 hp.setRemoved(true);
+//									log.error("confirmQueue info rm tx from  queue::" + hp.getKey());
+									hp.setRemoved(true);
 								}
 							} else {
-								// log.error("confirmQueue info put last::" +
-								// hp.getKey() + " checktime::" +
-								// checkTime
-								// + " lasttime::" + hp.getLastUpdateTime() + "
-								// confirm::"
-								// + hp.getBits().bitCount() + " need::" +
-								// minConfirm);
 								confirmQueue.addLast(hp);
 							}
 							i++;
@@ -192,7 +185,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 			}
 		}
 
-		log.error("confirmQueue info poll:: maxsize::" + maxsize + ",maxtried=" + maxtried + " size::"
+		log.error("confirmQueue info poll:: maxsize::" + maxsize + ",maxtried=" + maxtried + " queuesize::"
 				+ confirmQueue.size() + ",storage=" + storage.size() + ",try=" + i);
 
 		// log.debug("confirm tx poll maxsize::" + maxsize + " minConfirm::" +

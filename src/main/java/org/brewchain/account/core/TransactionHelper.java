@@ -126,7 +126,7 @@ public class TransactionHelper implements ActorService {
 		hp.setNeedBroadCast(true);
 		oSendingHashMapDB.put(hp.getKey(), hp);
 
-//		oConfirmMapDB.confirmTx(hp);
+		oConfirmMapDB.confirmTx(hp, BigInteger.ZERO);
 
 		dao.getStats().signalAcceptTx();
 		return hp;
