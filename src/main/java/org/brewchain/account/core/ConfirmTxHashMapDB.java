@@ -202,7 +202,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 		return ret;
 	}
 
-	public void clear() {
+	public synchronized void clear() {
 		try {
 			long start = System.currentTimeMillis();
 			int cc = clearQueue();

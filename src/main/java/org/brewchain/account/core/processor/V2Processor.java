@@ -338,7 +338,6 @@ public class V2Processor implements IProcessor, ActorService {
 
 		start = System.currentTimeMillis();
 		Map<String, ByteString> results = ExecuteTransaction(txs, oBlockEntity.build(), accounts);
-		
 
 		BlockHeader.Builder header = oBlockEntity.getHeaderBuilder();
 
@@ -449,11 +448,12 @@ public class V2Processor implements IProcessor, ActorService {
 							if (!transactionHelper.isExistsWaitBlockTx(txHash)
 									&& !transactionHelper.isExistsTransaction(txHash)) {
 								oAddBlockResponse.addTxHashs(txHash);
-//								log.error("need tx hash::" + txHash);
+								// log.error("need tx hash::" + txHash);
 							}
 						}
 						if (oAddBlockResponse.getTxHashsCount() > 0) {
-//							log.error("need tx count::" + oAddBlockResponse.getTxHashsCount());
+							// log.error("need tx count::" +
+							// oAddBlockResponse.getTxHashsCount());
 							oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.ERROR);
 							oAddBlockResponse.setWantNumber(applyBlock.getHeader().getNumber());
 							break;
@@ -496,16 +496,27 @@ public class V2Processor implements IProcessor, ActorService {
 
 							blockChainHelper.rollbackTo(applyBlock.getHeader().getNumber() - 1);
 							oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.ERROR);
-							
+							final BlockHeader.Builder bbh = oBlockHeader;
+							this.stateTrie.getExecutor().submit(new Runnable() {
+								@Override
+								public void run() {
+									for (String txHash : bbh.getTxHashsList()) {
+										transactionHelper.getOConfirmMapDB().revalidate(txHash);
+									}
+								}
+							});
 							// re
-							for (String txHash : oBlockHeader.getTxHashsList()) {
-								transactionHelper.getOConfirmMapDB().revalidate(txHash);
-							}
-							
 						} else {
 							oBlockStoreSummary = blockChainHelper.connectBlock(applyBlock.build());
-							log.error("connectok:apply="+applyBlock.getHeader().getNumber()+",connect="+oBlockStoreSummary);
-							transactionHelper.getOConfirmMapDB().clear();
+							log.error("connectok:apply=" + applyBlock.getHeader().getNumber() + ",connect="
+									+ oBlockStoreSummary);
+							this.stateTrie.getExecutor().submit(new Runnable() {
+								@Override
+								public void run() {
+									transactionHelper.getOConfirmMapDB().clear();
+								}
+							});
+
 						}
 						break;
 					case APPLY_CHILD:
