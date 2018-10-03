@@ -269,11 +269,13 @@ public class BlockUnStableStore implements ActorService {
 			oParent = this.storage.get(oParent.getParentHash(), oParent.getNumber() - 1);
 		}
 		if (oBlockStoreNodeValue != null && count >= blockChainConfig.getStableBlocks()) {
-			storage.remove(oBlockStoreNodeValue.getBlockHash(), oBlockStoreNodeValue.getNumber());
-			// log.debug("stable block number::" +
-			// oBlockStoreNodeValue.getNumber() + " hash::"
-			// + oBlockStoreNodeValue.getBlockHash());
-			return oBlockStoreNodeValue;
+			try (ALock l = writeLock.lock()) {
+				storage.remove(oBlockStoreNodeValue.getBlockHash(), oBlockStoreNodeValue.getNumber());
+				// log.debug("stable block number::" +
+				// oBlockStoreNodeValue.getNumber() + " hash::"
+				// + oBlockStoreNodeValue.getBlockHash());
+				return oBlockStoreNodeValue;
+			}
 		}
 		return null;
 	}

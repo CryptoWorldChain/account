@@ -93,7 +93,7 @@ public class TransactionLoadTestExecImpl extends SessionModules<ReqCommonTest> {
 			} else {
 				KeyPairs from, to;
 				int nonce = 0;
-				if (kps.size() < 10000) {
+				if (kps.size() < 2000000) {
 					// make one
 					from = encApi.genKeys();
 					to = encApi.genKeys();
