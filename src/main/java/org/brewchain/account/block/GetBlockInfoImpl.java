@@ -86,8 +86,10 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 					+ ((stateTrie.getBatchStorage().get() == null || stateTrie.getBatchStorage().get().kvs == null)
 							? "0"
 							: stateTrie.getBatchStorage().get().kvs.size())
-					+ " queue:: " + oConfirmMapDB.getConfirmQueue().size() + " bps::"
-					+ (dao.getStats().getBlockTxCount().get() * 1000.0
+					+ " queue:: " + oConfirmMapDB.getConfirmQueue().size() 
+					+ " storage:: " + oConfirmMapDB.getStorage().size() 
+					+ " remove:: " + oConfirmMapDB.getRemoveSavestorage().size() 
+					+ " bps::" + (dao.getStats().getBlockTxCount().get() * 1000.0
 							/ (dao.getStats().getLastBlockTxTime() - dao.getStats().getFirstBlockTxTime())));
 			oRespBlockInfo.setNumber(blockChainHelper.getLastBlockNumber());
 			// oRespBlockInfo.setCache(blockChainHelper.getBlockCacheDump());
