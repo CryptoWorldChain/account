@@ -1,6 +1,10 @@
 package org.brewchain.account.sample;
 
 import java.math.BigInteger;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockChainHelper;
@@ -9,7 +13,6 @@ import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.gens.TxTest.PTSTCommand;
 import org.brewchain.account.gens.TxTest.PTSTModule;
 import org.brewchain.account.gens.TxTest.ReqCommonTest;
-import org.brewchain.account.gens.TxTest.RespCommonTest;
 import org.brewchain.account.gens.TxTest.RespCreateTransactionTest;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionBody;
@@ -22,6 +25,7 @@ import org.fc.brewchain.bcapi.KeyPairs;
 
 import com.google.protobuf.ByteString;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import onight.oapi.scala.commons.SessionModules;
@@ -58,6 +62,14 @@ public class TransactionLoadTestExecImpl extends SessionModules<ReqCommonTest> {
 		return PTSTModule.TST.name();
 	}
 
+	@AllArgsConstructor
+	class LoadKeyPairs {
+		KeyPairs kp;
+		int nonce = 0;
+	}
+
+	LinkedBlockingDeque<LoadKeyPairs> kps = new LinkedBlockingDeque<>();
+
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqCommonTest pb, final CompleteHandler handler) {
 		RespCreateTransactionTest.Builder oRespCreateTransactionTest = RespCreateTransactionTest.newBuilder();
@@ -79,10 +91,27 @@ public class TransactionLoadTestExecImpl extends SessionModules<ReqCommonTest> {
 					log.error("wrong txHash::" + txHash);
 				}
 			} else {
-				// make one
-				KeyPairs from = encApi.genKeys();
-				KeyPairs to = encApi.genKeys();
-				tx = addDefaultTx(from, to);
+				KeyPairs from, to;
+				int nonce = 0;
+				if (kps.size() < 10000) {
+					// make one
+					from = encApi.genKeys();
+					to = encApi.genKeys();
+					kps.putLast(new LoadKeyPairs(from, 0));
+					kps.putLast(new LoadKeyPairs(to, 0));
+				} else {
+					LoadKeyPairs lfrom = kps.poll();
+					LoadKeyPairs lto = kps.poll();
+					// accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
+					from = lfrom.kp;
+					to = lto.kp;
+					nonce = lfrom.nonce;
+					lfrom.nonce = lfrom.nonce + 1;
+					kps.putLast(lto);
+					kps.putLast(lfrom);
+				}
+
+				tx = addDefaultTx(from, to, nonce);
 				if (tx != null) {
 					txHash = transactionHelper.CreateMultiTransaction(tx).getKey();
 					oRespCreateTransactionTest.setRetmsg("success");
@@ -103,7 +132,7 @@ public class TransactionLoadTestExecImpl extends SessionModules<ReqCommonTest> {
 		return;
 	}
 
-	private MultiTransaction.Builder addDefaultTx(KeyPairs oFrom, KeyPairs oTo) {
+	private MultiTransaction.Builder addDefaultTx(KeyPairs oFrom, KeyPairs oTo, int nonce) {
 		MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 		MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
 		try {
@@ -113,7 +142,6 @@ public class TransactionLoadTestExecImpl extends SessionModules<ReqCommonTest> {
 			MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
 			oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
 			oMultiTransactionInput4.setAmount(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(BigInteger.ZERO)));
-			int nonce = accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
 			// nonce = nonce + i - 1;
 			oMultiTransactionInput4.setNonce(nonce);
 			oMultiTransactionBody.addInputs(oMultiTransactionInput4);
@@ -124,8 +152,8 @@ public class TransactionLoadTestExecImpl extends SessionModules<ReqCommonTest> {
 			oMultiTransactionBody.addOutputs(oMultiTransactionOutput1);
 			oMultiTransaction.clearTxHash();
 			oMultiTransactionBody.clearSignatures();
-//			oMultiTransactionBody.setTimestamp(System.currentTimeMillis());
-			
+			// oMultiTransactionBody.setTimestamp(System.currentTimeMillis());
+
 			// 签名
 			MultiTransactionSignature.Builder oMultiTransactionSignature21 = MultiTransactionSignature.newBuilder();
 			oMultiTransactionSignature21.setSignature(

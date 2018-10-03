@@ -446,7 +446,9 @@ public class V2Processor implements IProcessor, ActorService {
 					case APPLY:
 						for (String txHash : applyBlock.getHeader().getTxHashsList()) {
 							if (!transactionHelper.isExistsWaitBlockTx(txHash)
-									&& !transactionHelper.isExistsTransaction(txHash)) {
+							// 不需要从数据库里面抓取，TODO 讨论一下
+							// && !transactionHelper.isExistsTransaction(txHash)
+							) {
 								oAddBlockResponse.addTxHashs(txHash);
 								// log.error("need tx hash::" + txHash);
 							}
@@ -508,8 +510,9 @@ public class V2Processor implements IProcessor, ActorService {
 							// re
 						} else {
 							oBlockStoreSummary = blockChainHelper.connectBlock(applyBlock.build());
-//							log.error("connectok:apply=" + applyBlock.getHeader().getNumber() + ",connect="
-//									+ oBlockStoreSummary);
+							// log.error("connectok:apply=" +
+							// applyBlock.getHeader().getNumber() + ",connect="
+							// + oBlockStoreSummary);
 							this.stateTrie.getExecutor().submit(new Runnable() {
 								@Override
 								public void run() {
@@ -535,7 +538,9 @@ public class V2Processor implements IProcessor, ActorService {
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 						break;
 					case ERROR:
-						log.error("fail to apply block number::" + applyBlock.getHeader().getNumber());
+						log.error("fail to apply block number::" + applyBlock.getHeader().getNumber() + ":want"
+								+ oAddBlockResponse.getWantNumber() + ",needTxHash="
+								+ oAddBlockResponse.getTxHashsCount()+",ApplyHash="+applyBlock.getHeader().getBlockHash());
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 						break;
 					}
@@ -556,8 +561,9 @@ public class V2Processor implements IProcessor, ActorService {
 			oAddBlockResponse.setWantNumber(oAddBlockResponse.getCurrentNumber());
 		}
 
-//		log.error("====> end apply block number::" + oBlockEntity.getHeader().getNumber() + "  cost::"
-//				+ (System.currentTimeMillis() - start));
+		// log.error("====> end apply block number::" +
+		// oBlockEntity.getHeader().getNumber() + " cost::"
+		// + (System.currentTimeMillis() - start));
 		blockChainHelper.getDao().getStats().setCurBlockID(oBlockEntity.getHeader().getNumber());
 
 		return oAddBlockResponse.build();

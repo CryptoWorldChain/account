@@ -78,7 +78,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 		}
 	}
 
-	public synchronized void confirmTx(String key, BigInteger bits) {
+	public  void confirmTx(String key, BigInteger bits) {
 		try {
 			// rwLock.writeLock().lock();
 			if (removeSavestorage.containsKey(key)) {
@@ -109,7 +109,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 		return poll(maxsize, 0);
 	}
 
-	public synchronized HashPair invalidate(String key) {
+	public  HashPair invalidate(String key) {
 		// rwLock.writeLock().lock();
 		try {// second entry.
 			HashPair hp = storage.get(key);
@@ -126,7 +126,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 		}
 	}
 
-	public synchronized HashPair revalidate(String key) {
+	public  HashPair revalidate(String key) {
 		// rwLock.writeLock().lock();
 		try {// second entry.
 			HashPair hp = storage.get(key);
