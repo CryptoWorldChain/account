@@ -408,7 +408,7 @@ public class TransactionHelper implements ActorService {
 				log.error("txHash not found:" + txHash+",found In confirmMap:bc="+hp.getBits().bitCount());
 				return hp.getTx();
 			} else {
-				log.error("txHash not found:" + txHash);
+//				log.error("txHash not found:" + txHash);
 				return null;
 			}
 		}
