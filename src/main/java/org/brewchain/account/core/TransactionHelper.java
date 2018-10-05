@@ -285,9 +285,9 @@ public class TransactionHelper implements ActorService {
 						keys.add(oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash())));
 						values.add(OValue.newBuilder().setExtdata(mts).setInfo(mtb.getTxHash()).build());
 						// oConfirmMapDB.confirmTx(hp, bits);
-//						if (isBroadCast) {
+						if (isBroadCast) {
 							oConfirmMapDB.confirmTx(hp, bits);
-//						}
+						}
 						txDBCacheByHash.put(hp.getKey(), hp.getTx());
 						dao.getStats().signalSyncTx();
 					} else {

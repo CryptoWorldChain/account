@@ -538,7 +538,7 @@ public class V2Processor implements IProcessor, ActorService {
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 						break;
 					case ERROR:
-						log.error("fail to apply block number::" + applyBlock.getHeader().getNumber() + ":want"
+						log.error("fail to apply block number::" + applyBlock.getHeader().getNumber() + ":want="
 								+ oAddBlockResponse.getWantNumber() + ",needTxHash="
 								+ oAddBlockResponse.getTxHashsCount()+",ApplyHash="+applyBlock.getHeader().getBlockHash());
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
