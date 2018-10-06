@@ -498,15 +498,7 @@ public class V2Processor implements IProcessor, ActorService {
 
 							blockChainHelper.rollbackTo(applyBlock.getHeader().getNumber() - 1);
 							oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.ERROR);
-							final BlockHeader.Builder bbh = oBlockHeader;
-							this.stateTrie.getExecutor().submit(new Runnable() {
-								@Override
-								public void run() {
-									for (String txHash : bbh.getTxHashsList()) {
-										transactionHelper.getOConfirmMapDB().revalidate(txHash);
-									}
-								}
-							});
+							
 							// re
 						} else {
 							oBlockStoreSummary = blockChainHelper.connectBlock(applyBlock.build());
@@ -519,7 +511,6 @@ public class V2Processor implements IProcessor, ActorService {
 									transactionHelper.getOConfirmMapDB().clear();
 								}
 							});
-
 						}
 						break;
 					case APPLY_CHILD:
@@ -534,13 +525,23 @@ public class V2Processor implements IProcessor, ActorService {
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 						break;
 					case STORE:
-						log.info("apply done number::" + blockChainHelper.getLastBlockNumber());
+						log.error("apply done number::" + blockChainHelper.getLastBlockNumber());
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
+
 						break;
 					case ERROR:
 						log.error("fail to apply block number::" + applyBlock.getHeader().getNumber() + ":want="
 								+ oAddBlockResponse.getWantNumber() + ",needTxHash="
 								+ oAddBlockResponse.getTxHashsCount()+",ApplyHash="+applyBlock.getHeader().getBlockHash());
+						final BlockHeader.Builder bbh = oBlockHeader;
+						this.stateTrie.getExecutor().submit(new Runnable() {
+							@Override
+							public void run() {
+								for (String txHash : bbh.getTxHashsList()) {
+									transactionHelper.getOConfirmMapDB().revalidate(txHash);
+								}
+							}
+						});
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 						break;
 					}

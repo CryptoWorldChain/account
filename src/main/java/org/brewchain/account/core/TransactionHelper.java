@@ -285,13 +285,13 @@ public class TransactionHelper implements ActorService {
 						keys.add(oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash())));
 						values.add(OValue.newBuilder().setExtdata(mts).setInfo(mtb.getTxHash()).build());
 						// oConfirmMapDB.confirmTx(hp, bits);
-						if (isBroadCast) {
+//						if (isBroadCast) {
 							oConfirmMapDB.confirmTx(hp, bits);
-						}
+//						}
 						txDBCacheByHash.put(hp.getKey(), hp.getTx());
 						dao.getStats().signalSyncTx();
 					} else {
-						// oConfirmMapDB.confirmTx(mtb.getTxHash(), bits, true);
+						oConfirmMapDB.confirmTx(mtb.getTxHash(), bits);
 					}
 				} catch (Exception e) {
 					log.error("fail to sync transaction::" + oMultiTransaction.size() + " error::" + e, e);
@@ -299,8 +299,13 @@ public class TransactionHelper implements ActorService {
 			}
 
 			try {
-				Future<OValue[]> f = dao.getTxsDao().batchPuts(keys.toArray(new OKey[] {}),
-						values.toArray(new OValue[] {}));// 返回DB里面不存在的,但是数据库已经存进去的
+				OKey ks[]=new OKey[keys.size()];
+				OValue vs[]=new OValue[keys.size()];
+				for(int i=0;i<ks.length;i++){
+					ks[i]=keys.get(i);
+					vs[i]=values.get(i);
+				}
+				Future<OValue[]> f = dao.getTxsDao().batchPuts(ks,vs);// 返回DB里面不存在的,但是数据库已经存进去的
 				// if (f != null && f.get() != null) {
 				// log.debug("sync tx:: batch::" + keys.size() + " new::" +
 				// f.get().length);
@@ -400,6 +405,7 @@ public class TransactionHelper implements ActorService {
 		}
 		HashPair hp = oConfirmMapDB.getStorage().get(txHash);
 		if (hp != null && hp.getTx() != null) {
+			txDBCacheByHash.put(txHash, hp.getTx());
 			return hp.getTx();
 		}
 
