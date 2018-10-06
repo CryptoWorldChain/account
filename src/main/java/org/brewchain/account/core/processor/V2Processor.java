@@ -446,8 +446,7 @@ public class V2Processor implements IProcessor, ActorService {
 					case APPLY:
 						for (String txHash : applyBlock.getHeader().getTxHashsList()) {
 							if (!transactionHelper.isExistsWaitBlockTx(txHash)
-							// 不需要从数据库里面抓取，TODO 讨论一下
-							// && !transactionHelper.isExistsTransaction(txHash)
+							 && !transactionHelper.isExistsTransaction(txHash)
 							) {
 								oAddBlockResponse.addTxHashs(txHash);
 								// log.error("need tx hash::" + txHash);

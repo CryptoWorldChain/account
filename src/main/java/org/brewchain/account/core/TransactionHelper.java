@@ -305,6 +305,7 @@ public class TransactionHelper implements ActorService {
 					ks[i]=keys.get(i);
 					vs[i]=values.get(i);
 				}
+				log.error("batch save tx:ks.size="+ks.length+",vs.size="+vs.length);
 				Future<OValue[]> f = dao.getTxsDao().batchPuts(ks,vs);// 返回DB里面不存在的,但是数据库已经存进去的
 				// if (f != null && f.get() != null) {
 				// log.debug("sync tx:: batch::" + keys.size() + " new::" +
