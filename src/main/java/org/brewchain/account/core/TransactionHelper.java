@@ -398,19 +398,17 @@ public class TransactionHelper implements ActorService {
 		if (cacheTx != null) {
 			return cacheTx;
 		}
+		HashPair hp = oConfirmMapDB.getStorage().get(txHash);
+		if (hp != null && hp.getTx() != null) {
+			return hp.getTx();
+		}
 
 		OValue oValue = dao.getTxsDao().get(oEntityHelper.byteKey2OKey(encApi.hexDec(txHash))).get();
 
 		if (oValue == null || oValue.getExtdata() == null) {
 			// throw new Exception(String.format("没有找到hash %s 的交易数据", txHash));
-			HashPair hp = oConfirmMapDB.getStorage().get(txHash);
-			if (hp != null && hp.getTx() != null) {
-				log.error("txHash not found:" + txHash+",found In confirmMap:bc="+hp.getBits().bitCount());
-				return hp.getTx();
-			} else {
 //				log.error("txHash not found:" + txHash);
 				return null;
-			}
 		}
 		MultiTransaction oTransaction = MultiTransaction.parseFrom(oValue.getExtdata().toByteArray());
 		txDBCacheByHash.put(txHash, oTransaction);
