@@ -253,6 +253,13 @@ public class TransactionHelper implements ActorService {
 		syncTransactionBatch(oMultiTransaction, true, bits);
 	}
 
+	public boolean containConfirm(String txhash,int bit){
+		HashPair hp = oConfirmMapDB.storage.get(txhash);
+		if(hp!=null){
+			return hp.getBits().testBit(bit);
+		}
+		return false;
+	}
 	public void syncTransactionBatch(List<MultiTransaction.Builder> oMultiTransaction, boolean isBroadCast,
 			BigInteger bits) {
 		if (oMultiTransaction.size() > 0) {
