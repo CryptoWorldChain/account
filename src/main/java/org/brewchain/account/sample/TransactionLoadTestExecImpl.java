@@ -161,7 +161,6 @@ public class TransactionLoadTestExecImpl extends SessionModules<ReqCommonTest> {
 					ByteString.copyFrom(encApi.ecSign(oFrom.getPrikey(), oMultiTransactionBody.build().toByteArray())));
 			oMultiTransactionBody.addSignatures(oMultiTransactionSignature21);
 
-			oMultiTransactionBody.setTimestamp(System.currentTimeMillis());
 			oMultiTransaction.setTxBody(oMultiTransactionBody);
 			return oMultiTransaction;
 		} catch (Exception e) {

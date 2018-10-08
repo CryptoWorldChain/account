@@ -60,6 +60,9 @@ public class ConfirmTxHashMapDB implements ActorService {
 					_hp = storage.get(hp.getKey());// double entry
 					if (_hp == null) {
 						storage.put(hp.getKey(), hp);
+						if (hp.getTx() != null) {
+							confirmQueue.addLast(hp);
+						}
 						_hp = hp;
 					}
 				}
