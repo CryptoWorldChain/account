@@ -79,7 +79,7 @@ public class TransactionLoadTestExecImpl extends SessionModules<ReqCommonTest> {
 		try {
 			MultiTransaction.Builder tx = transactionLoadTestStore.getOne();
 			if (tx != null) {
-				tx.setTxBody(tx.getTxBodyBuilder().setTimestamp(System.currentTimeMillis()));
+//				tx.setTxBody(tx.getTxBodyBuilder().setTimestamp(System.currentTimeMillis()));
 				txHash = transactionHelper.CreateMultiTransaction(tx).getKey();
 				oRespCreateTransactionTest.setRetmsg("success");
 				oRespCreateTransactionTest.setTxhash(txHash);
@@ -153,7 +153,7 @@ public class TransactionLoadTestExecImpl extends SessionModules<ReqCommonTest> {
 			oMultiTransactionBody.addOutputs(oMultiTransactionOutput1);
 			oMultiTransaction.clearTxHash();
 			oMultiTransactionBody.clearSignatures();
-			// oMultiTransactionBody.setTimestamp(System.currentTimeMillis());
+			oMultiTransactionBody.setTimestamp(System.currentTimeMillis());
 
 			// 签名
 			MultiTransactionSignature.Builder oMultiTransactionSignature21 = MultiTransactionSignature.newBuilder();

@@ -446,44 +446,21 @@ public class V2Processor implements IProcessor, ActorService {
 					case APPLY:
 						for (String txHash : applyBlock.getHeader().getTxHashsList()) {
 							if (!transactionHelper.isExistsWaitBlockTx(txHash)
-							 && !transactionHelper.isExistsTransaction(txHash)
-							) {
+									&& !transactionHelper.isExistsTransaction(txHash)) {
 								oAddBlockResponse.addTxHashs(txHash);
-								// log.error("need tx hash::" + txHash);
 							}
 						}
 						if (oAddBlockResponse.getTxHashsCount() > 0) {
-							// log.error("need tx count::" +
-							// oAddBlockResponse.getTxHashsCount());
 							oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.ERROR);
 							oAddBlockResponse.setWantNumber(applyBlock.getHeader().getNumber());
+							log.error("must sync tx first, need count::" + oAddBlockResponse.getTxHashsCount());
 							break;
 						}
-						// if (!preCheckBlockTx(applyBlock)) {
-						// log.warn("error in preCheckBlockTx==>tx already
-						// done");
-						// break;
-						// }
-
 						BlockEntity parentBlock;
 						parentBlock = blockChainHelper.getBlockByHash(applyBlock.getHeader().getParentHash());
 
-						// this.stateTrie.setRoot(encApi.hexDec(parentBlock.getHeader().getStateRoot()));
 						processBlock(applyBlock, parentBlock);
-
-						// log.debug("=====sync-> " +
-						// applyBlock.getHeader().getNumber() + " state::"
-						// + applyBlock.getHeader().getStateRoot() + "-" +
-						// oBlockEntity.getHeader().getStateRoot()
-						// + " tx::" + applyBlock.getHeader().getTxTrieRoot() +
-						// "-"
-						// + oBlockEntity.getHeader().getTxTrieRoot() + "
-						// parent::"
-						// + applyBlock.getHeader().getParentHash() + "
-						// receipt::"
-						// + applyBlock.getHeader().getReceiptTrieRoot() + "-"
-						// + oBlockEntity.getHeader().getReceiptTrieRoot());
-
+						
 						if (!oBlockEntity.getHeader().getStateRoot().equals(applyBlock.getHeader().getStateRoot())
 								|| !oBlockEntity.getHeader().getTxTrieRoot()
 										.equals(applyBlock.getHeader().getTxTrieRoot())
@@ -497,13 +474,10 @@ public class V2Processor implements IProcessor, ActorService {
 
 							blockChainHelper.rollbackTo(applyBlock.getHeader().getNumber() - 1);
 							oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.ERROR);
-							
+
 							// re
 						} else {
 							oBlockStoreSummary = blockChainHelper.connectBlock(applyBlock.build());
-							// log.error("connectok:apply=" +
-							// applyBlock.getHeader().getNumber() + ",connect="
-							// + oBlockStoreSummary);
 							this.stateTrie.getExecutor().submit(new Runnable() {
 								@Override
 								public void run() {
@@ -531,7 +505,8 @@ public class V2Processor implements IProcessor, ActorService {
 					case ERROR:
 						log.error("fail to apply block number::" + applyBlock.getHeader().getNumber() + ":want="
 								+ oAddBlockResponse.getWantNumber() + ",needTxHash="
-								+ oAddBlockResponse.getTxHashsCount()+",ApplyHash="+applyBlock.getHeader().getBlockHash());
+								+ oAddBlockResponse.getTxHashsCount() + ",ApplyHash="
+								+ applyBlock.getHeader().getBlockHash());
 						final BlockHeader.Builder bbh = oBlockHeader;
 						this.stateTrie.getExecutor().submit(new Runnable() {
 							@Override

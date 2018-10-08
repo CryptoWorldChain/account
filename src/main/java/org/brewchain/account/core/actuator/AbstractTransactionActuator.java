@@ -53,7 +53,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 		MultiTransactionBody.Builder txBody = signatureTx.getTxBodyBuilder();
 		signatureTx.clearTxHash();
 
-		txBody = txBody.clearSignatures().clearTimestamp();
+		txBody = txBody.clearSignatures();
 		byte[] oMultiTransactionEncode = txBody.build().toByteArray();
 		// 校验交易签名
 		for (MultiTransactionSignature oMultiTransactionSignature : oMultiTransaction.getTxBody().getSignaturesList()) {
