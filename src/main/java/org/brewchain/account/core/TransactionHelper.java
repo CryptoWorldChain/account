@@ -253,6 +253,13 @@ public class TransactionHelper implements ActorService {
 		syncTransactionBatch(oMultiTransaction, true, bits);
 	}
 
+	public boolean containConfirm(String txhash,int bit){
+		HashPair hp = oConfirmMapDB.storage.get(txhash);
+		if(hp!=null){
+			return hp.getBits().testBit(bit);
+		}
+		return false;
+	}
 	public void syncTransactionBatch(List<MultiTransaction.Builder> oMultiTransaction, boolean isBroadCast,
 			BigInteger bits) {
 		if (oMultiTransaction.size() > 0) {
@@ -291,7 +298,7 @@ public class TransactionHelper implements ActorService {
 						txDBCacheByHash.put(hp.getKey(), hp.getTx());
 						dao.getStats().signalSyncTx();
 					} else {
-						// oConfirmMapDB.confirmTx(mtb.getTxHash(), bits, true);
+						oConfirmMapDB.confirmTx(mtb.getTxHash(), bits);
 					}
 				} catch (Exception e) {
 					log.error("fail to sync transaction::" + oMultiTransaction.size() + " error::" + e, e);
@@ -299,8 +306,14 @@ public class TransactionHelper implements ActorService {
 			}
 
 			try {
-				Future<OValue[]> f = dao.getTxsDao().batchPuts(keys.toArray(new OKey[] {}),
-						values.toArray(new OValue[] {}));// 返回DB里面不存在的,但是数据库已经存进去的
+				OKey ks[]=new OKey[keys.size()];
+				OValue vs[]=new OValue[keys.size()];
+				for(int i=0;i<ks.length;i++){
+					ks[i]=keys.get(i);
+					vs[i]=values.get(i);
+				}
+//				log.error("batch save tx:ks.size="+ks.length+",vs.size="+vs.length);
+				Future<OValue[]> f = dao.getTxsDao().batchPuts(ks,vs);// 返回DB里面不存在的,但是数据库已经存进去的
 				// if (f != null && f.get() != null) {
 				// log.debug("sync tx:: batch::" + keys.size() + " new::" +
 				// f.get().length);
@@ -359,7 +372,7 @@ public class TransactionHelper implements ActorService {
 			}
 			oConfirmMapDB.confirmTx(key, fromBits);
 		} catch (Exception e) {
-			log.error("error in confirmRecvTx:" + key + ",fromBits=" + fromBits,e);
+			log.error("error in confirmRecvTx:" + key + ",fromBits=" + fromBits, e);
 		}
 	}
 
@@ -398,11 +411,18 @@ public class TransactionHelper implements ActorService {
 		if (cacheTx != null) {
 			return cacheTx;
 		}
+		HashPair hp = oConfirmMapDB.getStorage().get(txHash);
+		if (hp != null && hp.getTx() != null) {
+			txDBCacheByHash.put(txHash, hp.getTx());
+			return hp.getTx();
+		}
+
 		OValue oValue = dao.getTxsDao().get(oEntityHelper.byteKey2OKey(encApi.hexDec(txHash))).get();
 
 		if (oValue == null || oValue.getExtdata() == null) {
 			// throw new Exception(String.format("没有找到hash %s 的交易数据", txHash));
-			return null;
+//				log.error("txHash not found:" + txHash);
+				return null;
 		}
 		MultiTransaction oTransaction = MultiTransaction.parseFrom(oValue.getExtdata().toByteArray());
 		txDBCacheByHash.put(txHash, oTransaction);

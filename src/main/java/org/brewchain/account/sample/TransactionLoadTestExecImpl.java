@@ -69,7 +69,8 @@ public class TransactionLoadTestExecImpl extends SessionModules<ReqCommonTest> {
 	}
 
 	LinkedBlockingDeque<LoadKeyPairs> kps = new LinkedBlockingDeque<>();
-
+	
+	int maxkeys = props().get("org.bc.ttt.maxkeys", 100000); 
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqCommonTest pb, final CompleteHandler handler) {
 		RespCreateTransactionTest.Builder oRespCreateTransactionTest = RespCreateTransactionTest.newBuilder();
@@ -93,11 +94,11 @@ public class TransactionLoadTestExecImpl extends SessionModules<ReqCommonTest> {
 			} else {
 				KeyPairs from, to;
 				int nonce = 0;
-				if (kps.size() < 10000) {
+				if (kps.size() < maxkeys) {
 					// make one
 					from = encApi.genKeys();
 					to = encApi.genKeys();
-					kps.putLast(new LoadKeyPairs(from, 0));
+					kps.putLast(new LoadKeyPairs(from, 1));
 					kps.putLast(new LoadKeyPairs(to, 0));
 				} else {
 					LoadKeyPairs lfrom = kps.poll();
