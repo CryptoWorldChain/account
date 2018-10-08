@@ -221,7 +221,7 @@ public class V1Processor implements IProcessor, ActorService {
 		}
 	}
 
-	private synchronized void processBlock(BlockEntity.Builder oBlockEntity) throws Exception {
+	private void processBlock(BlockEntity.Builder oBlockEntity) throws Exception {
 		BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
 		LinkedList<MultiTransaction> txs = new LinkedList<MultiTransaction>();
 		CacheTrie oTransactionTrie = new CacheTrie(this.encApi);

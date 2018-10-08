@@ -34,6 +34,7 @@ import org.brewchain.account.exception.TransactionException;
 import org.brewchain.account.gens.Tximpl.MultiTransactionBodyImpl;
 import org.brewchain.account.gens.Tximpl.MultiTransactionImpl;
 import org.brewchain.account.gens.Tximpl.MultiTransactionInputImpl;
+import org.brewchain.account.gens.Tximpl.MultiTransactionNodeImpl;
 import org.brewchain.account.gens.Tximpl.MultiTransactionOutputImpl;
 import org.brewchain.account.gens.Tximpl.MultiTransactionSignatureImpl;
 import org.brewchain.account.trie.StateTrie;
@@ -594,6 +595,13 @@ public class TransactionHelper implements ActorService {
 		}
 		oMultiTransactionBodyImpl.setTimestamp(oMultiTransactionBody.getTimestamp());
 		oMultiTransactionImpl.setTxBody(oMultiTransactionBodyImpl);
+		
+		MultiTransactionNode oMultiTransactionNode = oTransaction.getTxNode();
+
+		MultiTransactionNodeImpl.Builder oNode = MultiTransactionNodeImpl.newBuilder();
+		oNode.setBcuid(oMultiTransactionNode.getBcuid());
+		oNode.setNode(oMultiTransactionNode.getNode());
+		oMultiTransactionImpl.setNode(oNode);
 		return oMultiTransactionImpl;
 	}
 

@@ -56,7 +56,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 			// rwLock.writeLock().lock();
 			HashPair _hp = storage.get(hp.getKey());
 			if (_hp == null) {
-				synchronized (hp.getKey().substring(0, 3).intern()) {
+				synchronized ("acct_" + hp.getKey().substring(0, 3).intern()) {
 					_hp = storage.get(hp.getKey());// double entry
 					if (_hp == null) {
 						storage.put(hp.getKey(), hp);
@@ -81,7 +81,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 		}
 	}
 
-	public  void confirmTx(String key, BigInteger bits) {
+	public void confirmTx(String key, BigInteger bits) {
 		try {
 			// rwLock.writeLock().lock();
 			if (removeSavestorage.containsKey(key)) {
@@ -89,7 +89,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 			}
 			HashPair _hp = storage.get(key);
 			if (_hp == null) {
-				synchronized (key.substring(0, 3).intern()) {
+				synchronized ("acct_" + key.substring(0, 3).intern()) {
 					_hp = storage.get(key);// double entry
 					if (_hp == null) {
 						_hp = new HashPair(key, null, null);
@@ -112,7 +112,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 		return poll(maxsize, 0);
 	}
 
-	public  HashPair invalidate(String key) {
+	public HashPair invalidate(String key) {
 		// rwLock.writeLock().lock();
 		try {// second entry.
 			HashPair hp = storage.get(key);
@@ -129,20 +129,22 @@ public class ConfirmTxHashMapDB implements ActorService {
 		}
 	}
 
-	public  HashPair revalidate(String key) {
-		// rwLock.writeLock().lock();
-		try {// second entry.
-			HashPair hp = storage.get(key);
-			if (hp != null && hp.isRemoved()) {
-				hp.setRemoved(false);
-				removeSavestorage.remove(key);
-			}
-			return hp;
-		} catch (Exception e) {
-			return null;
-		} finally {
-			// rwLock.writeLock().unlock();
-		}
+	public HashPair revalidate(String key) {
+		return null;
+		// // rwLock.writeLock().lock();
+		// try {// second entry.
+		// HashPair hp = storage.get(key);
+		// if (hp != null && hp.isRemoved()) {
+		// hp.setRemoved(false);
+		// removeSavestorage.remove(key);
+		// }
+		// return hp;
+		// } catch (Exception e) {
+		// return null;
+		// } finally {
+		// // rwLock.writeLock().unlock();
+		// }
+
 	}
 
 	public List<MultiTransaction> poll(int maxsize, int minConfirm) {
@@ -306,7 +308,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 							&& System.currentTimeMillis() - hp.getLastUpdateTime() >= 180 * 1000) {
 						// time out confirm;
 						removeKeys.add(key);
-					} 
+					}
 				}
 			} catch (Exception e) {
 				log.error("cannot remove the tx::", e);
