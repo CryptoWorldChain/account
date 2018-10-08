@@ -56,7 +56,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 			// rwLock.writeLock().lock();
 			HashPair _hp = storage.get(hp.getKey());
 			if (_hp == null) {
-				synchronized ("acct_" + hp.getKey().substring(0, 3).intern()) {
+				synchronized (("acct_" + hp.getKey().substring(0, 3)).intern()) {
 					_hp = storage.get(hp.getKey());// double entry
 					if (_hp == null) {
 						storage.put(hp.getKey(), hp);
