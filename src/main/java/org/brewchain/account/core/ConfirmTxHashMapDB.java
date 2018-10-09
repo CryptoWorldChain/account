@@ -25,6 +25,7 @@ import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
 import onight.osgi.annotation.NActorProvider;
 import onight.tfw.ntrans.api.ActorService;
 import onight.tfw.ntrans.api.annotation.ActorRequire;
+import onight.tfw.outils.conf.PropHelper;
 
 @NActorProvider
 @Provides(specifications = { ActorService.class }, strategy = "SINGLETON")
@@ -48,7 +49,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 
 	public ConfirmTxHashMapDB(ConcurrentHashMap<String, HashPair> storage) {
 		// this.storage = storage;
-		this(storage, 1000000);
+		this(storage, new PropHelper(null).get("org.brewchain.account.confirm.memsize", 1000000));
 	}
 	
 	@Invalidate
