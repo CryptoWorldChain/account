@@ -12,7 +12,7 @@ import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import lombok.Data;
 
 @Data
-public class HashPair implements Serializable {
+public class HashPair  implements Serializable {
 	/**
 	 * 
 	 */
@@ -29,6 +29,8 @@ public class HashPair implements Serializable {
 	public int hashCode() {
 		return key.hashCode() ;
 	}
+	
+	
 
 	@Override
 	public boolean equals(Object obj) {

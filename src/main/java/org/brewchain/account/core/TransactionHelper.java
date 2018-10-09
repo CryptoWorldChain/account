@@ -255,7 +255,7 @@ public class TransactionHelper implements ActorService {
 	}
 
 	public boolean containConfirm(String txhash,int bit){
-		HashPair hp = oConfirmMapDB.storage.get(txhash);
+		HashPair hp = oConfirmMapDB.getHP(txhash);
 		if(hp!=null){
 			return hp.getBits().testBit(bit);
 		}
@@ -412,7 +412,7 @@ public class TransactionHelper implements ActorService {
 		if (cacheTx != null) {
 			return cacheTx;
 		}
-		HashPair hp = oConfirmMapDB.getStorage().get(txHash);
+		HashPair hp = oConfirmMapDB.getHP(txHash);
 		if (hp != null && hp.getTx() != null) {
 			txDBCacheByHash.put(txHash, hp.getTx());
 			return hp.getTx();
