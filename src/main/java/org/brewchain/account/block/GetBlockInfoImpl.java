@@ -12,6 +12,7 @@ import org.brewchain.account.core.BlockChainHelper;
 import org.brewchain.account.core.CacheBlockHashMapDB;
 import org.brewchain.account.core.ConfirmTxHashMapDB;
 import org.brewchain.account.core.KeyConstant;
+import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.core.WaitBlockHashMapDB;
 import org.brewchain.account.core.WaitSendHashMapDB;
 import org.brewchain.account.core.store.BlockStoreNodeValue;
@@ -59,7 +60,10 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 	ConfirmTxHashMapDB oConfirmMapDB; // 保存待打包block的交易
 	@ActorRequire(name = "Block_StateTrie", scope = "global")
 	StateTrie stateTrie;
+	@ActorRequire(name = "Transaction_Helper", scope = "global")
+	TransactionHelper transactionHelper;
 
+	
 	@Override
 	public String[] getCmds() {
 		return new String[] { PBCTCommand.BIO.name() };
@@ -95,7 +99,10 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 							: stateTrie.getBatchStorage().get().kvs.size())
 					+ " queue:: " + oConfirmMapDB.getConfirmQueue().size() 
 					+ " storage:: " + oConfirmMapDB.getStorageSize() 
-					+ " remove:: " + oConfirmMapDB.getRemoveSavestorage().size() 
+					+ " remove:: " + oConfirmMapDB.getRemoveSavestorage().size()
+					+ " counter::p=" + transactionHelper.getQueue().getCounter().getPtr_pending().get()+"s="
+					+transactionHelper.getQueue().getCounter().getPtr_sending().get()+",dbsave="
+					+transactionHelper.getQueue().getCounter().getPtr_saved().get()+"   "
 					+ " bps::" + (dao.getStats().getBlockTxCount().get() * 1000.0
 							/ (dao.getStats().getLastBlockTxTime() - dao.getStats().getFirstBlockTxTime())));
 			oRespBlockInfo.setNumber(blockChainHelper.getLastBlockNumber());
