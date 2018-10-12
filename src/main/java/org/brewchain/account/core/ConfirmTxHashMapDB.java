@@ -45,7 +45,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 		// this.storage = storage;
 		this(storage, new PropHelper(null).get("org.brewchain.account.confirm.memsize", 1000000));
 	}
-	
+
 	public ConfirmTxHashMapDB(ConcurrentHashMap<String, HashPair> storage, int maxElementsInMemory) {
 		// this.storage = storage;
 		this.maxElementsInMemory = maxElementsInMemory;
@@ -90,7 +90,8 @@ public class ConfirmTxHashMapDB implements ActorService {
 		if (storage.size() < this.maxElementsInMemory) {
 			storage.put(key, hp);
 		} else {
-			log.error("drop storage queue:size=" + storage.size());
+			// log.error("drop storage queue:size=" + storage.size());
+			storage.put(key, hp);
 			// hp.setStoredInDisk(true);
 			// putElement(hp.getKey(), hp);
 		}
@@ -131,16 +132,6 @@ public class ConfirmTxHashMapDB implements ActorService {
 		} catch (Exception e) {
 			log.error("confirmTx::", e);
 		} finally {
-		}
-	}
-
-	public void addToQueue(HashPair hp) {
-		if (confirmQueue.size() < this.maxElementsInMemory) {
-			confirmQueue.addLast(hp);
-		} else {
-			log.error("drop confirm queue:size=" + confirmQueue.size());
-			// hp.setStoredInDisk(true);
-			// putElement(hp.getKey(), hp);
 		}
 	}
 
