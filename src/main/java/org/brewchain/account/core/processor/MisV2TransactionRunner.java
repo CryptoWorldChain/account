@@ -50,8 +50,8 @@ public class MisV2TransactionRunner implements Runnable {
 						oiTransactionActuator.onExecuteDone(oTransaction, currentBlock, result);
 						results.put(oTransaction.getTxHash(), result);
 					} catch (Throwable e) {// e.printStackTrace();
-						log.error("block " + currentBlock.getHeader().getBlockHash() + " exec transaction hash::"
-								+ oTransaction.getTxHash() + " error::" + e.getMessage());
+//						log.error("block " + currentBlock.getHeader().getBlockHash() + " exec transaction hash::"
+//								+ oTransaction.getTxHash() + " error::" + e.getMessage());
 						try {
 							oiTransactionActuator.onExecuteError(oTransaction, currentBlock, ByteString
 									.copyFromUtf8(e.getMessage() == null ? "unknown exception" : e.getMessage()));
