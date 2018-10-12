@@ -64,6 +64,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 	public void destory() {
 		// this.storage.flush();
 		// cacheManager.shutdown();
+		persistQ.shutdown();
 	}
 
 	int maxElementsInMemory = 100 * 10000;
@@ -93,6 +94,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 		if (storage.size() < this.maxElementsInMemory || hp.getTx() != null) {
 			storage.put(key, hp);
 		} else {
+			persistQ.addElement(hp);
 			// log.error("drop storage queue:size=" + storage.size());
 			// storage.put(key, hp);
 			// hp.setStoredInDisk(true);

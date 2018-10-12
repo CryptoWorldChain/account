@@ -108,7 +108,7 @@ public class TransactionHelper implements ActorService, Runnable {
 			.expireAfterWrite(600, TimeUnit.SECONDS).maximumSize(prop.get("org.brewchain.account.cache.tx.max", 100000))
 			.concurrencyLevel(Runtime.getRuntime().availableProcessors()).build();
 
-	PendingQueue queue = new PendingQueue("txaccept",prop.get("org.brewchain.account.cache.pending", 100000));
+	PendingQueue queue = new PendingQueue("txaccept",prop.get("org.brewchain.account.tx.accept", 100000));
 
 	public boolean isStop = false;
 
