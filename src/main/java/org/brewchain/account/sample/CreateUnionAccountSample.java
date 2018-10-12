@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.brewchain.account.bean.HashPair;
 import org.brewchain.account.core.AccountHelper;
+import org.brewchain.account.core.BlockChainConfig;
 import org.brewchain.account.core.BlockChainHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
@@ -57,7 +58,9 @@ public class CreateUnionAccountSample extends SessionModules<ReqCreateUnionAccou
 	// BlockUnStableStore unStableStore;
 	@ActorRequire(name = "BlockStore_Helper", scope = "global")
 	BlockStore blockStore;
-
+	@ActorRequire(name = "BlockChain_Config", scope = "global")
+	BlockChainConfig blockChainConfig;
+	
 	@Override
 	public String[] getCmds() {
 		return new String[] { PTSTCommand.TCA.name() };
@@ -74,6 +77,12 @@ public class CreateUnionAccountSample extends SessionModules<ReqCreateUnionAccou
 		MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 		MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
 
+		if (!blockChainConfig.isDev()) {
+			oRespCreateUnionAccount.setRetCode(-1);
+			handler.onFinished(PacketHelper.toPBReturn(pack, oRespCreateUnionAccount.build()));
+			return;
+		}
+		
 		try {
 			MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
 			oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(pb.getAddress())));

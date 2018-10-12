@@ -26,6 +26,7 @@ import org.brewchain.account.core.actuator.ActuatorDefault;
 import org.brewchain.account.core.actuator.ActuatorLockTokenTransaction;
 import org.brewchain.account.core.actuator.ActuatorSanctionTransaction;
 import org.brewchain.account.core.actuator.ActuatorTokenTransaction;
+import org.brewchain.account.core.actuator.ActuatorUnionAccountTokenTransaction;
 import org.brewchain.account.core.actuator.ActuatorUnionAccountTransaction;
 import org.brewchain.account.core.actuator.iTransactionActuator;
 import org.brewchain.account.dao.DefDaos;
@@ -254,13 +255,14 @@ public class TransactionHelper implements ActorService {
 		syncTransactionBatch(oMultiTransaction, true, bits);
 	}
 
-	public boolean containConfirm(String txhash,int bit){
+	public boolean containConfirm(String txhash, int bit) {
 		HashPair hp = oConfirmMapDB.getHP(txhash);
-		if(hp!=null){
+		if (hp != null) {
 			return hp.getBits().testBit(bit);
 		}
 		return false;
 	}
+
 	public void syncTransactionBatch(List<MultiTransaction.Builder> oMultiTransaction, boolean isBroadCast,
 			BigInteger bits) {
 		if (oMultiTransaction.size() > 0) {
@@ -293,9 +295,9 @@ public class TransactionHelper implements ActorService {
 						keys.add(oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash())));
 						values.add(OValue.newBuilder().setExtdata(mts).setInfo(mtb.getTxHash()).build());
 						// oConfirmMapDB.confirmTx(hp, bits);
-//						if (isBroadCast) {
-							oConfirmMapDB.confirmTx(hp, bits);
-//						}
+						// if (isBroadCast) {
+						oConfirmMapDB.confirmTx(hp, bits);
+						// }
 						txDBCacheByHash.put(hp.getKey(), hp.getTx());
 						dao.getStats().signalSyncTx();
 					} else {
@@ -307,14 +309,15 @@ public class TransactionHelper implements ActorService {
 			}
 
 			try {
-				OKey ks[]=new OKey[keys.size()];
-				OValue vs[]=new OValue[keys.size()];
-				for(int i=0;i<ks.length;i++){
-					ks[i]=keys.get(i);
-					vs[i]=values.get(i);
+				OKey ks[] = new OKey[keys.size()];
+				OValue vs[] = new OValue[keys.size()];
+				for (int i = 0; i < ks.length; i++) {
+					ks[i] = keys.get(i);
+					vs[i] = values.get(i);
 				}
-//				log.error("batch save tx:ks.size="+ks.length+",vs.size="+vs.length);
-				Future<OValue[]> f = dao.getTxsDao().batchPuts(ks,vs);// 返回DB里面不存在的,但是数据库已经存进去的
+				// log.error("batch save
+				// tx:ks.size="+ks.length+",vs.size="+vs.length);
+				Future<OValue[]> f = dao.getTxsDao().batchPuts(ks, vs);// 返回DB里面不存在的,但是数据库已经存进去的
 				// if (f != null && f.get() != null) {
 				// log.debug("sync tx:: batch::" + keys.size() + " new::" +
 				// f.get().length);
@@ -422,8 +425,8 @@ public class TransactionHelper implements ActorService {
 
 		if (oValue == null || oValue.getExtdata() == null) {
 			// throw new Exception(String.format("没有找到hash %s 的交易数据", txHash));
-//				log.error("txHash not found:" + txHash);
-				return null;
+			// log.error("txHash not found:" + txHash);
+			return null;
 		}
 		MultiTransaction oTransaction = MultiTransaction.parseFrom(oValue.getExtdata().toByteArray());
 		txDBCacheByHash.put(txHash, oTransaction);
@@ -595,7 +598,7 @@ public class TransactionHelper implements ActorService {
 		}
 		oMultiTransactionBodyImpl.setTimestamp(oMultiTransactionBody.getTimestamp());
 		oMultiTransactionImpl.setTxBody(oMultiTransactionBodyImpl);
-		
+
 		MultiTransactionNode oMultiTransactionNode = oTransaction.getTxNode();
 
 		MultiTransactionNodeImpl.Builder oNode = MultiTransactionNodeImpl.newBuilder();
@@ -755,6 +758,10 @@ public class TransactionHelper implements ActorService {
 		case TYPE_Sanction:
 			oiTransactionActuator = new ActuatorSanctionTransaction(oAccountHelper, this, oCurrentBlock, encApi, dao,
 					this.stateTrie);
+			break;
+		case TYPE_UnionAccountTokenTransaction:
+			oiTransactionActuator = new ActuatorUnionAccountTokenTransaction(oAccountHelper, this, oCurrentBlock,
+					encApi, dao, this.stateTrie);
 			break;
 		default:
 			oiTransactionActuator = new ActuatorDefault(this.oAccountHelper, this, oCurrentBlock, encApi, dao,

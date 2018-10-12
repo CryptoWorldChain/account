@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.concurrent.LinkedBlockingDeque;
 
 import org.brewchain.account.bean.HashPair;
+import org.brewchain.account.core.BlockChainConfig;
 import org.brewchain.account.core.BlockChainHelper;
 import org.brewchain.account.core.CacheBlockHashMapDB;
 import org.brewchain.account.core.ConfirmTxHashMapDB;
@@ -46,7 +47,8 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 	DefDaos dao;
 	@ActorRequire(name = "BlockChain_Helper", scope = "global")
 	BlockChainHelper blockChainHelper;
-
+	@ActorRequire(name = "BlockChain_Config", scope = "global")
+	BlockChainConfig blockChainConfig;
 	@ActorRequire(name = "WaitSend_HashMapDB", scope = "global")
 	WaitSendHashMapDB oSendingHashMapDB; // 保存待广播交易
 	@ActorRequire(name = "WaitBlock_HashMapDB", scope = "global")
@@ -71,6 +73,11 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqBlockInfo pb, final CompleteHandler handler) {
 		RespBlockInfo.Builder oRespBlockInfo = RespBlockInfo.newBuilder();
+		
+		if (!blockChainConfig.isDev()) {
+			handler.onFinished(PacketHelper.toPBReturn(pack, oRespBlockInfo.build()));
+			return;
+		}
 		try {
 			if ("true".equalsIgnoreCase(pack.getExtStrProp("clear"))) {
 				dao.getStats().getAcceptTxCount().set(0);

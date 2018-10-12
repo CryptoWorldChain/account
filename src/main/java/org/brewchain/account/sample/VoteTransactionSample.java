@@ -4,6 +4,7 @@ import java.math.BigInteger;
 
 import org.apache.commons.lang3.StringUtils;
 import org.brewchain.account.core.AccountHelper;
+import org.brewchain.account.core.BlockChainConfig;
 import org.brewchain.account.core.BlockChainHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
@@ -53,7 +54,9 @@ public class VoteTransactionSample extends SessionModules<ReqVoteTransaction> {
 	// BlockUnStableStore unStableStore;
 	@ActorRequire(name = "BlockStore_Helper", scope = "global")
 	BlockStore blockStore;
-
+	@ActorRequire(name = "BlockChain_Config", scope = "global")
+	BlockChainConfig blockChainConfig;
+	
 	@Override
 	public String[] getCmds() {
 		return new String[] { PTSTCommand.VTS.name() };
@@ -68,6 +71,12 @@ public class VoteTransactionSample extends SessionModules<ReqVoteTransaction> {
 	public void onPBPacket(final FramePacket pack, final ReqVoteTransaction pb, final CompleteHandler handler) {
 		RespVoteTransaction.Builder oRespVoteTransaction = RespVoteTransaction.newBuilder();
 
+		if (!blockChainConfig.isDev()) {
+			oRespVoteTransaction.setRetCode(-1);
+			handler.onFinished(PacketHelper.toPBReturn(pack, oRespVoteTransaction.build()));
+			return;
+		}
+		
 		MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 		MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
 

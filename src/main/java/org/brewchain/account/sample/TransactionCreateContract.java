@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.util.Date;
 
 import org.brewchain.account.core.AccountHelper;
+import org.brewchain.account.core.BlockChainConfig;
 import org.brewchain.account.core.BlockChainHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
@@ -48,7 +49,9 @@ public class TransactionCreateContract extends SessionModules<ReqCreateContract>
 	TransactionHelper transactionHelper;
 	@ActorRequire(name = "TransactionLoadTest_Store", scope = "global")
 	TransactionLoadTestStore transactionLoadTestStore;
-
+	@ActorRequire(name = "BlockChain_Config", scope = "global")
+	BlockChainConfig blockChainConfig;
+	
 	@Override
 	public String[] getCmds() {
 		return new String[] { PTSTCommand.TCC.name() };
@@ -63,6 +66,12 @@ public class TransactionCreateContract extends SessionModules<ReqCreateContract>
 	public void onPBPacket(final FramePacket pack, final ReqCreateContract pb, final CompleteHandler handler) {
 		RespContract.Builder oRespContract = RespContract.newBuilder();
 
+		if (!blockChainConfig.isDev()) {
+			oRespContract.setRetcode(-1);
+			handler.onFinished(PacketHelper.toPBReturn(pack, oRespContract.build()));
+			return;
+		}
+		
 		try {
 			MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 			MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();

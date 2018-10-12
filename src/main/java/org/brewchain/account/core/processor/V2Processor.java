@@ -349,11 +349,6 @@ public class V2Processor implements IProcessor, ActorService {
 			header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
 
 			this.stateTrie.clear();
-			// log.error("====> end exec number::" +
-			// oBlockEntity.getHeader().getNumber() + ":exec tx count=" + i +
-			// ",cost="
-			// + (System.currentTimeMillis() - start));
-
 			oBlockEntity.setHeader(header);
 
 		} finally {
