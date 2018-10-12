@@ -36,6 +36,10 @@ public class WaitSendHashMapDB implements ActorService {
 			storage.put(key, val);
 		}
 	}
+	
+	public void put(Map<String,HashPair> vals) {
+		storage.putAll(vals);
+	}
 //
 //	public HashPair get(String key) {
 //		return storage.get(key);

@@ -12,7 +12,9 @@ import static java.util.Arrays.copyOfRange;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
+import org.apache.felix.ipojo.annotations.Invalidate;
 import org.apache.felix.ipojo.annotations.Provides;
+import org.apache.felix.ipojo.annotations.Validate;
 import org.brewchain.account.bean.HashPair;
 import org.brewchain.account.core.actuator.AbstractTransactionActuator;
 import org.brewchain.account.core.actuator.ActuatorCallContract;
@@ -78,7 +80,7 @@ import onight.tfw.outils.conf.PropHelper;
 @Instantiate(name = "Transaction_Helper")
 @Slf4j
 @Data
-public class TransactionHelper implements ActorService {
+public class TransactionHelper implements ActorService, Runnable {
 	@ActorRequire(name = "Account_Helper", scope = "global")
 	AccountHelper oAccountHelper;
 	@ActorRequire(name = "Def_Daos", scope = "global")
@@ -106,6 +108,60 @@ public class TransactionHelper implements ActorService {
 			.expireAfterWrite(600, TimeUnit.SECONDS).maximumSize(prop.get("org.brewchain.account.cache.tx.max", 100000))
 			.concurrencyLevel(Runtime.getRuntime().availableProcessors()).build();
 
+	PendingQueue queue = new PendingQueue(prop.get("org.brewchain.account.cache.pending", 100000));
+
+	public boolean isStop = false;
+
+	@Invalidate
+	public void invalid() {
+		isStop = true;
+		synchronized (this) {
+			try {
+				this.notifyAll();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		queue.shutdown();
+	}
+
+	@Validate
+	public void startup() {
+		log.info("about to start Tx");
+		new Thread(this).start();
+	}
+
+	@Override
+	public void run() {
+		while (!isStop) {
+			try {
+				if (oConfirmMapDB.size() < oConfirmMapDB.getMaxElementsInMemory()) {
+					List<HashPair> hps = queue
+							.poll(Math.min(oConfirmMapDB.getMaxElementsInMemory() - oConfirmMapDB.size(), 10000));
+					if (hps != null && hps.size() > 0) {
+						for (HashPair hp : hps) {
+							oSendingHashMapDB.put(hp.getKey(), hp);
+							oConfirmMapDB.confirmTx(hp, BigInteger.ZERO);
+							dao.getStats().signalAcceptTx();
+						}
+					}
+				}
+			} catch (Throwable t) {
+				log.error("error in tx to pending:", t);
+			}
+			try {
+				if (queue.getCounter().getPtr_sending().get() < queue.getCounter().getPtr_pending().get()) {
+					Thread.sleep(100);
+				} else {
+					synchronized (this) {
+						this.wait(10000);
+					}
+				}
+			} catch (Throwable e) {
+			}
+		}
+	}
+
 	/**
 	 * 保存交易方法。 交易不会立即执行，而是等待被广播和打包。只有在Block中的交易，才会被执行。 交易签名规则 1. 清除signatures 2.
 	 * txHash=ByteString.EMPTY 3. 签名内容=oMultiTransaction.toByteArray()
@@ -126,11 +182,20 @@ public class TransactionHelper implements ActorService {
 		HashPair hp = verifyAndSaveMultiTransaction(oMultiTransaction);
 
 		hp.setNeedBroadCast(true);
-		oSendingHashMapDB.put(hp.getKey(), hp);
 
-		oConfirmMapDB.confirmTx(hp, BigInteger.ZERO);
-
-		dao.getStats().signalAcceptTx();
+		queue.addElement(hp);
+		synchronized (this) {
+			try {
+				this.notifyAll();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		// oSendingHashMapDB.put(hp.getKey(), hp);
+		//
+		// oConfirmMapDB.confirmTx(hp, BigInteger.ZERO);
+		//
+		// dao.getStats().signalAcceptTx();
 		return hp;
 	}
 
