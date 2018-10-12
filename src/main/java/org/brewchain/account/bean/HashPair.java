@@ -24,7 +24,7 @@ public class HashPair  implements Serializable {
 	boolean isRemoved = false;
 	boolean isNeedBroadCast = false;
 	long lastUpdateTime = System.currentTimeMillis();
-
+	boolean isStoredInDisk = false;
 	@Override
 	public int hashCode() {
 		return key.hashCode() ;

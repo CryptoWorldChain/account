@@ -16,12 +16,7 @@ import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import net.sf.ehcache.Cache;
-import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
-import net.sf.ehcache.config.CacheConfiguration;
-import net.sf.ehcache.config.Configuration;
-import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
 import onight.osgi.annotation.NActorProvider;
 import onight.tfw.ntrans.api.ActorService;
 import onight.tfw.ntrans.api.annotation.ActorRequire;
@@ -33,15 +28,15 @@ import onight.tfw.outils.conf.PropHelper;
 @Slf4j
 @Data
 public class ConfirmTxHashMapDB implements ActorService {
-	// protected ConcurrentHashMap<String, HashPair> storage;
-	protected Cache storage;
+	protected ConcurrentHashMap<String, HashPair> storage;
+	// protected Cache storage;
 	protected ConcurrentHashMap<String, Long> removeSavestorage = new ConcurrentHashMap<>();
 	protected LinkedBlockingDeque<HashPair> confirmQueue = new LinkedBlockingDeque<>();
 	ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
 	@ActorRequire(name = "WaitSend_HashMapDB", scope = "global")
 	WaitSendHashMapDB oSendingHashMapDB; // 保存待广播交易
 
-	final CacheManager cacheManager = new CacheManager();
+	// final CacheManager cacheManager = new CacheManager();
 
 	public ConfirmTxHashMapDB() {
 		this(new ConcurrentHashMap<String, HashPair>());
@@ -51,28 +46,35 @@ public class ConfirmTxHashMapDB implements ActorService {
 		// this.storage = storage;
 		this(storage, new PropHelper(null).get("org.brewchain.account.confirm.memsize", 1000000));
 	}
-	
+
 	@Invalidate
-	public void destory(){
-		this.storage.flush();
-		cacheManager.shutdown();
+	public void destory() {
+		// this.storage.flush();
+		// cacheManager.shutdown();
 	}
+
+	int maxElementsInMemory = 100 * 10000;
 
 	public ConfirmTxHashMapDB(ConcurrentHashMap<String, HashPair> storage, int maxElementsInMemory) {
 		// this.storage = storage;
-		this.storage = new Cache("storageCache", maxElementsInMemory, MemoryStoreEvictionPolicy.LRU, true,
-				"./storagecache", true, 0, 0, true, 120, null);
-		cacheManager.addCache(this.storage);
-		
+		this.maxElementsInMemory = maxElementsInMemory;
+		// this.storage = new Cache("storageCache", maxElementsInMemory,
+		// MemoryStoreEvictionPolicy.LRU, true,
+		// "./storagecache", true, 0, 0, true, 120, null);
+		// cacheManager.addCache(this.storage);
+
 	}
 
 	BigInteger zeroBit = new BigInteger("0");
 
+	public HashPair eleToHP(HashPair ele) {
+		return ele;
+	}
+
 	public HashPair eleToHP(Element ele) {
-		if(ele!=null)
-		{
+		if (ele != null) {
 			return (HashPair) ele.getObjectValue();
-		}else{
+		} else {
 			return null;
 		}
 	}
@@ -84,11 +86,19 @@ public class ConfirmTxHashMapDB implements ActorService {
 	}
 
 	private void putElement(String key, HashPair hp) {
-		storage.put(new Element(key, hp));
+		// storage.put(new Element(key, hp));
+		if (storage.size() < this.maxElementsInMemory) {
+			storage.put(key, hp);
+		} else {
+			log.error("drop storage queue:size=" + storage.size());
+//			hp.setStoredInDisk(true);
+//			putElement(hp.getKey(), hp);
+		}
 	}
 
 	public HashPair getHP(String txhash) {
-		return eleToHP(storage.get(txhash));
+		return storage.get(txhash);
+		// return eleToHP(storage.get(txhash));
 	}
 
 	public void confirmTx(HashPair hp, BigInteger bits) {
@@ -116,8 +126,18 @@ public class ConfirmTxHashMapDB implements ActorService {
 			_hp.setBits(bits);
 
 		} catch (Exception e) {
-			log.error("confirmTx::" , e);
+			log.error("confirmTx::", e);
 		} finally {
+		}
+	}
+
+	public void addToQueue(HashPair hp) {
+		if (confirmQueue.size() < this.maxElementsInMemory) {
+			confirmQueue.addLast(hp);
+		} else {
+			log.error("drop confirm queue:size=" + confirmQueue.size());
+//			hp.setStoredInDisk(true);
+//			putElement(hp.getKey(), hp);
 		}
 	}
 
@@ -208,6 +228,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 						if (hp.getBits().bitCount() >= minConfirm) {
 							ret.add(hp.getTx());
 							removeSavestorage.put(hp.getKey(), System.currentTimeMillis());
+							putElement(hp.getKey(), hp);
 							hp.setRemoved(true);
 							i++;
 						} else {
@@ -238,7 +259,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 		}
 
 		log.error("confirmQueue info poll:: maxsize::" + maxsize + ",maxtried=" + maxtried + " queuesize::"
-				+ confirmQueue.size() + ",storage=" + storage.getSize() + ",try=" + i);
+				+ confirmQueue.size() + ",storage=" + storage.size() + ",try=" + i);
 
 		// log.debug("confirm tx poll maxsize::" + maxsize + " minConfirm::" +
 		// minConfirm + " checkTime::" + checkTime
@@ -335,12 +356,13 @@ public class ConfirmTxHashMapDB implements ActorService {
 	}
 
 	public int clearStorage() {
-		List<String> keys = storage.getKeys();
+//		List<String> keys = storage.getKeys();
 		List<String> removeKeys = new ArrayList<>();
-		// while (en.hasMoreElements()) {
-		for (String key : keys) {
+		Enumeration<String> en=storage.keys();
+		 while (en.hasMoreElements()) {
+//		for (String key : keys) {
 			try {
-				// String key = en.nextElement();
+				 String key = en.nextElement();
 				HashPair hp = getHP(key);
 				if (hp != null) {
 					if (hp.isRemoved()) {
@@ -363,19 +385,25 @@ public class ConfirmTxHashMapDB implements ActorService {
 		return removeKeys.size();
 	}
 
+	public int getStorageSize(){
+//		return storage.getSize();
+
+		return storage.size();
+	}
 	public int size() {
-		return storage.getSize();
+		return getStorageSize();
 	}
 
 	public static void main(String[] args) {
 		// test.
 		ConfirmTxHashMapDB confirmDB = new ConfirmTxHashMapDB(null, 10000);
-//		for (int i = 0; i < 100; i++) {
-//			String key = "key_" + i;
-//			HashPair hp = new HashPair(key, MultiTransaction.newBuilder().setTxHash(key).setStatus("Done").build());
-//			hp.setData(new byte[] { 0x00 });
-//			confirmDB.confirmTx(hp, BigInteger.ZERO.setBit(1));
-//		}
+		// for (int i = 0; i < 100; i++) {
+		// String key = "key_" + i;
+		// HashPair hp = new HashPair(key,
+		// MultiTransaction.newBuilder().setTxHash(key).setStatus("Done").build());
+		// hp.setData(new byte[] { 0x00 });
+		// confirmDB.confirmTx(hp, BigInteger.ZERO.setBit(1));
+		// }
 		System.out.println("size==" + confirmDB.size());
 		for (int i = 0; i < 100; i++) {
 			String key = "key_" + i;
@@ -384,6 +412,6 @@ public class ConfirmTxHashMapDB implements ActorService {
 				System.out.println("error:hp=" + hp);
 			}
 		}
-		confirmDB.cacheManager.shutdown();
+//		confirmDB.cacheManager.shutdown();
 	}
 }
