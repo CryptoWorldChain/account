@@ -100,7 +100,7 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 					+ " queue:: " + oConfirmMapDB.getConfirmQueue().size() 
 					+ " storage:: " + oConfirmMapDB.getStorageSize() 
 					+ " remove:: " + oConfirmMapDB.getRemoveSavestorage().size()
-					+ " counter::p=" + transactionHelper.getQueue().getCounter().getPtr_pending().get()+"s="
+					+ " counter::p=" + transactionHelper.getQueue().getCounter().getPtr_pending().get()+",s="
 					+transactionHelper.getQueue().getCounter().getPtr_sending().get()+",dbsave="
 					+transactionHelper.getQueue().getCounter().getPtr_saved().get()+"   "
 					+ " bps::" + (dao.getStats().getBlockTxCount().get() * 1000.0
