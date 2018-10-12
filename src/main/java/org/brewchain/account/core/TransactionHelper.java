@@ -133,9 +133,16 @@ public class TransactionHelper implements ActorService, Runnable {
 
 	@Override
 	public void run() {
+		try {
+			Thread.sleep(3000);
+			//boot up wait
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		while (!isStop) {
 			try {
-				if (oConfirmMapDB.size() < oConfirmMapDB.getMaxElementsInMemory()) {
+				if (oConfirmMapDB != null && oConfirmMapDB.size() < oConfirmMapDB.getMaxElementsInMemory()) {
 					List<HashPair> hps = queue
 							.poll(Math.min(oConfirmMapDB.getMaxElementsInMemory() - oConfirmMapDB.size(), 10000));
 					if (hps != null && hps.size() > 0) {
