@@ -129,7 +129,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 			}
 			HashPair _hp = getHP(key);
 			if (_hp == null) {
-				synchronized ("acct_" + key.substring(0, 3).intern()) {
+				synchronized (("acct_" + key.substring(0, 3)).intern()) {
 					_hp = getHP(key);// double entry
 					if (_hp == null) {
 						_hp = new HashPair(key, null, null);
