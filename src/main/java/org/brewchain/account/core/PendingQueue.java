@@ -14,7 +14,7 @@ import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
 @Data
 public class PendingQueue {
 	protected Cache storage;
-	final CacheManager cacheManager = new CacheManager();
+	final static CacheManager cacheManager = new CacheManager();
 
 	public final static String STR_COUNTER = "__idcounter";
 	CounterInfoData counter = new CounterInfoData();
