@@ -51,9 +51,9 @@ public class ConfirmTxHashMapDB implements ActorService {
 		// this.storage = storage;
 		this(storage, new PropHelper(null).get("org.brewchain.account.confirm.memsize", 1000000));
 	}
-	
+
 	@Invalidate
-	public void destory(){
+	public void destory() {
 		this.storage.flush();
 		cacheManager.shutdown();
 	}
@@ -63,16 +63,15 @@ public class ConfirmTxHashMapDB implements ActorService {
 		this.storage = new Cache("storageCache", maxElementsInMemory, MemoryStoreEvictionPolicy.LRU, true,
 				"./storagecache", true, 0, 0, true, 120, null);
 		cacheManager.addCache(this.storage);
-		
+
 	}
 
 	BigInteger zeroBit = new BigInteger("0");
 
 	public HashPair eleToHP(Element ele) {
-		if(ele!=null)
-		{
+		if (ele != null) {
 			return (HashPair) ele.getObjectValue();
-		}else{
+		} else {
 			return null;
 		}
 	}
@@ -116,7 +115,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 			_hp.setBits(bits);
 
 		} catch (Exception e) {
-			log.error("confirmTx::" , e);
+			log.error("confirmTx::", e);
 		} finally {
 		}
 	}
@@ -171,19 +170,19 @@ public class ConfirmTxHashMapDB implements ActorService {
 
 	public HashPair revalidate(String key) {
 		return null;
-		// // rwLock.writeLock().lock();
-		// try {// second entry.
-		// HashPair hp = storage.get(key);
-		// if (hp != null && hp.isRemoved()) {
-		// hp.setRemoved(false);
-		// removeSavestorage.remove(key);
-		// }
-		// return hp;
-		// } catch (Exception e) {
-		// return null;
-		// } finally {
-		// // rwLock.writeLock().unlock();
-		// }
+		// rwLock.writeLock().lock();
+		try {// second entry.
+			HashPair hp = storage.get(key);
+			if (hp != null && hp.isRemoved()) {
+				hp.setRemoved(false);
+				removeSavestorage.remove(key);
+			}
+			return hp;
+		} catch (Exception e) {
+			return null;
+		} finally {
+			// rwLock.writeLock().unlock();
+		}
 
 	}
 
@@ -370,12 +369,13 @@ public class ConfirmTxHashMapDB implements ActorService {
 	public static void main(String[] args) {
 		// test.
 		ConfirmTxHashMapDB confirmDB = new ConfirmTxHashMapDB(null, 10000);
-//		for (int i = 0; i < 100; i++) {
-//			String key = "key_" + i;
-//			HashPair hp = new HashPair(key, MultiTransaction.newBuilder().setTxHash(key).setStatus("Done").build());
-//			hp.setData(new byte[] { 0x00 });
-//			confirmDB.confirmTx(hp, BigInteger.ZERO.setBit(1));
-//		}
+		// for (int i = 0; i < 100; i++) {
+		// String key = "key_" + i;
+		// HashPair hp = new HashPair(key,
+		// MultiTransaction.newBuilder().setTxHash(key).setStatus("Done").build());
+		// hp.setData(new byte[] { 0x00 });
+		// confirmDB.confirmTx(hp, BigInteger.ZERO.setBit(1));
+		// }
 		System.out.println("size==" + confirmDB.size());
 		for (int i = 0; i < 100; i++) {
 			String key = "key_" + i;
