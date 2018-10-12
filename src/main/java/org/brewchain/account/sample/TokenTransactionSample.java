@@ -1,6 +1,7 @@
 package org.brewchain.account.sample;
 
 import org.brewchain.account.core.AccountHelper;
+import org.brewchain.account.core.BlockChainConfig;
 import org.brewchain.account.core.BlockChainHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
@@ -46,7 +47,8 @@ public class TokenTransactionSample extends SessionModules<ReqCreateTransactionT
 	AccountHelper accountHelper;
 	@ActorRequire(name = "Transaction_Helper", scope = "global")
 	TransactionHelper transactionHelper;
-
+	@ActorRequire(name = "BlockChain_Config", scope = "global")
+	BlockChainConfig blockChainConfig;
 	@Override
 	public String[] getCmds() {
 		return new String[] { PTSTCommand.TOO.name() };
@@ -61,6 +63,12 @@ public class TokenTransactionSample extends SessionModules<ReqCreateTransactionT
 	public void onPBPacket(final FramePacket pack, final ReqCreateTransactionTest pb, final CompleteHandler handler) {
 		RespCreateTransactionTest.Builder oRespCreateTransactionTest = RespCreateTransactionTest.newBuilder();
 
+		if (!blockChainConfig.isDev()) {
+			oRespCreateTransactionTest.setRetcode(-1);
+			handler.onFinished(PacketHelper.toPBReturn(pack, oRespCreateTransactionTest.build()));
+			return;
+		}
+		
 		MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 		MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
 

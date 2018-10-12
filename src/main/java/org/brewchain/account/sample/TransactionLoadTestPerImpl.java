@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.brewchain.account.core.AccountHelper;
+import org.brewchain.account.core.BlockChainConfig;
 import org.brewchain.account.core.BlockChainHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
@@ -53,7 +54,9 @@ public class TransactionLoadTestPerImpl extends SessionModules<ReqCreateTransact
 	TransactionHelper transactionHelper;
 	@ActorRequire(name = "TransactionLoadTest_Store", scope = "global")
 	TransactionLoadTestStore transactionLoadTestStore;
-
+	@ActorRequire(name = "BlockChain_Config", scope = "global")
+	BlockChainConfig blockChainConfig;
+	
 	@Override
 	public String[] getCmds() {
 		return new String[] { PTSTCommand.LTP.name() };
@@ -67,6 +70,12 @@ public class TransactionLoadTestPerImpl extends SessionModules<ReqCreateTransact
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqCreateTransactionTest pb, final CompleteHandler handler) {
 		RespCreateTransactionTest.Builder oRespCreateTransactionTest = RespCreateTransactionTest.newBuilder();
+		
+		if (!blockChainConfig.isDev()) {
+			oRespCreateTransactionTest.setRetcode(-1);
+			handler.onFinished(PacketHelper.toPBReturn(pack, oRespCreateTransactionTest.build()));
+			return;
+		}
 		// int total = Math.max(Math.max(Math.max(pb.getContractCall(),
 		// pb.getContractTx()), pb.getDefaultTx()),
 		// pb.getErc20Tx());

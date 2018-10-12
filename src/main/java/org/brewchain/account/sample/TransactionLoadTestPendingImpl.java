@@ -1,6 +1,7 @@
 package org.brewchain.account.sample;
 
 import org.brewchain.account.core.AccountHelper;
+import org.brewchain.account.core.BlockChainConfig;
 import org.brewchain.account.core.BlockChainHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
@@ -37,7 +38,9 @@ public class TransactionLoadTestPendingImpl extends SessionModules<ReqCommonTest
 	TransactionHelper transactionHelper;
 	@ActorRequire(name = "TransactionLoadTest_Store", scope = "global")
 	TransactionLoadTestStore transactionLoadTestStore;
-
+	@ActorRequire(name = "BlockChain_Config", scope = "global")
+	BlockChainConfig blockChainConfig;
+	
 	@Override
 	public String[] getCmds() {
 		return new String[] { "PEN" };
@@ -51,7 +54,13 @@ public class TransactionLoadTestPendingImpl extends SessionModules<ReqCommonTest
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqCommonTest pb, final CompleteHandler handler) {
 		RespCreateTransactionTest.Builder oRespCreateTransactionTest = RespCreateTransactionTest.newBuilder();
-
+		
+		if (!blockChainConfig.isDev()) {
+			oRespCreateTransactionTest.setRetcode(-1);
+			handler.onFinished(PacketHelper.toPBReturn(pack, oRespCreateTransactionTest.build()));
+			return;
+		}
+		
 		String txHash = "";
 		try {
 			MultiTransaction.Builder tx = transactionLoadTestStore.getOne();

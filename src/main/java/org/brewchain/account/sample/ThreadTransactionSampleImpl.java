@@ -6,6 +6,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import org.brewchain.account.core.AccountHelper;
+import org.brewchain.account.core.BlockChainConfig;
 import org.brewchain.account.core.BlockChainHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
@@ -47,7 +48,8 @@ public class ThreadTransactionSampleImpl extends SessionModules<ReqThreadTransac
 	AccountHelper accountHelper;
 	@ActorRequire(name = "Transaction_Helper", scope = "global")
 	TransactionHelper transactionHelper;
-
+	@ActorRequire(name = "BlockChain_Config", scope = "global")
+	BlockChainConfig blockChainConfig;
 	@Override
 	public String[] getCmds() {
 		return new String[] { PTSTCommand.MTT.name() };
@@ -61,6 +63,12 @@ public class ThreadTransactionSampleImpl extends SessionModules<ReqThreadTransac
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqThreadTransaction pb, final CompleteHandler handler) {
 		RespCommonTest.Builder oRespCommonTest = RespCommonTest.newBuilder();
+		if (!blockChainConfig.isDev()) {
+			oRespCommonTest.setRetcode(-1);
+			handler.onFinished(PacketHelper.toPBReturn(pack, oRespCommonTest.build()));
+			return;
+		}
+		
 		for (int i = 0; i < pb.getThreads(); i++) {
 			ThreadTransaction oThreadTransaction = new ThreadTransaction(transactionHelper, encApi, pb.getDuration(),
 					pb.getAddress(i), pb.getPrivKey(i), "");

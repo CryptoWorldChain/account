@@ -3,6 +3,7 @@ package org.brewchain.account.sample;
 import java.math.BigInteger;
 
 import org.brewchain.account.core.AccountHelper;
+import org.brewchain.account.core.BlockChainConfig;
 import org.brewchain.account.core.BlockChainHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
@@ -47,7 +48,9 @@ public class CryptoTransactionSample extends SessionModules<ReqCreateTransaction
 	AccountHelper accountHelper;
 	@ActorRequire(name = "Transaction_Helper", scope = "global")
 	TransactionHelper transactionHelper;
-
+	@ActorRequire(name = "BlockChain_Config", scope = "global")
+	BlockChainConfig blockChainConfig;
+	
 	@Override
 	public String[] getCmds() {
 		return new String[] { PTSTCommand.TRO.name() };
@@ -63,6 +66,12 @@ public class CryptoTransactionSample extends SessionModules<ReqCreateTransaction
 		RespCreateTransactionTest.Builder oRespCreateTransactionTest = RespCreateTransactionTest.newBuilder();
 		MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 		MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
+		
+		if (!blockChainConfig.isDev()) {
+			oRespCreateTransactionTest.setRetcode(-1);
+			handler.onFinished(PacketHelper.toPBReturn(pack, oRespCreateTransactionTest.build()));
+			return;
+		}
 
 		try {
 			for (ReqTransactionAccount input : pb.getInputList()) {

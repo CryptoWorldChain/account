@@ -2,6 +2,7 @@ package org.brewchain.account.account;
 
 import org.apache.commons.lang3.StringUtils;
 import org.brewchain.account.core.AccountHelper;
+import org.brewchain.account.core.BlockChainConfig;
 import org.brewchain.account.gens.Actimpl.PACTCommand;
 import org.brewchain.account.gens.Actimpl.PACTModule;
 import org.brewchain.account.gens.Actimpl.ReqGenerateAccount;
@@ -28,6 +29,8 @@ public class GenerateAccountImpl extends SessionModules<ReqGenerateAccount> {
 	AccountHelper oAccountHelper;
 	@ActorRequire(name = "bc_encoder", scope = "global")
 	EncAPI encApi;
+	@ActorRequire(name = "BlockChain_Config", scope = "global")
+	BlockChainConfig blockChainConfig;
 
 	@Override
 	public String[] getCmds() {
@@ -42,6 +45,11 @@ public class GenerateAccountImpl extends SessionModules<ReqGenerateAccount> {
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqGenerateAccount pb, final CompleteHandler handler) {
 		RespGenerateAccount.Builder oRespGenerateAccount = RespGenerateAccount.newBuilder();
+		if (!blockChainConfig.isDev()) {
+			oRespGenerateAccount.setRetCode(-1);
+			handler.onFinished(PacketHelper.toPBReturn(pack, oRespGenerateAccount.build()));
+			return;
+		}
 		try {
 			KeyPairs oKeyPairs;
 			if (StringUtils.isNotBlank(pb.getKey())) {

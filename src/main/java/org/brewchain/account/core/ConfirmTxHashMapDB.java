@@ -16,7 +16,6 @@ import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import net.sf.ehcache.Element;
 import onight.osgi.annotation.NActorProvider;
 import onight.tfw.ntrans.api.ActorService;
 import onight.tfw.ntrans.api.annotation.ActorRequire;
@@ -71,13 +70,13 @@ public class ConfirmTxHashMapDB implements ActorService {
 		return ele;
 	}
 
-	public HashPair eleToHP(Element ele) {
-		if (ele != null) {
-			return (HashPair) ele.getObjectValue();
-		} else {
-			return null;
-		}
-	}
+//	public HashPair eleToHP(Element ele) {
+//		if (ele != null) {
+//			return (HashPair) ele.getObjectValue();
+//		} else {
+//			return null;
+//		}
+//	}
 
 	public boolean containsKey(String txhash) {
 		// Element ele = storage.get(txhash);
@@ -190,20 +189,20 @@ public class ConfirmTxHashMapDB implements ActorService {
 	}
 
 	public HashPair revalidate(String key) {
-		return null;
-		// // rwLock.writeLock().lock();
-		// try {// second entry.
-		// HashPair hp = storage.get(key);
-		// if (hp != null && hp.isRemoved()) {
-		// hp.setRemoved(false);
-		// removeSavestorage.remove(key);
-		// }
-		// return hp;
-		// } catch (Exception e) {
-		// return null;
-		// } finally {
-		// // rwLock.writeLock().unlock();
-		// }
+//		return null;
+		// rwLock.writeLock().lock();
+		try {// second entry.
+			HashPair hp = storage.get(key);
+			if (hp != null && hp.isRemoved()) {
+				hp.setRemoved(false);
+				removeSavestorage.remove(key);
+			}
+			return hp;
+		} catch (Exception e) {
+			return null;
+		} finally {
+			// rwLock.writeLock().unlock();
+		}
 
 	}
 

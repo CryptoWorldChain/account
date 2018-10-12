@@ -128,6 +128,11 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			Account.Builder sender = accounts.get(encApi.hexEnc(oInput.getAddress().toByteArray()));
 			AccountValue.Builder senderAccountValue = sender.getValue().toBuilder();
 
+			if (senderAccountValue.getAddressCount() > 0) {
+				throw new TransactionParameterInvalidException(
+						"parameter invalid, union account does not allow to create this transaction");
+			}
+
 			BigInteger balance = ByteUtil.bytesToBigInteger(senderAccountValue.getBalance().toByteArray());
 
 			if (balance.compareTo(BigInteger.ZERO) == -1) {

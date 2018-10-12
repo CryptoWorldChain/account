@@ -1,6 +1,7 @@
 package org.brewchain.account.sample;
 
 import org.brewchain.account.core.AccountHelper;
+import org.brewchain.account.core.BlockChainConfig;
 import org.brewchain.account.core.BlockChainHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
@@ -26,7 +27,9 @@ import onight.tfw.otransio.api.beans.FramePacket;
 public class TransactionLoadTestPerResultImpl extends SessionModules<ReqCommonTest> {
 	@ActorRequire(name = "TransactionLoadTest_Store", scope = "global")
 	TransactionLoadTestStore transactionLoadTestStore;
-
+	@ActorRequire(name = "BlockChain_Config", scope = "global")
+	BlockChainConfig blockChainConfig;
+	
 	@Override
 	public String[] getCmds() {
 		return new String[] { PTSTCommand.LTR.name() };
@@ -40,6 +43,11 @@ public class TransactionLoadTestPerResultImpl extends SessionModules<ReqCommonTe
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqCommonTest pb, final CompleteHandler handler) {
 		RespCommonTest.Builder oRespCommonTest = RespCommonTest.newBuilder();
+		if (!blockChainConfig.isDev()) {
+			oRespCommonTest.setRetcode(-1);
+			handler.onFinished(PacketHelper.toPBReturn(pack, oRespCommonTest.build()));
+			return;
+		}
 		oRespCommonTest.setRetmsg("total::" + transactionLoadTestStore.remain());
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespCommonTest.build()));
 		return;

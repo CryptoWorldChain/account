@@ -349,11 +349,6 @@ public class V2Processor implements IProcessor, ActorService {
 			header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
 
 			this.stateTrie.clear();
-			// log.error("====> end exec number::" +
-			// oBlockEntity.getHeader().getNumber() + ":exec tx count=" + i +
-			// ",cost="
-			// + (System.currentTimeMillis() - start));
-
 			oBlockEntity.setHeader(header);
 
 		} finally {
@@ -447,6 +442,16 @@ public class V2Processor implements IProcessor, ActorService {
 							transactionHelper.getDao().getStats().getRollBackTxCount().incrementAndGet();
 
 							blockChainHelper.rollbackTo(applyBlock.getHeader().getNumber() - 1);
+							
+							final BlockHeader.Builder bbh = oBlockHeader;
+							this.stateTrie.getExecutor().submit(new Runnable() {
+								@Override
+								public void run() {
+									for (String txHash : bbh.getTxHashsList()) {
+										transactionHelper.getOConfirmMapDB().revalidate(txHash);
+									}
+								}
+							});
 							oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.ERROR);
 
 							// re
@@ -474,22 +479,12 @@ public class V2Processor implements IProcessor, ActorService {
 					case STORE:
 						log.error("apply done number::" + blockChainHelper.getLastBlockNumber());
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
-
 						break;
 					case ERROR:
 						log.error("fail to apply block number::" + applyBlock.getHeader().getNumber() + ":want="
 								+ oAddBlockResponse.getWantNumber() + ",needTxHash="
 								+ oAddBlockResponse.getTxHashsCount() + ",ApplyHash="
 								+ applyBlock.getHeader().getBlockHash());
-						final BlockHeader.Builder bbh = oBlockHeader;
-						this.stateTrie.getExecutor().submit(new Runnable() {
-							@Override
-							public void run() {
-								for (String txHash : bbh.getTxHashsList()) {
-									transactionHelper.getOConfirmMapDB().revalidate(txHash);
-								}
-							}
-						});
 						oBlockStoreSummary.setBehavior(BLOCK_BEHAVIOR.DONE);
 						break;
 					}
