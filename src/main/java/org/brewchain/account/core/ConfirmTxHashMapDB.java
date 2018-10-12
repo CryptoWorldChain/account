@@ -87,7 +87,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 
 	private void putElement(String key, HashPair hp) {
 		// storage.put(new Element(key, hp));
-		if (storage.size() < this.maxElementsInMemory) {
+		if (storage.size() < this.maxElementsInMemory || hp.getTx() != null) {
 			storage.put(key, hp);
 		} else {
 			// log.error("drop storage queue:size=" + storage.size());
