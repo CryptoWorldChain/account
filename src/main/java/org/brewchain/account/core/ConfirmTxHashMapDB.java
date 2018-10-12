@@ -189,10 +189,9 @@ public class ConfirmTxHashMapDB implements ActorService {
 	}
 
 	public HashPair revalidate(String key) {
-//		return null;
 		// rwLock.writeLock().lock();
 		try {// second entry.
-			HashPair hp = storage.get(key);
+			HashPair hp = eleToHP(storage.get(key));
 			if (hp != null && hp.isRemoved()) {
 				hp.setRemoved(false);
 				removeSavestorage.remove(key);
