@@ -24,9 +24,9 @@ public class PendingQueue {
 		cacheManager.shutdown();
 	}
 
-	public PendingQueue(int maxElementsInMemory) {
-		this.storage = new Cache("pendingcache", maxElementsInMemory, MemoryStoreEvictionPolicy.LRU, true,
-				"./pendingcache", true, 0, 0, true, 120, null);
+	public PendingQueue(String nameid,int maxElementsInMemory) {
+		this.storage = new Cache("pendingqueue_"+nameid, maxElementsInMemory, MemoryStoreEvictionPolicy.LRU, true,
+				"./pendingcache_"+nameid, true, 0, 0, true, 120, null);
 		cacheManager.addCache(this.storage);
 		Element ele = this.storage.get(STR_COUNTER);
 		if (ele != null && ele.getObjectValue() != null) {
@@ -58,7 +58,7 @@ public class PendingQueue {
 	}
 
 	public static void main(String[] args) {
-		PendingQueue pq = new PendingQueue(1000);
+		PendingQueue pq = new PendingQueue("test",1000);
 		int counter = 10000;
 //		for (int i = 0; i < counter; i++) {
 //			pq.addElement(new HashPair("kk_" + i, MultiTransaction.newBuilder().setTxHash("kk_" + i).build()));

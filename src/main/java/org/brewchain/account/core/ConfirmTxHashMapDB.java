@@ -34,6 +34,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 	ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
 	@ActorRequire(name = "WaitSend_HashMapDB", scope = "global")
 	WaitSendHashMapDB oSendingHashMapDB; // 保存待广播交易
+	PendingQueue persistQ;
 
 	// final CacheManager cacheManager = new CacheManager();
 
@@ -44,12 +45,14 @@ public class ConfirmTxHashMapDB implements ActorService {
 	public ConfirmTxHashMapDB(ConcurrentHashMap<String, HashPair> storage) {
 		// this.storage = storage;
 		this(storage, new PropHelper(null).get("org.brewchain.account.confirm.memsize", 1000000));
+		
 	}
 
 	public ConfirmTxHashMapDB(ConcurrentHashMap<String, HashPair> storage, int maxElementsInMemory) {
 		// this.storage = storage;
 		this.maxElementsInMemory = maxElementsInMemory;
 		this.storage = storage;
+		persistQ = new PendingQueue("confirmtx",maxElementsInMemory);
 		// this.storage = new Cache("storageCache", maxElementsInMemory,
 		// MemoryStoreEvictionPolicy.LRU, true,
 		// "./storagecache", true, 0, 0, true, 120, null);
