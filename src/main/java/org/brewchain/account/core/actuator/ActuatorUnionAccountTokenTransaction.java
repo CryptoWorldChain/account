@@ -3,6 +3,7 @@ package org.brewchain.account.core.actuator;
 import java.math.BigInteger;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.dao.DefDaos;
@@ -23,7 +24,6 @@ import org.brewchain.evmapi.gens.Tx.MultiTransactionBody;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionOutput;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionSignature;
-import org.codehaus.plexus.util.StringUtils;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;

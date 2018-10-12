@@ -45,6 +45,17 @@ public class ConfirmTxHashMapDB implements ActorService {
 		// this.storage = storage;
 		this(storage, new PropHelper(null).get("org.brewchain.account.confirm.memsize", 1000000));
 	}
+	
+	public ConfirmTxHashMapDB(ConcurrentHashMap<String, HashPair> storage, int maxElementsInMemory) {
+		// this.storage = storage;
+		this.maxElementsInMemory = maxElementsInMemory;
+		this.storage = storage;
+		// this.storage = new Cache("storageCache", maxElementsInMemory,
+		// MemoryStoreEvictionPolicy.LRU, true,
+		// "./storagecache", true, 0, 0, true, 120, null);
+		// cacheManager.addCache(this.storage);
+
+	}
 
 	@Invalidate
 	public void destory() {
@@ -54,29 +65,19 @@ public class ConfirmTxHashMapDB implements ActorService {
 
 	int maxElementsInMemory = 100 * 10000;
 
-	public ConfirmTxHashMapDB(ConcurrentHashMap<String, HashPair> storage, int maxElementsInMemory) {
-		// this.storage = storage;
-		this.maxElementsInMemory = maxElementsInMemory;
-		// this.storage = new Cache("storageCache", maxElementsInMemory,
-		// MemoryStoreEvictionPolicy.LRU, true,
-		// "./storagecache", true, 0, 0, true, 120, null);
-		// cacheManager.addCache(this.storage);
-
-	}
-
 	BigInteger zeroBit = new BigInteger("0");
 
 	public HashPair eleToHP(HashPair ele) {
 		return ele;
 	}
 
-//	public HashPair eleToHP(Element ele) {
-//		if (ele != null) {
-//			return (HashPair) ele.getObjectValue();
-//		} else {
-//			return null;
-//		}
-//	}
+	// public HashPair eleToHP(Element ele) {
+	// if (ele != null) {
+	// return (HashPair) ele.getObjectValue();
+	// } else {
+	// return null;
+	// }
+	// }
 
 	public boolean containsKey(String txhash) {
 		// Element ele = storage.get(txhash);
@@ -90,12 +91,15 @@ public class ConfirmTxHashMapDB implements ActorService {
 			storage.put(key, hp);
 		} else {
 			log.error("drop storage queue:size=" + storage.size());
-//			hp.setStoredInDisk(true);
-//			putElement(hp.getKey(), hp);
+			// hp.setStoredInDisk(true);
+			// putElement(hp.getKey(), hp);
 		}
 	}
 
 	public HashPair getHP(String txhash) {
+		if (storage == null) {
+			return null;
+		}
 		return storage.get(txhash);
 		// return eleToHP(storage.get(txhash));
 	}
@@ -135,8 +139,8 @@ public class ConfirmTxHashMapDB implements ActorService {
 			confirmQueue.addLast(hp);
 		} else {
 			log.error("drop confirm queue:size=" + confirmQueue.size());
-//			hp.setStoredInDisk(true);
-//			putElement(hp.getKey(), hp);
+			// hp.setStoredInDisk(true);
+			// putElement(hp.getKey(), hp);
 		}
 	}
 
@@ -257,7 +261,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 		}
 
 		log.error("confirmQueue info poll:: maxsize::" + maxsize + ",maxtried=" + maxtried + " queuesize::"
-				+ confirmQueue.size() + ",storage=" + storage.size() + ",try=" + i);
+				+ confirmQueue.size() + ",storage=" + (storage == null ? 0 : storage.size()) + ",try=" + i);
 
 		// log.debug("confirm tx poll maxsize::" + maxsize + " minConfirm::" +
 		// minConfirm + " checkTime::" + checkTime
@@ -354,40 +358,48 @@ public class ConfirmTxHashMapDB implements ActorService {
 	}
 
 	public int clearStorage() {
-//		List<String> keys = storage.getKeys();
-		List<String> removeKeys = new ArrayList<>();
-		Enumeration<String> en=storage.keys();
-		 while (en.hasMoreElements()) {
-//		for (String key : keys) {
-			try {
-				 String key = en.nextElement();
-				HashPair hp = getHP(key);
-				if (hp != null) {
-					if (hp.isRemoved()) {
-						removeKeys.add(key);
-					} else if (hp.getTx() == null && hp.getData() == null
-							&& System.currentTimeMillis() - hp.getLastUpdateTime() >= 180 * 1000) {
-						// time out confirm;
-						removeKeys.add(key);
+		// List<String> keys = storage.getKeys();
+		if (storage != null) {
+			List<String> removeKeys = new ArrayList<>();
+			Enumeration<String> en = storage.keys();
+			while (en.hasMoreElements()) {
+				// for (String key : keys) {
+				try {
+					String key = en.nextElement();
+					HashPair hp = getHP(key);
+					if (hp != null) {
+						if (hp.isRemoved()) {
+							removeKeys.add(key);
+						} else if (hp.getTx() == null && hp.getData() == null
+								&& System.currentTimeMillis() - hp.getLastUpdateTime() >= 180 * 1000) {
+							// time out confirm;
+							removeKeys.add(key);
+						}
 					}
+				} catch (Exception e) {
+					log.error("cannot remove the tx::", e);
+				} finally {
 				}
-			} catch (Exception e) {
-				log.error("cannot remove the tx::", e);
-			} finally {
 			}
-		}
-		for (String key : removeKeys) {
-			storage.remove(key);
+			for (String key : removeKeys) {
+				storage.remove(key);
+			}
+
+			return removeKeys.size();
+		} else {
+			return 0;
 		}
 
-		return removeKeys.size();
 	}
 
-	public int getStorageSize(){
-//		return storage.getSize();
-
+	public int getStorageSize() {
+		// return storage.getSize();
+		if (storage == null) {
+			return 0;
+		}
 		return storage.size();
 	}
+
 	public int size() {
 		return getStorageSize();
 	}
@@ -410,6 +422,6 @@ public class ConfirmTxHashMapDB implements ActorService {
 				System.out.println("error:hp=" + hp);
 			}
 		}
-//		confirmDB.cacheManager.shutdown();
+		// confirmDB.cacheManager.shutdown();
 	}
 }

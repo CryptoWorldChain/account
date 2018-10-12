@@ -32,6 +32,7 @@ enum PTSTCommand {
 	SLT = 23; // sign load test
 	GLT = 24; // cal address load test
 	EPT = 25; 
+	TUT = 26; // union account token transaction
 }
 
 message ReqSignLoadTest {

@@ -45,7 +45,7 @@ import onight.tfw.otransio.api.beans.FramePacket;
 @NActorProvider
 @Slf4j
 @Data
-public class UnionAccountTransactionSample extends SessionModules<ReqUnionAccountTransaction> {
+public class UnionAccountTokenTransactionSample extends SessionModules<ReqUnionAccountTransaction> {
 	@ActorRequire(name = "Block_Helper", scope = "global")
 	BlockHelper blockHelper;
 	@ActorRequire(name = "bc_encoder", scope = "global")
@@ -65,7 +65,7 @@ public class UnionAccountTransactionSample extends SessionModules<ReqUnionAccoun
 	
 	@Override
 	public String[] getCmds() {
-		return new String[] { PTSTCommand.TUA.name() };
+		return new String[] { PTSTCommand.TUT.name() };
 	}
 
 	@Override
@@ -89,12 +89,13 @@ public class UnionAccountTransactionSample extends SessionModules<ReqUnionAccoun
 		try {
 			MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
 			oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(pb.getUnionAccountAddress())));
+			oMultiTransactionInput4.setToken("CWS");
 			oMultiTransactionInput4
 					.setAmount(ByteString.copyFrom(ByteUtil.bigIntegerToBytes(new BigInteger(pb.getAmount()))));
 			int nonce = accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(pb.getUnionAccountAddress())));
 			oMultiTransactionInput4.setNonce(nonce);
 			oMultiTransactionBody.addInputs(oMultiTransactionInput4);
-			oMultiTransactionBody.setType(TransTypeEnum.TYPE_UnionAccountTransaction.value());
+			oMultiTransactionBody.setType(TransTypeEnum.TYPE_UnionAccountTokenTransaction.value());
 			oMultiTransactionBody.setTimestamp(System.currentTimeMillis());
 			if (StringUtils.isNotBlank(pb.getRelTxHash())) {
 				oMultiTransactionBody.setData(ByteString.copyFrom(encApi.hexDec(pb.getRelTxHash())));
