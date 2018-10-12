@@ -92,26 +92,28 @@ public class TransactionLoadTestExecImpl extends SessionModules<ReqCommonTest> {
 					log.error("wrong txHash::" + txHash);
 				}
 			} else {
-				KeyPairs from, to;
+//				KeyPairs from, to;
+//				int nonce = 0;
+//				if (kps.size() < maxkeys) {
+//					// make one
+//					from = encApi.genKeys();
+//					to = encApi.genKeys();
+//					kps.putLast(new LoadKeyPairs(from, 1));
+//					kps.putLast(new LoadKeyPairs(to, 0));
+//				} else {
+//					LoadKeyPairs lfrom = kps.poll();
+//					LoadKeyPairs lto = kps.poll();
+//					// accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
+//					from = lfrom.kp;
+//					to = lto.kp;
+//					nonce = lfrom.nonce;
+//					lfrom.nonce = lfrom.nonce + 1;
+//					kps.putLast(lto);
+//					kps.putLast(lfrom);
+//				}
+				KeyPairs from = encApi.genKeys();
+				KeyPairs to = encApi.genKeys();
 				int nonce = 0;
-				if (kps.size() < maxkeys) {
-					// make one
-					from = encApi.genKeys();
-					to = encApi.genKeys();
-					kps.putLast(new LoadKeyPairs(from, 1));
-					kps.putLast(new LoadKeyPairs(to, 0));
-				} else {
-					LoadKeyPairs lfrom = kps.poll();
-					LoadKeyPairs lto = kps.poll();
-					// accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
-					from = lfrom.kp;
-					to = lto.kp;
-					nonce = lfrom.nonce;
-					lfrom.nonce = lfrom.nonce + 1;
-					kps.putLast(lto);
-					kps.putLast(lfrom);
-				}
-
 				tx = addDefaultTx(from, to, nonce);
 				if (tx != null) {
 					txHash = transactionHelper.CreateMultiTransaction(tx).getKey();

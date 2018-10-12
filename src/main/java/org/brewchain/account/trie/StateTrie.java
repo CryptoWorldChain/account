@@ -829,6 +829,7 @@ public class StateTrie implements ActorService {
 			// persist all dirty nodes to underlying Source
 			// encode();
 			// release all Trie Node instances for GC
+			root = null;
 			root = new Node(root.hash);
 		}
 	}

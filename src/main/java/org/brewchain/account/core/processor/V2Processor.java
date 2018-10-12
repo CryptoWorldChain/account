@@ -69,8 +69,8 @@ public class V2Processor implements IProcessor, ActorService {
 	AccountHelper oAccountHelper;
 	MultiTransactionSeparator mts = new MultiTransactionSeparator();
 
-	public Map<String, ByteString> ExecuteTransaction(MultiTransaction[] oMultiTransactions,
-			BlockEntity currentBlock, Map<String, Account.Builder> accounts) throws Exception {
+	public Map<String, ByteString> ExecuteTransaction(MultiTransaction[] oMultiTransactions, BlockEntity currentBlock,
+			Map<String, Account.Builder> accounts) throws Exception {
 
 		Map<String, ByteString> results = new ConcurrentHashMap<>();
 		mts.reset();
@@ -211,7 +211,7 @@ public class V2Processor implements IProcessor, ActorService {
 						transactionHelper.getOConfirmMapDB().clear();
 					}
 				});
-				
+
 				log.info(String.format("LOGFILTER %s %s %s %s 执行区块[%s]",
 						encApi.hexEnc(KeyConstant.node.getoAccount().getAddress().toByteArray()), "account", "apply",
 						"block", oBlockEntity.getHeader().getBlockHash()));
@@ -294,68 +294,74 @@ public class V2Processor implements IProcessor, ActorService {
 	MultiTransaction emptytx = MultiTransaction.newBuilder().build();
 	byte[] emptybb = new byte[1];
 
-	private boolean processBlock(BlockEntity.Builder oBlockEntity, BlockEntity oParentBlock)
-			throws Exception {
-		BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
-		// LinkedList<MultiTransaction> txs = new LinkedList<>();
+	private boolean processBlock(BlockEntity.Builder oBlockEntity, BlockEntity oParentBlock) throws Exception {
 		CacheTrie oTransactionTrie = new CacheTrie(this.encApi);
 		CacheTrie oReceiptTrie = new CacheTrie(this.encApi);
-//		long start = System.currentTimeMillis();
-		this.stateTrie.setRoot(encApi.hexDec(oParentBlock.getHeader().getStateRoot()));
-		BlockBody.Builder bb = oBlockEntity.getBody().toBuilder();
 
-		byte[][] txTrieBB = new byte[oBlockHeader.getTxHashsCount()][];
-		MultiTransaction[] txs = new MultiTransaction[oBlockHeader.getTxHashsCount()];
-		int i = 0;
-		Map<String, Account.Builder> accounts = new ConcurrentHashMap<>(oBlockHeader.getTxHashsCount());
-		CountDownLatch cdl = new CountDownLatch(oBlockHeader.getTxHashsCount());
-		for (String txHash : oBlockHeader.getTxHashsList()) {
-			this.stateTrie.getExecutor().submit(new ParalTxLoader(txHash, i, cdl, txs, txTrieBB, accounts));
-			i++;
+		try {
+			BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
+			// LinkedList<MultiTransaction> txs = new LinkedList<>();
+
+			// long start = System.currentTimeMillis();
+			this.stateTrie.setRoot(encApi.hexDec(oParentBlock.getHeader().getStateRoot()));
+			BlockBody.Builder bb = oBlockEntity.getBody().toBuilder();
+
+			byte[][] txTrieBB = new byte[oBlockHeader.getTxHashsCount()][];
+			MultiTransaction[] txs = new MultiTransaction[oBlockHeader.getTxHashsCount()];
+			int i = 0;
+			Map<String, Account.Builder> accounts = new ConcurrentHashMap<>(oBlockHeader.getTxHashsCount());
+			CountDownLatch cdl = new CountDownLatch(oBlockHeader.getTxHashsCount());
+			for (String txHash : oBlockHeader.getTxHashsList()) {
+				this.stateTrie.getExecutor().submit(new ParalTxLoader(txHash, i, cdl, txs, txTrieBB, accounts));
+				i++;
+			}
+
+			cdl.await();
+			for (i = 0; i < oBlockHeader.getTxHashsCount(); i++) {
+				bb.addTxs(txs[i]);
+				oTransactionTrie.put(RLP.encodeInt(i), txTrieBB[i]);
+			}
+			oBlockEntity.setBody(bb);
+
+			// start = System.currentTimeMillis();
+			Map<String, ByteString> results = ExecuteTransaction(txs, oBlockEntity.build(), accounts);
+
+			BlockHeader.Builder header = oBlockEntity.getHeaderBuilder();
+
+			Iterator<String> iter = results.keySet().iterator();
+			List<String> keys = new ArrayList<>();
+			while (iter.hasNext()) {
+				String key = iter.next();
+				keys.add(key);
+			}
+			Collections.sort(keys);
+			for (String key : keys) {
+				oReceiptTrie.put(RLP.encodeInt(i), results.get(key).toByteArray());
+			}
+
+			applyReward(oBlockEntity);
+
+			header.setReceiptTrieRoot(encApi.hexEnc(
+					oReceiptTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY : oReceiptTrie.getRootHash()));
+			header.setTxTrieRoot(encApi.hexEnc(oTransactionTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY
+					: oTransactionTrie.getRootHash()));
+			// start = System.currentTimeMillis();
+			header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
+
+			this.stateTrie.clear();
+			// log.error("====> end exec number::" +
+			// oBlockEntity.getHeader().getNumber() + ":exec tx count=" + i +
+			// ",cost="
+			// + (System.currentTimeMillis() - start));
+
+			oBlockEntity.setHeader(header);
+
+		} finally {
+			oTransactionTrie.clear();
+			oTransactionTrie = null;
+			oReceiptTrie.clear();
+			oReceiptTrie = null;
 		}
-
-		cdl.await();
-		for (i = 0; i < oBlockHeader.getTxHashsCount(); i++) {
-			bb.addTxs(txs[i]);
-			oTransactionTrie.put(RLP.encodeInt(i), txTrieBB[i]);
-		}
-		oBlockEntity.setBody(bb);
-
-//		start = System.currentTimeMillis();
-		Map<String, ByteString> results = ExecuteTransaction(txs, oBlockEntity.build(), accounts);
-
-		BlockHeader.Builder header = oBlockEntity.getHeaderBuilder();
-
-		Iterator<String> iter = results.keySet().iterator();
-		List<String> keys = new ArrayList<>();
-		while (iter.hasNext()) {
-			String key = iter.next();
-			keys.add(key);
-		}
-		Collections.sort(keys);
-		for (String key : keys) {
-			oReceiptTrie.put(RLP.encodeInt(i), results.get(key).toByteArray());
-		}
-		
-		applyReward(oBlockEntity);
-
-		header.setReceiptTrieRoot(encApi
-				.hexEnc(oReceiptTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY : oReceiptTrie.getRootHash()));
-		header.setTxTrieRoot(encApi.hexEnc(
-				oTransactionTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY : oTransactionTrie.getRootHash()));
-//		start = System.currentTimeMillis();
-		header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
-
-		oTransactionTrie.clear();
-		oTransactionTrie = null;
-		oReceiptTrie.clear();
-		oReceiptTrie = null;
-
-		this.stateTrie.clear();
-//		log.error("====> end exec number::" + oBlockEntity.getHeader().getNumber() + ":exec tx count=" + i + ",cost="
-//				+ (System.currentTimeMillis() - start));
-		
-		oBlockEntity.setHeader(header);
 
 		return true;
 	}
@@ -428,7 +434,7 @@ public class V2Processor implements IProcessor, ActorService {
 						parentBlock = blockChainHelper.getBlockByHash(applyBlock.getHeader().getParentHash());
 
 						processBlock(applyBlock, parentBlock);
-						
+
 						if (!oBlockEntity.getHeader().getStateRoot().equals(applyBlock.getHeader().getStateRoot())
 								|| !oBlockEntity.getHeader().getTxTrieRoot()
 										.equals(applyBlock.getHeader().getTxTrieRoot())

@@ -70,7 +70,7 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 					String.format("sender balance %s less than %s", unionAccountBalance, amount));
 		}
 
-		if (amount.compareTo(max) > 0) {
+		if (amount.compareTo(max) > 0 && max.compareTo(BigInteger.ZERO) > 0) {
 			throw new TransactionParameterInvalidException("parameter invalid, amount must small than " + max);
 		}
 
@@ -79,7 +79,8 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 			throw new TransactionParameterInvalidException("parameter invalid, transaction value not equal");
 		}
 
-		if (amount.compareTo(acceptMax) >= 0) {
+		if ((amount.compareTo(acceptMax) >= 0 && acceptMax.compareTo(BigInteger.ZERO) > 0)
+				|| acceptMax.compareTo(BigInteger.ZERO) == 0) {
 			if (oMultiTransaction.getTxBody().getData() != null && !oMultiTransaction.getTxBody().getData().isEmpty()) {
 
 				MultiTransaction originalTx = oTransactionHelper
@@ -131,7 +132,7 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 					if (DateTimeUtil.isToday(unionAccountValue.getAccumulatedTimestamp())) {
 						BigInteger totalMax = ByteUtil
 								.bytesToBigInteger(unionAccountValue.getAccumulated().toByteArray());
-						if (amount.add(totalMax).compareTo(max) > 0) {
+						if (amount.add(totalMax).compareTo(max) > 0 && max.compareTo(BigInteger.ZERO) > 0) {
 							throw new TransactionParameterInvalidException(
 									"parameter invalid, already more than the maximum transfer amount of the day");
 						}
@@ -139,14 +140,14 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 				}
 			} else {
 				BigInteger totalMax = ByteUtil.bytesToBigInteger(unionAccountValue.getAccumulated().toByteArray());
-				if (amount.add(totalMax).compareTo(max) > 0) {
+				if (amount.add(totalMax).compareTo(max) > 0 && max.compareTo(BigInteger.ZERO) > 0) {
 					throw new TransactionParameterInvalidException(
 							"parameter invalid, already more than the maximum transfer amount of the day");
 				}
 			}
 		} else {
 			BigInteger totalMax = ByteUtil.bytesToBigInteger(unionAccountValue.getAccumulated().toByteArray());
-			if (amount.add(totalMax).compareTo(max) > 0) {
+			if (amount.add(totalMax).compareTo(max) > 0 && max.compareTo(BigInteger.ZERO) > 0) {
 				throw new TransactionParameterInvalidException(
 						"parameter invalid, already more than the maximum transfer amount of the day");
 			}
