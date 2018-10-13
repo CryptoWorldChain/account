@@ -233,7 +233,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 							// long time no seeee
 							if (checkTime - hp.getLastUpdateTime() >= 60000) {
 								if (hp.getTx() != null && hp.getData() != null && hp.isNeedBroadCast()) {
-									log.error("confirmQueue info broadcast:" + hp.getKey());
+									log.info("confirmQueue info broadcast:" + hp.getKey());
 									oSendingHashMapDB.put(hp.getKey(), hp);
 									confirmQueue.addLast(hp);
 								} else {
