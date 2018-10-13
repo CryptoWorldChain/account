@@ -34,7 +34,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 	ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
 	@ActorRequire(name = "WaitSend_HashMapDB", scope = "global")
 	WaitSendHashMapDB oSendingHashMapDB; // 保存待广播交易
-	PendingQueue persistQ;
+//	PendingQueue persistQ;
 
 	// final CacheManager cacheManager = new CacheManager();
 
@@ -52,7 +52,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 		// this.storage = storage;
 		this.maxElementsInMemory = maxElementsInMemory;
 		this.storage = storage;
-		persistQ = new PendingQueue("confirmtx", maxElementsInMemory);
+//		persistQ = new PendingQueue("confirmtx", maxElementsInMemory);
 		// this.storage = new Cache("storageCache", maxElementsInMemory,
 		// MemoryStoreEvictionPolicy.LRU, true,
 		// "./storagecache", true, 0, 0, true, 120, null);
@@ -64,7 +64,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 	public void destory() {
 		// this.storage.flush();
 		// cacheManager.shutdown();
-		persistQ.shutdown();
+//		persistQ.shutdown();
 	}
 
 	int maxElementsInMemory = 100 * 10000;

@@ -43,6 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 import onight.osgi.annotation.NActorProvider;
 import onight.tfw.ntrans.api.ActorService;
 import onight.tfw.ntrans.api.annotation.ActorRequire;
+import onight.tfw.outils.conf.PropHelper;
 import onight.tfw.outils.pool.ReusefulLoopPool;
 
 @NActorProvider
@@ -60,7 +61,8 @@ public class StateTrie implements ActorService {
 
 	private final static Object NULL_NODE = new Object();
 	private final static int MIN_BRANCHES_CONCURRENTLY = 4;// Math.min(16,Runtime.getRuntime().availableProcessors());
-	private static ExecutorService executor = new ForkJoinPool(Runtime.getRuntime().availableProcessors() * 6);
+	private static ExecutorService executor = new ForkJoinPool(new PropHelper(null)
+			.get("org.brewchain.account.state.parallel", Runtime.getRuntime().availableProcessors() * 2));
 
 	public static ExecutorService getExecutor() {
 		return executor;
@@ -627,17 +629,20 @@ public class StateTrie implements ActorService {
 	}
 
 	private void addHash(byte[] hash, byte[] ret) {
-		// System.out.println("addHash:" + type + ",hash=" + Hex.toHexString(hash));
+		// System.out.println("addHash:" + type + ",hash=" +
+		// Hex.toHexString(hash));
 
 		BatchStorage bs = batchStorage.get();
 		if (bs != null) {
 			// log.debug("add into state trie key::" + encApi.hexEnc(hash));
-			// if (type == NodeType.KVNodeNode || type == NodeType.KVNodeValue) {
+			// if (type == NodeType.KVNodeNode || type == NodeType.KVNodeValue)
+			// {
 			bs.add(hash, ret);
 			// }
 			cacheByHash.put(encApi.hexEnc(hash), ret);
 		} else {
-			// if (type == NodeType.KVNodeNode || type == NodeType.KVNodeValue) {
+			// if (type == NodeType.KVNodeNode || type == NodeType.KVNodeValue)
+			// {
 
 			dao.getAccountDao().put(oEntityHelper.byteKey2OKey(hash), oEntityHelper.byteValue2OValue(ret));
 			// }
