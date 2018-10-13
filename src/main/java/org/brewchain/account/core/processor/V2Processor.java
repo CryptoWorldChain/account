@@ -277,6 +277,7 @@ public class V2Processor implements IProcessor, ActorService {
 							+ oMultiTransaction.getTxBody().getInputsCount() + ",outputs="
 							+ oMultiTransaction.getTxBody().getOutputsCount());
 				} else {
+					transactionHelper.getDao().getStats().signalBlockTx();
 					bb[dstIndex] = oMultiTransaction;
 					txTrieBB[dstIndex] = transactionHelper.getTransactionContent(oMultiTransaction);
 					transactionHelper.merageTransactionAccounts(oMultiTransaction, accounts);

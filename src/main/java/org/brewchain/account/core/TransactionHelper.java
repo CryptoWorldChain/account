@@ -457,12 +457,8 @@ public class TransactionHelper implements ActorService, Runnable {
 		HashPair hpBlk = oConfirmMapDB.invalidate(txHash);
 		HashPair hpSend = oSendingHashMapDB.getStorage().remove(txHash);
 		if (hpBlk != null) {
-			dao.getStats().signalBlockTx();
 			return hpBlk;
 		} else {
-			if (hpSend != null) {
-				dao.getStats().signalBlockTx();
-			}
 			return hpSend;
 		}
 	}
