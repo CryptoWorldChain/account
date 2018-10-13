@@ -45,14 +45,14 @@ public class ConfirmTxHashMapDB implements ActorService {
 	public ConfirmTxHashMapDB(ConcurrentHashMap<String, HashPair> storage) {
 		// this.storage = storage;
 		this(storage, new PropHelper(null).get("org.brewchain.account.confirm.memsize", 1000000));
-		
+
 	}
 
 	public ConfirmTxHashMapDB(ConcurrentHashMap<String, HashPair> storage, int maxElementsInMemory) {
 		// this.storage = storage;
 		this.maxElementsInMemory = maxElementsInMemory;
 		this.storage = storage;
-		persistQ = new PendingQueue("confirmtx",maxElementsInMemory);
+		persistQ = new PendingQueue("confirmtx", maxElementsInMemory);
 		// this.storage = new Cache("storageCache", maxElementsInMemory,
 		// MemoryStoreEvictionPolicy.LRU, true,
 		// "./storagecache", true, 0, 0, true, 120, null);
@@ -94,7 +94,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 		if (storage.size() < this.maxElementsInMemory || hp.getTx() != null) {
 			storage.put(key, hp);
 		} else {
-			persistQ.addElement(hp);
+			// persistQ.addElement(hp);
 			// log.error("drop storage queue:size=" + storage.size());
 			// storage.put(key, hp);
 			// hp.setStoredInDisk(true);
@@ -366,10 +366,14 @@ public class ConfirmTxHashMapDB implements ActorService {
 					if (hp != null) {
 						if (hp.isRemoved()) {
 							removeKeys.add(key);
-						} else if (hp.getTx() == null && hp.getData() == null
-								&& System.currentTimeMillis() - hp.getLastUpdateTime() >= 180 * 1000) {
+						} else if (hp.getTx() == null || hp.getData() == null
+								|| System.currentTimeMillis() - hp.getLastUpdateTime() >= 180 * 1000) {
 							// time out confirm;
 							removeKeys.add(key);
+						} else if (hp.getTx() != null
+								&& System.currentTimeMillis() - hp.getLastUpdateTime() >= 60 * 1000) {
+							oSendingHashMapDB.put(hp.getKey(), hp);
+							confirmQueue.addLast(hp);
 						}
 					}
 				} catch (Exception e) {
