@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.commons.codec.binary.Hex;
+import org.brewchain.account.sample.TransactionLoadTestExecImpl;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionOutput;
@@ -79,7 +80,7 @@ public class MultiTransactionSeparator {
 		return sb.toString();
 	}
 
-	public void doClearing(MultiTransaction[] oMultiTransactions) {
+	public void doClearing(MultiTransaction[] oMultiTransactions,TransactionLoadTestExecImpl loadTester) {
 		int offset = 0;
 		for (MultiTransaction tx : oMultiTransactions) {
 			int bucketIdx = -1;
@@ -116,6 +117,11 @@ public class MultiTransactionSeparator {
 			}
 			for (MultiTransactionInput input : tx.getTxBody().getInputsList()) {
 				rs.sequances.put(fastAddress(input.getAddress()), tx);
+			}
+			if(loadTester!=null){
+				for (MultiTransactionInput input : tx.getTxBody().getInputsList()) {
+					loadTester.offerNewAccount(input.getAddress(), input.getNonce());
+				}
 			}
 			rs.queue.offer(tx);
 		}

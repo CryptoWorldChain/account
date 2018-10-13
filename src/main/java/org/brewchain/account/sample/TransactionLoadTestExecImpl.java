@@ -1,16 +1,17 @@
 package org.brewchain.account.sample;
 
 import java.math.BigInteger;
-import java.util.concurrent.BlockingQueue;
+import java.util.Enumeration;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.LinkedBlockingQueue;
 
+import org.apache.commons.codec.binary.Hex;
 import org.brewchain.account.core.AccountHelper;
 import org.brewchain.account.core.BlockChainConfig;
 import org.brewchain.account.core.BlockChainHelper;
 import org.brewchain.account.core.BlockHelper;
 import org.brewchain.account.core.TransactionHelper;
+import org.brewchain.account.core.processor.V2Processor;
 import org.brewchain.account.gens.TxTest.PTSTCommand;
 import org.brewchain.account.gens.TxTest.PTSTModule;
 import org.brewchain.account.gens.TxTest.ReqCommonTest;
@@ -54,7 +55,9 @@ public class TransactionLoadTestExecImpl extends SessionModules<ReqCommonTest> {
 	TransactionLoadTestStore transactionLoadTestStore;
 	@ActorRequire(name = "BlockChain_Config", scope = "global")
 	BlockChainConfig blockChainConfig;
-	
+	@ActorRequire(name = "V2_Processor", scope = "global")
+	V2Processor v2Processor;
+
 	@Override
 	public String[] getCmds() {
 		return new String[] { PTSTCommand.LTE.name() };
@@ -69,26 +72,55 @@ public class TransactionLoadTestExecImpl extends SessionModules<ReqCommonTest> {
 	class LoadKeyPairs {
 		KeyPairs kp;
 		int nonce = 0;
+		long lastUpdate = System.currentTimeMillis();
 	}
 
 	LinkedBlockingDeque<LoadKeyPairs> kps = new LinkedBlockingDeque<>();
-	
-	int maxkeys = props().get("org.bc.ttt.maxkeys", 100000); 
+	// ConcurrentHashMap<String, LoadKeyPairs> kps = new ConcurrentHashMap<>();
+	ConcurrentHashMap<String, LoadKeyPairs> keystores = new ConcurrentHashMap<>();
+
+	int maxkeys = props().get("org.bc.ttt.maxkeys", 100000);
+
+	public void offerNewAccount(ByteString hexaddress, int nonce) {
+		String address = Hex.encodeHexString(hexaddress.toByteArray());
+		LoadKeyPairs kp = keystores.get(address);
+		if (kp != null) {
+			kp.nonce = nonce + 1;
+			kp.lastUpdate = System.currentTimeMillis();
+			kps.addLast(kp);
+		}
+	}
+
+	public LoadKeyPairs popKeyPair() {
+		long checktime = System.currentTimeMillis();
+		LoadKeyPairs kp = kps.poll();
+		if (kp != null) {
+			if (checktime - kp.lastUpdate > 30000) {
+				return kp;
+			} else {
+				kps.addLast(kp);
+			}
+		}
+		return null;
+	}
+
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqCommonTest pb, final CompleteHandler handler) {
 		RespCreateTransactionTest.Builder oRespCreateTransactionTest = RespCreateTransactionTest.newBuilder();
-
+		if (v2Processor != null) {
+			v2Processor.setLoadTester(this);
+		}
 		if (!blockChainConfig.isDev()) {
 			oRespCreateTransactionTest.setRetcode(-1);
 			handler.onFinished(PacketHelper.toPBReturn(pack, oRespCreateTransactionTest.build()));
 			return;
 		}
-		
+
 		String txHash = "";
 		try {
 			MultiTransaction.Builder tx = transactionLoadTestStore.getOne();
 			if (tx != null) {
-//				tx.setTxBody(tx.getTxBodyBuilder().setTimestamp(System.currentTimeMillis()));
+				// tx.setTxBody(tx.getTxBodyBuilder().setTimestamp(System.currentTimeMillis()));
 				txHash = transactionHelper.CreateMultiTransaction(tx).getKey();
 				oRespCreateTransactionTest.setRetmsg("success");
 				oRespCreateTransactionTest.setTxhash(txHash);
@@ -101,28 +133,49 @@ public class TransactionLoadTestExecImpl extends SessionModules<ReqCommonTest> {
 					log.error("wrong txHash::" + txHash);
 				}
 			} else {
-//				KeyPairs from, to;
-//				int nonce = 0;
-//				if (kps.size() < maxkeys) {
-//					// make one
-//					from = encApi.genKeys();
-//					to = encApi.genKeys();
-//					kps.putLast(new LoadKeyPairs(from, 1));
-//					kps.putLast(new LoadKeyPairs(to, 0));
-//				} else {
-//					LoadKeyPairs lfrom = kps.poll();
-//					LoadKeyPairs lto = kps.poll();
-//					// accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
-//					from = lfrom.kp;
-//					to = lto.kp;
-//					nonce = lfrom.nonce;
-//					lfrom.nonce = lfrom.nonce + 1;
-//					kps.putLast(lto);
-//					kps.putLast(lfrom);
-//				}
-				KeyPairs from = encApi.genKeys();
-				KeyPairs to = encApi.genKeys();
+				// KeyPairs from, to;
+				// int nonce = 0;
+				// if (kps.size() < maxkeys) {
+				// // make one
+				// from = encApi.genKeys();
+				// to = encApi.genKeys();
+				// kps.putLast(new LoadKeyPairs(from, 1));
+				// kps.putLast(new LoadKeyPairs(to, 0));
+				// } else {
+				// LoadKeyPairs lfrom = kps.poll();
+				// LoadKeyPairs lto = kps.poll();
+				// //
+				// accountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(oFrom.getAddress())));
+				// from = lfrom.kp;
+				// to = lto.kp;
+				// nonce = lfrom.nonce;
+				// lfrom.nonce = lfrom.nonce + 1;
+				// kps.putLast(lto);
+				// kps.putLast(lfrom);
+				// }
+				LoadKeyPairs fromkp = popKeyPair();
+				LoadKeyPairs tokp = popKeyPair();
+				KeyPairs from;
+				KeyPairs to;
 				int nonce = 0;
+				if (fromkp != null) {
+					from = fromkp.kp;
+					nonce = fromkp.nonce;
+				} else {
+					from = encApi.genKeys();
+					if (keystores.size() < maxkeys) {
+						keystores.putIfAbsent(from.getAddress(), new LoadKeyPairs(from, 0, 0));
+					}
+				}
+				if (tokp != null) {
+					to = tokp.kp;
+				} else {
+					to = encApi.genKeys();
+					if (keystores.size() < maxkeys) {
+						keystores.putIfAbsent(to.getAddress(), new LoadKeyPairs(to, 0, 0));
+					}
+				}
+
 				tx = addDefaultTx(from, to, nonce);
 				if (tx != null) {
 					txHash = transactionHelper.CreateMultiTransaction(tx).getKey();

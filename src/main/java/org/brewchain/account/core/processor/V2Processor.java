@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -26,6 +25,7 @@ import org.brewchain.account.core.store.BlockStoreSummary;
 import org.brewchain.account.core.store.BlockStoreSummary.BLOCK_BEHAVIOR;
 import org.brewchain.account.exception.BlockStateTrieRuntimeException;
 import org.brewchain.account.gens.Blockimpl.AddBlockResponse;
+import org.brewchain.account.sample.TransactionLoadTestExecImpl;
 import org.brewchain.account.trie.CacheTrie;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.core.util.ByteUtil;
@@ -68,6 +68,9 @@ public class V2Processor implements IProcessor, ActorService {
 	@ActorRequire(name = "Account_Helper", scope = "global")
 	AccountHelper oAccountHelper;
 	MultiTransactionSeparator mts = new MultiTransactionSeparator();
+	
+	@ActorRequire(name = "LoadTester", scope = "global")
+	TransactionLoadTestExecImpl loadTester;
 
 	public Map<String, ByteString> ExecuteTransaction(MultiTransaction[] oMultiTransactions, BlockEntity currentBlock,
 			Map<String, Account.Builder> accounts) throws Exception {
@@ -80,7 +83,7 @@ public class V2Processor implements IProcessor, ActorService {
 			this.stateTrie.getExecutor().submit(new MisV2TransactionRunner(mts.getTxnQueue(i), transactionHelper,
 					currentBlock, accounts, results, cdl));
 		}
-		mts.doClearing(oMultiTransactions);
+		mts.doClearing(oMultiTransactions,loadTester);
 		cdl.await();
 		// log.debug(" ====> ExecuteTransaction.clearing:" + mts.getBucketInfo()
 		// + ",cost="
