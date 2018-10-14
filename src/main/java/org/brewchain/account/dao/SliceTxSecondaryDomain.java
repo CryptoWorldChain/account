@@ -11,6 +11,6 @@ public class SliceTxSecondaryDomain extends ODBDao {
 	}
 	@Override
 	public String getDomainName() {
-		return "tx.sec."+new PropHelper(null).get("org.brewchain.txsec.slicecount", 16);
+		return "tx.sec."+new PropHelper(null).get("org.brewchain.txsec.slicecount", 8);
 	}
 }

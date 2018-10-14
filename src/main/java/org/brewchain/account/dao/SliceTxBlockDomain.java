@@ -13,7 +13,7 @@ public class SliceTxBlockDomain extends ODBDao{
 	@Override
 	public String getDomainName() {
 //		return "txblock";
-		return "txblock.."+new PropHelper(null).get("org.brewchain.txsec.slicecount", 16);
+		return "txblock.."+new PropHelper(null).get("org.brewchain.txsec.slicecount", 8);
 
 	}
 }

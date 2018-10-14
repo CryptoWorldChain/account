@@ -13,7 +13,7 @@ public class SliceAccoutDomain<T extends Integer> extends ODBDao {
 
 	@Override
 	public String getDomainName() {
-		return "account.." + new PropHelper(null).get("org.brewchain.account.slicecount", 16);
+		return "account.." + new PropHelper(null).get("org.brewchain.account.slicecount", 8);
 	}
 
 }
