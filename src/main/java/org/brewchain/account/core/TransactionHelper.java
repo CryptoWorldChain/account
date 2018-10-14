@@ -345,7 +345,7 @@ public class TransactionHelper implements ActorService, Runnable {
 			List<OKey> keys = new ArrayList<>();
 			List<OValue> values = new ArrayList<>();
 			for (MultiTransaction.Builder mtb : oMultiTransaction) {
-				log.debug("sync tx count y::" + mtb.getTxHash());
+//				log.debug("sync tx count y::" + mtb.getTxHash());
 				try {
 					// dao.getStats().signalAcceptTx();
 					// MultiTransaction cacheTx =
@@ -484,6 +484,8 @@ public class TransactionHelper implements ActorService, Runnable {
 		if (cacheTx != null) {
 			return cacheTx;
 		}
+//		if (!transactionHelper.isExistsWaitBlockTx(txHash)
+//				&& !transactionHelper.isExistsTransaction(txHash)) {
 		HashPair hp = oConfirmMapDB.getHP(txHash);
 		if (hp != null && hp.getTx() != null) {
 			txDBCacheByHash.put(txHash, hp.getTx());
