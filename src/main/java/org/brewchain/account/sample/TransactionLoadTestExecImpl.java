@@ -1,9 +1,9 @@
 package org.brewchain.account.sample;
 
 import java.math.BigInteger;
-import java.util.Enumeration;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.codec.binary.Hex;
 import org.brewchain.account.core.AccountHelper;
@@ -71,7 +71,7 @@ public class TransactionLoadTestExecImpl extends SessionModules<ReqCommonTest> {
 	@AllArgsConstructor
 	class LoadKeyPairs {
 		KeyPairs kp;
-		int nonce = 0;
+		AtomicInteger nonce = new AtomicInteger(0);
 		long lastUpdate = System.currentTimeMillis();
 	}
 
@@ -85,7 +85,7 @@ public class TransactionLoadTestExecImpl extends SessionModules<ReqCommonTest> {
 		String address = Hex.encodeHexString(hexaddress.toByteArray());
 		LoadKeyPairs kp = keystores.get(address);
 		if (kp != null) {
-			kp.nonce = nonce + 1;
+			kp.nonce.addAndGet(10);
 			kp.lastUpdate = System.currentTimeMillis();
 			kps.addLast(kp);
 		}
@@ -160,11 +160,11 @@ public class TransactionLoadTestExecImpl extends SessionModules<ReqCommonTest> {
 				int nonce = 0;
 				if (fromkp != null) {
 					from = fromkp.kp;
-					nonce = fromkp.nonce;
+					nonce = fromkp.nonce.get();
 				} else {
 					from = encApi.genKeys();
 					if (keystores.size() < maxkeys) {
-						keystores.putIfAbsent(from.getAddress(), new LoadKeyPairs(from, 0, 0));
+						keystores.putIfAbsent(from.getAddress(), new LoadKeyPairs(from, new AtomicInteger(0), 0));
 					}
 				}
 				if (tokp != null) {
@@ -172,7 +172,7 @@ public class TransactionLoadTestExecImpl extends SessionModules<ReqCommonTest> {
 				} else {
 					to = encApi.genKeys();
 					if (keystores.size() < maxkeys) {
-						keystores.putIfAbsent(to.getAddress(), new LoadKeyPairs(to, 0, 0));
+						keystores.putIfAbsent(to.getAddress(), new LoadKeyPairs(to,new AtomicInteger(0), 0));
 					}
 				}
 

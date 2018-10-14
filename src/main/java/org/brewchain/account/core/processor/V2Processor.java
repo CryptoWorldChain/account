@@ -367,6 +367,7 @@ public class V2Processor implements IProcessor, ActorService {
 
 	@Override
 	public synchronized AddBlockResponse ApplyBlock(BlockEntity.Builder oBlockEntity) {
+		
 		BlockEntity.Builder applyBlock = oBlockEntity.clone();
 		long start = System.currentTimeMillis();
 		AddBlockResponse.Builder oAddBlockResponse = AddBlockResponse.newBuilder();

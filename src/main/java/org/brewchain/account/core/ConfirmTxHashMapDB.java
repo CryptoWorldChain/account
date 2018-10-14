@@ -115,7 +115,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 			// rwLock.writeLock().lock();
 			HashPair _hp = getHP(hp.getKey());
 			if (_hp == null) {
-				synchronized (("acct_" + hp.getKey().substring(0, 3)).intern()) {
+				synchronized (("acct_" + hp.getKey().substring(0, 1)).intern()) {
 					_hp = eleToHP(storage.get(hp.getKey()));// double entry
 					if (_hp == null) {
 						putElement(hp.getKey(), hp);
@@ -148,7 +148,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 			}
 			HashPair _hp = getHP(key);
 			if (_hp == null) {
-				synchronized (("acct_" + key.substring(0, 3)).intern()) {
+				synchronized (("acct_" + key.substring(0, 1)).intern()) {
 					_hp = getHP(key);// double entry
 					if (_hp == null) {
 						_hp = new HashPair(key, null, null);

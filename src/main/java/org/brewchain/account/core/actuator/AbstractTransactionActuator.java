@@ -153,7 +153,7 @@ public abstract class AbstractTransactionActuator implements iTransactionActuato
 			}
 
 			int nonce = senderAccountValue.getNonce();
-			if (nonce != oInput.getNonce()) {
+			if (nonce > oInput.getNonce()) {
 				throw new TransactionParameterInvalidException(
 						String.format("parameter invalid, sender nonce %s is not equal with transaction nonce %s",
 								nonce, oInput.getNonce()));

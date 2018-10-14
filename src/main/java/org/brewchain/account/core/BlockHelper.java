@@ -80,7 +80,8 @@ public class BlockHelper implements ActorService {
 	 */
 	public BlockEntity.Builder CreateNewBlock(int txCount, int confirmRecvCount, String extraData, String term)
 			throws Exception {
-		log.error("make new block::maxTxCount="+txCount+",confirmRecvCount::" + confirmRecvCount + " term::" + term);
+		log.error(
+				"make new block::maxTxCount=" + txCount + ",confirmRecvCount::" + confirmRecvCount + " term::" + term);
 		return CreateNewBlock(transactionHelper.getWaitBlockTx(txCount, confirmRecvCount), extraData, term);
 	}
 
@@ -154,6 +155,13 @@ public class BlockHelper implements ActorService {
 	}
 
 	public AddBlockResponse ApplyBlock(BlockEntity.Builder block) throws Exception {
+		BlockEntity dbblock = blockChainHelper.getBlockByHash(block.getHeader().getBlockHash());
+		if (dbblock != null) {
+			AddBlockResponse.Builder oAddBlockResponse = AddBlockResponse.newBuilder();
+			oAddBlockResponse.setCurrentNumber(blockChainHelper.getLastBlockNumber());
+			oAddBlockResponse.setWantNumber(oAddBlockResponse.getCurrentNumber());
+			return oAddBlockResponse.build();
+		}
 		return oProcessorManager.getProcessor(block.getVersion()).ApplyBlock(block);
 	}
 
