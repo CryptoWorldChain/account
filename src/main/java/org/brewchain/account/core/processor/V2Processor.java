@@ -264,9 +264,11 @@ public class V2Processor implements IProcessor, ActorService {
 		byte[][] txTrieBB;
 		Map<String, Account.Builder> accounts;
 		AddBlockResponse.Builder oAddBlockResponse;
+		long blocknumber;
 		@Override
 		public void run() {
 			try {
+				Thread.currentThread().setName("txloader-"+blocknumber);
 				HashPair hp = transactionHelper.removeWaitingSendOrBlockTx(txHash);
 				MultiTransaction oMultiTransaction = null;
 				if (hp != null) {
@@ -316,7 +318,7 @@ public class V2Processor implements IProcessor, ActorService {
 			Map<String, Account.Builder> accounts = new ConcurrentHashMap<>(oBlockHeader.getTxHashsCount());
 			CountDownLatch cdl = new CountDownLatch(oBlockHeader.getTxHashsCount());
 			for (String txHash : oBlockHeader.getTxHashsList()) {
-				this.stateTrie.getExecutor().submit(new ParalTxLoader(txHash, i, cdl, txs, txTrieBB, accounts,oAddBlockResponse));
+				this.stateTrie.getExecutor().submit(new ParalTxLoader(txHash, i, cdl, txs, txTrieBB, accounts,oAddBlockResponse,oBlockHeader.getNumber()));
 				i++;
 			}
 
@@ -370,7 +372,7 @@ public class V2Processor implements IProcessor, ActorService {
 
 	@Override
 	public synchronized AddBlockResponse ApplyBlock(BlockEntity.Builder oBlockEntity) {
-
+		Thread.currentThread().setName("v2Apply-"+oBlockEntity.getHeader().getNumber());
 		BlockEntity.Builder applyBlock = oBlockEntity.clone();
 		long start = System.currentTimeMillis();
 		AddBlockResponse.Builder oAddBlockResponse = AddBlockResponse.newBuilder();
