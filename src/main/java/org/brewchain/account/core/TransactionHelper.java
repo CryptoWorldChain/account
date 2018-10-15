@@ -108,7 +108,7 @@ public class TransactionHelper implements ActorService, Runnable {
 			.expireAfterWrite(600, TimeUnit.SECONDS).maximumSize(prop.get("org.brewchain.account.cache.tx.max", 100000))
 			.concurrencyLevel(Runtime.getRuntime().availableProcessors()).build();
 
-	PendingQueue queue = new PendingQueue("txaccept",prop.get("org.brewchain.account.tx.accept", 100000));
+	PendingQueue queue = new PendingQueue("txaccept", prop.get("org.brewchain.account.tx.accept", 100000));
 
 	public boolean isStop = false;
 
@@ -135,7 +135,7 @@ public class TransactionHelper implements ActorService, Runnable {
 	public void run() {
 		try {
 			Thread.sleep(3000);
-			//boot up wait
+			// boot up wait
 		} catch (InterruptedException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -313,9 +313,9 @@ public class TransactionHelper implements ActorService, Runnable {
 					txDBCacheByHash.put(hp.getKey(), hp.getTx());
 
 					dao.getStats().signalSyncTx();
-					// if (isBroadCast) {
-					oConfirmMapDB.confirmTx(hp, bits);
-					// }
+					if (isBroadCast) {
+						oConfirmMapDB.confirmTx(hp, bits);
+					}
 				}
 			}
 		} catch (Exception e) {
@@ -345,7 +345,7 @@ public class TransactionHelper implements ActorService, Runnable {
 			List<OKey> keys = new ArrayList<>();
 			List<OValue> values = new ArrayList<>();
 			for (MultiTransaction.Builder mtb : oMultiTransaction) {
-//				log.debug("sync tx count y::" + mtb.getTxHash());
+				// log.debug("sync tx count y::" + mtb.getTxHash());
 				try {
 					// dao.getStats().signalAcceptTx();
 					// MultiTransaction cacheTx =
@@ -368,9 +368,9 @@ public class TransactionHelper implements ActorService, Runnable {
 						keys.add(oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash())));
 						values.add(OValue.newBuilder().setExtdata(mts).setInfo(mtb.getTxHash()).build());
 						// oConfirmMapDB.confirmTx(hp, bits);
-						// if (isBroadCast) {
-						oConfirmMapDB.confirmTx(hp, bits);
-						// }
+						if (isBroadCast) {
+							oConfirmMapDB.confirmTx(hp, bits);
+						}
 						txDBCacheByHash.put(hp.getKey(), hp.getTx());
 						dao.getStats().signalSyncTx();
 					} else {
@@ -484,8 +484,8 @@ public class TransactionHelper implements ActorService, Runnable {
 		if (cacheTx != null) {
 			return cacheTx;
 		}
-//		if (!transactionHelper.isExistsWaitBlockTx(txHash)
-//				&& !transactionHelper.isExistsTransaction(txHash)) {
+		// if (!transactionHelper.isExistsWaitBlockTx(txHash)
+		// && !transactionHelper.isExistsTransaction(txHash)) {
 		HashPair hp = oConfirmMapDB.getHP(txHash);
 		if (hp != null && hp.getTx() != null) {
 			txDBCacheByHash.put(txHash, hp.getTx());

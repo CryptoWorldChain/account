@@ -310,10 +310,10 @@ public class ConfirmTxHashMapDB implements ActorService {
 		while (i < maxtried) {
 			try {
 				HashPair hp = confirmQueue.pollFirst();
-				if (hp == null) {
-					break;
-				}
-				if (!hp.isRemoved()) {// 180
+//				if (hp == null) {
+//					break;
+//				}
+				if (!hp.isRemoved()&&hp.getTx()!=null) {// 180
 					confirmQueue.addLast(hp);
 				} else {
 					clearcount++;
