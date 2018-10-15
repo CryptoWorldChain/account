@@ -149,12 +149,12 @@ public class BlockHelper implements ActorService {
 		blockChainHelper.stableBlock(oBlockEntity.build());
 	}
 
-	public AddBlockResponse ApplyBlock(ByteString bs) throws Exception {
+	public synchronized AddBlockResponse ApplyBlock(ByteString bs) throws Exception {
 		BlockEntity.Builder block = BlockEntity.newBuilder().mergeFrom(bs);
 		return ApplyBlock(block);
 	}
 
-	public AddBlockResponse ApplyBlock(BlockEntity.Builder block) throws Exception {
+	public synchronized AddBlockResponse ApplyBlock(BlockEntity.Builder block) throws Exception {
 		BlockEntity dbblock = blockChainHelper.getBlockByHash(block.getHeader().getBlockHash());
 		if (dbblock != null) {
 			AddBlockResponse.Builder oAddBlockResponse = AddBlockResponse.newBuilder();
