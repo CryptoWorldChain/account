@@ -222,7 +222,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 			} else {
 				// rwLock.writeLock().lock();
 				try {
-					if (!hp.isRemoved()&&!removeSavestorage.containsKey(hp.getKey())) {
+					if (!hp.isRemoved()&&!removeSavestorage.containsKey(hp.getKey())&&hp.getTx()!=null) {
 						if (hp.getBits().bitCount() >= minConfirm) {
 							ret.add(hp.getTx());
 							removeSavestorage.put(hp.getKey(), System.currentTimeMillis());

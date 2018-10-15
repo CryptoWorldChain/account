@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.brewchain.account.core.KeyConstant;
 import org.brewchain.account.core.TransactionHelper;
@@ -27,6 +28,7 @@ public class MisV2TransactionRunner implements Runnable {
 	Map<String, Account.Builder> accounts;
 	Map<String, ByteString> results;
 	CountDownLatch cdl;
+	
 
 	@Override
 	public void run() {
@@ -43,15 +45,17 @@ public class MisV2TransactionRunner implements Runnable {
 					} else {
 						transactionHelper.resetActuator(oiTransactionActuator, currentBlock);
 					}
-
 					try {
 						oiTransactionActuator.onPrepareExecute(oTransaction, accounts);
 						ByteString result = oiTransactionActuator.onExecute(oTransaction, accounts);
 						oiTransactionActuator.onExecuteDone(oTransaction, currentBlock, result);
 						results.put(oTransaction.getTxHash(), result);
 					} catch (Throwable e) {// e.printStackTrace();
-//						log.error("block " + currentBlock.getHeader().getBlockHash() + " exec transaction hash::"
-//								+ oTransaction.getTxHash() + " error::" + e.getMessage());
+						// log.error("block " +
+						// currentBlock.getHeader().getBlockHash() + " exec
+						// transaction hash::"
+						// + oTransaction.getTxHash() + " error::" +
+						// e.getMessage());
 						try {
 							oiTransactionActuator.onExecuteError(oTransaction, currentBlock, ByteString
 									.copyFromUtf8(e.getMessage() == null ? "unknown exception" : e.getMessage()));
@@ -60,14 +64,13 @@ public class MisV2TransactionRunner implements Runnable {
 						} catch (Exception e1) {
 							log.error("onexec errro:" + e1.getMessage(), e1);
 						}
-					} 
-					finally {
+					} finally {
 						cdl.countDown();
 					}
 				}
 			}
 		} finally {
-			//cdl.countDown();
+			// cdl.countDown();
 		}
 	}
 }
