@@ -16,7 +16,6 @@ public class StatsInfo implements Runnable {
 
 	long lastUpdateTime = System.currentTimeMillis();
 	private AtomicLong blockTxCount = new AtomicLong(0);
-	
 
 	double txAcceptTps = 0.0;
 	double txBlockTps = 0.0;
@@ -39,28 +38,37 @@ public class StatsInfo implements Runnable {
 		curBlockID = blockid;
 		curBlockTime = System.currentTimeMillis();
 	}
-	
-	public void signalBlockTx(){
-		blockTxCount.incrementAndGet();
-		lastBlockTxTime = System.currentTimeMillis();
-		
-		if(firstBlockTxTime==0){
-			firstBlockTxTime = lastBlockTxTime;
+
+	public void signalBlockTx() {
+		signalBlockTx(1);
+	}
+
+	public void signalBlockTx(int count) {
+		if (count > 0) {
+			blockTxCount.addAndGet(count);
+			lastBlockTxTime = System.currentTimeMillis();
+
+			if (firstBlockTxTime == 0) {
+				firstBlockTxTime = lastBlockTxTime;
+			}
 		}
 	}
-	
+
 	public void signalSyncTx() {
 		txSyncCount.incrementAndGet();
 	}
-	
-	public void signalAcceptTx(){
-		acceptTxCount.incrementAndGet();
-		lastAcceptTxTime = System.currentTimeMillis();
 
-		if(firstAcceptTxTime==0){
-			firstAcceptTxTime = lastAcceptTxTime;
+	public void signalAcceptTx(int cc) {
+		if (cc > 0) {
+			acceptTxCount.addAndGet(cc);
+			lastAcceptTxTime = System.currentTimeMillis();
+
+			if (firstAcceptTxTime == 0) {
+				firstAcceptTxTime = lastAcceptTxTime;
+			}
 		}
 	}
+
 	@Override
 	public void run() {
 
@@ -80,8 +88,8 @@ public class StatsInfo implements Runnable {
 				}
 				if (curBlockID > lastBlockID) {
 					long __curBlockID = curBlockID;
-					long __lastBlockTxCount =   lastBlockTxCount;
-					
+					long __lastBlockTxCount = lastBlockTxCount;
+
 					txBlockTps = (curBlockTxCount - __lastBlockTxCount) * 1000.f
 							/ (Math.abs(curBlockTime - lastBlockTime) + 1);
 					txBlockTps = txBlockTps / (__curBlockID - lastBlockID);
@@ -95,8 +103,9 @@ public class StatsInfo implements Runnable {
 					maxBlockTps = txBlockTps;
 				}
 				lastUpdateTime = System.currentTimeMillis();
-			//	log.info("[STATS] TxAccept[count,tps]=[{},{}] TxBlock[count,tps]=[{},{}]", curAcceptTxCount,
-			//			txAcceptTps, curBlockTxCount, txBlockTps);
+				// log.info("[STATS] TxAccept[count,tps]=[{},{}]
+				// TxBlock[count,tps]=[{},{}]", curAcceptTxCount,
+				// txAcceptTps, curBlockTxCount, txBlockTps);
 			} catch (Throwable t) {
 
 			}

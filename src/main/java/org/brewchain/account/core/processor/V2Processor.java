@@ -287,7 +287,6 @@ public class V2Processor implements IProcessor, ActorService {
 					justCheck.set(true);
 				} else {
 					if (!justCheck.get()) {
-						transactionHelper.getDao().getStats().signalBlockTx();
 						bb[dstIndex] = oMultiTransaction;
 						txTrieBB[dstIndex] = transactionHelper.getTransactionContent(oMultiTransaction);
 						transactionHelper.merageTransactionAccounts(oMultiTransaction, accounts);
@@ -339,6 +338,7 @@ public class V2Processor implements IProcessor, ActorService {
 				bb.addTxs(txs[i]);
 				oTransactionTrie.put(RLP.encodeInt(i), txTrieBB[i]);
 			}
+			transactionHelper.getDao().getStats().signalBlockTx(oBlockHeader.getTxHashsCount());
 			oBlockEntity.setBody(bb);
 
 			// start = System.currentTimeMillis();

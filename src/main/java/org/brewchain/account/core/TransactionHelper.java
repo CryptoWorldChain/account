@@ -150,8 +150,8 @@ public class TransactionHelper implements ActorService, Runnable {
 						for (HashPair hp : hps) {
 							oSendingHashMapDB.put(hp.getKey(), hp);
 							oConfirmMapDB.confirmTx(hp, BigInteger.ZERO);
-							dao.getStats().signalAcceptTx();
 						}
+						dao.getStats().signalAcceptTx(hps.size());
 					}
 				}
 			} catch (Throwable t) {
@@ -234,7 +234,7 @@ public class TransactionHelper implements ActorService, Runnable {
 		// 保存交易到db中
 		// log.debug("====put genesis transaction::"+
 		// multiTransaction.getTxHash());
-		dao.getStats().signalAcceptTx();
+		dao.getStats().signalAcceptTx(1);
 
 		dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(multiTransaction.getTxHash())),
 				oEntityHelper.byteValue2OValue(multiTransaction.toByteArray()));
@@ -351,7 +351,7 @@ public class TransactionHelper implements ActorService, Runnable {
 					// MultiTransaction cacheTx =
 					// txDBCacheByHash.getIfPresent(mtb.getTxHash());
 					MultiTransaction cacheTx = GetTransaction(mtb.getTxHash());
-
+					boolean isDone = TXStatus.isDone(cacheTx);
 					MultiTransaction mt = mtb.clearStatus().clearResult().build();
 
 					iTransactionActuator oiTransactionActuator = getActuator(mt.getTxBody().getType(), null);
@@ -368,12 +368,12 @@ public class TransactionHelper implements ActorService, Runnable {
 						keys.add(oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash())));
 						values.add(OValue.newBuilder().setExtdata(mts).setInfo(mtb.getTxHash()).build());
 						// oConfirmMapDB.confirmTx(hp, bits);
-						if (isBroadCast) {
+//						if (isBroadCast) {
 							oConfirmMapDB.confirmTx(hp, bits);
-						}
+//						}
 						txDBCacheByHash.put(hp.getKey(), hp.getTx());
 						dao.getStats().signalSyncTx();
-					} else {
+					} else if (!isDone) {
 						oConfirmMapDB.confirmTx(mtb.getTxHash(), bits);
 					}
 				} catch (Exception e) {
