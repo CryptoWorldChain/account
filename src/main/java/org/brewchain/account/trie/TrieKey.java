@@ -108,6 +108,10 @@ public final class TrieKey {
 	}
 
 	public TrieKey matchAndShift(TrieKey k) {
+		// TODO unknown null
+		if (k == null) {
+			return null;
+		}
 		int len = getLength();
 		int kLen = k.getLength();
 		if (len < kLen)
