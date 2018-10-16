@@ -176,8 +176,9 @@ public class V2Processor implements IProcessor, ActorService {
 		oBlockHeader.setParentHash(oBestBlockHeader.getBlockHash());
 
 		long currentTimestamp = System.currentTimeMillis();
-		oBlockHeader.setTimestamp(System.currentTimeMillis() == oBestBlockHeader.getTimestamp()
-				? oBestBlockHeader.getTimestamp() + 1 : currentTimestamp);
+		oBlockHeader.setTimestamp(
+				System.currentTimeMillis() == oBestBlockHeader.getTimestamp() ? oBestBlockHeader.getTimestamp() + 1
+						: currentTimestamp);
 		oBlockHeader.setNumber(oBestBlockHeader.getNumber() + 1);
 		oBlockHeader.setExtraData(extraData);
 		for (int i = 0; i < txs.size(); i++) {
@@ -284,7 +285,7 @@ public class V2Processor implements IProcessor, ActorService {
 				if (oMultiTransaction == null || StringUtils.isBlank(oMultiTransaction.getTxHash())
 						|| oMultiTransaction.getTxBody().getInputsCount() <= 0) {
 					// log.error("cannot load tx :txhash=" + txHash);
-//					oAddBlockResponse.addTxHashs(txHash);
+					// oAddBlockResponse.addTxHashs(txHash);
 					missingHash.add(txHash);
 					justCheck.set(true);
 				} else {
@@ -326,16 +327,20 @@ public class V2Processor implements IProcessor, ActorService {
 			Map<String, Account.Builder> accounts = new ConcurrentHashMap<>(oBlockHeader.getTxHashsCount());
 			CountDownLatch cdl = new CountDownLatch(oBlockHeader.getTxHashsCount());
 			AtomicBoolean justCheck = new AtomicBoolean(false);
-			ConcurrentLinkedQueue<String> missingHash = new ConcurrentLinkedQueue<>(); 
+			ConcurrentLinkedQueue<String> missingHash = new ConcurrentLinkedQueue<>();
 			for (String txHash : oBlockHeader.getTxHashsList()) {
 				this.stateTrie.getExecutor().submit(new ParalTxLoader(txHash, i, cdl, txs, txTrieBB, accounts,
-						missingHash, oBlockHeader.getNumber(),justCheck));
+						missingHash, oBlockHeader.getNumber(), justCheck));
 				i++;
 			}
 
 			cdl.await();
-			if(missingHash.size()>0){
-				oAddBlockResponse.addAllTxHashs(missingHash);
+			if (!missingHash.isEmpty()) {
+				String hash = missingHash.poll();
+				while (hash != null) {
+					oAddBlockResponse.addTxHashs(hash);
+					hash = missingHash.poll();
+				}
 				return false;
 			}
 			for (i = 0; i < oBlockHeader.getTxHashsCount(); i++) {
