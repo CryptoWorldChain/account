@@ -259,8 +259,8 @@ public class ConfirmTxHashMapDB implements ActorService {
 		}
 
 		log.error("confirmQueue info poll:: maxsize::" + maxsize + ",maxtried=" + maxtried + " queuesize::"
-				+ confirmQueue.size() + ",storage=" + (storage == null ? 0 : storage.size()) + ",try=" + i
-				+",cost="+(System.currentTimeMillis()-checkTime));
+				+ confirmQueue.size() + ",storage=" + (storage == null ? 0 : storage.size()) + ",try=" + i + ",cost="
+				+ (System.currentTimeMillis() - checkTime));
 
 		// log.debug("confirm tx poll maxsize::" + maxsize + " minConfirm::" +
 		// minConfirm + " checkTime::" + checkTime
@@ -269,10 +269,11 @@ public class ConfirmTxHashMapDB implements ActorService {
 	}
 
 	long lastClearTime = 0;
+	long clearWaitMS = props.get("org.brewchain.account.queue.clear.ms", 10000);
 
 	public synchronized void clear() {
-		if (System.currentTimeMillis() - lastClearTime < props.get("org.brewchain.account.queue.clear.ms", 10000)
-				&& confirmQueue.size() < maxElementsInMemory && storage.size() < maxElementsInMemory) {
+		if (System.currentTimeMillis() - lastClearTime < clearWaitMS && confirmQueue.size() < maxElementsInMemory * 2
+				&& storage.size() < maxElementsInMemory * 2) {
 			return;
 		}
 		int ccs[] = new int[3];
@@ -309,7 +310,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 			log.error("error in clearRemoveQueue:", e);
 		}
 		lastClearTime = System.currentTimeMillis();
-				
+
 		log.error("end of clear:cost=" + (System.currentTimeMillis() - tstart) + ":[" + cost[0] + "," + cost[1] + ","
 				+ cost[2] + "],count=[" + ccs[0] + "," + ccs[1] + "," + ccs[2] + "]");
 	}
