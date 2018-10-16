@@ -161,9 +161,7 @@ public class TransactionHelper implements ActorService, Runnable {
 				if (queue.getCounter().getPtr_sending().get() < queue.getCounter().getPtr_pending().get()) {
 					Thread.sleep(100);
 				} else {
-					synchronized (this) {
-						this.wait(10000);
-					}
+					Thread.sleep(2000);
 				}
 			} catch (Throwable e) {
 			}
@@ -192,13 +190,13 @@ public class TransactionHelper implements ActorService, Runnable {
 		hp.setNeedBroadCast(true);
 
 		queue.addElement(hp);
-		synchronized (this) {
-			try {
-				this.notifyAll();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
+//		synchronized (this) {
+//			try {
+//				this.notifyAll();
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//			}
+//		}
 		// oSendingHashMapDB.put(hp.getKey(), hp);
 		//
 		// oConfirmMapDB.confirmTx(hp, BigInteger.ZERO);
@@ -336,7 +334,7 @@ public class TransactionHelper implements ActorService, Runnable {
 		return false;
 	}
 
-	public synchronized void syncTransactionBatch(List<MultiTransaction.Builder> oMultiTransaction, boolean isBroadCast,
+	public  void syncTransactionBatch(List<MultiTransaction.Builder> oMultiTransaction, boolean isBroadCast,
 			BigInteger bits) {
 		if (oMultiTransaction.size() > 0) {
 
