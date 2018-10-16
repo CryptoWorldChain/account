@@ -190,13 +190,13 @@ public class TransactionHelper implements ActorService, Runnable {
 		hp.setNeedBroadCast(true);
 
 		queue.addElement(hp);
-//		synchronized (this) {
-//			try {
-//				this.notifyAll();
-//			} catch (Exception e) {
-//				e.printStackTrace();
-//			}
-//		}
+		// synchronized (this) {
+		// try {
+		// this.notifyAll();
+		// } catch (Exception e) {
+		// e.printStackTrace();
+		// }
+		// }
 		// oSendingHashMapDB.put(hp.getKey(), hp);
 		//
 		// oConfirmMapDB.confirmTx(hp, BigInteger.ZERO);
@@ -334,7 +334,7 @@ public class TransactionHelper implements ActorService, Runnable {
 		return false;
 	}
 
-	public  void syncTransactionBatch(List<MultiTransaction.Builder> oMultiTransaction, boolean isBroadCast,
+	public void syncTransactionBatch(List<MultiTransaction.Builder> oMultiTransaction, boolean isBroadCast,
 			BigInteger bits) {
 		if (oMultiTransaction.size() > 0) {
 
@@ -455,7 +455,7 @@ public class TransactionHelper implements ActorService, Runnable {
 		// HashPair hpBlk = oPendingHashMapDB.getStorage().remove(txHash);
 		HashPair hpBlk = oConfirmMapDB.invalidate(txHash);
 		HashPair hpSend = oSendingHashMapDB.getStorage().remove(txHash);
-		if (hpBlk != null) {
+		if (hpBlk != null && hpBlk.getTx() != null) {
 			return hpBlk;
 		} else {
 			return hpSend;

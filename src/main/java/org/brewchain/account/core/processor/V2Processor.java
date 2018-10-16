@@ -176,9 +176,8 @@ public class V2Processor implements IProcessor, ActorService {
 		oBlockHeader.setParentHash(oBestBlockHeader.getBlockHash());
 
 		long currentTimestamp = System.currentTimeMillis();
-		oBlockHeader.setTimestamp(
-				System.currentTimeMillis() == oBestBlockHeader.getTimestamp() ? oBestBlockHeader.getTimestamp() + 1
-						: currentTimestamp);
+		oBlockHeader.setTimestamp(System.currentTimeMillis() == oBestBlockHeader.getTimestamp()
+				? oBestBlockHeader.getTimestamp() + 1 : currentTimestamp);
 		oBlockHeader.setNumber(oBestBlockHeader.getNumber() + 1);
 		oBlockHeader.setExtraData(extraData);
 		for (int i = 0; i < txs.size(); i++) {
@@ -212,12 +211,12 @@ public class V2Processor implements IProcessor, ActorService {
 			case APPLY:
 				blockChainHelper.connectBlock(oBlockEntity.build());
 
-				this.stateTrie.getExecutor().submit(new Runnable() {
-					@Override
-					public void run() {
-						transactionHelper.getOConfirmMapDB().clear();
-					}
-				});
+//				this.stateTrie.getExecutor().submit(new Runnable() {
+//					@Override
+//					public void run() {
+//						transactionHelper.getOConfirmMapDB().clear();
+//					}
+//				});
 
 				log.info(String.format("LOGFILTER %s %s %s %s 执行区块[%s]",
 						encApi.hexEnc(KeyConstant.node.getoAccount().getAddress().toByteArray()), "account", "apply",
@@ -286,7 +285,11 @@ public class V2Processor implements IProcessor, ActorService {
 						|| oMultiTransaction.getTxBody().getInputsCount() <= 0) {
 					// log.error("cannot load tx :txhash=" + txHash);
 					// oAddBlockResponse.addTxHashs(txHash);
-					missingHash.add(txHash);
+					if (StringUtils.isBlank(txHash)) {
+						log.error("!!!Get Empty TXHash::"+txHash);
+					} else {
+						missingHash.add(txHash);
+					}
 					justCheck.set(true);
 				} else {
 					if (!justCheck.get()) {
@@ -374,9 +377,13 @@ public class V2Processor implements IProcessor, ActorService {
 					: oTransactionTrie.getRootHash()));
 			// start = System.currentTimeMillis();
 			header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
-
+			oBlockEntity.setHeader(header.build());
+			if(StringUtils.isBlank(oBlockEntity.getHeader().getStateRoot())){
+				log.error("get empty stateroot==");
+			}
+			
 			this.stateTrie.clear();
-			oBlockEntity.setHeader(header);
+			
 
 		} finally {
 			oTransactionTrie.clear();
@@ -460,7 +467,8 @@ public class V2Processor implements IProcessor, ActorService {
 
 							transactionHelper.getDao().getStats().getRollBackBlockCount().incrementAndGet();
 							transactionHelper.getDao().getStats().getRollBackTxCount().incrementAndGet();
-							transactionHelper.getDao().getStats().signalBlockTx(-applyBlock.getHeader().getTxHashsCount());
+							transactionHelper.getDao().getStats()
+									.signalBlockTx(-applyBlock.getHeader().getTxHashsCount());
 							blockChainHelper.rollbackTo(applyBlock.getHeader().getNumber() - 1);
 
 							final BlockHeader.Builder bbh = oBlockHeader;
@@ -490,7 +498,7 @@ public class V2Processor implements IProcessor, ActorService {
 						// log.debug("find childs count::" + childs.size());
 						for (BlockEntity blockEntity : childs) {
 							applyBlock = blockEntity.toBuilder();
-							log.info("ready to apply child block::" + applyBlock.getHeader().getBlockHash()
+							log.error("ready to apply child block::" + applyBlock.getHeader().getBlockHash()
 									+ " number::" + applyBlock.getHeader().getNumber());
 							ApplyBlock(applyBlock);
 						}
