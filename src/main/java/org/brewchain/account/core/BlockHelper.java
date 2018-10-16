@@ -155,13 +155,13 @@ public class BlockHelper implements ActorService {
 	}
 
 	public synchronized AddBlockResponse ApplyBlock(BlockEntity.Builder block) throws Exception {
-		BlockEntity dbblock = blockChainHelper.getBlockByHash(block.getHeader().getBlockHash());
-		if (dbblock != null) {
-			AddBlockResponse.Builder oAddBlockResponse = AddBlockResponse.newBuilder();
-			oAddBlockResponse.setCurrentNumber(blockChainHelper.getLastBlockNumber());
-			oAddBlockResponse.setWantNumber(oAddBlockResponse.getCurrentNumber());
-			return oAddBlockResponse.build();
-		}
+//		BlockEntity dbblock = blockChainHelper.getBlockByHash(block.getHeader().getBlockHash());
+//		if (dbblock != null) {
+//			AddBlockResponse.Builder oAddBlockResponse = AddBlockResponse.newBuilder();
+//			oAddBlockResponse.setCurrentNumber(blockChainHelper.getLastBlockNumber());
+//			oAddBlockResponse.setWantNumber(oAddBlockResponse.getCurrentNumber());
+//			return oAddBlockResponse.build();
+//		}
 		return oProcessorManager.getProcessor(block.getVersion()).ApplyBlock(block);
 	}
 
