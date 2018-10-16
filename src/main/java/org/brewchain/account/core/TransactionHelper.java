@@ -355,21 +355,16 @@ public class TransactionHelper implements ActorService, Runnable {
 					}
 					if (!isDone) {
 						MultiTransaction mt = mtb.clearStatus().clearResult().build();
-
-						iTransactionActuator oiTransactionActuator = getActuator(mt.getTxBody().getType(), null);
-						if (oiTransactionActuator.needSignature()) {
-							// Map<String, Account.Builder> accounts =
-							// getTransactionAccounts(mt);
-							oiTransactionActuator.onVerifySignature(mt, null);
-						}
-
-						ByteString mts = mt.toByteString();
-						HashPair hp = new HashPair(mt.getTxHash(), mts.toByteArray(), mt);
-						hp.setNeedBroadCast(false);
 						if (cacheTx == null) {
+							iTransactionActuator oiTransactionActuator = getActuator(mt.getTxBody().getType(), null);
+							if (oiTransactionActuator.needSignature()) {
+								oiTransactionActuator.onVerifySignature(mt, null);
+							}
+							ByteString mts = mt.toByteString();
+							HashPair hp = new HashPair(mt.getTxHash(), mts.toByteArray(), mt);
+							hp.setNeedBroadCast(false);
 							keys.add(oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash())));
 							values.add(OValue.newBuilder().setExtdata(mts).setInfo(mtb.getTxHash()).build());
-							// oConfirmMapDB.confirmTx(hp, bits);
 							if (isBroadCast) {
 								oConfirmMapDB.confirmTx(hp, bits);
 							}
