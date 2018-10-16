@@ -517,7 +517,7 @@ public class V2Processor implements IProcessor, ActorService {
 		}
 
 		log.error("====> end apply block number::" + oBlockEntity.getHeader().getNumber() + " cost::"
-				+ (System.currentTimeMillis() - start));
+				+ (System.currentTimeMillis() - start) + " txs::" + oBlockEntity.getHeader().getTxHashsCount());
 		blockChainHelper.getDao().getStats().setCurBlockID(oBlockEntity.getHeader().getNumber());
 
 		return oAddBlockResponse.build();
