@@ -348,35 +348,30 @@ public class TransactionHelper implements ActorService, Runnable {
 					// dao.getStats().signalAcceptTx();
 					// MultiTransaction cacheTx =
 					// txDBCacheByHash.getIfPresent(mtb.getTxHash());
-					synchronized (("tx_" + mtb.getTxHash().substring(0, 3)).intern()) {
-						MultiTransaction cacheTx = GetTransaction(mtb.getTxHash());
-						boolean isDone = false;
-						if (cacheTx != null) {
-							isDone = TXStatus.isDone(cacheTx);
-						}
-						if (!isDone) {
-							MultiTransaction mt = mtb.clearStatus().clearResult().build();
-							if (cacheTx == null) {
-								iTransactionActuator oiTransactionActuator = getActuator(mt.getTxBody().getType(),
-										null);
-								if (oiTransactionActuator.needSignature()) {
-									oiTransactionActuator.onVerifySignature(mt, null);
-								}
-								ByteString mts = mt.toByteString();
-								HashPair hp = new HashPair(mt.getTxHash(), mts.toByteArray(), mt);
-								hp.setNeedBroadCast(false);
-								keys.add(oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash())));
-								values.add(OValue.newBuilder().setExtdata(mts).setInfo(mtb.getTxHash()).build());
-								if (isBroadCast) {
-									oConfirmMapDB.confirmTx(hp, bits);
-								}
-								txDBCacheByHash.put(hp.getKey(), hp.getTx());
-								dao.getStats().signalSyncTx();
-							} else {
-								oConfirmMapDB.confirmTx(mtb.getTxHash(), bits);
+					MultiTransaction cacheTx = GetTransaction(mtb.getTxHash());
+					boolean isDone = false;
+					if (cacheTx != null) {
+						isDone = TXStatus.isDone(cacheTx);
+					}
+					if (!isDone) {
+						MultiTransaction mt = mtb.clearStatus().clearResult().build();
+						if (cacheTx == null) {
+							iTransactionActuator oiTransactionActuator = getActuator(mt.getTxBody().getType(), null);
+							if (oiTransactionActuator.needSignature()) {
+								oiTransactionActuator.onVerifySignature(mt, null);
 							}
-						} else {
-							log.error("found tx already done:" + mtb.getTxHash());
+							ByteString mts = mt.toByteString();
+							HashPair hp = new HashPair(mt.getTxHash(), mts.toByteArray(), mt);
+							hp.setNeedBroadCast(false);
+							keys.add(oEntityHelper.byteKey2OKey(encApi.hexDec(mtb.getTxHash())));
+							values.add(OValue.newBuilder().setExtdata(mts).setInfo(mtb.getTxHash()).build());
+							if (isBroadCast) {
+								oConfirmMapDB.confirmTx(hp, bits);
+							}
+							txDBCacheByHash.put(hp.getKey(), hp.getTx());
+							dao.getStats().signalSyncTx();
+						} else if (!isDone) {
+							oConfirmMapDB.confirmTx(mtb.getTxHash(), bits);
 						}
 					}
 				} catch (Exception e) {
@@ -970,26 +965,22 @@ public class TransactionHelper implements ActorService, Runnable {
 	}
 
 	public void setTransactionDone(MultiTransaction tx, BlockEntity be, ByteString result) throws Exception {
-		synchronized (("tx_" + tx.getTxHash().substring(0, 3)).intern()) {
-			MultiTransaction.Builder oTransaction = tx.toBuilder();
-			TXStatus.setDone(oTransaction, result);
-			txDBCacheByHash.put(oTransaction.getTxHash(), oTransaction.build());
+		MultiTransaction.Builder oTransaction = tx.toBuilder();
+		TXStatus.setDone(oTransaction, result);
+		txDBCacheByHash.put(oTransaction.getTxHash(), oTransaction.build());
 
-			dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(oTransaction.getTxHash())), oEntityHelper
-					.byteValue2OValue(oTransaction.build().toByteArray(), String.valueOf(be.getHeader().getNumber())));
-		}
+		dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(oTransaction.getTxHash())), oEntityHelper
+				.byteValue2OValue(oTransaction.build().toByteArray(), String.valueOf(be.getHeader().getNumber())));
 	}
 
 	public void setTransactionError(MultiTransaction tx, BlockEntity be, ByteString result) throws Exception {
-		synchronized (("tx_" + tx.getTxHash().substring(0, 3)).intern()) {
-			MultiTransaction.Builder oTransaction = tx.toBuilder();
-			TXStatus.setError(oTransaction, result);
+		MultiTransaction.Builder oTransaction = tx.toBuilder();
+		TXStatus.setError(oTransaction, result);
 
-			txDBCacheByHash.put(oTransaction.getTxHash(), oTransaction.build());
+		txDBCacheByHash.put(oTransaction.getTxHash(), oTransaction.build());
 
-			dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(oTransaction.getTxHash())), oEntityHelper
-					.byteValue2OValue(oTransaction.build().toByteArray(), String.valueOf(be.getHeader().getNumber())));
-		}
+		dao.getTxsDao().put(oEntityHelper.byteKey2OKey(encApi.hexDec(oTransaction.getTxHash())), oEntityHelper
+				.byteValue2OValue(oTransaction.build().toByteArray(), String.valueOf(be.getHeader().getNumber())));
 	}
 
 	/**
