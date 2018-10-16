@@ -46,6 +46,9 @@ public class PendingQueue {
 			Element element = storage.get(counter.ptr_sending.incrementAndGet());
 			if (element != null && element.getObjectValue() != null && element.getObjectValue() instanceof HashPair) {
 				ret.add((HashPair) element.getObjectValue());
+			}else{
+				//要减下去。。。。
+				counter.ptr_sending.decrementAndGet();
 			}
 		}
 		if (counter.ptr_pending.get() > counter.ptr_saved.get()) {
