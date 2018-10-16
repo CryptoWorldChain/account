@@ -233,8 +233,8 @@ public class ConfirmTxHashMapDB implements ActorService {
 							if (checkTime - hp.getLastUpdateTime() >= 60000) {
 								if (hp.getTx() != null && hp.getData() != null && hp.isNeedBroadCast()) {
 									log.info("confirmQueue info broadcast:" + hp.getKey());
-									oSendingHashMapDB.put(hp.getKey(), hp);
-									confirmQueue.addLast(hp);
+//									oSendingHashMapDB.put(hp.getKey(), hp);
+//									confirmQueue.addLast(hp);
 								} else {
 									// log.error("confirmQueue info rm tx from
 									// queue::" + hp.getKey());
@@ -313,7 +313,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 //				if (hp == null) {
 //					break;
 //				}
-				if (!hp.isRemoved()&&hp.getTx()!=null) {// 180
+				if (!hp.isRemoved()&&hp.getTx()!=null&&!removeSavestorage.containsKey(hp.getKey())) {// 180
 					confirmQueue.addLast(hp);
 				} else {
 					clearcount++;
