@@ -50,7 +50,7 @@ public class PendingQueue {
 				ret.add((HashPair) element.getObjectValue());
 			}else{
 				//要减下去。。。。
-				log.error("get empty sending:"+counter.ptr_sending.get()+",p="+counter.ptr_pending.get());
+				log.debug("get empty sending:"+counter.ptr_sending.get()+",p="+counter.ptr_pending.get());
 				counter.ptr_sending.decrementAndGet();
 			}
 		}
