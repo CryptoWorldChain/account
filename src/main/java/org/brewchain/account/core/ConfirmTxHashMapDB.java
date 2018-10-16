@@ -36,6 +36,8 @@ public class ConfirmTxHashMapDB implements ActorService {
 	WaitSendHashMapDB oSendingHashMapDB; // 保存待广播交易
 	// PendingQueue persistQ;
 
+	protected PropHelper props = new PropHelper(null);
+
 	// final CacheManager cacheManager = new CacheManager();
 
 	public ConfirmTxHashMapDB() {
@@ -236,9 +238,9 @@ public class ConfirmTxHashMapDB implements ActorService {
 								if (hp.getTx() != null && hp.getData() != null) {
 									log.info("confirmQueue info broadcast:" + hp.getKey());
 									// oSendingHashMapDB.put(hp.getKey(), hp);
-									 confirmQueue.addLast(hp);
+									confirmQueue.addLast(hp);
 								} else {
-									 log.error("confirmQueue info rm tx is empty  from queue::" + hp.getKey());
+									log.error("confirmQueue info rm tx is empty  from queue::" + hp.getKey());
 									hp.setRemoved(true);
 									removeSavestorage.put(hp.getKey(), System.currentTimeMillis());
 								}
@@ -257,7 +259,8 @@ public class ConfirmTxHashMapDB implements ActorService {
 		}
 
 		log.error("confirmQueue info poll:: maxsize::" + maxsize + ",maxtried=" + maxtried + " queuesize::"
-				+ confirmQueue.size() + ",storage=" + (storage == null ? 0 : storage.size()) + ",try=" + i);
+				+ confirmQueue.size() + ",storage=" + (storage == null ? 0 : storage.size()) + ",try=" + i + ",cost="
+				+ (System.currentTimeMillis() - checkTime));
 
 		// log.debug("confirm tx poll maxsize::" + maxsize + " minConfirm::" +
 		// minConfirm + " checkTime::" + checkTime
@@ -265,8 +268,14 @@ public class ConfirmTxHashMapDB implements ActorService {
 		return ret;
 	}
 
-	public synchronized void clear() {
+	long lastClearTime = 0;
+	long clearWaitMS = props.get("org.brewchain.account.queue.clear.ms", 10000);
 
+	public synchronized void clear() {
+		if (System.currentTimeMillis() - lastClearTime < clearWaitMS && confirmQueue.size() < maxElementsInMemory * 2
+				&& storage.size() < maxElementsInMemory * 2) {
+			return;
+		}
 		int ccs[] = new int[3];
 		long cost[] = new long[3];
 		long tstart = System.currentTimeMillis();
@@ -300,6 +309,8 @@ public class ConfirmTxHashMapDB implements ActorService {
 		} catch (Exception e) {
 			log.error("error in clearRemoveQueue:", e);
 		}
+		lastClearTime = System.currentTimeMillis();
+
 		log.error("end of clear:cost=" + (System.currentTimeMillis() - tstart) + ":[" + cost[0] + "," + cost[1] + ","
 				+ cost[2] + "],count=[" + ccs[0] + "," + ccs[1] + "," + ccs[2] + "]");
 	}
@@ -372,8 +383,8 @@ public class ConfirmTxHashMapDB implements ActorService {
 							removeKeys.add(key);
 						} else if (hp.getTx() != null
 								&& System.currentTimeMillis() - hp.getLastUpdateTime() >= 60 * 1000) {
-//							oSendingHashMapDB.put(hp.getKey(), hp);
-//							confirmQueue.add1Last(hp);
+							// oSendingHashMapDB.put(hp.getKey(), hp);
+							// confirmQueue.add1Last(hp);
 						}
 					}
 				} catch (Exception e) {

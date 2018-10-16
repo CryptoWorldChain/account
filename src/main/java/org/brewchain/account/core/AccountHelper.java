@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -34,6 +35,8 @@ import org.brewchain.evmapi.gens.Act.ERC20Token;
 import org.brewchain.evmapi.gens.Act.ERC20TokenValue;
 import org.fc.brewchain.bcapi.EncAPI;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.protobuf.ByteString;
 
 import lombok.Data;
@@ -138,12 +141,42 @@ public class AccountHelper implements ActorService {
 		return GetAccount(addr) != null;
 	}
 
+//	Cache<String, AccountValue.Builder> accountByHash = CacheBuilder.newBuilder().initialCapacity(10000)
+//			.expireAfterWrite(300, TimeUnit.SECONDS).maximumSize(300000)
+//			.concurrencyLevel(Runtime.getRuntime().availableProcessors()).build();
+
 	/**
 	 * 获取用户账户
 	 * 
 	 * @param addr
 	 * @return
 	 */
+//	public Account.Builder GetAccount(ByteString addr) {
+//		Account.Builder oAccount = null;
+//		String addrHex = encApi.hexEnc(addr.toByteArray());
+//		try {
+//			oAccount = Account.newBuilder();
+//			oAccount.setAddress(addr);
+//			byte[] valueHash = null;
+//			AccountValue.Builder cacheAcct = accountByHash.getIfPresent(addrHex);
+//			if (cacheAcct != null) {
+//				oAccount.setValue(cacheAcct);
+//			} else if (this.stateTrie != null) {
+//				valueHash = this.stateTrie.get(addr.toByteArray());
+//				if (valueHash != null) {
+//					AccountValue.Builder oAccountValue = AccountValue.newBuilder();
+//					oAccountValue.mergeFrom(valueHash);
+//					oAccount.setValue(oAccountValue);
+//					accountByHash.put(addrHex, oAccountValue);
+//				}
+//			}
+//		} catch (Exception e) {
+//			log.error("account not found::" + encApi.hexEnc(addr.toByteArray()), e);
+//			oAccount = GetAccountFromDB(addr);
+//		}
+//		return oAccount;
+//	}
+	
 	public Account.Builder GetAccount(ByteString addr) {
 		try {
 			Account.Builder oAccount = Account.newBuilder();
@@ -161,12 +194,12 @@ public class AccountHelper implements ActorService {
 			}
 		} catch (Exception e) {
 			log.error("account not found::" + encApi.hexEnc(addr.toByteArray()), e);
-//			return GetAccountFromDB(addr);
 		}
 		return null;
 	}
 
-	public Account.Builder GetAccountFromDB(ByteString addr) {
+
+	private Account.Builder GetAccountFromDB(ByteString addr) {
 		try {
 			Account.Builder oAccount = Account.newBuilder();
 			oAccount.setAddress(addr);
@@ -212,6 +245,8 @@ public class AccountHelper implements ActorService {
 			Account.Builder oAccount = GetAccount(addr);
 			if (oAccount == null) {
 				oAccount = CreateAccount(addr);
+//				String addrHex = encApi.hexEnc(addr.toByteArray());
+//				accountByHash.put(addrHex, oAccount.getValueBuilder());
 			}
 			return oAccount;
 		} catch (Exception e) {
@@ -734,6 +769,8 @@ public class AccountHelper implements ActorService {
 		if (this.stateTrie != null && stateable) {
 			this.stateTrie.put(addr.toByteArray(), oAccountValue.toByteArray());
 		}
+		String addrHex = encApi.hexEnc(addr.toByteArray());
+//		accountByHash.put(addrHex, oAccountValue.toBuilder());
 	}
 
 	public void putAccountValue(ByteString addr, AccountValue oAccountValue) {
@@ -753,9 +790,9 @@ public class AccountHelper implements ActorService {
 		Collections.sort(keys);
 		for (String key : keys) {
 			AccountValue value = accountValues.get(key).getValue();
-			if (this.stateTrie != null) {
+//			if (this.stateTrie != null) {
 				this.stateTrie.put(encApi.hexDec(key), value.toByteArray());
-			}
+//			}
 		}
 		// no need, because all account already on the mpt
 		// doPutAccounts(accountValues);
