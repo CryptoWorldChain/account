@@ -238,8 +238,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 									// oSendingHashMapDB.put(hp.getKey(), hp);
 									 confirmQueue.addLast(hp);
 								} else {
-									// log.error("confirmQueue info rm tx from
-									// queue::" + hp.getKey());
+									 log.error("confirmQueue info rm tx is empty  from queue::" + hp.getKey());
 									hp.setRemoved(true);
 									removeSavestorage.put(hp.getKey(), System.currentTimeMillis());
 								}
