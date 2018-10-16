@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -264,7 +265,7 @@ public class V2Processor implements IProcessor, ActorService {
 		MultiTransaction[] bb;
 		byte[][] txTrieBB;
 		Map<String, Account.Builder> accounts;
-		AddBlockResponse.Builder oAddBlockResponse;
+		ConcurrentLinkedQueue<String> missingHash;
 		long blocknumber;
 		AtomicBoolean justCheck;
 
@@ -283,7 +284,8 @@ public class V2Processor implements IProcessor, ActorService {
 				if (oMultiTransaction == null || StringUtils.isBlank(oMultiTransaction.getTxHash())
 						|| oMultiTransaction.getTxBody().getInputsCount() <= 0) {
 					// log.error("cannot load tx :txhash=" + txHash);
-					oAddBlockResponse.addTxHashs(txHash);
+//					oAddBlockResponse.addTxHashs(txHash);
+					missingHash.add(txHash);
 					justCheck.set(true);
 				} else {
 					if (!justCheck.get()) {
@@ -324,14 +326,16 @@ public class V2Processor implements IProcessor, ActorService {
 			Map<String, Account.Builder> accounts = new ConcurrentHashMap<>(oBlockHeader.getTxHashsCount());
 			CountDownLatch cdl = new CountDownLatch(oBlockHeader.getTxHashsCount());
 			AtomicBoolean justCheck = new AtomicBoolean(false);
+			ConcurrentLinkedQueue<String> missingHash = new ConcurrentLinkedQueue<>(); 
 			for (String txHash : oBlockHeader.getTxHashsList()) {
 				this.stateTrie.getExecutor().submit(new ParalTxLoader(txHash, i, cdl, txs, txTrieBB, accounts,
-						oAddBlockResponse, oBlockHeader.getNumber(),justCheck));
+						missingHash, oBlockHeader.getNumber(),justCheck));
 				i++;
 			}
 
 			cdl.await();
-			if (oAddBlockResponse.getTxHashsCount() > 0) {
+			if(missingHash.size()>0){
+				oAddBlockResponse.addAllTxHashs(missingHash);
 				return false;
 			}
 			for (i = 0; i < oBlockHeader.getTxHashsCount(); i++) {
