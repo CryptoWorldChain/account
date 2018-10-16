@@ -161,18 +161,19 @@ public class AccountHelper implements ActorService {
 			}
 		} catch (Exception e) {
 			log.error("account not found::" + encApi.hexEnc(addr.toByteArray()), e);
+			return GetAccountFromDB(addr);
 		}
 		return null;
 	}
 
-	public Account GetAccountFromDB(ByteString addr) {
+	public Account.Builder GetAccountFromDB(ByteString addr) {
 		try {
 			Account.Builder oAccount = Account.newBuilder();
 			oAccount.setAddress(addr);
 			OValue o = dao.getAccountDao().get(oEntityHelper.byteKey2OKey(addr.toByteArray())).get();
 			AccountValue oAccountValue = AccountValue.parseFrom(o.getExtdata().toByteArray());
 			oAccount.setValue(oAccountValue);
-			return oAccount.build();
+			return oAccount;
 		} catch (Exception e) {
 			log.error("account not found::" + encApi.hexEnc(addr.toByteArray()));
 		}
