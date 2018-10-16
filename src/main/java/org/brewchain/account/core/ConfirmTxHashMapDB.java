@@ -232,11 +232,11 @@ public class ConfirmTxHashMapDB implements ActorService {
 							i++;
 						} else {
 							// long time no seeee
-							if (checkTime - hp.getLastUpdateTime() >= 60000) {
-								if (hp.getTx() != null && hp.getData() != null && hp.isNeedBroadCast()) {
+							if (checkTime - hp.getLastUpdateTime() >= 180000) {
+								if (hp.getTx() != null && hp.getData() != null) {
 									log.info("confirmQueue info broadcast:" + hp.getKey());
 									// oSendingHashMapDB.put(hp.getKey(), hp);
-									// confirmQueue.add1Last(hp);
+									 confirmQueue.addLast(hp);
 								} else {
 									// log.error("confirmQueue info rm tx from
 									// queue::" + hp.getKey());
