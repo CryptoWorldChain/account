@@ -259,7 +259,8 @@ public class ConfirmTxHashMapDB implements ActorService {
 		}
 
 		log.error("confirmQueue info poll:: maxsize::" + maxsize + ",maxtried=" + maxtried + " queuesize::"
-				+ confirmQueue.size() + ",storage=" + (storage == null ? 0 : storage.size()) + ",try=" + i);
+				+ confirmQueue.size() + ",storage=" + (storage == null ? 0 : storage.size()) + ",try=" + i
+				+",cost="+(System.currentTimeMillis()-checkTime));
 
 		// log.debug("confirm tx poll maxsize::" + maxsize + " minConfirm::" +
 		// minConfirm + " checkTime::" + checkTime
