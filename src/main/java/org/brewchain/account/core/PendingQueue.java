@@ -6,12 +6,14 @@ import java.util.List;
 import org.brewchain.account.bean.HashPair;
 
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
 import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
 
 @Data
+@Slf4j
 public class PendingQueue {
 	protected Cache storage;
 	final static CacheManager cacheManager = new CacheManager();
@@ -48,6 +50,7 @@ public class PendingQueue {
 				ret.add((HashPair) element.getObjectValue());
 			}else{
 				//要减下去。。。。
+				log.error("get empty sending:"+counter.ptr_sending.get()+",p="+counter.ptr_pending.get());
 				counter.ptr_sending.decrementAndGet();
 			}
 		}
