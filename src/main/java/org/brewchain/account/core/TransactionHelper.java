@@ -336,7 +336,7 @@ public class TransactionHelper implements ActorService, Runnable {
 		return false;
 	}
 
-	public void syncTransactionBatch(List<MultiTransaction.Builder> oMultiTransaction, boolean isBroadCast,
+	public synchronized void syncTransactionBatch(List<MultiTransaction.Builder> oMultiTransaction, boolean isBroadCast,
 			BigInteger bits) {
 		if (oMultiTransaction.size() > 0) {
 
