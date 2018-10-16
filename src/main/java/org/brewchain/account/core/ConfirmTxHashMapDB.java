@@ -113,6 +113,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 	public void confirmTx(HashPair hp, BigInteger bits) {
 		try {
 			// rwLock.writeLock().lock();
+			boolean put2Queue = false;
 			HashPair _hp = getHP(hp.getKey());
 			if (_hp == null) {
 				synchronized (("acct_" + hp.getKey().substring(0, 1)).intern()) {
@@ -120,13 +121,14 @@ public class ConfirmTxHashMapDB implements ActorService {
 					if (_hp == null) {
 						putElement(hp.getKey(), hp);
 						if (hp.getTx() != null) {
+							put2Queue = true;
 							confirmQueue.addLast(hp);
 						}
 						_hp = hp;
 					}
 				}
 			}
-			if (_hp.getTx() == null && hp.getTx() != null) {
+			if (!put2Queue && _hp.getTx() == null && hp.getTx() != null) {
 				_hp.setData(hp.getData());
 				_hp.setTx(hp.getTx());
 				_hp.setNeedBroadCast(hp.isNeedBroadCast());
@@ -222,7 +224,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 			} else {
 				// rwLock.writeLock().lock();
 				try {
-					if (!hp.isRemoved()&&!removeSavestorage.containsKey(hp.getKey())&&hp.getTx()!=null) {
+					if (!hp.isRemoved() && !removeSavestorage.containsKey(hp.getKey()) && hp.getTx() != null) {
 						if (hp.getBits().bitCount() >= minConfirm) {
 							ret.add(hp.getTx());
 							removeSavestorage.put(hp.getKey(), System.currentTimeMillis());
@@ -233,8 +235,8 @@ public class ConfirmTxHashMapDB implements ActorService {
 							if (checkTime - hp.getLastUpdateTime() >= 60000) {
 								if (hp.getTx() != null && hp.getData() != null && hp.isNeedBroadCast()) {
 									log.info("confirmQueue info broadcast:" + hp.getKey());
-//									oSendingHashMapDB.put(hp.getKey(), hp);
-//									confirmQueue.addLast(hp);
+									// oSendingHashMapDB.put(hp.getKey(), hp);
+									// confirmQueue.addLast(hp);
 								} else {
 									// log.error("confirmQueue info rm tx from
 									// queue::" + hp.getKey());
@@ -310,10 +312,10 @@ public class ConfirmTxHashMapDB implements ActorService {
 		while (i < maxtried) {
 			try {
 				HashPair hp = confirmQueue.pollFirst();
-//				if (hp == null) {
-//					break;
-//				}
-				if (!hp.isRemoved()&&hp.getTx()!=null&&!removeSavestorage.containsKey(hp.getKey())) {// 180
+				// if (hp == null) {
+				// break;
+				// }
+				if (!hp.isRemoved() && hp.getTx() != null && !removeSavestorage.containsKey(hp.getKey())) {// 180
 					confirmQueue.addLast(hp);
 				} else {
 					clearcount++;
