@@ -460,7 +460,7 @@ public class V2Processor implements IProcessor, ActorService {
 
 							transactionHelper.getDao().getStats().getRollBackBlockCount().incrementAndGet();
 							transactionHelper.getDao().getStats().getRollBackTxCount().incrementAndGet();
-
+							transactionHelper.getDao().getStats().signalBlockTx(-applyBlock.getHeader().getTxHashsCount());
 							blockChainHelper.rollbackTo(applyBlock.getHeader().getNumber() - 1);
 
 							final BlockHeader.Builder bbh = oBlockHeader;
