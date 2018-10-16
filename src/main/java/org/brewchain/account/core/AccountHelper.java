@@ -161,7 +161,7 @@ public class AccountHelper implements ActorService {
 			}
 		} catch (Exception e) {
 			log.error("account not found::" + encApi.hexEnc(addr.toByteArray()), e);
-			return GetAccountFromDB(addr);
+//			return GetAccountFromDB(addr);
 		}
 		return null;
 	}
