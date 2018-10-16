@@ -658,7 +658,7 @@ public class StateTrie implements ActorService {
 		}
 	}
 
-	public byte[] get(byte[] key) {
+	public synchronized byte[] get(byte[] key) {
 		if (!hasRoot())
 			return null; // treating unknown root hash as empty trie
 		TrieKey k = TrieKey.fromNormal(key);
@@ -688,7 +688,7 @@ public class StateTrie implements ActorService {
 		}
 	}
 
-	public void put(byte[] key, byte[] value) {
+	public synchronized void put(byte[] key, byte[] value) {
 		TrieKey k = TrieKey.fromNormal(key);
 		if (root == null) {
 			if (value != null && value.length > 0) {
