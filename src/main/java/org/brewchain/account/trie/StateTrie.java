@@ -657,7 +657,12 @@ public class StateTrie implements ActorService {
 //		if (bs != null) {
 			// log.debug("add into state trie key::" + encApi.hexEnc(hash));
 //			bs.remove(hash);
-			 log.error("state trie deleteHash bs " + encApi.hexEnc(hash));
+		cacheByHash.invalidate(encApi.hexEnc(hash));
+//		} else {
+			// if (type == NodeType.KVNodeNode || type == NodeType.KVNodeValue)
+			// {
+		dao.getAccountDao().delete(oEntityHelper.byteKey2OKey(hash));
+//			 log.error("state trie deleteHash bs " + encApi.hexEnc(hash));
 //		}
 	}
 
