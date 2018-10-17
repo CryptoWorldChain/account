@@ -13,6 +13,8 @@ import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Invalidate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.brewchain.account.bean.HashPair;
+import org.brewchain.account.trie.StateTrie;
+import org.brewchain.account.util.OEntityBuilder;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 
 import lombok.Data;
@@ -36,7 +38,8 @@ public class ConfirmTxHashMapDB implements ActorService {
 	@ActorRequire(name = "WaitSend_HashMapDB", scope = "global")
 	WaitSendHashMapDB oSendingHashMapDB; // 保存待广播交易
 	// PendingQueue persistQ;
-
+	@ActorRequire(name = "Block_StateTrie", scope = "global")
+	StateTrie stateTrie;
 	protected PropHelper props = new PropHelper(null);
 
 	// final CacheManager cacheManager = new CacheManager();
@@ -272,7 +275,8 @@ public class ConfirmTxHashMapDB implements ActorService {
 	long lastClearTime = 0;
 	long clearWaitMS = props.get("org.brewchain.account.queue.clear.ms", 10000);
 
-	AtomicBoolean gcRunning = new AtomicBoolean(false); 
+	AtomicBoolean gcRunning = new AtomicBoolean(false);
+
 	public synchronized void clear() {
 		if (System.currentTimeMillis() - lastClearTime < clearWaitMS && confirmQueue.size() < maxElementsInMemory * 2
 				&& storage.size() < maxElementsInMemory * 2) {
@@ -311,32 +315,42 @@ public class ConfirmTxHashMapDB implements ActorService {
 		} catch (Exception e) {
 			log.error("error in clearRemoveQueue:", e);
 		}
-		if(gcRunning.compareAndSet(false, true)){
+		if (gcRunning.compareAndSet(false, true)) {
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
 					Thread.currentThread().setName("gcrunning");
 					try {
 						long start = System.currentTimeMillis();
-						long mem=Runtime.getRuntime().freeMemory();
+						long mem = Runtime.getRuntime().freeMemory();
 						System.gc();
-						log.error("manual gc:cost="+(System.currentTimeMillis()-start)+",memfree="+(Runtime.getRuntime().freeMemory()-mem)/1024/1024+"M");
+						List<String> rmhashs = stateTrie.getRemoveQueue()
+								.poll(props.get("org.brewchain.account.trie.remove.batch", 10000));
+						long startclear=System.currentTimeMillis();
+						for (String hash : rmhashs) {
+							stateTrie.getDao().getAccountDao().delete(
+									OEntityBuilder.byteKey2OKey(stateTrie.getEncApi().hexDec(hash)));
+						}
+						log.error("manual gc:cost="+(startclear-start)+",trie.dbdelcost=" + (System.currentTimeMillis() - startclear) 
+								+",dbdelsize="+rmhashs.size()
+								+ ",memfree="
+								+ (Runtime.getRuntime().freeMemory() - mem) / 1024 / 1024 + "M");
 						// log.error("end of clearRemoveQueue::cost=" +
-						// (System.currentTimeMillis() - start) + ",clearcount=" + cc);
+						// (System.currentTimeMillis() - start) + ",clearcount="
+						// + cc);
 					} catch (Exception e) {
 						log.error("error in gc:", e);
-					}finally{
+					} finally {
 						gcRunning.set(false);
 					}
 				}
 			}).start();
 		}
-		
+
 		lastClearTime = System.currentTimeMillis();
 		log.error("end of clear:cost=" + (System.currentTimeMillis() - tstart) + ":[" + cost[0] + "," + cost[1] + ","
-				+ cost[2] + "],count=[" + ccs[0] + "," + ccs[1] + "," + ccs[2]+"]");
-		
-		
+				+ cost[2] + "],count=[" + ccs[0] + "," + ccs[1] + "," + ccs[2] + "]");
+
 	}
 
 	public int clearQueue() {

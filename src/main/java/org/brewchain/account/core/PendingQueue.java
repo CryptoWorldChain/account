@@ -14,7 +14,7 @@ import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
 
 @Data
 @Slf4j
-public class PendingQueue {
+public class PendingQueue <T>{
 	protected Cache storage;
 	final static CacheManager cacheManager = new CacheManager();
 
@@ -36,18 +36,18 @@ public class PendingQueue {
 		}
 	}
 
-	public void addElement(HashPair hp) {
+	public void addElement(T hp) {
 		while (storage.putIfAbsent(new Element(counter.ptr_pending.incrementAndGet(), hp)) != null)
 			;
 
 	}
 
-	public synchronized List<HashPair> poll(int size) {
-		List<HashPair> ret = new ArrayList<>();
+	public synchronized List<T> poll(int size) {
+		List<T> ret = new ArrayList<>();
 		for (int i = 0; i < size && counter.ptr_sending.get() < counter.ptr_pending.get(); i++) {
 			Element element = storage.get(counter.ptr_sending.incrementAndGet());
 			if (element != null && element.getObjectValue() != null && element.getObjectValue() instanceof HashPair) {
-				ret.add((HashPair) element.getObjectValue());
+				ret.add((T) element.getObjectValue());
 			}else{
 				//要减下去。。。。
 				log.debug("get empty sending:"+counter.ptr_sending.get()+",p="+counter.ptr_pending.get());
@@ -64,7 +64,7 @@ public class PendingQueue {
 	}
 
 	public static void main(String[] args) {
-		PendingQueue pq = new PendingQueue("test",1000);
+		PendingQueue<HashPair> pq = new PendingQueue<>("test",1000);
 		int counter = 10000;
 //		for (int i = 0; i < counter; i++) {
 //			pq.addElement(new HashPair("kk_" + i, MultiTransaction.newBuilder().setTxHash("kk_" + i).build()));

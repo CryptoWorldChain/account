@@ -23,6 +23,7 @@ import org.apache.commons.lang3.text.StrBuilder;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.bouncycastle.util.encoders.Hex;
+import org.brewchain.account.core.PendingQueue;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.exception.BlockStateTrieRuntimeException;
 import org.brewchain.account.util.ByteUtil;
@@ -63,6 +64,8 @@ public class StateTrie implements ActorService {
 	private final static int MIN_BRANCHES_CONCURRENTLY = 4;// Math.min(16,Runtime.getRuntime().availableProcessors());
 	private static ExecutorService executor = new ForkJoinPool(new PropHelper(null)
 			.get("org.brewchain.account.state.parallel", Runtime.getRuntime().availableProcessors() * 2));
+
+	PendingQueue<String> removeQueue = new PendingQueue<>("trie-acct-remove", new PropHelper(null).get("org.brewchain.account.trie.expire.maxinmem", 100000));
 
 	public static ExecutorService getExecutor() {
 		return executor;
@@ -657,11 +660,13 @@ public class StateTrie implements ActorService {
 //		if (bs != null) {
 			// log.debug("add into state trie key::" + encApi.hexEnc(hash));
 //			bs.remove(hash);
-		cacheByHash.invalidate(encApi.hexEnc(hash));
+		String strhex = encApi.hexEnc(hash);
+		cacheByHash.invalidate(strhex);
+		removeQueue.addElement(strhex);
 //		} else {
 			// if (type == NodeType.KVNodeNode || type == NodeType.KVNodeValue)
 			// {
-		dao.getAccountDao().delete(oEntityHelper.byteKey2OKey(hash));
+//		dao.getAccountDao().delete(oEntityHelper.byteKey2OKey(hash));
 //			 log.error("state trie deleteHash bs " + encApi.hexEnc(hash));
 //		}
 	}
