@@ -218,6 +218,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 		int maxtried = confirmQueue.size();
 		List<MultiTransaction> ret = new ArrayList<>();
 		long checkTime = System.currentTimeMillis();
+		gcShouldStop.set(true);
 
 		// log.error("confirmQueue info poll:: maxsize::" + maxsize +
 		// ",maxtried=" + maxtried + " size::"
@@ -276,6 +277,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 	long clearWaitMS = props.get("org.brewchain.account.queue.clear.ms", 10000);
 
 	AtomicBoolean gcRunning = new AtomicBoolean(false);
+	AtomicBoolean gcShouldStop = new AtomicBoolean(false);
 
 	public synchronized void clear() {
 		if (System.currentTimeMillis() - lastClearTime < clearWaitMS && confirmQueue.size() < maxElementsInMemory * 2
@@ -330,11 +332,17 @@ public class ConfirmTxHashMapDB implements ActorService {
 						for (String hash : rmhashs) {
 							stateTrie.getDao().getAccountDao().delete(
 									OEntityBuilder.byteKey2OKey(stateTrie.getEncApi().hexDec(hash)));
+							if(gcShouldStop.get()){
+								break;
+							}
 						}
 						log.error("manual gc:cost="+(startclear-start)+",trie.dbdelcost=" + (System.currentTimeMillis() - startclear) 
-								+",dbdelsize="+rmhashs.size()
+								+",dbdelsize="+rmhashs.size()+",gcstop="+gcShouldStop.get()
 								+ ",memfree="
 								+ (Runtime.getRuntime().freeMemory() - mem) / 1024 / 1024 + "M");
+						
+						gcShouldStop.set(false);
+
 						// log.error("end of clearRemoveQueue::cost=" +
 						// (System.currentTimeMillis() - start) + ",clearcount="
 						// + cc);
