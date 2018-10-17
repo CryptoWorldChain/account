@@ -276,8 +276,8 @@ public class ConfirmTxHashMapDB implements ActorService {
 				&& storage.size() < maxElementsInMemory * 2) {
 			return;
 		}
-		int ccs[] = new int[3];
-		long cost[] = new long[3];
+		long ccs[] = new long[4];
+		long cost[] = new long[4];
 		long tstart = System.currentTimeMillis();
 		try {
 			long start = System.currentTimeMillis();
@@ -309,10 +309,24 @@ public class ConfirmTxHashMapDB implements ActorService {
 		} catch (Exception e) {
 			log.error("error in clearRemoveQueue:", e);
 		}
-		lastClearTime = System.currentTimeMillis();
+		try {
+			long start = System.currentTimeMillis();
+			long mem=Runtime.getRuntime().freeMemory();
+			System.gc();
+			ccs[3] = (Runtime.getRuntime().freeMemory()-mem);
+			cost[3] = (System.currentTimeMillis() - start);
 
+			// log.error("end of clearRemoveQueue::cost=" +
+			// (System.currentTimeMillis() - start) + ",clearcount=" + cc);
+		} catch (Exception e) {
+			log.error("error in gc:", e);
+		}
+		
+		lastClearTime = System.currentTimeMillis();
 		log.error("end of clear:cost=" + (System.currentTimeMillis() - tstart) + ":[" + cost[0] + "," + cost[1] + ","
-				+ cost[2] + "],count=[" + ccs[0] + "," + ccs[1] + "," + ccs[2] + "]");
+				+ cost[2]+","+ cost[3] + "],count=[" + ccs[0] + "," + ccs[1] + "," + ccs[2] + "," + ccs[3] + "]");
+		
+		
 	}
 
 	public int clearQueue() {

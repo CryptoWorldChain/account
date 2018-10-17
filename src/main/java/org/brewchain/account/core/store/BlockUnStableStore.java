@@ -281,7 +281,7 @@ public class BlockUnStableStore implements ActorService {
 	}
 
 	public BlockEntity getBlockByNumber(long number) {
-		try (ALock l = writeLock.lock()) {
+//		try (ALock l = writeLock.lock()) {//try to unkon
 
 			if (storage.containsColumn(number)) {
 				// find connected block
@@ -308,7 +308,7 @@ public class BlockUnStableStore implements ActorService {
 				// }
 				// return objs[0].getBlockEntity();
 			}
-		}
+//		}
 		return null;
 	}
 

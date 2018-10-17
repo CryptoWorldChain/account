@@ -304,6 +304,7 @@ public class V2Processor implements IProcessor, ActorService {
 				log.error("error in loading tx:" + txHash + ",idx=" + dstIndex, e);
 			} finally {
 				cdl.countDown();
+				Thread.currentThread().setName("statetrie-pool");
 			}
 		}
 
