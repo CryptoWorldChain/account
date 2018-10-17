@@ -6,6 +6,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -271,6 +272,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 	long lastClearTime = 0;
 	long clearWaitMS = props.get("org.brewchain.account.queue.clear.ms", 10000);
 
+	AtomicBoolean gcRunning = new AtomicBoolean(false); 
 	public synchronized void clear() {
 		if (System.currentTimeMillis() - lastClearTime < clearWaitMS && confirmQueue.size() < maxElementsInMemory * 2
 				&& storage.size() < maxElementsInMemory * 2) {
@@ -309,22 +311,30 @@ public class ConfirmTxHashMapDB implements ActorService {
 		} catch (Exception e) {
 			log.error("error in clearRemoveQueue:", e);
 		}
-		try {
-			long start = System.currentTimeMillis();
-			long mem=Runtime.getRuntime().freeMemory();
-			System.gc();
-			ccs[3] = (Runtime.getRuntime().freeMemory()-mem);
-			cost[3] = (System.currentTimeMillis() - start);
-
-			// log.error("end of clearRemoveQueue::cost=" +
-			// (System.currentTimeMillis() - start) + ",clearcount=" + cc);
-		} catch (Exception e) {
-			log.error("error in gc:", e);
+		if(gcRunning.compareAndSet(false, true)){
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					Thread.currentThread().setName("gcrunning");
+					try {
+						long start = System.currentTimeMillis();
+						long mem=Runtime.getRuntime().freeMemory();
+						System.gc();
+						log.error("manual gc:cost="+(System.currentTimeMillis()-start)+",memfree="+(Runtime.getRuntime().freeMemory()-mem)/1024/1024+"M");
+						// log.error("end of clearRemoveQueue::cost=" +
+						// (System.currentTimeMillis() - start) + ",clearcount=" + cc);
+					} catch (Exception e) {
+						log.error("error in gc:", e);
+					}finally{
+						gcRunning.set(false);
+					}
+				}
+			}).start();
 		}
 		
 		lastClearTime = System.currentTimeMillis();
 		log.error("end of clear:cost=" + (System.currentTimeMillis() - tstart) + ":[" + cost[0] + "," + cost[1] + ","
-				+ cost[2]+","+ cost[3] + "],count=[" + ccs[0] + "," + ccs[1] + "," + ccs[2] + "," + ccs[3] + "]");
+				+ cost[2] + "],count=[" + ccs[0] + "," + ccs[1] + "," + ccs[2]+"]");
 		
 		
 	}

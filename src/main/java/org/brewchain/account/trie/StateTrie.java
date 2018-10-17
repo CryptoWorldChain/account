@@ -302,7 +302,7 @@ public class StateTrie implements ActorService {
 				} else {
 					hash = encApi.sha3Encode(ret);
 					// hash = ret;
-					addHash(hash, ret);
+					addHash(hash, ret,type);
 					return encodeElement(hash);
 				}
 			}
@@ -600,7 +600,7 @@ public class StateTrie implements ActorService {
 	}
 
 	Cache<String, byte[]> cacheByHash = CacheBuilder.newBuilder().initialCapacity(10000)
-			.expireAfterWrite(300, TimeUnit.SECONDS).maximumSize(300000)
+			.expireAfterAccess(3600, TimeUnit.SECONDS).maximumSize(300000)
 			.concurrencyLevel(Runtime.getRuntime().availableProcessors()).build();
 
 	private byte[] getHash(byte[] hash) {
@@ -631,7 +631,7 @@ public class StateTrie implements ActorService {
 		return null;
 	}
 
-	private void addHash(byte[] hash, byte[] ret) {
+	private void addHash(byte[] hash, byte[] ret,NodeType type) {
 		// System.out.println("addHash:" + type + ",hash=" +
 		// Hex.toHexString(hash));
 
