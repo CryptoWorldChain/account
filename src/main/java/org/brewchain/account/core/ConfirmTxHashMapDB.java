@@ -323,24 +323,26 @@ public class ConfirmTxHashMapDB implements ActorService {
 				public void run() {
 					Thread.currentThread().setName("gcrunning");
 					try {
-						long start = System.currentTimeMillis();
-						long mem = Runtime.getRuntime().freeMemory();
-						System.gc();
 						List<String> rmhashs = stateTrie.getRemoveQueue()
 								.poll(props.get("org.brewchain.account.trie.remove.batch", 10000));
-						long startclear=System.currentTimeMillis();
+						long startclear = System.currentTimeMillis();
 						for (String hash : rmhashs) {
-							stateTrie.getDao().getAccountDao().delete(
-									OEntityBuilder.byteKey2OKey(stateTrie.getEncApi().hexDec(hash)));
-							if(gcShouldStop.get()){
+							stateTrie.getDao().getAccountDao()
+									.delete(OEntityBuilder.byteKey2OKey(stateTrie.getEncApi().hexDec(hash)));
+							if (gcShouldStop.get()) {
 								break;
 							}
 						}
-						log.error("manual gc:cost="+(startclear-start)+",trie.dbdelcost=" + (System.currentTimeMillis() - startclear) 
-								+",dbdelsize="+rmhashs.size()+",gcstop="+gcShouldStop.get()
-								+ ",memfree="
+						long startgc = System.currentTimeMillis();
+						long mem = Runtime.getRuntime().freeMemory();
+						if (!gcShouldStop.get()) {
+							System.gc();
+						}
+						log.error("manual gc:cost=" + (System.currentTimeMillis() - startgc) + ",trie.dbdelcost="
+								+ (startgc - startclear) + ",dbdelsize=" + rmhashs.size()
+								+ ",gcstop=" + gcShouldStop.get() + ",memfree="
 								+ (Runtime.getRuntime().freeMemory() - mem) / 1024 / 1024 + "M");
-						
+
 						gcShouldStop.set(false);
 
 						// log.error("end of clearRemoveQueue::cost=" +
