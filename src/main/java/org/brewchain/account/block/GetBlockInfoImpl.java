@@ -86,7 +86,10 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 //					+ ((stateTrie.getBatchStorage().get() == null || stateTrie.getBatchStorage().get().kvs == null)
 //							? "0"
 //							: stateTrie.getBatchStorage().get().kvs.size())
-					+ " queue:: " + oConfirmMapDB.getConfirmQueue().size() 
+					+ " queue:: " + oConfirmMapDB.getConfirmQueue().size()
+					+ " trie.rmsize::[p=" + stateTrie.getRemoveQueue().getCounter().getPtr_pending().get()+",s="
+							+stateTrie.getRemoveQueue().getCounter().getPtr_sending().get()+",db="
+							+stateTrie.getRemoveQueue().getCounter().getPtr_saved().get()+"] "
 					+ " storage:: " + oConfirmMapDB.getStorageSize() 
 					+ " remove:: " + oConfirmMapDB.getRemoveSavestorage().size()
 					+ " counter::p=" + transactionHelper.getQueue().getCounter().getPtr_pending().get()+",s="
