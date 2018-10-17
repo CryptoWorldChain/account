@@ -208,7 +208,7 @@ public class AccountHelper implements ActorService {
 			oAccount.setValue(oAccountValue);
 			return oAccount;
 		} catch (Exception e) {
-			log.error("account not found::" + encApi.hexEnc(addr.toByteArray()));
+//			log.error("account not found::" + encApi.hexEnc(addr.toByteArray()));
 		}
 		return null;
 	}
@@ -242,7 +242,7 @@ public class AccountHelper implements ActorService {
 	 */
 	public Account.Builder GetAccountOrCreate(ByteString addr) {
 		try {
-			Account.Builder oAccount = GetAccount(addr);
+			Account.Builder oAccount = GetAccountFromDB(addr);
 			if (oAccount == null) {
 				oAccount = CreateAccount(addr);
 //				String addrHex = encApi.hexEnc(addr.toByteArray());
