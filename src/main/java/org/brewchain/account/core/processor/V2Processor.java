@@ -2,6 +2,7 @@ package org.brewchain.account.core.processor;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -321,7 +322,11 @@ public class V2Processor implements IProcessor, ActorService {
 			// LinkedList<MultiTransaction> txs = new LinkedList<>();
 
 			// long start = System.currentTimeMillis();
-			this.stateTrie.setRoot(encApi.hexDec(oParentBlock.getHeader().getStateRoot()));
+			if(!Arrays.equals(encApi.hexDec(oParentBlock.getHeader().getStateRoot()), this.stateTrie.getRootHash())){
+				this.stateTrie.clear();
+				this.stateTrie.setRoot(encApi.hexDec(oParentBlock.getHeader().getStateRoot()));	
+			}
+			
 			BlockBody.Builder bb = oBlockEntity.getBody().toBuilder();
 
 			byte[][] txTrieBB = new byte[oBlockHeader.getTxHashsCount()][];
@@ -382,7 +387,7 @@ public class V2Processor implements IProcessor, ActorService {
 				log.error("get empty stateroot==");
 			}
 			
-			this.stateTrie.clear();
+//			this.stateTrie.clear();
 			
 
 		} finally {
