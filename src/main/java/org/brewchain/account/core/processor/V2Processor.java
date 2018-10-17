@@ -323,6 +323,8 @@ public class V2Processor implements IProcessor, ActorService {
 
 			// long start = System.currentTimeMillis();
 			if(!Arrays.equals(encApi.hexDec(oParentBlock.getHeader().getStateRoot()), this.stateTrie.getRootHash())){
+				log.error("reset state root=stateTirRoothash="+encApi.hexEnc(this.stateTrie.getRootHash())+",parentHash="
+						+oParentBlock.getHeader().getStateRoot());
 				this.stateTrie.clear();
 				this.stateTrie.setRoot(encApi.hexDec(oParentBlock.getHeader().getStateRoot()));	
 			}
@@ -387,7 +389,7 @@ public class V2Processor implements IProcessor, ActorService {
 				log.error("get empty stateroot==");
 			}
 			
-//			this.stateTrie.clear();
+//			!!this.stateTrie.clear();
 			
 
 		} finally {
