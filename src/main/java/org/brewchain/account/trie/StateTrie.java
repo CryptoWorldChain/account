@@ -159,10 +159,12 @@ public class StateTrie implements ActorService {
 						// System.lineSeparator();
 						i++;
 					}
-
+					long startdbtime = System.currentTimeMillis();
 					dao.getAccountDao().batchPuts(oks, ovs);
 					// log.debug("state trie batch puts " + size + " trace::" +
 					// trace);
+					log.error("encode size=" + size + ",fillcost=" + (startdbtime - start) + ",dbcost="
+							+ (System.currentTimeMillis() - startdbtime));
 					bs.kvs.clear();
 				} catch (Exception e) {
 					log.warn("error in flushBS" + e.getMessage(), e);
@@ -180,6 +182,7 @@ public class StateTrie implements ActorService {
 				batchStorage.set(bs);
 				byte[] ret = encode(1, true);
 				flushBS(bs);
+
 				// dao.getAccountDao().put(oEntityHelper.byteKey2OKey(hash),
 				// oEntityHelsper.byteValue2OValue(ret));
 				return ret;
