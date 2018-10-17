@@ -46,7 +46,7 @@ public class PendingQueue <T>{
 		List<T> ret = new ArrayList<>();
 		for (int i = 0; i < size && counter.ptr_sending.get() < counter.ptr_pending.get(); i++) {
 			Element element = storage.get(counter.ptr_sending.incrementAndGet());
-			if (element != null && element.getObjectValue() != null && element.getObjectValue() instanceof HashPair) {
+			if (element != null && element.getObjectValue() != null && element.getObjectValue() !=null) {
 				ret.add((T) element.getObjectValue());
 			}else{
 				//要减下去。。。。
