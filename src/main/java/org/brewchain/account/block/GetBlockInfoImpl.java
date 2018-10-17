@@ -1,30 +1,19 @@
 package org.brewchain.account.block;
 
-import java.math.BigInteger;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.concurrent.LinkedBlockingDeque;
-
-import org.brewchain.account.bean.HashPair;
 import org.brewchain.account.core.BlockChainConfig;
 import org.brewchain.account.core.BlockChainHelper;
 import org.brewchain.account.core.CacheBlockHashMapDB;
 import org.brewchain.account.core.ConfirmTxHashMapDB;
-import org.brewchain.account.core.KeyConstant;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.core.WaitBlockHashMapDB;
 import org.brewchain.account.core.WaitSendHashMapDB;
-import org.brewchain.account.core.store.BlockStoreNodeValue;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.gens.Blockimpl.PBCTCommand;
 import org.brewchain.account.gens.Blockimpl.PBCTModule;
 import org.brewchain.account.gens.Blockimpl.ReqBlockInfo;
 import org.brewchain.account.gens.Blockimpl.RespBlockInfo;
-import org.brewchain.account.gens.Blockimpl.WaitBlockItem;
 import org.brewchain.account.trie.StateTrie;
 import org.brewchain.account.util.OEntityBuilder;
-import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import lombok.Data;
@@ -92,11 +81,11 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 				dao.getStats().setLastAcceptTxTime(0);
 			}
 			oRespBlockInfo.setBlockCount(blockChainHelper.getLastStableBlockNumber());
-			oRespBlockInfo.setCache("state::" + stateTrie.getCacheByHash().size() + " pool::"
-					+ stateTrie.getBsPool().size() + " storage::"
-					+ ((stateTrie.getBatchStorage().get() == null || stateTrie.getBatchStorage().get().kvs == null)
-							? "0"
-							: stateTrie.getBatchStorage().get().kvs.size())
+			oRespBlockInfo.setCache("state::" + stateTrie.getCacheByHash().size() 
+//					+ " pool::"+ stateTrie.getBsPool().size() + " storage::"
+//					+ ((stateTrie.getBatchStorage().get() == null || stateTrie.getBatchStorage().get().kvs == null)
+//							? "0"
+//							: stateTrie.getBatchStorage().get().kvs.size())
 					+ " queue:: " + oConfirmMapDB.getConfirmQueue().size() 
 					+ " storage:: " + oConfirmMapDB.getStorageSize() 
 					+ " remove:: " + oConfirmMapDB.getRemoveSavestorage().size()
