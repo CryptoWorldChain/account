@@ -72,20 +72,20 @@ public class StateTrie implements ActorService {
 		BranchNode, KVNodeValue, KVNodeNode
 	}
 
-	public class BatchStorage {
-		public LinkedHashMap<OKey, OValue> kvs = new LinkedHashMap<>();
+//	public class BatchStorage {
+//		public LinkedHashMap<OKey, OValue> kvs = new LinkedHashMap<>();
+//
+//		public void add(byte[] key, byte[] v) {
+//			kvs.put(oEntityHelper.byteKey2OKey(key), oEntityHelper.byteValue2OValue(v));
+//		}
+//
+//		public void remove(byte[] key) {
+//			kvs.remove(oEntityHelper.byteKey2OKey(key));
+//		}
+//	}
 
-		public void add(byte[] key, byte[] v) {
-			kvs.put(oEntityHelper.byteKey2OKey(key), oEntityHelper.byteValue2OValue(v));
-		}
-
-		public void remove(byte[] key) {
-			kvs.remove(oEntityHelper.byteKey2OKey(key));
-		}
-	}
-
-	ThreadLocal<BatchStorage> batchStorage = new ThreadLocal<>();
-	ReusefulLoopPool<BatchStorage> bsPool = new ReusefulLoopPool<>();
+//	ThreadLocal<BatchStorage> batchStorage = new ThreadLocal<>();
+//	ReusefulLoopPool<BatchStorage> bsPool = new ReusefulLoopPool<>();
 
 	public final class Node {
 		private byte[] hash = null;
@@ -139,49 +139,49 @@ public class StateTrie implements ActorService {
 			}
 		}
 
-		public void flushBS(BatchStorage bs) {
-			long start = System.currentTimeMillis();
-
-			int size = bs.kvs.size();
-			if (size > 0) {
-				try {
-					OKey[] oks = new OKey[size];
-					OValue[] ovs = new OValue[size];
-					int i = 0;
-
-					// String trace = "";
-					for (Map.Entry<OKey, OValue> kvs : bs.kvs.entrySet()) {
-						oks[i] = kvs.getKey();
-						ovs[i] = kvs.getValue();
-
-						// trace +=
-						// encApi.hexEnc(kvs.getKey().getData().toByteArray()) +
-						// System.lineSeparator();
-						i++;
-					}
-					long startdbtime = System.currentTimeMillis();
-					dao.getAccountDao().batchPuts(oks, ovs);
-					// log.debug("state trie batch puts " + size + " trace::" +
-					// trace);
-					log.error("encode size=" + size + ",fillcost=" + (startdbtime - start) + ",dbcost="
-							+ (System.currentTimeMillis() - startdbtime));
-					bs.kvs.clear();
-				} catch (Exception e) {
-					log.warn("error in flushBS" + e.getMessage(), e);
-				}
-				// bs.values.clear();
-			}
-		}
+//		public void flushBS(BatchStorage bs) {
+//			long start = System.currentTimeMillis();
+//
+//			int size = bs.kvs.size();
+//			if (size > 0) {
+//				try {
+//					OKey[] oks = new OKey[size];
+//					OValue[] ovs = new OValue[size];
+//					int i = 0;
+//
+//					// String trace = "";
+//					for (Map.Entry<OKey, OValue> kvs : bs.kvs.entrySet()) {
+//						oks[i] = kvs.getKey();
+//						ovs[i] = kvs.getValue();
+//
+//						// trace +=
+//						// encApi.hexEnc(kvs.getKey().getData().toByteArray()) +
+//						// System.lineSeparator();
+//						i++;
+//					}
+//					long startdbtime = System.currentTimeMillis();
+//					dao.getAccountDao().batchPuts(oks, ovs);
+//					// log.debug("state trie batch puts " + size + " trace::" +
+//					// trace);
+//					log.error("encode size=" + size + ",fillcost=" + (startdbtime - start) + ",dbcost="
+//							+ (System.currentTimeMillis() - startdbtime));
+//					bs.kvs.clear();
+//				} catch (Exception e) {
+//					log.warn("error in flushBS" + e.getMessage(), e);
+//				}
+//				// bs.values.clear();
+//			}
+//		}
 
 		public byte[] encode() {
-			BatchStorage bs = bsPool.borrow();
-			if (bs == null) {
-				bs = new BatchStorage();
-			}
+//			BatchStorage bs = bsPool.borrow();
+//			if (bs == null) {
+//				bs = new BatchStorage();
+//			}
 			try {
-				batchStorage.set(bs);
+//				batchStorage.set(bs);
 				byte[] ret = encode(1, true);
-				flushBS(bs);
+//				flushBS(bs);
 
 				// dao.getAccountDao().put(oEntityHelper.byteKey2OKey(hash),
 				// oEntityHelsper.byteValue2OValue(ret));
@@ -190,14 +190,14 @@ public class StateTrie implements ActorService {
 				log.warn("error encode:" + e.getMessage(), e);
 				throw e;
 			} finally {
-				if (bs != null) {
-					if (bsPool.size() < 100) {
-						bs.kvs.clear();
-						// bs.values.clear();
-						bsPool.retobj(bs);
-					}
-				}
-				batchStorage.remove();
+//				if (bs != null) {
+//					if (bsPool.size() < 100) {
+//						bs.kvs.clear();
+//						// bs.values.clear();
+//						bsPool.retobj(bs);
+//					}
+//				}
+//				batchStorage.remove();
 			}
 		}
 
@@ -232,30 +232,30 @@ public class StateTrie implements ActorService {
 									Callable<byte[]> oCallable = new Callable<byte[]>() {
 										@Override
 										public byte[] call() throws Exception {
-											BatchStorage bs = bsPool.borrow();
-											if (bs == null) {
-												bs = new BatchStorage();
-											}
+//											BatchStorage bs = bsPool.borrow();
+//											if (bs == null) {
+//												bs = new BatchStorage();
+//											}
 											try {
-												if (bs != null) {
-													batchStorage.set(bs);
-												}
+//												if (bs != null) {
+//													batchStorage.set(bs);
+//												}
 												byte[] ret = child.encode(depth + 1, false);
 												// flush
-												flushBS(bs);
+//												flushBS(bs);
 												return ret;
 											} catch (Exception e) {
 												log.error("error in exec bs:" + e.getMessage(), e);
 												throw e;
 											} finally {
-												if (bs != null) {
-													batchStorage.remove();
-													if (bsPool.size() < 100) {
-														bs.kvs.clear();
-														// bs.values.clear();
-														bsPool.retobj(bs);
-													}
-												}
+//												if (bs != null) {
+//													batchStorage.remove();
+//													if (bsPool.size() < 100) {
+//														bs.kvs.clear();
+//														// bs.values.clear();
+//														bsPool.retobj(bs);
+//													}
+//												}
 											}
 										}
 									};
@@ -635,30 +635,30 @@ public class StateTrie implements ActorService {
 		// System.out.println("addHash:" + type + ",hash=" +
 		// Hex.toHexString(hash));
 
-		BatchStorage bs = batchStorage.get();
-		if (bs != null) {
+//		BatchStorage bs = batchStorage.get();
+//		if (bs != null) {
 			// log.debug("add into state trie key::" + encApi.hexEnc(hash));
 			// if (type == NodeType.KVNodeNode || type == NodeType.KVNodeValue)
 			// {
-			bs.add(hash, ret);
+//			bs.add(hash, ret);
 			// }
 			cacheByHash.put(encApi.hexEnc(hash), ret);
-		} else {
+//		} else {
 			// if (type == NodeType.KVNodeNode || type == NodeType.KVNodeValue)
 			// {
 
 			dao.getAccountDao().put(oEntityHelper.byteKey2OKey(hash), oEntityHelper.byteValue2OValue(ret));
 			// }
-		}
+//		}
 	}
 
 	private void deleteHash(byte[] hash) {
-		BatchStorage bs = batchStorage.get();
-		if (bs != null) {
+//		BatchStorage bs = batchStorage.get();
+//		if (bs != null) {
 			// log.debug("add into state trie key::" + encApi.hexEnc(hash));
-			bs.remove(hash);
-			// log.debug("state trie batch bs " + encApi.hexEnc(hash));
-		}
+//			bs.remove(hash);
+			 log.error("state trie deleteHash bs " + encApi.hexEnc(hash));
+//		}
 	}
 
 	public synchronized byte[] get(byte[] key) {
