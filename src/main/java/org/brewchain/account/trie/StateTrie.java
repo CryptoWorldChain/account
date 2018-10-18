@@ -163,11 +163,11 @@ public class StateTrie implements ActorService {
 						// System.lineSeparator();
 						i++;
 					}
-					long startdbtime = System.currentTimeMillis();
+//					long startdbtime = System.currentTimeMillis();
 					dao.getAccountDao().batchPuts(oks, ovs);
 
-					log.error("encode size=" + size + ",fillcost=" + (startdbtime - start) + ",dbcost="
-							+ (System.currentTimeMillis() - startdbtime));
+//					log.error("encode size=" + size + ",fillcost=" + (startdbtime - start) + ",dbcost="
+//							+ (System.currentTimeMillis() - startdbtime));
 					bs.kvs.clear();
 				} catch (Exception e) {
 					log.warn("error in flushBS" + e.getMessage(), e);
@@ -260,20 +260,39 @@ public class StateTrie implements ActorService {
 												}
 												byte[] ret = child.encode(depth + 1, false);
 												// flush
-												flushBS(bs);
+												final BatchStorage fbs = bs;
+												flushexecutor.submit(new Runnable() {
+													@Override
+													public void run() {
+														try {
+															flushBS(fbs);
+														} catch (Exception e) {
+															log.error("error in flush bs:" + e.getMessage(), e);
+														} finally {
+															if (fbs != null) {
+																batchStorage.remove();
+																if (bsPool.size() < 100) {
+																	fbs.kvs.clear();
+																	// bs.values.clear();
+																	bsPool.retobj(fbs);
+																}
+															}
+														}
+													}
+												});
 												return ret;
 											} catch (Exception e) {
 												log.error("error in exec bs:" + e.getMessage(), e);
 												throw e;
 											} finally {
-												if (bs != null) {
-													batchStorage.remove();
-													if (bsPool.size() < 100) {
-														bs.kvs.clear();
-														// bs.values.clear();
-														bsPool.retobj(bs);
-													}
-												}
+//												if (bs != null) {
+//													batchStorage.remove();
+//													if (bsPool.size() < 100) {
+//														bs.kvs.clear();
+//														// bs.values.clear();
+//														bsPool.retobj(bs);
+//													}
+//												}
 											}
 										}
 									};
