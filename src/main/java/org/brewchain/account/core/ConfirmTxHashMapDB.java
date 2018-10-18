@@ -284,6 +284,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 				&& storage.size() < maxElementsInMemory * 2) {
 			return;
 		}
+		gcShouldStop.set(false);
 		long ccs[] = new long[4];
 		long cost[] = new long[4];
 		long tstart = System.currentTimeMillis();
@@ -343,7 +344,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 								+ ",gcstop=" + gcShouldStop.get() + ",memfree="
 								+ (Runtime.getRuntime().freeMemory() - mem) / 1024 / 1024 + "M");
 
-						gcShouldStop.set(false);
+						
 
 						// log.error("end of clearRemoveQueue::cost=" +
 						// (System.currentTimeMillis() - start) + ",clearcount="
@@ -367,7 +368,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 		int i = 0;
 		int maxtried = confirmQueue.size();
 		int clearcount = 0;
-		while (i < maxtried) {
+		while (i < maxtried&&!gcShouldStop.get()) {
 			try {
 				HashPair hp = confirmQueue.pollFirst();
 				// if (hp == null) {
@@ -391,7 +392,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 	public int clearRemoveQueue() {
 		Enumeration<String> en = removeSavestorage.keys();
 		List<String> removeKeys = new ArrayList<>();
-		while (en.hasMoreElements()) {
+		while (en.hasMoreElements()&&!gcShouldStop.get()) {
 			try {
 				String key = en.nextElement();
 				Long rmTime = removeSavestorage.get(key);
@@ -417,7 +418,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 		if (storage != null) {
 			List<String> removeKeys = new ArrayList<>();
 			Enumeration<String> en = storage.keys();
-			while (en.hasMoreElements()) {
+			while (en.hasMoreElements()&&!gcShouldStop.get()) {
 				// for (String key : keys) {
 				try {
 					String key = en.nextElement();

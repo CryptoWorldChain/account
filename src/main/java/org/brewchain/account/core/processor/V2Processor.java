@@ -398,13 +398,15 @@ public class V2Processor implements IProcessor, ActorService {
 					oReceiptTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY : oReceiptTrie.getRootHash()));
 			header.setTxTrieRoot(encApi.hexEnc(oTransactionTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY
 					: oTransactionTrie.getRootHash()));
-			// start = System.currentTimeMillis();
+			long start = System.currentTimeMillis();
 			header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
+			log.error("calc trie cost:"+(System.currentTimeMillis()-start)+",blocknumber="+header.getNumber()+",txcount="+
+					oBlockHeader.getTxHashsCount());
 			oBlockEntity.setHeader(header.build());
 			if (StringUtils.isBlank(oBlockEntity.getHeader().getStateRoot())) {
 				log.error("get empty stateroot==");
 			}
-
+			
 			// !!this.stateTrie.clear();
 
 		} finally {
