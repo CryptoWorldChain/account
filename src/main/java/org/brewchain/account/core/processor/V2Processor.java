@@ -222,11 +222,11 @@ public class V2Processor implements IProcessor, ActorService {
 				// }
 				// });
 
-				log.info(String.format("LOGFILTER %s %s %s %s 执行区块[%s]",
-						encApi.hexEnc(KeyConstant.node.getoAccount().getAddress().toByteArray()), "account", "apply",
-						"block", oBlockEntity.getHeader().getBlockHash()));
+//				log.info(String.format("LOGFILTER %s %s %s %s 执行区块[%s]",
+//						encApi.hexEnc(KeyConstant.node.getoAccount().getAddress().toByteArray()), "account", "apply",
+//						"block", oBlockEntity.getHeader().getBlockHash()));
 
-				log.debug("new block, number::" + oBlockEntity.getHeader().getNumber() + " hash::"
+				log.info("new block, number::" + oBlockEntity.getHeader().getNumber() + " hash::"
 						+ oBlockEntity.getHeader().getBlockHash() + " parent::"
 						+ oBlockEntity.getHeader().getParentHash() + " tx::" + oBlockEntity.getHeader().getTxTrieRoot()
 						+ " state::" + oBlockEntity.getHeader().getStateRoot() + " receipt::"
@@ -322,6 +322,15 @@ public class V2Processor implements IProcessor, ActorService {
 		CacheTrie oReceiptTrie = new CacheTrie(this.encApi);
 
 		try {
+			if(oBlockEntity.getHeader().getNumber()==oParentBlock.getHeader().getNumber()){
+				log.error("dulipcate apply block parentHeight=currentHeight:"+oParentBlock.getHeader().getNumber()+",txs="+createdtxs);
+				return true;
+			}
+			if (StringUtils.equals(oParentBlock.getHeader().getBlockHash(),oBlockEntity.getHeader().getBlockHash())) {
+				log.error("dulipcate apply block parentHash=currentHash:"+oBlockEntity.getHeader().getBlockHash()+",blocknumber="+oParentBlock.getHeader().getNumber()+",txs="+createdtxs);
+				return true;
+			}
+
 			BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
 			// LinkedList<MultiTransaction> txs = new LinkedList<>();
 
