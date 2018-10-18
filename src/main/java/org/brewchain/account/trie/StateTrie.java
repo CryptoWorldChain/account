@@ -12,6 +12,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -67,6 +69,8 @@ public class StateTrie implements ActorService {
 
 	PendingQueue<String> removeQueue = new PendingQueue<>("trie-acct-remove",
 			new PropHelper(null).get("org.brewchain.account.trie.expire.maxinmem", 100000));
+
+	ConcurrentLinkedQueue<String> removingMap = new ConcurrentLinkedQueue<>();
 
 	public static ExecutorService getExecutor() {
 		return executor;
@@ -165,6 +169,7 @@ public class StateTrie implements ActorService {
 					}
 					// long startdbtime = System.currentTimeMillis();
 					dao.getAccountDao().batchPuts(oks, ovs);
+
 					// log.debug("state trie batch puts " + size + " trace::" +
 					// trace);
 					// log.error("encode size=" + size + ",fillcost=" +
@@ -175,6 +180,9 @@ public class StateTrie implements ActorService {
 					log.warn("error in flushBS" + e.getMessage(), e);
 				}
 				// bs.values.clear();
+			}
+			for (String key : removingMap) {
+				removeQueue.addElement(key);
 			}
 		}
 
@@ -590,7 +598,7 @@ public class StateTrie implements ActorService {
 		}
 		String strhex = encApi.hexEnc(hash);
 		cacheByHash.invalidate(strhex);
-		removeQueue.addElement(strhex);
+		removingMap.add(strhex);
 	}
 
 	public synchronized byte[] get(byte[] key) {
