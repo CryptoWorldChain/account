@@ -6,26 +6,20 @@ import static org.brewchain.account.util.RLP.EMPTY_ELEMENT_RLP;
 import static org.brewchain.account.util.RLP.encodeElement;
 import static org.brewchain.account.util.RLP.encodeList;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.lang3.text.StrBuilder;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.bouncycastle.util.encoders.Hex;
-import org.brewchain.account.core.PendingQueue;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.exception.BlockStateTrieRuntimeException;
 import org.brewchain.account.util.ByteUtil;
@@ -36,9 +30,6 @@ import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.fc.brewchain.bcapi.EncAPI;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.protobuf.ByteString;
 
 import lombok.Data;
@@ -540,9 +531,11 @@ public class StateTrie implements ActorService {
 		return root != null && root.resolveCheck();
 	}
 
-	Cache<String, byte[]> cacheByHash = CacheBuilder.newBuilder().initialCapacity(10000)
-			.expireAfterAccess(3600, TimeUnit.SECONDS).maximumSize(300000)
-			.concurrencyLevel(Runtime.getRuntime().availableProcessors()).build();
+	ConcurrentHashMap<String, byte[]> cacheByHash = new ConcurrentHashMap<>();// CacheBuilder.newBuilder().initialCapacity(10000)
+	// Cache<String, byte[]> cacheByHash =
+	// CacheBuilder.newBuilder().initialCapacity(10000)
+	// .expireAfterAccess(3600, TimeUnit.SECONDS).maximumSize(300000)
+	// .concurrencyLevel(Runtime.getRuntime().availableProcessors()).build();
 
 	private byte[] getHash(byte[] hash) {
 		OKey key = oEntityHelper.byteKey2OKey(hash);
@@ -554,7 +547,7 @@ public class StateTrie implements ActorService {
 		}
 		try {
 			if (v == null) {
-				byte[] body = cacheByHash.getIfPresent(hexHash);
+				byte[] body = cacheByHash.get(key);// .getIfPresent(hexHash);
 				if (body != null) {
 					return body;
 				}
@@ -598,7 +591,8 @@ public class StateTrie implements ActorService {
 			bs.remove(hash);
 		}
 		String strhex = encApi.hexEnc(hash);
-		cacheByHash.invalidate(strhex);
+		// cacheByHash.invalidate(strhex);
+		cacheByHash.remove(strhex);
 		// removingMap.add(strhex);
 	}
 
@@ -695,7 +689,8 @@ public class StateTrie implements ActorService {
 		if (root != null) {
 			root = delete(root, k);
 		}
-		cacheByHash.invalidate(key);
+		// cacheByHash.invalidate(key);
+		cacheByHash.remove(encApi.hexEnc(key));
 	}
 
 	private Node delete(Node n, TrieKey k) {
@@ -770,6 +765,10 @@ public class StateTrie implements ActorService {
 
 	public byte[] getRootHash() {
 		encode();
+		Enumeration<String> keys = cacheByHash.keys();
+		while (cacheByHash.size() > 100000 && keys.hasMoreElements()) {
+			cacheByHash.remove(keys.nextElement());
+		}
 		return root != null ? root.hash : ByteUtil.EMPTY_BYTE_ARRAY;
 	}
 

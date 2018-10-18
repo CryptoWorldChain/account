@@ -318,7 +318,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 		} catch (Exception e) {
 			log.error("error in clearRemoveQueue:", e);
 		}
-		if (gcRunning.compareAndSet(false, true)) {
+		if (false&&gcRunning.compareAndSet(false, true)) {
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
@@ -338,26 +338,26 @@ public class ConfirmTxHashMapDB implements ActorService {
 						
 						long startdbsync = System.currentTimeMillis();
 						if(!gcShouldStop.get()){
-							try {
-								stateTrie.getDao().getAccountDao().sync();
-							} catch (Exception e) {
-								log.error("db sync evit memory error",e);
-							}
-							try {
-								stateTrie.getDao().getTxsDao().sync();
-							} catch (Exception e) {
-								log.error("db sync evit memory error",e);
-							}
-							try {
-								stateTrie.getDao().getTxblockDao().sync();
-							} catch (Exception e) {
-								log.error("db sync evit memory error",e);
-							}
+//							try {
+//								stateTrie.getDao().getAccountDao().sync();
+//							} catch (Exception e) {
+//								log.error("db sync evit memory error",e);
+//							}
+//							try {
+//								stateTrie.getDao().getTxsDao().sync();
+//							} catch (Exception e) {
+//								log.error("db sync evit memory error",e);
+//							}
+//							try {
+//								stateTrie.getDao().getTxblockDao().sync();
+//							} catch (Exception e) {
+//								log.error("db sync evit memory error",e);
+//							}
 						}
 						long startgc = System.currentTimeMillis();
 						long mem = Runtime.getRuntime().freeMemory();
 						if (!gcShouldStop.get()) {
-							System.gc();
+							//System.gc();
 						}
 						log.error("manual gc:cost=" + (System.currentTimeMillis() - startgc) 
 //								+ ",trie.dbdelcost=" + (startdbsync - startclear)
