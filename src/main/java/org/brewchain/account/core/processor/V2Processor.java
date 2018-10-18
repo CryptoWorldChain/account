@@ -215,17 +215,6 @@ public class V2Processor implements IProcessor, ActorService {
 			case APPLY:
 				blockChainHelper.connectBlock(oBlockEntity.build());
 
-				// this.stateTrie.getExecutor().submit(new Runnable() {
-				// @Override
-				// public void run() {
-				// transactionHelper.getOConfirmMapDB().clear();
-				// }
-				// });
-
-//				log.info(String.format("LOGFILTER %s %s %s %s 执行区块[%s]",
-//						encApi.hexEnc(KeyConstant.node.getoAccount().getAddress().toByteArray()), "account", "apply",
-//						"block", oBlockEntity.getHeader().getBlockHash()));
-
 				log.info("new block, number::" + oBlockEntity.getHeader().getNumber() + " hash::"
 						+ oBlockEntity.getHeader().getBlockHash() + " parent::"
 						+ oBlockEntity.getHeader().getParentHash() + " tx::" + oBlockEntity.getHeader().getTxTrieRoot()
@@ -335,7 +324,7 @@ public class V2Processor implements IProcessor, ActorService {
 			// LinkedList<MultiTransaction> txs = new LinkedList<>();
 
 			// long start = System.currentTimeMillis();
-			if (!Arrays.equals(encApi.hexDec(oParentBlock.getHeader().getStateRoot()), this.stateTrie.getRootHash())) {
+			if (oBlockEntity.getHeader().getNumber()>1&&!Arrays.equals(encApi.hexDec(oParentBlock.getHeader().getStateRoot()), this.stateTrie.getRootHash())) {
 				log.error("reset state root=stateTirRoothash=" + encApi.hexEnc(this.stateTrie.getRootHash())
 						+ ",parentHash=" + oParentBlock.getHeader().getStateRoot() + ",applyheight="
 						+ oBlockEntity.getHeader().getNumber());

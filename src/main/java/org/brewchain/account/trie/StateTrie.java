@@ -65,7 +65,8 @@ public class StateTrie implements ActorService {
 	private static ExecutorService executor = new ForkJoinPool(new PropHelper(null)
 			.get("org.brewchain.account.state.parallel", Runtime.getRuntime().availableProcessors() * 2));
 
-	PendingQueue<String> removeQueue = new PendingQueue<>("trie-acct-remove", new PropHelper(null).get("org.brewchain.account.trie.expire.maxinmem", 100000));
+	PendingQueue<String> removeQueue = new PendingQueue<>("trie-acct-remove",
+			new PropHelper(null).get("org.brewchain.account.trie.expire.maxinmem", 100000));
 
 	public static ExecutorService getExecutor() {
 		return executor;
@@ -162,12 +163,13 @@ public class StateTrie implements ActorService {
 						// System.lineSeparator();
 						i++;
 					}
-//					long startdbtime = System.currentTimeMillis();
+					// long startdbtime = System.currentTimeMillis();
 					dao.getAccountDao().batchPuts(oks, ovs);
 					// log.debug("state trie batch puts " + size + " trace::" +
 					// trace);
-//					log.error("encode size=" + size + ",fillcost=" + (startdbtime - start) + ",dbcost="
-//							+ (System.currentTimeMillis() - startdbtime));
+					// log.error("encode size=" + size + ",fillcost=" +
+					// (startdbtime - start) + ",dbcost="
+					// + (System.currentTimeMillis() - startdbtime));
 					bs.kvs.clear();
 				} catch (Exception e) {
 					log.warn("error in flushBS" + e.getMessage(), e);
@@ -302,7 +304,7 @@ public class StateTrie implements ActorService {
 				} else {
 					hash = encApi.sha3Encode(ret);
 					// hash = ret;
-					addHash(hash, ret,type);
+					addHash(hash, ret, type);
 					return encodeElement(hash);
 				}
 			}
@@ -481,7 +483,6 @@ public class StateTrie implements ActorService {
 			return this;
 		}
 
-
 		@Override
 		public String toString() {
 			return getType() + (dirty ? " *" : "") + (hash == null ? "" : "(hash: " + Hex.toHexString(hash) + " )");
@@ -538,10 +539,10 @@ public class StateTrie implements ActorService {
 		OKey key = oEntityHelper.byteKey2OKey(hash);
 		String hexHash = encApi.hexEnc(hash);
 		OValue v = null;
-		// BatchStorage bs = batchStorage.get();
-		// if (bs != null) {
-		// v = bs.kvs.get(key);
-		// }
+		BatchStorage bs = batchStorage.get();
+		if (bs != null) {
+			v = bs.kvs.get(key);
+		}
 		try {
 			if (v == null) {
 				byte[] body = cacheByHash.getIfPresent(hexHash);
@@ -562,17 +563,17 @@ public class StateTrie implements ActorService {
 		return null;
 	}
 
-	private void addHash(byte[] hash, byte[] ret,NodeType type) {
+	private void addHash(byte[] hash, byte[] ret, NodeType type) {
 		// System.out.println("addHash:" + type + ",hash=" +
 		// Hex.toHexString(hash));
 
 		BatchStorage bs = batchStorage.get();
 		if (bs != null) {
-//			 log.debug("add into state trie key::" + encApi.hexEnc(hash));
-//			 if (type == NodeType.KVNodeNode || type == NodeType.KVNodeValue)
-//			 {
+			// log.debug("add into state trie key::" + encApi.hexEnc(hash));
+			// if (type == NodeType.KVNodeNode || type == NodeType.KVNodeValue)
+			// {
 			bs.add(hash, ret);
-//			 }
+			// }
 			cacheByHash.put(encApi.hexEnc(hash), ret);
 		} else {
 			// if (type == NodeType.KVNodeNode || type == NodeType.KVNodeValue)
@@ -768,7 +769,6 @@ public class StateTrie implements ActorService {
 			// persist all dirty nodes to underlying Source
 			// encode();
 			// release all Trie Node instances for GC
-			root = null;
 			root = new Node(root.hash);
 		}
 	}
