@@ -324,22 +324,32 @@ public class ConfirmTxHashMapDB implements ActorService {
 				public void run() {
 					Thread.currentThread().setName("gcrunning");
 					try {
-						List<String> rmhashs = stateTrie.getRemoveQueue()
-								.poll(props.get("org.brewchain.account.trie.remove.batch", 10000));
-						long startclear = System.currentTimeMillis();
-						for (String hash : rmhashs) {
-							stateTrie.getDao().getAccountDao()
-									.delete(OEntityBuilder.byteKey2OKey(stateTrie.getEncApi().hexDec(hash)));
-							if (gcShouldStop.get()) {
-								break;
-							}
-						}
+//						List<String> rmhashs = stateTrie.getRemoveQueue()
+//								.poll(props.get("org.brewchain.account.trie.remove.batch", 10000));
+//						long startclear = System.currentTimeMillis();
+//						for (String hash : rmhashs) {
+//							stateTrie.getDao().getAccountDao()
+//									.delete(OEntityBuilder.byteKey2OKey(stateTrie.getEncApi().hexDec(hash)));
+//							if (gcShouldStop.get()) {
+//								break;
+//							}
+//						}
 						
 						
 						long startdbsync = System.currentTimeMillis();
 						if(!gcShouldStop.get()){
 							try {
 								stateTrie.getDao().getAccountDao().sync();
+							} catch (Exception e) {
+								log.error("db sync evit memory error",e);
+							}
+							try {
+								stateTrie.getDao().getTxsDao().sync();
+							} catch (Exception e) {
+								log.error("db sync evit memory error",e);
+							}
+							try {
+								stateTrie.getDao().getTxblockDao().sync();
 							} catch (Exception e) {
 								log.error("db sync evit memory error",e);
 							}
@@ -350,8 +360,9 @@ public class ConfirmTxHashMapDB implements ActorService {
 							System.gc();
 						}
 						log.error("manual gc:cost=" + (System.currentTimeMillis() - startgc) 
-								+ ",trie.dbdelcost=" + (startdbsync - startclear)
-								+ ",trie.dbsync="+ (startgc - startdbsync) + ",dbdelsize=" + rmhashs.size()
+//								+ ",trie.dbdelcost=" + (startdbsync - startclear)
+								+ ",trie.dbsync="+ (startgc - startdbsync) 
+//								+ ",dbdelsize=" + rmhashs.size()
 								+ ",gcstop=" + gcShouldStop.get() + ",memfree="
 								+ (Runtime.getRuntime().freeMemory() - mem) / 1024 / 1024 + "M");
 

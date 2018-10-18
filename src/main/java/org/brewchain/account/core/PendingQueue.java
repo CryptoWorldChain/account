@@ -6,8 +6,6 @@ import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.brewchain.account.bean.HashPair;
-
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.ehcache.Cache;
@@ -20,8 +18,8 @@ import onight.tfw.outils.conf.PropHelper;
 @Slf4j
 public class PendingQueue<T> {
 	protected Cache storage;
-	final static CacheManager cacheManager = new CacheManager();
-
+	final static CacheManager cacheManager = new CacheManager("./conf/ehcache.xml");
+	
 	public final static String STR_COUNTER = "__idcounter";
 	CounterInfoData counter = new CounterInfoData();
 
@@ -30,7 +28,7 @@ public class PendingQueue<T> {
 		cacheManager.shutdown();
 	}
 
-	public String getDir() {
+	public static String getDir() {
 		String network = ".";
 		try {
 			File networkFile = new File(".chainnet");
@@ -60,7 +58,7 @@ public class PendingQueue<T> {
 
 	public PendingQueue(String nameid, int maxElementsInMemory) {
 		this.storage = new Cache("pendingqueue_" + nameid, maxElementsInMemory, MemoryStoreEvictionPolicy.LRU, true,
-				"/opt/bruntime/db/"+getDir()+"/pendingcache_" + nameid, true, 0, 0, true, 120, null);
+				"./pendingcache_" + nameid, true, 0, 0, true, 120, null);
 		cacheManager.addCache(this.storage);
 		Element ele = this.storage.get(STR_COUNTER);
 		if (ele != null && ele.getObjectValue() != null) {
@@ -96,13 +94,12 @@ public class PendingQueue<T> {
 	}
 
 	public static void main(String[] args) {
-		PendingQueue<HashPair> pq = new PendingQueue<>("test", 1000);
+		PendingQueue<String> pq = new PendingQueue<>("test", 1000);
 		int counter = 10000;
-		// for (int i = 0; i < counter; i++) {
-		// pq.addElement(new HashPair("kk_" + i,
-		// MultiTransaction.newBuilder().setTxHash("kk_" + i).build()));
-		// }
-		List<HashPair> hp = pq.poll(100);
+		for (int i = 0; i < counter; i++) {
+			pq.addElement("KKK"+i);
+		}
+		List<String> hp = pq.poll(100);
 		System.out.println("hpsize=" + hp.size());
 		pq.shutdown();
 	}

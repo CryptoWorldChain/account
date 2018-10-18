@@ -67,10 +67,12 @@ public class StateTrie implements ActorService {
 	private static ExecutorService executor = new ForkJoinPool(new PropHelper(null)
 			.get("org.brewchain.account.state.parallel", Runtime.getRuntime().availableProcessors() * 2));
 
-	PendingQueue<String> removeQueue = new PendingQueue<>("trie-acct-remove",
-			new PropHelper(null).get("org.brewchain.account.trie.expire.maxinmem", 100000));
+	// PendingQueue<String> removeQueue = new PendingQueue<>("trie-acct-remove",
+	// new PropHelper(null).get("org.brewchain.account.trie.expire.maxinmem",
+	// 100000));
 
-	ConcurrentLinkedQueue<String> removingMap = new ConcurrentLinkedQueue<>();
+	// ConcurrentLinkedQueue<String> removingMap = new
+	// ConcurrentLinkedQueue<>();
 
 	public static ExecutorService getExecutor() {
 		return executor;
@@ -167,23 +169,22 @@ public class StateTrie implements ActorService {
 						// System.lineSeparator();
 						i++;
 					}
-					// long startdbtime = System.currentTimeMillis();
+					long startdbtime = System.currentTimeMillis();
 					dao.getAccountDao().batchPuts(oks, ovs);
 
-					// log.debug("state trie batch puts " + size + " trace::" +
-					// trace);
-					// log.error("encode size=" + size + ",fillcost=" +
-					// (startdbtime - start) + ",dbcost="
-					// + (System.currentTimeMillis() - startdbtime));
+					log.error("encode size=" + size + ",fillcost=" + (startdbtime - start) + ",dbcost="
+							+ (System.currentTimeMillis() - startdbtime));
 					bs.kvs.clear();
 				} catch (Exception e) {
 					log.warn("error in flushBS" + e.getMessage(), e);
 				}
 				// bs.values.clear();
 			}
-			for (String key : removingMap) {
-				removeQueue.addElement(key);
-			}
+			// String key = removingMap.poll();
+			// while (key != null) {
+			// removeQueue.addElement(key);
+			// key = removingMap.poll();
+			// }
 		}
 
 		public byte[] encode() {
@@ -598,7 +599,7 @@ public class StateTrie implements ActorService {
 		}
 		String strhex = encApi.hexEnc(hash);
 		cacheByHash.invalidate(strhex);
-		removingMap.add(strhex);
+		// removingMap.add(strhex);
 	}
 
 	public synchronized byte[] get(byte[] key) {
