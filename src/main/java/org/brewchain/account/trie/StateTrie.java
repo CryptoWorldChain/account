@@ -12,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
@@ -55,9 +56,11 @@ public class StateTrie implements ActorService {
 
 	private final static Object NULL_NODE = new Object();
 	private final static int MIN_BRANCHES_CONCURRENTLY = 4;// Math.min(16,Runtime.getRuntime().availableProcessors());
-	private static ExecutorService executor = new ForkJoinPool(new PropHelper(null)
+	private static ForkJoinPool executor = new ForkJoinPool(new PropHelper(null)
 			.get("org.brewchain.account.state.parallel", Runtime.getRuntime().availableProcessors() * 2));
 
+	ForkJoinPool flushexecutor = new ForkJoinPool(new PropHelper(null)
+			.get("org.brewchain.account.state.parallel", Runtime.getRuntime().availableProcessors() * 2));
 	// PendingQueue<String> removeQueue = new PendingQueue<>("trie-acct-remove",
 	// new PropHelper(null).get("org.brewchain.account.trie.expire.maxinmem",
 	// 100000));
@@ -65,7 +68,7 @@ public class StateTrie implements ActorService {
 	// ConcurrentLinkedQueue<String> removingMap = new
 	// ConcurrentLinkedQueue<>();
 
-	public static ExecutorService getExecutor() {
+	public static ForkJoinPool getExecutor() {
 		return executor;
 	}
 
@@ -186,19 +189,32 @@ public class StateTrie implements ActorService {
 			try {
 				batchStorage.set(bs);
 				byte[] ret = encode(1, true);
-				flushBS(bs);
+				final BatchStorage fbs = bs;
+				
+				flushexecutor.submit(new Runnable() {
+					@Override
+					public void run() {
+						try {
+							flushBS(fbs);
+						} catch (Exception e) {
+							log.error("error in flush db", e);
+						} finally {
+							if (fbs != null) {
+								if (bsPool.size() < 100) {
+									fbs.kvs.clear();
+									// bs.values.clear();
+									bsPool.retobj(fbs);
+								}
+							}
+						}
+					}
+				});
 				return ret;
 			} catch (Exception e) {
 				log.warn("error encode:" + e.getMessage(), e);
 				throw e;
 			} finally {
-				if (bs != null) {
-					if (bsPool.size() < 100) {
-						bs.kvs.clear();
-						// bs.values.clear();
-						bsPool.retobj(bs);
-					}
-				}
+
 				batchStorage.remove();
 			}
 		}
