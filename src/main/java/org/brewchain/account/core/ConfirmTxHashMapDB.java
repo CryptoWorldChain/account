@@ -334,17 +334,26 @@ public class ConfirmTxHashMapDB implements ActorService {
 								break;
 							}
 						}
+						
+						
+						long startdbsync = System.currentTimeMillis();
+						if(!gcShouldStop.get()){
+							try {
+								stateTrie.getDao().getAccountDao().sync();
+							} catch (Exception e) {
+								log.error("db sync evit memory error",e);
+							}
+						}
 						long startgc = System.currentTimeMillis();
 						long mem = Runtime.getRuntime().freeMemory();
 						if (!gcShouldStop.get()) {
 							System.gc();
 						}
-						log.error("manual gc:cost=" + (System.currentTimeMillis() - startgc) + ",trie.dbdelcost="
-								+ (startgc - startclear) + ",dbdelsize=" + rmhashs.size()
+						log.error("manual gc:cost=" + (System.currentTimeMillis() - startgc) 
+								+ ",trie.dbdelcost=" + (startdbsync - startclear)
+								+ ",trie.dbsync="+ (startgc - startdbsync) + ",dbdelsize=" + rmhashs.size()
 								+ ",gcstop=" + gcShouldStop.get() + ",memfree="
 								+ (Runtime.getRuntime().freeMemory() - mem) / 1024 / 1024 + "M");
-
-						
 
 						// log.error("end of clearRemoveQueue::cost=" +
 						// (System.currentTimeMillis() - start) + ",clearcount="
