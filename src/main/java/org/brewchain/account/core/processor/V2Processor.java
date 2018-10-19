@@ -306,6 +306,20 @@ public class V2Processor implements IProcessor, ActorService {
 	MultiTransaction emptytx = MultiTransaction.newBuilder().build();
 	byte[] emptybb = new byte[1];
 
+	public void waitUntilFlushFinished(long bh) {
+		int cc = 0;
+		while (this.stateTrie.getFlushexecutor().getActiveThreadCount() > 0) {
+			if (cc++ % 100 == 0) {
+				log.error("still waiting db flush... " + this.stateTrie.getFlushexecutor().getActiveThreadCount() + ",bh=" + bh);
+			}
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
 	private boolean processBlock(BlockEntity.Builder oBlockEntity, BlockEntity oParentBlock,
 			AddBlockResponse.Builder oAddBlockResponse, List<MultiTransaction> createdtxs) throws Exception {
 		CacheTrie oTransactionTrie = new CacheTrie(this.encApi);
@@ -322,13 +336,14 @@ public class V2Processor implements IProcessor, ActorService {
 						+ ",blocknumber=" + oParentBlock.getHeader().getNumber() + ",txs=" + createdtxs);
 				return true;
 			}
-
+			waitUntilFlushFinished(oBlockEntity.getHeader().getNumber());
+			
 			BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
 			// LinkedList<MultiTransaction> txs = new LinkedList<>();
-
+			
 			// long start = System.currentTimeMillis();
-			if (oBlockEntity.getHeader().getNumber() >= 1 && !Arrays
-					.equals(encApi.hexDec(oParentBlock.getHeader().getStateRoot()), this.stateTrie.getRootHash())) {
+
+			if (oBlockEntity.getHeader().getNumber() >= 1 && !Arrays.equals(encApi.hexDec(oParentBlock.getHeader().getStateRoot()), this.stateTrie.getRootHash())) {
 				log.error("reset state root=stateTirRoothash=" + encApi.hexEnc(this.stateTrie.getRootHash())
 						+ ",parentHash=" + oParentBlock.getHeader().getStateRoot() + ",applyheight="
 						+ oBlockEntity.getHeader().getNumber());
