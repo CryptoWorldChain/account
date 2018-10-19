@@ -1,7 +1,9 @@
 package org.brewchain.account.core;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
@@ -134,10 +136,15 @@ public class BlockHelper implements ActorService {
 			oTransactionTrie.put(encApi.hexDec(txs.get(i).getTxHash()), txs.get(i).toByteArray());
 		}
 
+		Map<String, Account.Builder> accts = new HashMap<>();
 		for (Account oAccount : accounts) {
-			this.stateTrie.put(oAccount.getAddress().toByteArray(), oAccount.getValue().toByteArray());
+			accts.put(encApi.hexEnc(oAccount.getAddress().toByteArray()), oAccount.toBuilder());
 		}
+		accountHelper.BatchPutAccounts(accts);
+		
 		oBlockHeader.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
+		
+//		this.stateTrie.getRoot().f
 		oBlockHeader.setTxTrieRoot(encApi.hexEnc(oTransactionTrie.getRootHash()));
 		// oBlockHeader.setReceiptTrieRoot(value)
 		oBlockHeader.setBlockHash(encApi.hexEnc(encApi.sha256Encode(oBlockHeader.build().toByteArray())));
