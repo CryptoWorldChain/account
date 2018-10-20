@@ -242,7 +242,7 @@ public class AccountHelper implements ActorService {
 	 */
 	public Account.Builder GetAccountOrCreate(ByteString addr) {
 		try {
-			Account.Builder oAccount = GetAccountFromDB(addr);
+			Account.Builder oAccount = GetAccount(addr);
 			if (oAccount == null) {
 				oAccount = CreateAccount(addr);
 //				String addrHex = encApi.hexEnc(addr.toByteArray());

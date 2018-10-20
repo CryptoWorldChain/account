@@ -357,9 +357,10 @@ public class TransactionHelper implements ActorService, Runnable {
 						MultiTransaction mt = mtb.clearStatus().clearResult().build();
 						if (cacheTx == null) {
 							iTransactionActuator oiTransactionActuator = getActuator(mt.getTxBody().getType(), null);
-							if (oiTransactionActuator.needSignature()) {
-								oiTransactionActuator.onVerifySignature(mt, null);
-							}
+							// 临时注释掉，account不能是null
+//							if (oiTransactionActuator.needSignature()) {
+//								oiTransactionActuator.onVerifySignature(mt, null);
+//							}
 							ByteString mts = mt.toByteString();
 							HashPair hp = new HashPair(mt.getTxHash(), mts.toByteArray(), mt);
 							hp.setNeedBroadCast(false);
