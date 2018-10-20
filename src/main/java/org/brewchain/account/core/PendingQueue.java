@@ -18,8 +18,8 @@ import onight.tfw.outils.conf.PropHelper;
 @Slf4j
 public class PendingQueue<T> {
 	protected Cache storage;
-	final static CacheManager cacheManager = new CacheManager("./conf/ehcache.xml");
-	
+	public final static CacheManager cacheManager = new CacheManager("./conf/ehcache.xml");
+
 	public final static String STR_COUNTER = "__idcounter";
 	CounterInfoData counter = new CounterInfoData();
 
@@ -48,7 +48,7 @@ public class PendingQueue<T> {
 				br.close();
 				fr.close();
 			}
-			
+
 			// log.debug("choose the chain_net::" + network);
 		} catch (Exception e) {
 			log.error("error on read chain_net::" + e.getMessage());
@@ -69,7 +69,24 @@ public class PendingQueue<T> {
 	public void addElement(T hp) {
 		while (storage.putIfAbsent(new Element(counter.ptr_pending.incrementAndGet(), hp)) != null)
 			;
+	}
 
+	public void addLast(T hp) {
+		addElement(hp);
+	}
+
+	public int size() {
+		return (int) (counter.ptr_pending.get() - counter.ptr_sending.get());
+	}
+
+	public T pollFirst() {
+		List<T> ret = poll(1);
+
+		if (ret != null & ret.size() > 0) {
+			return ret.get(0);
+		}
+
+		return null;
 	}
 
 	public synchronized List<T> poll(int size) {
@@ -97,7 +114,7 @@ public class PendingQueue<T> {
 		PendingQueue<String> pq = new PendingQueue<>("test", 1000);
 		int counter = 10000;
 		for (int i = 0; i < counter; i++) {
-			pq.addElement("KKK"+i);
+			pq.addElement("KKK" + i);
 		}
 		List<String> hp = pq.poll(100);
 		System.out.println("hpsize=" + hp.size());

@@ -52,8 +52,8 @@ public class BlockHelper implements ActorService {
 	EncAPI encApi;
 	@ActorRequire(name = "Def_Daos", scope = "global")
 	DefDaos dao;
-	@ActorRequire(name = "CacheBlock_HashMapDB", scope = "global")
-	CacheBlockHashMapDB oCacheHashMapDB;
+//	@ActorRequire(name = "CacheBlock_HashMapDB", scope = "global")
+//	CacheBlockHashMapDB oCacheHashMapDB;
 	@ActorRequire(name = "Block_StateTrie", scope = "global")
 	StateTrie stateTrie;
 	@ActorRequire(name = "Processor_Manager", scope = "global")

@@ -7,6 +7,7 @@ import org.brewchain.account.core.ConfirmTxHashMapDB;
 import org.brewchain.account.core.TransactionHelper;
 import org.brewchain.account.core.WaitBlockHashMapDB;
 import org.brewchain.account.core.WaitSendHashMapDB;
+import org.brewchain.account.core.store.BlockUnStableStore;
 import org.brewchain.account.dao.DefDaos;
 import org.brewchain.account.gens.Blockimpl.PBCTCommand;
 import org.brewchain.account.gens.Blockimpl.PBCTModule;
@@ -51,6 +52,8 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 	StateTrie stateTrie;
 	@ActorRequire(name = "Transaction_Helper", scope = "global")
 	TransactionHelper transactionHelper;
+	@ActorRequire(name = "BlockStore_UnStable", scope = "global")
+	BlockUnStableStore unStableStore;
 
 	
 	@Override
@@ -86,6 +89,7 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 //					+ ((stateTrie.getBatchStorage().get() == null || stateTrie.getBatchStorage().get().kvs == null)
 //							? "0"
 //							: stateTrie.getBatchStorage().get().kvs.size())
+					+ " unstable:: " + unStableStore.getStorage().size()
 					+ " queue:: " + oConfirmMapDB.getConfirmQueue().size()
 //					+ " trie.rmsize::[p=" + stateTrie.getRemoveQueue().getCounter().getPtr_pending().get()+",s="
 //							+stateTrie.getRemoveQueue().getCounter().getPtr_sending().get()+",db="

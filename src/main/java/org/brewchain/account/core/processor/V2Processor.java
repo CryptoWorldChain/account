@@ -324,7 +324,7 @@ public class V2Processor implements IProcessor, ActorService {
 			AddBlockResponse.Builder oAddBlockResponse, List<MultiTransaction> createdtxs) throws Exception {
 		CacheTrie oTransactionTrie = new CacheTrie(this.encApi);
 		CacheTrie oReceiptTrie = new CacheTrie(this.encApi);
-
+		long start = System.currentTimeMillis();
 		try {
 			if (oBlockEntity.getHeader().getNumber() == oParentBlock.getHeader().getNumber()) {
 				log.error("dulipcate apply block parentHeight=currentHeight:" + oParentBlock.getHeader().getNumber()
@@ -337,12 +337,13 @@ public class V2Processor implements IProcessor, ActorService {
 				return true;
 			}
 			waitUntilFlushFinished(oBlockEntity.getHeader().getNumber());
-			
+			long waitflushend = System.currentTimeMillis();
+
 			BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
 			// LinkedList<MultiTransaction> txs = new LinkedList<>();
 			
 			// long start = System.currentTimeMillis();
-
+			this.stateTrie.getNodeCounter().set(0);
 			if (oBlockEntity.getHeader().getNumber() >= 1 && !Arrays.equals(encApi.hexDec(oParentBlock.getHeader().getStateRoot()), this.stateTrie.getRootHash())) {
 				log.error("reset state root=stateTirRoothash=" + encApi.hexEnc(this.stateTrie.getRootHash())
 						+ ",parentHash=" + oParentBlock.getHeader().getStateRoot() + ",applyheight="
@@ -390,11 +391,14 @@ public class V2Processor implements IProcessor, ActorService {
 				bb.addTxs(txs[i]);
 				oTransactionTrie.put(RLP.encodeInt(i), txTrieBB[i]);
 			}
+			long loadtxend = System.currentTimeMillis();
+
 			transactionHelper.getDao().getStats().signalBlockTx(oBlockHeader.getTxHashsCount());
 			oBlockEntity.setBody(bb);
 
 			// start = System.currentTimeMillis();
 			Map<String, ByteString> results = ExecuteTransaction(txs, oBlockEntity.build(), accounts);
+			long execend = System.currentTimeMillis();
 
 			BlockHeader.Builder header = oBlockEntity.getHeaderBuilder();
 
@@ -415,10 +419,12 @@ public class V2Processor implements IProcessor, ActorService {
 					oReceiptTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY : oReceiptTrie.getRootHash()));
 			header.setTxTrieRoot(encApi.hexEnc(oTransactionTrie.getRootHash() == null ? ByteUtil.EMPTY_BYTE_ARRAY
 					: oTransactionTrie.getRootHash()));
-			long start = System.currentTimeMillis();
+			long starttriecode = System.currentTimeMillis();
 			header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
-			log.error("calc trie cost:" + (System.currentTimeMillis() - start) + ",blocknumber=" + header.getNumber()
-					+ ",txcount=" + oBlockHeader.getTxHashsCount());
+			log.error("calc trie total cost:" + (System.currentTimeMillis() - start) + ",blocknumber=" + header.getNumber()
+					+ ",txcount=" + oBlockHeader.getTxHashsCount()+",encodecc="+this.stateTrie.getNodeCounter().get()
+					+",cost[f="+(waitflushend-start)+",l="+(loadtxend-waitflushend)+",e="+(execend-loadtxend)
+					+",a="+(starttriecode-execend)+",t="+(System.currentTimeMillis() - starttriecode)+"]");
 			oBlockEntity.setHeader(header.build());
 			if (StringUtils.isBlank(oBlockEntity.getHeader().getStateRoot())) {
 				log.error("get empty stateroot==");

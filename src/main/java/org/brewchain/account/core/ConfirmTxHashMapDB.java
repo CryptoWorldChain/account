@@ -34,6 +34,8 @@ public class ConfirmTxHashMapDB implements ActorService {
 	// protected Cache storage;
 	protected ConcurrentHashMap<String, Long> removeSavestorage = new ConcurrentHashMap<>();
 	protected LinkedBlockingDeque<HashPair> confirmQueue = new LinkedBlockingDeque<>();
+	
+
 	ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
 	@ActorRequire(name = "WaitSend_HashMapDB", scope = "global")
 	WaitSendHashMapDB oSendingHashMapDB; // 保存待广播交易
@@ -41,7 +43,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 	@ActorRequire(name = "Block_StateTrie", scope = "global")
 	StateTrie stateTrie;
 	protected PropHelper props = new PropHelper(null);
-
+//	PendingQueue<HashPair> confirmQueue = new PendingQueue<HashPair>("txconfirm", props.get("org.brewchain.account.confirmq", 100000));
 	// final CacheManager cacheManager = new CacheManager();
 
 	public ConfirmTxHashMapDB() {
@@ -99,6 +101,9 @@ public class ConfirmTxHashMapDB implements ActorService {
 		// storage.put(new Element(key, hp));
 		if (storage.size() < this.maxElementsInMemory || hp.getTx() != null) {
 			storage.put(key, hp);
+			if (storage.size() > this.maxElementsInMemory) {
+				clearStorage();
+			}
 		} else {
 			// persistQ.addElement(hp);
 			// log.error("drop storage queue:size=" + storage.size());
@@ -324,45 +329,45 @@ public class ConfirmTxHashMapDB implements ActorService {
 				public void run() {
 					Thread.currentThread().setName("gcrunning");
 					try {
-//						List<String> rmhashs = stateTrie.getRemoveQueue()
-//								.poll(props.get("org.brewchain.account.trie.remove.batch", 10000));
-//						long startclear = System.currentTimeMillis();
-//						for (String hash : rmhashs) {
-//							stateTrie.getDao().getAccountDao()
-//									.delete(OEntityBuilder.byteKey2OKey(stateTrie.getEncApi().hexDec(hash)));
-//							if (gcShouldStop.get()) {
-//								break;
-//							}
-//						}
-						
-						
+						// List<String> rmhashs = stateTrie.getRemoveQueue()
+						// .poll(props.get("org.brewchain.account.trie.remove.batch",
+						// 10000));
+						// long startclear = System.currentTimeMillis();
+						// for (String hash : rmhashs) {
+						// stateTrie.getDao().getAccountDao()
+						// .delete(OEntityBuilder.byteKey2OKey(stateTrie.getEncApi().hexDec(hash)));
+						// if (gcShouldStop.get()) {
+						// break;
+						// }
+						// }
+
 						long startdbsync = System.currentTimeMillis();
-						if(!gcShouldStop.get()){
-//							try {
-//								stateTrie.getDao().getAccountDao().sync();
-//							} catch (Exception e) {
-//								log.error("db sync evit memory error",e);
-//							}
-//							try {
-//								stateTrie.getDao().getTxsDao().sync();
-//							} catch (Exception e) {
-//								log.error("db sync evit memory error",e);
-//							}
-//							try {
-//								stateTrie.getDao().getTxblockDao().sync();
-//							} catch (Exception e) {
-//								log.error("db sync evit memory error",e);
-//							}
+						if (!gcShouldStop.get()) {
+							// try {
+							// stateTrie.getDao().getAccountDao().sync();
+							// } catch (Exception e) {
+							// log.error("db sync evit memory error",e);
+							// }
+							// try {
+							// stateTrie.getDao().getTxsDao().sync();
+							// } catch (Exception e) {
+							// log.error("db sync evit memory error",e);
+							// }
+							// try {
+							// stateTrie.getDao().getTxblockDao().sync();
+							// } catch (Exception e) {
+							// log.error("db sync evit memory error",e);
+							// }
 						}
 						long startgc = System.currentTimeMillis();
 						long mem = Runtime.getRuntime().freeMemory();
 						if (!gcShouldStop.get()) {
-							//System.gc();
+//							System.gc();
 						}
-						log.error("manual gc:cost=" + (System.currentTimeMillis() - startgc) 
-//								+ ",trie.dbdelcost=" + (startdbsync - startclear)
-								+ ",trie.dbsync="+ (startgc - startdbsync) 
-//								+ ",dbdelsize=" + rmhashs.size()
+						log.error("manual gc:cost=" + (System.currentTimeMillis() - startgc)
+						// + ",trie.dbdelcost=" + (startdbsync - startclear)
+								+ ",trie.dbsync=" + (startgc - startdbsync)
+						// + ",dbdelsize=" + rmhashs.size()
 								+ ",gcstop=" + gcShouldStop.get() + ",memfree="
 								+ (Runtime.getRuntime().freeMemory() - mem) / 1024 / 1024 + "M");
 
@@ -388,7 +393,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 		int i = 0;
 		int maxtried = confirmQueue.size();
 		int clearcount = 0;
-		while (i < maxtried&&!gcShouldStop.get()) {
+		while (i < maxtried && !gcShouldStop.get()) {
 			try {
 				HashPair hp = confirmQueue.pollFirst();
 				// if (hp == null) {
@@ -412,7 +417,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 	public int clearRemoveQueue() {
 		Enumeration<String> en = removeSavestorage.keys();
 		List<String> removeKeys = new ArrayList<>();
-		while (en.hasMoreElements()&&!gcShouldStop.get()) {
+		while (en.hasMoreElements() && !gcShouldStop.get()) {
 			try {
 				String key = en.nextElement();
 				Long rmTime = removeSavestorage.get(key);
@@ -433,12 +438,17 @@ public class ConfirmTxHashMapDB implements ActorService {
 		return removeKeys.size();
 	}
 
-	public int clearStorage() {
+	long lastClearStorage = 0;
+
+	public synchronized int clearStorage() {
 		// List<String> keys = storage.getKeys();
+		if (System.currentTimeMillis() - lastClearStorage < 5000) {
+			return 0;
+		}
 		if (storage != null) {
 			List<String> removeKeys = new ArrayList<>();
 			Enumeration<String> en = storage.keys();
-			while (en.hasMoreElements()&&!gcShouldStop.get()) {
+			while (en.hasMoreElements() && !gcShouldStop.get()) {
 				// for (String key : keys) {
 				try {
 					String key = en.nextElement();

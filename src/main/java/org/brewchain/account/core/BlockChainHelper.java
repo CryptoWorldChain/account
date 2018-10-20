@@ -53,8 +53,8 @@ public class BlockChainHelper implements ActorService {
 	DefDaos dao;
 	@ActorRequire(name = "bc_encoder", scope = "global")
 	EncAPI encApi;
-	@ActorRequire(name = "CacheBlock_HashMapDB", scope = "global")
-	CacheBlockHashMapDB oCacheHashMapDB;
+//	@ActorRequire(name = "CacheBlock_HashMapDB", scope = "global")
+//	CacheBlockHashMapDB oCacheHashMapDB;
 	@ActorRequire(name = "KeyStore_Helper", scope = "global")
 	KeyStoreHelper keyStoreHelper;
 	@ActorRequire(name = "BlockStore_Helper", scope = "global")

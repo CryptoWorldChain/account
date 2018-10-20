@@ -35,8 +35,6 @@ import org.brewchain.evmapi.gens.Act.ERC20Token;
 import org.brewchain.evmapi.gens.Act.ERC20TokenValue;
 import org.fc.brewchain.bcapi.EncAPI;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.protobuf.ByteString;
 
 import lombok.Data;
@@ -779,22 +777,26 @@ public class AccountHelper implements ActorService {
 	}
 
 	public void BatchPutAccounts(Map<String, Account.Builder> accountValues) {
+		long start = System.currentTimeMillis();
 		Set<String> keySets = accountValues.keySet();
 		Iterator<String> iterator = keySets.iterator();
 		// sort by keys
 		List<String> keys = new ArrayList<>();
-
 		while (iterator.hasNext()) {
 			String key = iterator.next();
 			keys.add(key);
 		}
 		Collections.sort(keys);
+		
+		long sortend = System.currentTimeMillis();
 		for (String key : keys) {
 			AccountValue value = accountValues.get(key).getValue();
 //			if (this.stateTrie != null) {
 				this.stateTrie.put(encApi.hexDec(key), value.toByteArray());
 //			}
 		}
+		log.error("batchputs.put.cost="+(System.currentTimeMillis()-sortend)+",sortcost="+(sortend-start)+",count="+keys.size());
+		keys.clear();
 		// no need, because all account already on the mpt
 		// doPutAccounts(accountValues);
 	}
