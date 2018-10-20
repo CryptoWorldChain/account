@@ -214,8 +214,9 @@ public class V2Processor implements IProcessor, ActorService {
 			BlockStoreSummary oSummary = blockChainHelper.addBlock(oBlockEntity.build());
 			switch (oSummary.getBehavior()) {
 			case APPLY:
+				long start=System.currentTimeMillis();
 				blockChainHelper.connectBlock(oBlockEntity.build());
-
+				log.error("");
 				log.info("new block, number::" + oBlockEntity.getHeader().getNumber() + " hash::"
 						+ oBlockEntity.getHeader().getBlockHash() + " parent::"
 						+ oBlockEntity.getHeader().getParentHash() + " tx::" + oBlockEntity.getHeader().getTxTrieRoot()
@@ -336,9 +337,6 @@ public class V2Processor implements IProcessor, ActorService {
 						+ ",blocknumber=" + oParentBlock.getHeader().getNumber() + ",txs=" + createdtxs);
 				return true;
 			}
-			waitUntilFlushFinished(oBlockEntity.getHeader().getNumber());
-			long waitflushend = System.currentTimeMillis();
-
 			BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
 			// LinkedList<MultiTransaction> txs = new LinkedList<>();
 			
@@ -350,7 +348,10 @@ public class V2Processor implements IProcessor, ActorService {
 						+ oBlockEntity.getHeader().getNumber());
 				this.stateTrie.clear();
 				this.stateTrie.setRoot(encApi.hexDec(oParentBlock.getHeader().getStateRoot()));
+				waitUntilFlushFinished(oBlockEntity.getHeader().getNumber());
+
 			}
+			long waitflushend = System.currentTimeMillis();
 
 			BlockBody.Builder bb = oBlockEntity.getBody().toBuilder();
 
