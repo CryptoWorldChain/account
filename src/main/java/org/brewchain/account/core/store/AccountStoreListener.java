@@ -17,7 +17,7 @@ public class AccountStoreListener implements Observer {
 	
 	@Override
 	public void update(Observable o, Object arg) {
-		log.warn("AccountStore stop! try to restart it");
+		log.error("AccountStore stop! try to restart it");
 		AccountStore run = new AccountStore();
 		run.setDao(dao);
 		run.setOEntityHelper(oEntityHelper);

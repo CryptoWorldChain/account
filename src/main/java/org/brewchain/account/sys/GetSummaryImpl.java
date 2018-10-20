@@ -77,21 +77,21 @@ public class GetSummaryImpl extends SessionModules<ReqGetSummary> {
 //			oRespGetSummary.addItems(oUnStableItems.build());
 //		}
 		
-		LinkedBlockingDeque<HashPair> lbd = new LinkedBlockingDeque<HashPair>(oConfirmMapDB.getConfirmQueue());
+//		LinkedBlockingDeque<HashPair> lbd = new LinkedBlockingDeque<HashPair>(oConfirmMapDB.getConfirmQueue());
 
 		int i = 500;
-		for (Iterator<HashPair> it = lbd.iterator(); it.hasNext();) {
-			if (i <= 0) {
-				break;
-			}
-			HashPair item = it.next();
-			UnStableItems.Builder oWaitBlockItem = UnStableItems.newBuilder();
-			oWaitBlockItem.setNumber(String.valueOf(item.getBits().bitCount()));
-			oWaitBlockItem.setHash(item.getKey());
-			oWaitBlockItem.setRemove(String.valueOf(item.isRemoved()));
-			oRespGetSummary.addItems(oWaitBlockItem);
-			i--;
-		}
+//		for (Iterator<HashPair> it = lbd.iterator(); it.hasNext();) {
+//			if (i <= 0) {
+//				break;
+//			}
+//			HashPair item = it.next();
+//			UnStableItems.Builder oWaitBlockItem = UnStableItems.newBuilder();
+//			oWaitBlockItem.setNumber(String.valueOf(item.getBits().bitCount()));
+//			oWaitBlockItem.setHash(item.getKey());
+//			oWaitBlockItem.setRemove(String.valueOf(item.isRemoved()));
+//			oRespGetSummary.addItems(oWaitBlockItem);
+//			i--;
+//		}
 
 		handler.onFinished(PacketHelper.toPBReturn(pack, oRespGetSummary.build()));
 	}

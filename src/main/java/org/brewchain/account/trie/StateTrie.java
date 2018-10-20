@@ -7,16 +7,14 @@ import static org.brewchain.account.util.RLP.encodeElement;
 import static org.brewchain.account.util.RLP.encodeList;
 
 import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
@@ -123,6 +121,7 @@ public class StateTrie implements ActorService {
 		private Node(RLP.LList parsedRlp) {
 			this.parsedRlp = parsedRlp;
 			this.rlp = parsedRlp.getEncoded();
+			
 		}
 
 		private Node(Object[] children) {
@@ -144,7 +143,7 @@ public class StateTrie implements ActorService {
 		}
 
 		public void flushBS(BatchStorage bs) {
-			long start = System.currentTimeMillis();
+//			long start = System.currentTimeMillis();
 
 			int size = bs.kvs.size();
 			if (size > 0) {
@@ -183,14 +182,17 @@ public class StateTrie implements ActorService {
 
 		public byte[] encode() {
 			BatchStorage bs = bsPool.borrow();
+			boolean newone = false;
+
 			if (bs == null) {
 				bs = new BatchStorage();
+				newone = true;
 			}
 			try {
 				batchStorage.set(bs);
 				byte[] ret = encode(1, true);
 				final BatchStorage fbs = bs;
-				
+				final boolean fnewone = newone;
 				flushexecutor.submit(new Runnable() {
 					@Override
 					public void run() {
@@ -200,10 +202,13 @@ public class StateTrie implements ActorService {
 							log.error("error in flush db", e);
 						} finally {
 							if (fbs != null) {
+								fbs.kvs.clear();
 								if (bsPool.size() < 100) {
-									fbs.kvs.clear();
-									// bs.values.clear();
-									bsPool.retobj(fbs);
+									if(fnewone){
+										bsPool.addObject(fbs);
+									}else{
+										bsPool.retobj(fbs);
+									}
 								}
 							}
 						}
@@ -214,13 +219,13 @@ public class StateTrie implements ActorService {
 				log.warn("error encode:" + e.getMessage(), e);
 				throw e;
 			} finally {
-
 				batchStorage.remove();
 			}
 		}
 
 		private byte[] encode(final int depth, boolean forceHash) {
 			// BatchStorage bs = batchStorage.get();
+			nodeCounter.incrementAndGet();
 			if (!dirty) {
 				return hash != null ? encodeElement(hash) : rlp;
 			} else {
@@ -251,8 +256,10 @@ public class StateTrie implements ActorService {
 										@Override
 										public byte[] call() throws Exception {
 											BatchStorage bs = bsPool.borrow();
+											boolean newone = false;
 											if (bs == null) {
 												bs = new BatchStorage();
+												newone = true;
 											}
 											try {
 												if (bs != null) {
@@ -261,6 +268,7 @@ public class StateTrie implements ActorService {
 												byte[] ret = child.encode(depth + 1, false);
 												// flush
 												final BatchStorage fbs = bs;
+												final boolean fnewone = newone;
 												flushexecutor.submit(new Runnable() {
 													@Override
 													public void run() {
@@ -271,10 +279,14 @@ public class StateTrie implements ActorService {
 														} finally {
 															if (fbs != null) {
 																batchStorage.remove();
+																fbs.kvs.clear();
 																if (bsPool.size() < 100) {
-																	fbs.kvs.clear();
-																	// bs.values.clear();
-																	bsPool.retobj(fbs);
+																	if(fnewone){
+																		bsPool.addObject(fbs);
+																	}else
+																	{
+																		bsPool.retobj(fbs);
+																	}
 																}
 															}
 														}
@@ -285,14 +297,6 @@ public class StateTrie implements ActorService {
 												log.error("error in exec bs:" + e.getMessage(), e);
 												throw e;
 											} finally {
-//												if (bs != null) {
-//													batchStorage.remove();
-//													if (bsPool.size() < 100) {
-//														bs.kvs.clear();
-//														// bs.values.clear();
-//														bsPool.retobj(bs);
-//													}
-//												}
 											}
 										}
 									};
@@ -310,6 +314,7 @@ public class StateTrie implements ActorService {
 						} catch (Exception e) {
 							throw new RuntimeException(e);
 						}
+						nodeCounter.incrementAndGet();
 					} else {
 						byte[][] encoded = new byte[17][];
 						for (int i = 0; i < 16; i++) {
@@ -318,13 +323,16 @@ public class StateTrie implements ActorService {
 						}
 						byte[] value = branchNodeGetValue();
 						encoded[16] = encodeElement(value);
+						nodeCounter.incrementAndGet();
 						ret = encodeList(encoded);
 					}
 				} else if (type == NodeType.KVNodeNode) {
+					nodeCounter.incrementAndGet();
 					ret = encodeList(encodeElement(kvNodeGetKey().toPacked()),
 							kvNodeGetChildNode().encode(depth + 1, false));
 				} else {
 					byte[] value = kvNodeGetValue();
+					nodeCounter.incrementAndGet();
 					ret = encodeList(encodeElement(kvNodeGetKey().toPacked()),
 							encodeElement(value == null ? EMPTY_BYTE_ARRAY : value));
 				}
@@ -340,6 +348,7 @@ public class StateTrie implements ActorService {
 					hash = encApi.sha3Encode(ret);
 					// hash = ret;
 					addHash(hash, ret, type);
+					
 					return encodeElement(hash);
 				}
 			}
@@ -362,7 +371,6 @@ public class StateTrie implements ActorService {
 			if (children != null)
 				return;
 			resolve();
-
 			RLP.LList list = parsedRlp == null ? RLP.decodeLazyList(rlp) : parsedRlp;
 
 			if (list.size() == 2) {
@@ -807,6 +815,7 @@ public class StateTrie implements ActorService {
 		return root != null ? root.hash : ByteUtil.EMPTY_BYTE_ARRAY;
 	}
 
+	AtomicLong nodeCounter=new AtomicLong(0);
 	public void clear() {
 		if (root != null && root.dirty) {
 			// persist all dirty nodes to underlying Source
@@ -814,6 +823,7 @@ public class StateTrie implements ActorService {
 			// release all Trie Node instances for GC
 			root = new Node(root.hash);
 		}
+		nodeCounter.set(0);
 	}
 
 	@Override

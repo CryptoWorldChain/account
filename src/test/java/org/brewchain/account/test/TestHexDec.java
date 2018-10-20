@@ -30,7 +30,7 @@ public class TestHexDec {
 	EncInstance encAPI = new EncInstance();
 	MemoryODBSupport odbs=new MemoryODBSupport();
 	public void init() {
-		daos.setAccountDao(odbs);
+//!!		daos.setAccountDao(odbs);
 		st.setAsync(true);
 		st.setDao(daos);
 		encAPI.startup();

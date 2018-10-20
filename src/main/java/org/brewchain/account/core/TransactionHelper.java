@@ -105,7 +105,7 @@ public class TransactionHelper implements ActorService, Runnable {
 	PropHelper prop = new PropHelper(null);
 	Cache<String, MultiTransaction> txDBCacheByHash = CacheBuilder.newBuilder()
 			.initialCapacity(prop.get("org.brewchain.account.cache.tx.init", 10000))
-			.expireAfterWrite(600, TimeUnit.SECONDS).maximumSize(prop.get("org.brewchain.account.cache.tx.max", 100000))
+			.expireAfterAccess(600, TimeUnit.SECONDS).maximumSize(prop.get("org.brewchain.account.cache.tx.max", 100000))
 			.concurrencyLevel(Runtime.getRuntime().availableProcessors()).build();
 
 	PendingQueue<HashPair> queue = new PendingQueue<HashPair>("txaccept", prop.get("org.brewchain.account.tx.accept", 100000));

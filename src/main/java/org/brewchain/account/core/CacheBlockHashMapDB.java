@@ -18,6 +18,11 @@ import lombok.extern.slf4j.Slf4j;
 import onight.osgi.annotation.NActorProvider;
 import onight.tfw.ntrans.api.ActorService;
 
+/**
+ * 
+ *  @deprecated by brew may cost memory leak.  
+ */
+@Deprecated  
 @NActorProvider
 @Provides(specifications = { ActorService.class }, strategy = "SINGLETON")
 @Instantiate(name = "CacheBlock_HashMapDB")
