@@ -105,10 +105,12 @@ public class TransactionHelper implements ActorService, Runnable {
 	PropHelper prop = new PropHelper(null);
 	Cache<String, MultiTransaction> txDBCacheByHash = CacheBuilder.newBuilder()
 			.initialCapacity(prop.get("org.brewchain.account.cache.tx.init", 10000))
-			.expireAfterAccess(600, TimeUnit.SECONDS).maximumSize(prop.get("org.brewchain.account.cache.tx.max", 100000))
+			.expireAfterAccess(600, TimeUnit.SECONDS)
+			.maximumSize(prop.get("org.brewchain.account.cache.tx.max", 100000))
 			.concurrencyLevel(Runtime.getRuntime().availableProcessors()).build();
 
-	PendingQueue<HashPair> queue = new PendingQueue<HashPair>("txaccept", prop.get("org.brewchain.account.tx.accept", 100000));
+	PendingQueue<HashPair> queue = new PendingQueue<HashPair>("txaccept",
+			prop.get("org.brewchain.account.tx.accept", 100000));
 
 	public boolean isStop = false;
 
@@ -290,10 +292,12 @@ public class TransactionHelper implements ActorService, Runnable {
 
 				iTransactionActuator oiTransactionActuator = getActuator(oMultiTransaction.getTxBody().getType(), null);
 				if (oiTransactionActuator.needSignature()) {
-					// Map<String, Account.Builder> accounts =
-					// getTransactionAccounts(oMultiTransaction);
-
-					oiTransactionActuator.onVerifySignature(oMultiTransaction.build(), null);
+					Map<String, Account.Builder> accounts = null;
+					if (oMultiTransaction.getTxBody().getType() == TransTypeEnum.TYPE_UnionAccountTransaction.value()
+							|| oMultiTransaction.getTxBody().getType() == TransTypeEnum.TYPE_UnionAccountTokenTransaction.value()) {
+						accounts = getTransactionAccounts(oMultiTransaction);
+					}
+					oiTransactionActuator.onVerifySignature(oMultiTransaction.build(), accounts);
 				}
 
 				byte keyByte[] = encApi.hexDec(oMultiTransaction.getTxHash());
@@ -357,10 +361,15 @@ public class TransactionHelper implements ActorService, Runnable {
 						MultiTransaction mt = mtb.clearStatus().clearResult().build();
 						if (cacheTx == null) {
 							iTransactionActuator oiTransactionActuator = getActuator(mt.getTxBody().getType(), null);
-							// 临时注释掉，account不能是null
-//							if (oiTransactionActuator.needSignature()) {
-//								oiTransactionActuator.onVerifySignature(mt, null);
-//							}
+							if (oiTransactionActuator.needSignature()) {
+								Map<String, Account.Builder> accounts = null;
+								if (mt.getTxBody().getType() == TransTypeEnum.TYPE_UnionAccountTransaction.value()
+										|| mt.getTxBody().getType() == TransTypeEnum.TYPE_UnionAccountTokenTransaction
+												.value()) {
+									accounts = getTransactionAccounts(mt);
+								}
+								oiTransactionActuator.onVerifySignature(mt, accounts);
+							}
 							ByteString mts = mt.toByteString();
 							HashPair hp = new HashPair(mt.getTxHash(), mts.toByteArray(), mt);
 							hp.setNeedBroadCast(false);

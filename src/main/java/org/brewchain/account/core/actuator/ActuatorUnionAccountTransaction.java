@@ -89,6 +89,12 @@ public class ActuatorUnionAccountTransaction extends AbstractTransactionActuator
 					throw new TransactionParameterInvalidException("parameter invalid, not found original transaction");
 				}
 
+				if (!FastByteComparisons.equal(originalTx.getTxBody().getOutputs(0).getAddress().toByteArray(),
+						oMultiTransaction.getTxBody().getOutputs(0).getAddress().toByteArray())) {
+					throw new TransactionParameterInvalidException(
+							"parameter invalid, output address are equal with original tx");
+				}
+
 				byte[] confirmTxBytes = oAccountHelper.getStorage(unionAccount,
 						oMultiTransaction.getTxBody().getData().toByteArray());
 				UnionAccountStorage oUnionAccountStorage = UnionAccountStorage.parseFrom(confirmTxBytes);

@@ -9,10 +9,12 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 
+import com.google.protobuf.InvalidProtocolBufferException;
+
 import lombok.Data;
 
 @Data
-public class HashPair  implements Serializable {
+public class HashPair implements Serializable {
 	/**
 	 * 
 	 */
@@ -20,17 +22,27 @@ public class HashPair  implements Serializable {
 	String key;
 	byte data[];
 	transient MultiTransaction tx;
+	// MultiTransaction tx;
 	BigInteger bits = new BigInteger("0");
 	boolean isRemoved = false;
 	boolean isNeedBroadCast = false;
 	long lastUpdateTime = System.currentTimeMillis();
 	boolean isStoredInDisk = false;
+
 	@Override
 	public int hashCode() {
-		return key.hashCode() ;
+		return key.hashCode();
 	}
-	
-	
+
+	public MultiTransaction getTx() {
+		if (tx == null && data != null) {
+			try {
+				tx = MultiTransaction.parseFrom(data);
+			} catch (InvalidProtocolBufferException e) {
+			}
+		}
+		return tx;
+	}
 
 	@Override
 	public boolean equals(Object obj) {

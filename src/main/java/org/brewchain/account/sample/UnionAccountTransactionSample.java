@@ -77,11 +77,11 @@ public class UnionAccountTransactionSample extends SessionModules<ReqUnionAccoun
 	public void onPBPacket(final FramePacket pack, final ReqUnionAccountTransaction pb, final CompleteHandler handler) {
 		RespCreateUnionAccount.Builder oRespCreateUnionAccount = RespCreateUnionAccount.newBuilder();
 
-		if (!blockChainConfig.isDev()) {
-			oRespCreateUnionAccount.setRetCode(-1);
-			handler.onFinished(PacketHelper.toPBReturn(pack, oRespCreateUnionAccount.build()));
-			return;
-		}
+//		if (!blockChainConfig.isDev()) {
+//			oRespCreateUnionAccount.setRetCode(-1);
+//			handler.onFinished(PacketHelper.toPBReturn(pack, oRespCreateUnionAccount.build()));
+//			return;
+//		}
 		
 		MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 		MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();

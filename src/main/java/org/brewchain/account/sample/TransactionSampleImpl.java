@@ -66,11 +66,11 @@ public class TransactionSampleImpl extends SessionModules<ReqCreateTransactionTe
 	public void onPBPacket(final FramePacket pack, final ReqCreateTransactionTest pb, final CompleteHandler handler) {
 		RespCreateTransactionTest.Builder oRespCreateTransactionTest = RespCreateTransactionTest.newBuilder();
 
-		if (!blockChainConfig.isDev()) {
-			oRespCreateTransactionTest.setRetcode(-1);
-			handler.onFinished(PacketHelper.toPBReturn(pack, oRespCreateTransactionTest.build()));
-			return;
-		}
+//		if (!blockChainConfig.isDev()) {
+//			oRespCreateTransactionTest.setRetcode(-1);
+//			handler.onFinished(PacketHelper.toPBReturn(pack, oRespCreateTransactionTest.build()));
+//			return;
+//		}
 		
 		MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 		MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();

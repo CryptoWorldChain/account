@@ -70,10 +70,10 @@ public class GetBlockInfoImpl extends SessionModules<ReqBlockInfo> {
 	public void onPBPacket(final FramePacket pack, final ReqBlockInfo pb, final CompleteHandler handler) {
 		RespBlockInfo.Builder oRespBlockInfo = RespBlockInfo.newBuilder();
 		
-		if (!blockChainConfig.isDev()) {
-			handler.onFinished(PacketHelper.toPBReturn(pack, oRespBlockInfo.build()));
-			return;
-		}
+//		if (!blockChainConfig.isDev()) {
+//			handler.onFinished(PacketHelper.toPBReturn(pack, oRespBlockInfo.build()));
+//			return;
+//		}
 		try {
 			if ("true".equalsIgnoreCase(pack.getExtStrProp("clear"))) {
 				dao.getStats().getAcceptTxCount().set(0);
