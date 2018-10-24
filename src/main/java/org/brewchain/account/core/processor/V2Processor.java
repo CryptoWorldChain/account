@@ -73,25 +73,30 @@ public class V2Processor implements IProcessor, ActorService {
 	AccountHelper oAccountHelper;
 	MultiTransactionSeparator mts = new MultiTransactionSeparator();
 
-	@ActorRequire(name = "LoadTester", scope = "global")
-	TransactionLoadTestExecImpl loadTester;
+	// @ActorRequire(name = "LoadTester", scope = "global")
+	// TransactionLoadTestExecImpl loadTester;
 
 	public Map<String, ByteString> ExecuteTransaction(MultiTransaction[] oMultiTransactions, BlockEntity currentBlock,
 			Map<String, Account.Builder> accounts) throws Exception {
 
 		Map<String, ByteString> results = new ConcurrentHashMap<>();
 		mts.reset();
-		// long start = System.currentTimeMillis();
+
 		CountDownLatch cdl = new CountDownLatch(oMultiTransactions.length);
+
+		// long start = System.currentTimeMillis();
+		// String content = mts.getBucketInfo();
+
 		for (int i = 0; i < mts.getBucketSize(); i++) {
 			this.stateTrie.getExecutor().submit(new MisV2TransactionRunner(mts.getTxnQueue(i), transactionHelper,
 					currentBlock, accounts, results, cdl));
 		}
-		mts.doClearing(oMultiTransactions, loadTester);
+		mts.doClearing(oMultiTransactions, null);
 		cdl.await();
-		// log.debug(" ====> ExecuteTransaction.clearing:" + mts.getBucketInfo()
-		// + ",cost="
-		// + (System.currentTimeMillis() - start));
+
+		// log.error("====> ExecuteTransaction.clearing:" + content + ",cost=" +
+		// (System.currentTimeMillis() - start));
+
 		// log.debug("--:cdlwaitup" + cdl.getCount());
 		oAccountHelper.BatchPutAccounts(accounts);
 		return results;
@@ -177,9 +182,8 @@ public class V2Processor implements IProcessor, ActorService {
 		oBlockHeader.setParentHash(oBestBlockHeader.getBlockHash());
 
 		long currentTimestamp = System.currentTimeMillis();
-		oBlockHeader.setTimestamp(
-				System.currentTimeMillis() == oBestBlockHeader.getTimestamp() ? oBestBlockHeader.getTimestamp() + 1
-						: currentTimestamp);
+		oBlockHeader.setTimestamp(System.currentTimeMillis() == oBestBlockHeader.getTimestamp()
+				? oBestBlockHeader.getTimestamp() + 1 : currentTimestamp);
 		oBlockHeader.setNumber(oBestBlockHeader.getNumber() + 1);
 		oBlockHeader.setExtraData(extraData);
 		for (int i = 0; i < txs.size(); i++) {
@@ -214,9 +218,9 @@ public class V2Processor implements IProcessor, ActorService {
 			BlockStoreSummary oSummary = blockChainHelper.addBlock(oBlockEntity.build());
 			switch (oSummary.getBehavior()) {
 			case APPLY:
-				long start=System.currentTimeMillis();
+				long start = System.currentTimeMillis();
 				blockChainHelper.connectBlock(oBlockEntity.build());
-				log.error("");
+
 				log.info("new block, number::" + oBlockEntity.getHeader().getNumber() + " hash::"
 						+ oBlockEntity.getHeader().getBlockHash() + " parent::"
 						+ oBlockEntity.getHeader().getParentHash() + " tx::" + oBlockEntity.getHeader().getTxTrieRoot()
@@ -311,7 +315,9 @@ public class V2Processor implements IProcessor, ActorService {
 		int cc = 0;
 		while (this.stateTrie.getFlushexecutor().getActiveThreadCount() > 0) {
 			if (cc++ % 100 == 0) {
-				log.error("still waiting db flush... " + this.stateTrie.getFlushexecutor().getActiveThreadCount() + ",bh=" + bh);
+				// log.error("still waiting db flush... " +
+				// this.stateTrie.getFlushexecutor().getActiveThreadCount()
+				// + ",bh=" + bh);
 			}
 			try {
 				Thread.sleep(10);
@@ -328,29 +334,37 @@ public class V2Processor implements IProcessor, ActorService {
 		long start = System.currentTimeMillis();
 		try {
 			if (oBlockEntity.getHeader().getNumber() == oParentBlock.getHeader().getNumber()) {
-				log.error("dulipcate apply block parentHeight=currentHeight:" + oParentBlock.getHeader().getNumber()
-						+ ",txs=" + createdtxs);
+				// log.error("dulipcate apply block parentHeight=currentHeight:"
+				// + oParentBlock.getHeader().getNumber()
+				// + ",txs=" + createdtxs);
 				return true;
 			}
 			if (StringUtils.equals(oParentBlock.getHeader().getBlockHash(), oBlockEntity.getHeader().getBlockHash())) {
-				log.error("dulipcate apply block parentHash=currentHash:" + oBlockEntity.getHeader().getBlockHash()
-						+ ",blocknumber=" + oParentBlock.getHeader().getNumber() + ",txs=" + createdtxs);
+				// log.error("dulipcate apply block parentHash=currentHash:" +
+				// oBlockEntity.getHeader().getBlockHash()
+				// + ",blocknumber=" + oParentBlock.getHeader().getNumber() +
+				// ",txs=" + createdtxs);
 				return true;
 			}
 			BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
 			// LinkedList<MultiTransaction> txs = new LinkedList<>();
-			
+
 			// long start = System.currentTimeMillis();
 			this.stateTrie.getNodeCounter().set(0);
-			if (oBlockEntity.getHeader().getNumber() >= 1 && !Arrays.equals(encApi.hexDec(oParentBlock.getHeader().getStateRoot()), this.stateTrie.getRootHash())) {
-				log.error("reset state root=stateTirRoothash=" + encApi.hexEnc(this.stateTrie.getRootHash())
-						+ ",parentHash=" + oParentBlock.getHeader().getStateRoot() + ",applyheight="
-						+ oBlockEntity.getHeader().getNumber());
+
+			if (oBlockEntity.getHeader().getNumber() >= 1 && !Arrays
+					.equals(encApi.hexDec(oParentBlock.getHeader().getStateRoot()), this.stateTrie.getRootHash())) {
+				// log.error("reset state root=stateTirRoothash=" +
+				// encApi.hexEnc(this.stateTrie.getRootHash())
+				// + ",parentHash=" + oParentBlock.getHeader().getStateRoot() +
+				// ",applyheight="
+				// + oBlockEntity.getHeader().getNumber());
 				this.stateTrie.clear();
 				this.stateTrie.setRoot(encApi.hexDec(oParentBlock.getHeader().getStateRoot()));
 				waitUntilFlushFinished(oBlockEntity.getHeader().getNumber());
-
 			}
+
+			// this.stateTrie.setRoot(encApi.hexDec(oParentBlock.getHeader().getStateRoot()));
 			long waitflushend = System.currentTimeMillis();
 
 			BlockBody.Builder bb = oBlockEntity.getBody().toBuilder();
@@ -366,7 +380,6 @@ public class V2Processor implements IProcessor, ActorService {
 					txTrieBB[dstIndex] = transactionHelper.getTransactionContent(oMultiTransaction);
 					transactionHelper.merageTransactionAccounts(oMultiTransaction, accounts);
 				}
-
 			} else {
 				CountDownLatch cdl = new CountDownLatch(oBlockHeader.getTxHashsCount());
 				AtomicBoolean justCheck = new AtomicBoolean(false);
@@ -392,10 +405,11 @@ public class V2Processor implements IProcessor, ActorService {
 				bb.addTxs(txs[i]);
 				oTransactionTrie.put(RLP.encodeInt(i), txTrieBB[i]);
 			}
-			long loadtxend = System.currentTimeMillis();
 
 			transactionHelper.getDao().getStats().signalBlockTx(oBlockHeader.getTxHashsCount());
 			oBlockEntity.setBody(bb);
+
+			long loadtxend = System.currentTimeMillis();
 
 			// start = System.currentTimeMillis();
 			Map<String, ByteString> results = ExecuteTransaction(txs, oBlockEntity.build(), accounts);
@@ -422,17 +436,17 @@ public class V2Processor implements IProcessor, ActorService {
 					: oTransactionTrie.getRootHash()));
 			long starttriecode = System.currentTimeMillis();
 			header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
-			log.error("calc trie total cost:" + (System.currentTimeMillis() - start) + ",blocknumber=" + header.getNumber()
-					+ ",txcount=" + oBlockHeader.getTxHashsCount()+",encodecc="+this.stateTrie.getNodeCounter().get()
-					+",cost[f="+(waitflushend-start)+",l="+(loadtxend-waitflushend)+",e="+(execend-loadtxend)
-					+",a="+(starttriecode-execend)+",t="+(System.currentTimeMillis() - starttriecode)+"]");
+			log.error("calc trie total cost:" + (System.currentTimeMillis() - start) + ",blocknumber="
+					+ header.getNumber() + ",txcount=" + oBlockHeader.getTxHashsCount() + ",encodecc="
+					+ this.stateTrie.getNodeCounter().get() + ",cost[f=" + (waitflushend - start) + ",l="
+					+ (loadtxend - waitflushend) + ",e=" + (execend - loadtxend) + ",a=" + (starttriecode - execend)
+					+ ",t=" + (System.currentTimeMillis() - starttriecode) + "]");
 			oBlockEntity.setHeader(header.build());
 			if (StringUtils.isBlank(oBlockEntity.getHeader().getStateRoot())) {
 				log.error("get empty stateroot==");
 			}
 
-			// !!this.stateTrie.clear();
-
+//			this.stateTrie.clear();
 		} finally {
 			oTransactionTrie.clear();
 			oTransactionTrie = null;

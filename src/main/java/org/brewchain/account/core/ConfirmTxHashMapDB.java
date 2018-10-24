@@ -231,7 +231,7 @@ public class ConfirmTxHashMapDB implements ActorService {
 		while (i < maxtried && ret.size() < maxsize) {
 			HashPair hp = confirmQueue.pollFirst();
 			if (hp == null) {
-				log.error("confirmQueue info empty;");
+//				log.error("confirmQueue info empty;");
 				break;
 			} else {
 				// rwLock.writeLock().lock();
@@ -246,11 +246,11 @@ public class ConfirmTxHashMapDB implements ActorService {
 							// long time no seeee
 							if (checkTime - hp.getLastUpdateTime() >= 180000) {
 								if (hp.getTx() != null && hp.getData() != null) {
-									log.info("confirmQueue info broadcast:" + hp.getKey());
+//									log.info("confirmQueue info broadcast:" + hp.getKey());
 									// oSendingHashMapDB.put(hp.getKey(), hp);
 									confirmQueue.addLast(hp);
 								} else {
-									log.error("confirmQueue info rm tx is empty  from queue::" + hp.getKey());
+//									log.error("confirmQueue info rm tx is empty  from queue::" + hp.getKey());
 									hp.setRemoved(true);
 									removeSavestorage.put(hp.getKey(), System.currentTimeMillis());
 								}
@@ -268,9 +268,9 @@ public class ConfirmTxHashMapDB implements ActorService {
 			}
 		}
 
-		log.error("confirmQueue info poll:: maxsize::" + maxsize + ",maxtried=" + maxtried + " queuesize::"
-				+ confirmQueue.size() + ",storage=" + (storage == null ? 0 : storage.size()) + ",try=" + i + ",cost="
-				+ (System.currentTimeMillis() - checkTime));
+//		log.error("confirmQueue info poll:: maxsize::" + maxsize + ",maxtried=" + maxtried + " queuesize::"
+//				+ confirmQueue.size() + ",storage=" + (storage == null ? 0 : storage.size()) + ",try=" + i + ",cost="
+//				+ (System.currentTimeMillis() - checkTime));
 
 		// log.debug("confirm tx poll maxsize::" + maxsize + " minConfirm::" +
 		// minConfirm + " checkTime::" + checkTime

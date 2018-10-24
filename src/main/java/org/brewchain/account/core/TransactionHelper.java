@@ -204,6 +204,10 @@ public class TransactionHelper implements ActorService, Runnable {
 		// oConfirmMapDB.confirmTx(hp, BigInteger.ZERO);
 		//
 		// dao.getStats().signalAcceptTx();
+		
+		log.info(String.format("%s %s %s %s 创建交易[%s]", KeyConstant.node.getNode(), "account", "create", "transaction",
+				hp.getKey()));
+
 		return hp;
 	}
 

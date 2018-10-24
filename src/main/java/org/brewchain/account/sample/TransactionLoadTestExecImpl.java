@@ -107,9 +107,9 @@ public class TransactionLoadTestExecImpl extends SessionModules<ReqCommonTest> {
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqCommonTest pb, final CompleteHandler handler) {
 		RespCreateTransactionTest.Builder oRespCreateTransactionTest = RespCreateTransactionTest.newBuilder();
-		if (v2Processor != null) {
-			v2Processor.setLoadTester(this);
-		}
+//		if (v2Processor != null) {
+//			v2Processor.setLoadTester(this);
+//		}
 		if (!blockChainConfig.isDev()) {
 			oRespCreateTransactionTest.setRetcode(-1);
 			handler.onFinished(PacketHelper.toPBReturn(pack, oRespCreateTransactionTest.build()));

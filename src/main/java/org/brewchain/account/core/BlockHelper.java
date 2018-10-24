@@ -82,8 +82,8 @@ public class BlockHelper implements ActorService {
 	 */
 	public BlockEntity.Builder CreateNewBlock(int txCount, int confirmRecvCount, String extraData, String term)
 			throws Exception {
-		log.error(
-				"make new block::maxTxCount=" + txCount + ",confirmRecvCount::" + confirmRecvCount + " term::" + term);
+//		log.error(
+//				"make new block::maxTxCount=" + txCount + ",confirmRecvCount::" + confirmRecvCount + " term::" + term);
 		return CreateNewBlock(transactionHelper.getWaitBlockTx(txCount, confirmRecvCount), extraData, term);
 	}
 
