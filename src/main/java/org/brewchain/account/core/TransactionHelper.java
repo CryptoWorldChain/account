@@ -905,31 +905,7 @@ public class TransactionHelper implements ActorService, Runnable {
 
 	public Map<String, Account.Builder> merageTransactionAccounts(MultiTransaction.Builder oMultiTransaction,
 			Map<String, Account.Builder> current) {
-		// Map<String, Account.Builder> accounts = new HashMap<>();
-		for (MultiTransactionInput oInput : oMultiTransaction.getTxBody().getInputsList()) {
-			String key = encApi.hexEnc(oInput.getAddress().toByteArray());
-			if (!current.containsKey(key)) {
-				current.put(key, oAccountHelper.GetAccountOrCreate(oInput.getAddress()));
-			}
-		}
-
-		for (MultiTransactionOutput oOutput : oMultiTransaction.getTxBody().getOutputsList()) {
-			String key = encApi.hexEnc(oOutput.getAddress().toByteArray());
-			if (!current.containsKey(key)) {
-				current.put(key, oAccountHelper.GetAccountOrCreate(oOutput.getAddress()));
-			}
-		}
-
-		if ((oMultiTransaction.getTxBody().getType() == TransTypeEnum.TYPE_CreateContract.value()
-				|| oMultiTransaction.getTxBody().getType() == TransTypeEnum.TYPE_CreateCryptoToken.value()
-				|| oMultiTransaction.getTxBody().getType() == TransTypeEnum.TYPE_CreateToken.value())
-				&& StringUtils.isNotBlank(blockChainConfig.getLock_account_address())) {
-			if (!current.containsKey(blockChainConfig.getLock_account_address())) {
-				current.put(blockChainConfig.getLock_account_address(), oAccountHelper.GetAccountOrCreate(
-						ByteString.copyFrom(encApi.hexDec(blockChainConfig.getLock_account_address()))));
-			}
-		}
-		return current;
+		return merageTransactionAccounts(oMultiTransaction.build(), current);
 	}
 
 	public Map<String, Account.Builder> merageTransactionAccounts(MultiTransaction oMultiTransaction,

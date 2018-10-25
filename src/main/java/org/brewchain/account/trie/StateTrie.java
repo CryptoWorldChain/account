@@ -6,16 +6,20 @@ import static org.brewchain.account.util.RLP.EMPTY_ELEMENT_RLP;
 import static org.brewchain.account.util.RLP.encodeElement;
 import static org.brewchain.account.util.RLP.encodeList;
 
-import java.util.Enumeration;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.lang3.text.StrBuilder;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.bouncycastle.util.encoders.Hex;
@@ -29,6 +33,9 @@ import org.brewchain.bcapi.gens.Oentity.OKey;
 import org.brewchain.bcapi.gens.Oentity.OValue;
 import org.fc.brewchain.bcapi.EncAPI;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.protobuf.ByteString;
 
 import lombok.Data;
@@ -54,19 +61,10 @@ public class StateTrie implements ActorService {
 
 	private final static Object NULL_NODE = new Object();
 	private final static int MIN_BRANCHES_CONCURRENTLY = 4;// Math.min(16,Runtime.getRuntime().availableProcessors());
-	private static ForkJoinPool executor = new ForkJoinPool(new PropHelper(null)
+	private static ExecutorService executor = new ForkJoinPool(new PropHelper(null)
 			.get("org.brewchain.account.state.parallel", Runtime.getRuntime().availableProcessors() * 2));
 
-	ForkJoinPool flushexecutor = new ForkJoinPool(new PropHelper(null)
-			.get("org.brewchain.account.state.parallel", Runtime.getRuntime().availableProcessors() * 2));
-	// PendingQueue<String> removeQueue = new PendingQueue<>("trie-acct-remove",
-	// new PropHelper(null).get("org.brewchain.account.trie.expire.maxinmem",
-	// 100000));
-
-	// ConcurrentLinkedQueue<String> removingMap = new
-	// ConcurrentLinkedQueue<>();
-
-	public static ForkJoinPool getExecutor() {
+	public static ExecutorService getExecutor() {
 		return executor;
 	}
 
@@ -121,7 +119,6 @@ public class StateTrie implements ActorService {
 		private Node(RLP.LList parsedRlp) {
 			this.parsedRlp = parsedRlp;
 			this.rlp = parsedRlp.getEncoded();
-			
 		}
 
 		private Node(Object[] children) {
@@ -143,7 +140,7 @@ public class StateTrie implements ActorService {
 		}
 
 		public void flushBS(BatchStorage bs) {
-//			long start = System.currentTimeMillis();
+			long start = System.currentTimeMillis();
 
 			int size = bs.kvs.size();
 			if (size > 0) {
@@ -162,70 +159,47 @@ public class StateTrie implements ActorService {
 						// System.lineSeparator();
 						i++;
 					}
-//					long startdbtime = System.currentTimeMillis();
-					dao.getAccountDao().batchPuts(oks, ovs);
 
-//					log.error("encode size=" + size + ",fillcost=" + (startdbtime - start) + ",dbcost="
-//							+ (System.currentTimeMillis() - startdbtime));
+					dao.getAccountDao().batchPuts(oks, ovs);
+					// log.debug("state trie batch puts " + size + " trace::" +
+					// trace);
 					bs.kvs.clear();
 				} catch (Exception e) {
 					log.warn("error in flushBS" + e.getMessage(), e);
 				}
 				// bs.values.clear();
 			}
-			// String key = removingMap.poll();
-			// while (key != null) {
-			// removeQueue.addElement(key);
-			// key = removingMap.poll();
-			// }
 		}
 
 		public byte[] encode() {
 			BatchStorage bs = bsPool.borrow();
-			boolean newone = false;
-
 			if (bs == null) {
 				bs = new BatchStorage();
-				newone = true;
 			}
 			try {
 				batchStorage.set(bs);
 				byte[] ret = encode(1, true);
-				final BatchStorage fbs = bs;
-				final boolean fnewone = newone;
-				flushexecutor.submit(new Runnable() {
-					@Override
-					public void run() {
-						try {
-							flushBS(fbs);
-						} catch (Exception e) {
-							log.error("error in flush db", e);
-						} finally {
-							if (fbs != null) {
-								fbs.kvs.clear();
-								if (bsPool.size() < 100) {
-									if(fnewone){
-										bsPool.addObject(fbs);
-									}else{
-										bsPool.retobj(fbs);
-									}
-								}
-							}
-						}
-					}
-				});
+				flushBS(bs);
+				// dao.getAccountDao().put(oEntityHelper.byteKey2OKey(hash),
+				// oEntityHelsper.byteValue2OValue(ret));
 				return ret;
 			} catch (Exception e) {
 				log.warn("error encode:" + e.getMessage(), e);
 				throw e;
 			} finally {
+				if (bs != null) {
+					if (bsPool.size() < 100) {
+						bs.kvs.clear();
+						// bs.values.clear();
+						bsPool.retobj(bs);
+					}
+				}
 				batchStorage.remove();
 			}
 		}
 
 		private byte[] encode(final int depth, boolean forceHash) {
 			// BatchStorage bs = batchStorage.get();
-			nodeCounter.incrementAndGet();
 			if (!dirty) {
 				return hash != null ? encodeElement(hash) : rlp;
 			} else {
@@ -256,10 +230,8 @@ public class StateTrie implements ActorService {
 										@Override
 										public byte[] call() throws Exception {
 											BatchStorage bs = bsPool.borrow();
-											boolean newone = false;
 											if (bs == null) {
 												bs = new BatchStorage();
-												newone = true;
 											}
 											try {
 												if (bs != null) {
@@ -267,36 +239,20 @@ public class StateTrie implements ActorService {
 												}
 												byte[] ret = child.encode(depth + 1, false);
 												// flush
-												final BatchStorage fbs = bs;
-												final boolean fnewone = newone;
-												flushexecutor.submit(new Runnable() {
-													@Override
-													public void run() {
-														try {
-															flushBS(fbs);
-														} catch (Exception e) {
-															log.error("error in flush bs:" + e.getMessage(), e);
-														} finally {
-															if (fbs != null) {
-																batchStorage.remove();
-																fbs.kvs.clear();
-																if (bsPool.size() < 100) {
-																	if(fnewone){
-																		bsPool.addObject(fbs);
-																	}else
-																	{
-																		bsPool.retobj(fbs);
-																	}
-																}
-															}
-														}
-													}
-												});
+												flushBS(bs);
 												return ret;
 											} catch (Exception e) {
 												log.error("error in exec bs:" + e.getMessage(), e);
 												throw e;
 											} finally {
+												if (bs != null) {
+													batchStorage.remove();
+													if (bsPool.size() < 100) {
+														bs.kvs.clear();
+														// bs.values.clear();
+														bsPool.retobj(bs);
+													}
+												}
 											}
 										}
 									};
@@ -314,7 +270,6 @@ public class StateTrie implements ActorService {
 						} catch (Exception e) {
 							throw new RuntimeException(e);
 						}
-						nodeCounter.incrementAndGet();
 					} else {
 						byte[][] encoded = new byte[17][];
 						for (int i = 0; i < 16; i++) {
@@ -323,16 +278,13 @@ public class StateTrie implements ActorService {
 						}
 						byte[] value = branchNodeGetValue();
 						encoded[16] = encodeElement(value);
-						nodeCounter.incrementAndGet();
 						ret = encodeList(encoded);
 					}
 				} else if (type == NodeType.KVNodeNode) {
-					nodeCounter.incrementAndGet();
 					ret = encodeList(encodeElement(kvNodeGetKey().toPacked()),
 							kvNodeGetChildNode().encode(depth + 1, false));
 				} else {
 					byte[] value = kvNodeGetValue();
-					nodeCounter.incrementAndGet();
 					ret = encodeList(encodeElement(kvNodeGetKey().toPacked()),
 							encodeElement(value == null ? EMPTY_BYTE_ARRAY : value));
 				}
@@ -347,8 +299,7 @@ public class StateTrie implements ActorService {
 				} else {
 					hash = encApi.sha3Encode(ret);
 					// hash = ret;
-					addHash(hash, ret, type);
-					
+					addHash(hash, ret);
 					return encodeElement(hash);
 				}
 			}
@@ -371,6 +322,7 @@ public class StateTrie implements ActorService {
 			if (children != null)
 				return;
 			resolve();
+
 			RLP.LList list = parsedRlp == null ? RLP.decodeLazyList(rlp) : parsedRlp;
 
 			if (list.size() == 2) {
@@ -526,6 +478,76 @@ public class StateTrie implements ActorService {
 			return this;
 		}
 
+		/*********** Dump methods ************/
+
+		// public String dumpStruct(String indent, String prefix) {
+		// String ret = indent + prefix + getType() + (dirty ? " *" : "")
+		// + (hash == null ? "" : "(hash: " + Hex.toHexString(hash).substring(0,
+		// 6) + ")");
+		// if (getType() == NodeType.BranchNode) {
+		// byte[] value = branchNodeGetValue();
+		// ret += (value == null ? "" : " [T] = " + Hex.toHexString(value)) +
+		// "\n";
+		// for (int i = 0; i < 16; i++) {
+		// Node child = branchNodeGetChild(i);
+		// if (child != null) {
+		// ret += child.dumpStruct(indent + " ", "[" + i + "] ");
+		// }
+		// }
+		//
+		// } else if (getType() == NodeType.KVNodeNode) {
+		// ret += " [" + kvNodeGetKey() + "]\n";
+		// ret += kvNodeGetChildNode().dumpStruct(indent + " ", "");
+		// } else {
+		// ret += " [" + kvNodeGetKey() + "] = " +
+		// Hex.toHexString(kvNodeGetValue()) + "\n";
+		// }
+		// return ret;
+		// }
+
+		// public List<String> dumpTrieNode(boolean compact) {
+		// List<String> ret = new ArrayList<>();
+		// if (hash != null) {
+		// ret.add(hash2str(hash, compact) + " ==> " + dumpContent(false,
+		// compact));
+		// }
+		//
+		// if (getType() == NodeType.BranchNode) {
+		// for (int i = 0; i < 16; i++) {
+		// Node child = branchNodeGetChild(i);
+		// if (child != null)
+		// ret.addAll(child.dumpTrieNode(compact));
+		// }
+		// } else if (getType() == NodeType.KVNodeNode) {
+		// ret.addAll(kvNodeGetChildNode().dumpTrieNode(compact));
+		// }
+		// return ret;
+		// }
+		//
+		// private String dumpContent(boolean recursion, boolean compact) {
+		// if (recursion && hash != null)
+		// return hash2str(hash, compact);
+		// String ret;
+		// if (getType() == NodeType.BranchNode) {
+		// ret = "[";
+		// for (int i = 0; i < 16; i++) {
+		// Node child = branchNodeGetChild(i);
+		// ret += i == 0 ? "" : ",";
+		// ret += child == null ? "" : child.dumpContent(true, compact);
+		// }
+		// byte[] value = branchNodeGetValue();
+		// ret += value == null ? "" : ", " + val2str(value, compact);
+		// ret += "]";
+		// } else if (getType() == NodeType.KVNodeNode) {
+		// ret = "[<" + kvNodeGetKey() + ">, " +
+		// kvNodeGetChildNode().dumpContent(true, compact) + "]";
+		// } else {
+		// ret = "[<" + kvNodeGetKey() + ">, " + val2str(kvNodeGetValue(),
+		// compact) + "]";
+		// }
+		// return ret;
+		// }
+
 		@Override
 		public String toString() {
 			return getType() + (dirty ? " *" : "") + (hash == null ? "" : "(hash: " + Hex.toHexString(hash) + " )");
@@ -574,23 +596,21 @@ public class StateTrie implements ActorService {
 		return root != null && root.resolveCheck();
 	}
 
-	ConcurrentHashMap<String, byte[]> cacheByHash = new ConcurrentHashMap<>();// CacheBuilder.newBuilder().initialCapacity(10000)
-	// Cache<String, byte[]> cacheByHash =
-	// CacheBuilder.newBuilder().initialCapacity(10000)
-	// .expireAfterAccess(3600, TimeUnit.SECONDS).maximumSize(300000)
-	// .concurrencyLevel(Runtime.getRuntime().availableProcessors()).build();
+	Cache<String, byte[]> cacheByHash = CacheBuilder.newBuilder().initialCapacity(10000)
+			.expireAfterWrite(300, TimeUnit.SECONDS).maximumSize(200000)
+			.concurrencyLevel(Runtime.getRuntime().availableProcessors()).build();
 
 	private byte[] getHash(byte[] hash) {
 		OKey key = oEntityHelper.byteKey2OKey(hash);
 		String hexHash = encApi.hexEnc(hash);
 		OValue v = null;
-		BatchStorage bs = batchStorage.get();
-		if (bs != null) {
-			v = bs.kvs.get(key);
-		}
+		// BatchStorage bs = batchStorage.get();
+		// if (bs != null) {
+		// v = bs.kvs.get(key);
+		// }
 		try {
 			if (v == null) {
-				byte[] body = cacheByHash.get(key);// .getIfPresent(hexHash);
+				byte[] body = cacheByHash.getIfPresent(hexHash);
 				if (body != null) {
 					return body;
 				}
@@ -608,7 +628,7 @@ public class StateTrie implements ActorService {
 		return null;
 	}
 
-	private void addHash(byte[] hash, byte[] ret, NodeType type) {
+	private void addHash(byte[] hash, byte[] ret) {
 		// System.out.println("addHash:" + type + ",hash=" +
 		// Hex.toHexString(hash));
 
@@ -623,6 +643,7 @@ public class StateTrie implements ActorService {
 		} else {
 			// if (type == NodeType.KVNodeNode || type == NodeType.KVNodeValue)
 			// {
+
 			dao.getAccountDao().put(oEntityHelper.byteKey2OKey(hash), oEntityHelper.byteValue2OValue(ret));
 			// }
 		}
@@ -631,15 +652,13 @@ public class StateTrie implements ActorService {
 	private void deleteHash(byte[] hash) {
 		BatchStorage bs = batchStorage.get();
 		if (bs != null) {
+			// log.debug("add into state trie key::" + encApi.hexEnc(hash));
 			bs.remove(hash);
+			// log.debug("state trie batch bs " + encApi.hexEnc(hash));
 		}
-		String strhex = encApi.hexEnc(hash);
-		// cacheByHash.invalidate(strhex);
-		cacheByHash.remove(strhex);
-		// removingMap.add(strhex);
 	}
 
-	public synchronized byte[] get(byte[] key) {
+	public byte[] get(byte[] key) {
 		if (!hasRoot())
 			return null; // treating unknown root hash as empty trie
 		TrieKey k = TrieKey.fromNormal(key);
@@ -669,7 +688,7 @@ public class StateTrie implements ActorService {
 		}
 	}
 
-	public synchronized void put(byte[] key, byte[] value) {
+	public void put(byte[] key, byte[] value) {
 		TrieKey k = TrieKey.fromNormal(key);
 		if (root == null) {
 			if (value != null && value.length > 0) {
@@ -732,8 +751,7 @@ public class StateTrie implements ActorService {
 		if (root != null) {
 			root = delete(root, k);
 		}
-		// cacheByHash.invalidate(key);
-		cacheByHash.remove(encApi.hexEnc(key));
+		cacheByHash.invalidate(key);
 	}
 
 	private Node delete(Node n, TrieKey k) {
@@ -808,22 +826,17 @@ public class StateTrie implements ActorService {
 
 	public byte[] getRootHash() {
 		encode();
-		Enumeration<String> keys = cacheByHash.keys();
-		while (cacheByHash.size() > 100000 && keys.hasMoreElements()) {
-			cacheByHash.remove(keys.nextElement());
-		}
 		return root != null ? root.hash : ByteUtil.EMPTY_BYTE_ARRAY;
 	}
 
-	AtomicLong nodeCounter=new AtomicLong(0);
 	public void clear() {
 		if (root != null && root.dirty) {
 			// persist all dirty nodes to underlying Source
 			// encode();
 			// release all Trie Node instances for GC
+			root = null;
 			root = new Node(root.hash);
 		}
-		nodeCounter.set(0);
 	}
 
 	@Override
@@ -838,6 +851,27 @@ public class StateTrie implements ActorService {
 		return FastByteComparisons.equal(getRootHash(), oStateTrie.getRootHash());
 
 	}
+
+	// public String dumpStructure() {
+	// return root == null ? "<empty>" : root.dumpStruct("", "");
+	// }
+
+	// public String dumpTrie() {
+	// return dumpTrie(true);
+	// }
+
+	// public String dumpTrie(boolean compact) {
+	// if (root == null)
+	// return "<empty>";
+	// encode();
+	// StrBuilder ret = new StrBuilder();
+	// List<String> strings = root.dumpTrieNode(compact);
+	// ret.append("Root: " + hash2str(getRootHash(), compact) + "\n");
+	// for (String s : strings) {
+	// ret.append(s).append('\n');
+	// }
+	// return ret.toString();
+	// }
 
 	public void scanTree(ScanAction scanAction) {
 		scanTree(root, TrieKey.empty(false), scanAction);

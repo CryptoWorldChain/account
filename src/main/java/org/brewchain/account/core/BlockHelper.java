@@ -168,7 +168,7 @@ public class BlockHelper implements ActorService {
 //			oAddBlockResponse.setCurrentNumber(blockChainHelper.getLastBlockNumber());
 //			oAddBlockResponse.setWantNumber(oAddBlockResponse.getCurrentNumber());
 //			return oAddBlockResponse.build();
-//		}
+//		}	
 		return oProcessorManager.getProcessor(block.getVersion()).ApplyBlock(block);
 	}
 

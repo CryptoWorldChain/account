@@ -67,11 +67,11 @@ public class CryptoTransactionSample extends SessionModules<ReqCreateTransaction
 		MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 		MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
 		
-		if (!blockChainConfig.isDev()) {
-			oRespCreateTransactionTest.setRetcode(-1);
-			handler.onFinished(PacketHelper.toPBReturn(pack, oRespCreateTransactionTest.build()));
-			return;
-		}
+//		if (!blockChainConfig.isDev()) {
+//			oRespCreateTransactionTest.setRetcode(-1);
+//			handler.onFinished(PacketHelper.toPBReturn(pack, oRespCreateTransactionTest.build()));
+//			return;
+//		}
 
 		try {
 			for (ReqTransactionAccount input : pb.getInputList()) {

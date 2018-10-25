@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -76,8 +77,8 @@ public class V2Processor implements IProcessor, ActorService {
 	// @ActorRequire(name = "LoadTester", scope = "global")
 	// TransactionLoadTestExecImpl loadTester;
 
-	public Map<String, ByteString> ExecuteTransaction(MultiTransaction[] oMultiTransactions, BlockEntity currentBlock,
-			Map<String, Account.Builder> accounts) throws Exception {
+	public synchronized Map<String, ByteString> ExecuteTransaction(MultiTransaction[] oMultiTransactions,
+			BlockEntity currentBlock, Map<String, Account.Builder> accounts) throws Exception {
 
 		Map<String, ByteString> results = new ConcurrentHashMap<>();
 		mts.reset();
@@ -103,7 +104,7 @@ public class V2Processor implements IProcessor, ActorService {
 	}
 
 	@Override
-	public Map<String, ByteString> ExecuteTransaction(List<MultiTransaction> oMultiTransactions,
+	public synchronized Map<String, ByteString> ExecuteTransaction(List<MultiTransaction> oMultiTransactions,
 			BlockEntity currentBlock) throws Exception {
 
 		Map<String, ByteString> results = new HashMap<>();
@@ -282,7 +283,7 @@ public class V2Processor implements IProcessor, ActorService {
 				}
 				if (oMultiTransaction == null || StringUtils.isBlank(oMultiTransaction.getTxHash())
 						|| oMultiTransaction.getTxBody().getInputsCount() <= 0) {
-					// log.error("cannot load tx :txhash=" + txHash);
+					log.error("cannot load tx :txhash=" + txHash);
 					// oAddBlockResponse.addTxHashs(txHash);
 					if (StringUtils.isBlank(txHash)) {
 						log.error("!!!Get Empty TXHash::" + txHash);
@@ -295,6 +296,8 @@ public class V2Processor implements IProcessor, ActorService {
 						bb[dstIndex] = oMultiTransaction;
 						txTrieBB[dstIndex] = transactionHelper.getTransactionContent(oMultiTransaction);
 						transactionHelper.merageTransactionAccounts(oMultiTransaction, accounts);
+					} else {
+						log.error("cannot load tx accounts::txhash=" + txHash);
 					}
 				}
 
@@ -312,19 +315,20 @@ public class V2Processor implements IProcessor, ActorService {
 	byte[] emptybb = new byte[1];
 
 	public void waitUntilFlushFinished(long bh) {
-		int cc = 0;
-		while (this.stateTrie.getFlushexecutor().getActiveThreadCount() > 0) {
-			if (cc++ % 100 == 0) {
-				// log.error("still waiting db flush... " +
-				// this.stateTrie.getFlushexecutor().getActiveThreadCount()
-				// + ",bh=" + bh);
-			}
-			try {
-				Thread.sleep(10);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
+		// int cc = 0;
+		// while (this.stateTrie.getFlushexecutor().getActiveThreadCount() > 0)
+		// {
+		// if (cc++ % 100 == 0) {
+		// // log.error("still waiting db flush... " +
+		// // this.stateTrie.getFlushexecutor().getActiveThreadCount()
+		// // + ",bh=" + bh);
+		// }
+		// try {
+		// Thread.sleep(10);
+		// } catch (InterruptedException e) {
+		// e.printStackTrace();
+		// }
+		// }
 	}
 
 	private boolean processBlock(BlockEntity.Builder oBlockEntity, BlockEntity oParentBlock,
@@ -333,24 +337,26 @@ public class V2Processor implements IProcessor, ActorService {
 		CacheTrie oReceiptTrie = new CacheTrie(this.encApi);
 		long start = System.currentTimeMillis();
 		try {
-			if (oBlockEntity.getHeader().getNumber() == oParentBlock.getHeader().getNumber()) {
-				// log.error("dulipcate apply block parentHeight=currentHeight:"
-				// + oParentBlock.getHeader().getNumber()
-				// + ",txs=" + createdtxs);
-				return true;
-			}
-			if (StringUtils.equals(oParentBlock.getHeader().getBlockHash(), oBlockEntity.getHeader().getBlockHash())) {
-				// log.error("dulipcate apply block parentHash=currentHash:" +
-				// oBlockEntity.getHeader().getBlockHash()
-				// + ",blocknumber=" + oParentBlock.getHeader().getNumber() +
-				// ",txs=" + createdtxs);
-				return true;
-			}
+			// if (oBlockEntity.getHeader().getNumber() ==
+			// oParentBlock.getHeader().getNumber()) {
+			// // log.error("dulipcate apply block parentHeight=currentHeight:"
+			// // + oParentBlock.getHeader().getNumber()
+			// // + ",txs=" + createdtxs);
+			// return true;
+			// }
+			// if (StringUtils.equals(oParentBlock.getHeader().getBlockHash(),
+			// oBlockEntity.getHeader().getBlockHash())) {
+			// // log.error("dulipcate apply block parentHash=currentHash:" +
+			// // oBlockEntity.getHeader().getBlockHash()
+			// // + ",blocknumber=" + oParentBlock.getHeader().getNumber() +
+			// // ",txs=" + createdtxs);
+			// return true;
+			// }
 			BlockHeader.Builder oBlockHeader = oBlockEntity.getHeader().toBuilder();
 			// LinkedList<MultiTransaction> txs = new LinkedList<>();
 
 			// long start = System.currentTimeMillis();
-			this.stateTrie.getNodeCounter().set(0);
+			// this.stateTrie.getNodeCounter().set(0);
 
 			if (oBlockEntity.getHeader().getNumber() >= 1 && !Arrays
 					.equals(encApi.hexDec(oParentBlock.getHeader().getStateRoot()), this.stateTrie.getRootHash())) {
@@ -361,9 +367,12 @@ public class V2Processor implements IProcessor, ActorService {
 				// + oBlockEntity.getHeader().getNumber());
 				this.stateTrie.clear();
 				this.stateTrie.setRoot(encApi.hexDec(oParentBlock.getHeader().getStateRoot()));
-				waitUntilFlushFinished(oBlockEntity.getHeader().getNumber());
+				// waitUntilFlushFinished(oBlockEntity.getHeader().getNumber());
 			}
 
+			// this.stateTrie.clear();
+			// log.error(" put statetrie root::" +
+			// oParentBlock.getHeader().getStateRoot());
 			// this.stateTrie.setRoot(encApi.hexDec(oParentBlock.getHeader().getStateRoot()));
 			long waitflushend = System.currentTimeMillis();
 
@@ -411,7 +420,6 @@ public class V2Processor implements IProcessor, ActorService {
 
 			long loadtxend = System.currentTimeMillis();
 
-			// start = System.currentTimeMillis();
 			Map<String, ByteString> results = ExecuteTransaction(txs, oBlockEntity.build(), accounts);
 			long execend = System.currentTimeMillis();
 
@@ -436,17 +444,18 @@ public class V2Processor implements IProcessor, ActorService {
 					: oTransactionTrie.getRootHash()));
 			long starttriecode = System.currentTimeMillis();
 			header.setStateRoot(encApi.hexEnc(this.stateTrie.getRootHash()));
+
+			// this.stateTrie.getNodeCounter().get()
 			log.error("calc trie total cost:" + (System.currentTimeMillis() - start) + ",blocknumber="
-					+ header.getNumber() + ",txcount=" + oBlockHeader.getTxHashsCount() + ",encodecc="
-					+ this.stateTrie.getNodeCounter().get() + ",cost[f=" + (waitflushend - start) + ",l="
-					+ (loadtxend - waitflushend) + ",e=" + (execend - loadtxend) + ",a=" + (starttriecode - execend)
-					+ ",t=" + (System.currentTimeMillis() - starttriecode) + "]");
+					+ header.getNumber() + ",txcount=" + oBlockHeader.getTxHashsCount() + ",encodecc=" + "" + ",cost[f="
+					+ (waitflushend - start) + ",l=" + (loadtxend - waitflushend) + ",e=" + (execend - loadtxend)
+					+ ",a=" + (starttriecode - execend) + ",t=" + (System.currentTimeMillis() - starttriecode) + "]");
 			oBlockEntity.setHeader(header.build());
 			if (StringUtils.isBlank(oBlockEntity.getHeader().getStateRoot())) {
 				log.error("get empty stateroot==");
 			}
 
-//			this.stateTrie.clear();
+			// this.stateTrie.clear();
 		} finally {
 			oTransactionTrie.clear();
 			oTransactionTrie = null;

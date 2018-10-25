@@ -185,7 +185,7 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 								.get(encApi.hexEnc(oOutput.getCryptoToken().toByteArray())).toBuilder();
 						oAccountCryptoToken.setOwner(oOutput.getAddress());
 						oAccountCryptoToken.setNonce(oAccountCryptoToken.getNonce() + 1);
-						oAccountCryptoToken.setOwnertime(System.currentTimeMillis());
+						oAccountCryptoToken.setOwnertime(oMultiTransaction.getTxBody().getTimestamp());
 						oAccountCryptoValue.addTokens(oAccountCryptoToken.build());
 						receiverAccountValue.setCryptos(k, oAccountCryptoValue);
 						isExistToken = true;
@@ -205,7 +205,7 @@ public class ActuatorCryptoTokenTransaction extends AbstractTransactionActuator 
 							.get(encApi.hexEnc(oOutput.getCryptoToken().toByteArray())).toBuilder();
 					oAccountCryptoToken.setOwner(oOutput.getAddress());
 					oAccountCryptoToken.setNonce(oAccountCryptoToken.getNonce() + 1);
-					oAccountCryptoToken.setOwnertime(System.currentTimeMillis());
+					oAccountCryptoToken.setOwnertime(oMultiTransaction.getTxBody().getTimestamp());
 
 					AccountCryptoValue.Builder oAccountCryptoValue = AccountCryptoValue.newBuilder();
 					oAccountCryptoValue.addTokens(oAccountCryptoToken);
